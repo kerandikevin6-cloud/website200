@@ -14,8 +14,8 @@ const PAGES = [
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const css = read('assets/css/app.css');
-const modals = read('assets/js/modals.js');
-const js = read('assets/js/app.js');
+const MODULES = ['format', 'api', 'chart', 'modals', 'trade', 'positions', 'app'];
+const js = MODULES.map(m => read(`assets/js/${m}.js`)).join(String.fromCharCode(10));
 
 const pages = {};
 for (const name of PAGES) {
@@ -47,9 +47,6 @@ ${css}
 
 <div class="app" id="app"></div>
 
-<script>
-${modals}
-</script>
 <script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = ${JSON.stringify(pages)};</script>
 <script>
 ${js}

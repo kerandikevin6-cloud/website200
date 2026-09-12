@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nexas — Terminal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0A1420">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/css/app.css">
@@ -11,95 +13,49 @@
 <body data-page="trade" data-chrome="app">
 <div class="app">
   <main>
-    <div class="terminal">
+    <div class="terminal" id="terminal">
 
       <div class="col-mid">
-        <div class="ctabs">
-          <button class="ctab">Matches / Differs</button>
-          <button class="ctab active">Even / Odd</button>
-          <button class="ctab">Over / Under</button>
-        </div>
-
-        <div class="instrument">
-          <div class="inst-mark">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-6 4 3 4-8 6 11"></path></svg>
-          </div>
-          <div>
-            <div class="inst-name">Volatility 10 (1s) Index</div>
-            <div class="inst-price">
-              <span class="p num" id="px">9601.01</span>
-              <span class="c num pos" id="pxChg">+0.01 (0.00%)</span>
-            </div>
-          </div>
-          <div class="inst-right"><span class="chip">1 tick</span></div>
-        </div>
+        <div class="ctabs" id="contractTabs"><div class="sk sk-tabs"></div></div>
+        <div class="instrument" id="instrument"><div class="sk sk-inst"></div></div>
 
         <div class="chart-card">
-          <canvas id="chart"></canvas>
+          <canvas id="chart" aria-label="Price chart"></canvas>
           <div class="chart-tools">
-            <button aria-label="Zoom in"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
-            <button aria-label="Reset zoom"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 12a9 9 0 109-9"></path><path d="M3 4v5h5"></path></svg></button>
-            <button aria-label="Zoom out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+            <button data-zoom="in" aria-label="Zoom in">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
+            <button data-zoom="reset" aria-label="Reset zoom">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 12a9 9 0 109-9"></path><path d="M3 4v5h5"></path></svg>
+            </button>
+            <button data-zoom="out" aria-label="Zoom out">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+            </button>
+          </div>
+          <div class="chart-opts" id="chartOpts">
+            <button data-view="line" class="active">Ticks</button>
+            <button data-view="5">5t</button>
+            <button data-view="15">15t</button>
           </div>
         </div>
 
         <div class="digits" id="digits"></div>
+        <div id="activeList"></div>
       </div>
 
       <div class="col-right">
-        <div class="panel">
-          <div>
-            <div class="label" style="margin-bottom:9px">Trade mode · runs until target hit</div>
-            <div class="seg">
-              <button class="active">Auto</button>
-              <button>Manual</button>
-            </div>
-          </div>
-
-          <div class="seg">
-            <button class="active">Stake</button>
-            <button>Payout</button>
-          </div>
-
-          <div class="stake">
-            <button id="minus" aria-label="Decrease stake"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
-            <div class="f">
-              <input id="stake" value="10" inputmode="decimal" aria-label="Stake">
-              <span class="cur">USD</span>
-            </div>
-            <button id="plus" aria-label="Increase stake"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
-          </div>
-
-          <div class="quick" id="quick">
-            <button data-add="1">+1</button>
-            <button data-add="5">+5</button>
-            <button data-add="10">+10</button>
-            <button data-add="25">+25</button>
-            <button data-add="50">+50</button>
-          </div>
-
-          <div class="session"><span>Last session</span><span class="num">0 trades · 0W / 0L</span></div>
-          <div class="session"><span>Session P/L</span><span class="num pos">+0.00 USD</span></div>
-        </div>
-
-        <div class="trade-dock">
-          <div class="trade-actions">
-            <button class="tbtn even" data-side="Even">
-              <div class="t">Even</div>
-              <div class="s">Payout <span data-payout>19.53</span> · 95.30%</div>
-            </button>
-            <button class="tbtn odd" data-side="Odd">
-              <div class="t">Odd</div>
-              <div class="s">Payout <span data-payout>19.53</span> · 95.30%</div>
-            </button>
-          </div>
-        </div>
+        <div class="panel" id="panel"><div class="sk sk-panel"></div></div>
+        <div class="trade-dock" id="dock"></div>
       </div>
 
     </div>
   </main>
 </div>
+<script src="assets/js/format.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/chart.js"></script>
 <script src="assets/js/modals.js"></script>
+<script src="assets/js/trade.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

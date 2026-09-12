@@ -715,24 +715,993 @@ footer a:hover{color:var(--text-2)}
   background:var(--neg);border:1.5px solid var(--bg);
 }
 
+/* ============================================================
+   Pro terminal surfaces
+   ============================================================ */
+
+/* ---------------- skeletons ---------------- */
+.sk{position:relative;overflow:hidden;background:var(--surface-2)}
+.sk::after{
+  content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(127,127,127,.12),transparent);
+  animation:shimmer 1.3s infinite;
+}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.sk-tabs{height:44px}
+.sk-inst{height:52px;margin:10px 14px}
+.sk-panel{height:280px;margin:10px 0}
+.sk-summary{height:96px;margin:14px}
+.sk-list{height:220px;margin:14px}
+@media (prefers-reduced-motion:reduce){.sk::after{animation:none}}
+
+/* ---------------- instrument header ---------------- */
+.inst-main{min-width:0}
+.inst-name{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:500;color:var(--text)}
+.inst-name svg{color:var(--muted)}
+.feed{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.feed i{width:6px;height:6px;border-radius:50%;background:var(--pos)}
+.feed.reconnecting i,.feed.booting i{background:var(--neg);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+
+/* ---------------- chart options ---------------- */
+.chart-opts{
+  position:absolute;top:10px;right:72px;display:flex;
+  border:1px solid var(--line);background:var(--surface);
+}
+.chart-opts button{padding:5px 10px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.chart-opts button + button{border-left:1px solid var(--line-soft)}
+.chart-opts button.active{background:var(--surface-3);color:var(--text)}
+#chart{touch-action:none;cursor:crosshair}
+
+/* ---------------- digits ---------------- */
+.digit.picked{border-color:var(--accent);background:var(--accent-soft)}
+.digit.picked i{color:var(--accent)}
+
+/* ---------------- panel rows ---------------- */
+.stack-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pickline{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:3px}
+.pickline b{min-width:22px;text-align:center;font-size:15px;font-weight:500}
+.pickline .unit{font-size:11px;color:var(--muted);margin-left:-4px}
+.stepbtn{width:30px;height:30px;display:grid;place-items:center;color:var(--text-2);background:var(--surface-2)}
+.stepbtn:hover{background:var(--surface-3);color:var(--text)}
+.field-error{color:var(--neg);font-size:12px;margin-top:7px}
+.stake.invalid{border-color:var(--neg)}
+.tbtn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ---------------- automated run ---------------- */
+.runbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 12px;border:1px solid var(--line-soft);background:var(--surface-2);
+}
+.runbar.active{border-color:var(--pos);background:var(--pos-soft)}
+.runbar-t{font-size:13px;font-weight:500;margin-top:2px}
+.btn-mini{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 11px;font-size:12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--text-2);
+}
+.btn-mini:hover{color:var(--text);border-color:var(--muted)}
+.btn-mini.solid{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-stop{padding:7px 13px;font-size:12px;font-weight:600;background:var(--neg);color:#fff}
+
+/* ---------------- open positions ---------------- */
+.active-wrap{display:flex;gap:10px;padding:0 12px 14px;overflow-x:auto;scrollbar-width:none}
+.active-wrap::-webkit-scrollbar{display:none}
+.active{flex:0 0 auto;width:min(82vw,260px);padding:12px;border:1px solid var(--line);background:var(--surface)}
+.active-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.active-top b{font-size:13.5px}
+.active-meta{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--muted);margin-top:3px}
+.bar{height:3px;background:var(--surface-3);margin:10px 0 8px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s ease}
+.active-foot{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)}
+
+/* ---------------- positions page ---------------- */
+.pnl-head{
+  display:flex;gap:18px;flex-wrap:wrap;margin:14px;padding:16px;
+  border:1px solid var(--line-soft);background:var(--surface);
+}
+.pnl-head .big{font-family:var(--mono);font-size:30px;margin:4px 0 2px}
+.pnl-head .sub{font-size:11.5px;color:var(--muted)}
+.pnl-side{flex:1;min-width:190px;display:grid;grid-template-columns:1fr 1fr;gap:0 18px;align-content:center}
+.pnl-side .kv{padding:6px 0;border:none;font-size:12.5px}
+.filters{display:flex;align-items:center;gap:10px;padding:0 14px 12px;flex-wrap:wrap}
+.chipline{display:flex;gap:6px;flex-wrap:wrap}
+.fchip{padding:6px 11px;font-size:12px;border:1px solid var(--line-soft);color:var(--muted);background:var(--surface)}
+.fchip.on{border-color:var(--text);color:var(--text)}
+.input.sm{width:auto;padding:7px 10px;font-size:12.5px}
+.trow{display:flex;align-items:center;gap:13px;padding:13px 14px;width:100%;text-align:left;color:inherit}
+.trow + .trow{border-top:1px solid var(--line-soft)}
+button.trow:hover{background:var(--surface-2)}
+.trow .ico{
+  width:32px;height:32px;display:grid;place-items:center;border-radius:50%;
+  background:var(--surface-2);color:var(--text-2);flex:none;
+}
+.trow .ico.pos{background:var(--pos-soft);color:var(--pos)}
+.trow .ico.neg{background:var(--neg-soft);color:var(--neg)}
+.trow .ico.live{background:var(--accent-soft);color:var(--accent)}
+.trow .t{flex:1;min-width:0}
+.trow .t b{display:block;font-size:13.5px;font-weight:500}
+.trow .t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.trow .p{text-align:right;font-size:13.5px}
+.trow .p .sub{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.detail-pl{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px;border:1px solid var(--line-soft);background:var(--surface-2);
+}
+.detail-pl b{font-size:20px}
+.detail-pl.pos b{color:var(--pos)}
+.detail-pl.neg b{color:var(--neg)}
+kbd{font-family:var(--mono);font-size:11px;padding:3px 7px;border:1px solid var(--line);background:var(--surface-2)}
+
+/* ---------------- connection, consent, risk ---------------- */
+.conn-banner{
+  position:fixed;left:50%;top:-60px;transform:translateX(-50%);z-index:80;
+  display:flex;align-items:center;gap:9px;padding:9px 16px;font-size:12.5px;
+  background:var(--neg);color:#fff;transition:top .25s ease;white-space:nowrap;
+}
+.conn-banner.show{top:calc(var(--topbar-h) + 8px)}
+.spin{
+  width:12px;height:12px;border-radius:50%;border:1.5px solid rgba(255,255,255,.4);
+  border-top-color:#fff;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+body.feed-down .tbtn{opacity:.5;pointer-events:none}
+
+.consent{
+  position:fixed;left:0;right:0;bottom:0;z-index:85;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  background:var(--surface);border-top:1px solid var(--line);
+}
+.consent p{margin:0;flex:1;min-width:200px;font-size:12.5px;color:var(--text-2)}
+.consent-btns{display:flex;gap:8px}
+
+.risk-strip{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:var(--surface-2);border-bottom:1px solid var(--line-soft);
+  font-size:11.5px;color:var(--text-2);
+}
+.risk-strip span{display:flex;align-items:center;gap:8px;flex:1;line-height:1.45}
+.risk-strip svg{color:var(--accent);flex:none}
+.risk-strip .iconbtn{width:26px;height:26px}
+
+body.locked{overflow:hidden}
+
+/* ---------------- desktop refinements ---------------- */
+@media (min-width:900px){
+  .active-wrap{padding:0 0 14px}
+  .active{width:260px}
+  .pnl-head{margin:16px 0}
+  .filters{padding:0 0 12px}
+  .consent{left:auto;right:20px;bottom:20px;max-width:420px;border:1px solid var(--line)}
+}
+
 </style>
 
 <div class="app" id="app"></div>
 
+<script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = {"index":{"attrs":{"data-page":"trade","data-chrome":"app"},"title":"Nexas — Terminal","html":"\n    <div class=\"terminal\" id=\"terminal\">\n\n      <div class=\"col-mid\">\n        <div class=\"ctabs\" id=\"contractTabs\"><div class=\"sk sk-tabs\"></div></div>\n        <div class=\"instrument\" id=\"instrument\"><div class=\"sk sk-inst\"></div></div>\n\n        <div class=\"chart-card\">\n          <canvas id=\"chart\" aria-label=\"Price chart\"></canvas>\n          <div class=\"chart-tools\">\n            <button data-zoom=\"in\" aria-label=\"Zoom in\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n            </button>\n            <button data-zoom=\"reset\" aria-label=\"Reset zoom\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 109-9\"></path><path d=\"M3 4v5h5\"></path></svg>\n            </button>\n            <button data-zoom=\"out\" aria-label=\"Zoom out\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg>\n            </button>\n          </div>\n          <div class=\"chart-opts\" id=\"chartOpts\">\n            <button data-view=\"line\" class=\"active\">Ticks</button>\n            <button data-view=\"5\">5t</button>\n            <button data-view=\"15\">15t</button>\n          </div>\n        </div>\n\n        <div class=\"digits\" id=\"digits\"></div>\n        <div id=\"activeList\"></div>\n      </div>\n\n      <div class=\"col-right\">\n        <div class=\"panel\" id=\"panel\"><div class=\"sk sk-panel\"></div></div>\n        <div class=\"trade-dock\" id=\"dock\"></div>\n      </div>\n\n    </div>\n  ","script":""},"markets":{"attrs":{"data-page":"markets","data-chrome":"app"},"title":"Nexas — Markets","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"page-head\">\r\n        <h1>Markets</h1>\r\n        <p>Synthetic indices, generated continuously and open every hour of every day.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">All</button>\r\n        <button class=\"ctab\">Volatility</button>\r\n        <button class=\"ctab\">Boom &amp; Crash</button>\r\n        <button class=\"ctab\">Step</button>\r\n      </div>\r\n\r\n      <div id=\"marketList\"><div class=\"sk sk-list\"></div></div>\r\n      <div style=\"height:20px\"></div>\r\n    </div>\r\n  ","script":""},"positions":{"attrs":{"data-page":"positions","data-chrome":"app"},"title":"Nexas — Positions","html":"\n    <div class=\"shell\" id=\"positions\">\n      <div class=\"page-head\">\n        <h1>Positions</h1>\n        <p>Everything open, settled and paid, on this account.</p>\n      </div>\n\n      <div class=\"ctabs\">\n        <button class=\"ctab active\" data-posview=\"open\">Open</button>\n        <button class=\"ctab\" data-posview=\"closed\">Closed</button>\n        <button class=\"ctab\" data-posview=\"transactions\">Ledger</button>\n      </div>\n\n      <div id=\"posSummary\"><div class=\"sk sk-summary\"></div></div>\n      <div id=\"posFilters\"></div>\n      <div id=\"posList\"><div class=\"sk sk-list\"></div></div>\n      <div style=\"height:22px\"></div>\n    </div>\n  ","script":""},"responsible":{"attrs":{"data-page":"responsible","data-chrome":"app"},"title":"Nexas — Responsible Trading","html":"\r\n    <div class=\"page\">\r\n      <span class=\"label page-kicker\">Responsible trading</span>\r\n      <h1>Trade with intent, not impulse.</h1>\r\n      <p class=\"lede\">Trading carries real risk. Nexas gives you the controls to decide, in advance, how much time and money you are willing to commit — and holds you to it.</p>\r\n\r\n      <div class=\"rule\"></div>\r\n\r\n      <h2>Set your limits before you trade</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\r\n          <div>\r\n            <b>Session duration</b>\r\n            <p>Cap how long a single session can run. The terminal closes out and locks when the clock ends.</p>\r\n            <span class=\"chip\">Currently 60 minutes</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\r\n          <div>\r\n            <b>Loss and stake ceilings</b>\r\n            <p>Daily, weekly and monthly ceilings on total stake and net loss. Any increase takes 24 hours to apply.</p>\r\n            <span class=\"chip\">Daily loss $250</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"></rect><path d=\"M4 10h16M8 3v4M16 3v4\"></path></svg>\r\n          <div>\r\n            <b>Cooling-off and self-exclusion</b>\r\n            <p>Pause new positions for 24 hours, or close access entirely for a period you choose. Withdrawals stay open.</p>\r\n            <span class=\"chip\">Not active</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <h2>What the numbers actually look like</h2>\r\n      <div class=\"stats\">\r\n        <div class=\"stat\"><b>70%</b><span>of retail accounts lose money over a twelve-month period</span></div>\r\n        <div class=\"stat\"><b>1 in 5</b><span>traders exceed the deposit they originally planned</span></div>\r\n        <div class=\"stat\"><b>24h</b><span>delay applied to any increase in your limits</span></div>\r\n        <div class=\"stat\"><b>$0</b><span>cost to set, lower or activate any control</span></div>\r\n      </div>\r\n\r\n      <h2>Signs worth taking seriously</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>Chasing losses</h3><p>Raising stake size to recover a previous loss rather than following a plan.</p></div>\r\n        <div class=\"card\"><h3>Borrowed funds</h3><p>Trading with money set aside for rent, bills, school fees or credit repayment.</p></div>\r\n        <div class=\"card\"><h3>Concealment</h3><p>Hiding the extent of your trading from people close to you.</p></div>\r\n      </div>\r\n\r\n      <h2>Get support</h2>\r\n      <p>If trading has stopped feeling like a decision and started feeling like a compulsion, speak to someone independent of us. Our team can also apply a self-exclusion on your behalf at any time, without questions.</p>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>GamCare</h3><p>Free, confidential support and live chat, available around the clock.</p></div>\r\n        <div class=\"card\"><h3>Gambling Therapy</h3><p>Multilingual online support for people affected worldwide.</p></div>\r\n        <div class=\"card\"><h3>Nexas support</h3><p>Reach us in-app at any hour to apply limits or close an account.</p></div>\r\n      </div>\r\n\r\n      <div style=\"margin-top:22px\"><a class=\"btn btn-ghost\" href=\"chat.html\">Talk to our team</a></div>\r\n    </div>\r\n\r\n    <footer>\r\n      <div class=\"fl\">\r\n        <a href=\"responsible.html\">Responsible Trading</a>\r\n        <a href=\"#\">Risk Disclosure</a>\r\n        <a href=\"#\">Terms</a>\r\n        <a href=\"#\">Privacy</a>\r\n        <a href=\"#\">Complaints</a>\r\n        <a href=\"#\">Security</a>\r\n      </div>\r\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Past results do not indicate future outcomes.</p>\r\n    </footer>\r\n  ","script":""},"account":{"attrs":{"data-page":"account","data-chrome":"app","data-back":"index.html","data-title":"Account"},"title":"Nexas — Account","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"summary\" style=\"display:flex;align-items:center;gap:14px\">\r\n        <div class=\"avatar\" style=\"width:52px;height:52px;font-size:22px\">A</div>\r\n        <div style=\"flex:1;min-width:0\">\r\n          <div style=\"font-weight:600;font-size:16px\">Amara Kimani</div>\r\n          <div style=\"color:var(--muted);font-size:12.5px\">am***a@mail.com</div>\r\n        </div>\r\n        <span class=\"badge warn\">Unverified</span>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <button class=\"row\" data-open=\"profile\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"></rect><path d=\"M7 10h3M7 14h6M15 9h3v4h-3z\"></path></svg></span>\r\n          <span class=\"t\"><b>Change name</b><span>Amara Kimani</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"password\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V7a4 4 0 118 0v4\"></path></svg></span>\r\n          <span class=\"t\"><b>Update password</b><span>Last changed 4 months ago</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"verify\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path><path d=\"M9 12l2 2 4-4\"></path></svg></span>\r\n          <span class=\"t\"><b>Verify identity</b><span>Required before your first withdrawal</span></span>\r\n          <span class=\"badge warn\">2 steps left</span>\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"row danger\" href=\"login.html\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4\"></path><path d=\"M16 17l5-5-5-5M21 12H9\"></path></svg></span>\r\n          <span class=\"t\"><b>Log out</b></span>\r\n        </a>\r\n      </div>\r\n      <div style=\"height:24px\"></div>\r\n    </div>\r\n  ","script":""},"chat":{"attrs":{"data-page":"chat","data-chrome":"app","data-back":"account.html","data-title":"Live chat"},"title":"Nexas — Live Chat","html":"\r\n    <div class=\"chat\">\r\n      <div class=\"chat-head\">\r\n        <div class=\"avatar\">J</div>\r\n        <div>\r\n          <b>Joseph · Nexas support</b>\r\n          <span>Online now</span>\r\n        </div>\r\n      </div>\r\n\r\n      <div class=\"chat-log\" id=\"chatLog\">\r\n        <div class=\"chat-day\">Today</div>\r\n        <div class=\"msg them\">Hello Amara, you are through to Nexas support. How can I help?<span class=\"time\">09:12</span></div>\r\n        <div class=\"msg me\">Hi — my M-Pesa deposit hasn't shown up yet.<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg them\">Let me check. Could you confirm the last four digits of the phone number you used?<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg me\">Ends 4471.<span class=\"time\">09:14</span></div>\r\n        <div class=\"msg them\">Thank you. I can see the transaction pending with the provider. It will credit automatically within ten minutes, and I'll stay on the chat until it does.<span class=\"time\">09:15</span></div>\r\n      </div>\r\n\r\n      <form class=\"chat-bar\" id=\"chatForm\">\r\n        <button class=\"iconbtn\" type=\"button\" aria-label=\"Attach file\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7\"></path></svg>\r\n        </button>\r\n        <input class=\"input\" id=\"chatInput\" placeholder=\"Write a message\" autocomplete=\"off\" aria-label=\"Message\">\r\n        <button class=\"chat-send\" type=\"submit\" aria-label=\"Send\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l16-8-6 16-2.5-6z\"></path></svg>\r\n        </button>\r\n      </form>\r\n    </div>\r\n  ","script":""},"login":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Sign In","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Welcome back.</h1>\r\n        <p>Sign in to pick up where you left off.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Signing you in\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"email\">Email address</label>\r\n            <input class=\"input\" id=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"password\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"password\" type=\"password\" autocomplete=\"current-password\" placeholder=\"••••••••\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div style=\"display:flex;justify-content:space-between;align-items:center\">\r\n              <label class=\"checkline\" style=\"font-size:12.5px\"><input type=\"checkbox\" id=\"remember\"> Keep me signed in</label>\r\n              <a class=\"link\" href=\"forgot-password.html\">Forgot password?</a>\r\n            </div>\r\n          </div>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Sign in</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Signing you in with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">New to Nexas? <a href=\"signup.html\">Create an account</a></div>\r\n    </div>\r\n  ","script":""},"signup":{"attrs":{"data-page":"signup","data-chrome":"auth"},"title":"Nexas — Create Account","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Open your account.</h1>\r\n        <p>Two minutes to set up. Deposit when you are ready.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Setting up your account\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">\r\n            <div class=\"field\">\r\n              <label for=\"sFirst\">First name</label>\r\n              <input class=\"input\" id=\"sFirst\" autocomplete=\"given-name\" placeholder=\"Amara\">\r\n            </div>\r\n            <div class=\"field\">\r\n              <label for=\"sLast\">Last name</label>\r\n              <input class=\"input\" id=\"sLast\" autocomplete=\"family-name\" placeholder=\"Kimani\">\r\n            </div>\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"sEmail\">Email address</label>\r\n            <input class=\"input\" id=\"sEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n          <label class=\"checkline\">\r\n            <input type=\"checkbox\" id=\"terms\">\r\n            <span>I am 18 or older and accept the <a class=\"link\" href=\"#\">Terms</a> and <a class=\"link\" href=\"responsible.html\">Risk Disclosure</a>.</span>\r\n          </label>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Create account</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Setting up your account with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Already registered? <a href=\"login.html\">Sign in</a></div>\r\n    </div>\r\n  ","script":""},"forgot-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Forgot Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"login.html\">Nexas</a>\r\n        <h1>Reset your password.</h1>\r\n        <p>Enter the email on your account and we will send a six-digit code.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-demo-form=\"Reset code sent\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"resetEmail\">Email address</label>\r\n            <input class=\"input\" id=\"resetEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <a class=\"btn btn-fill\" href=\"reset-password.html\">Send reset code</a>\r\n        </form>\r\n\r\n        <div class=\"divider\">still stuck?</div>\r\n\r\n        <a class=\"btn btn-ghost\" href=\"chat.html\">\r\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\r\n          Chat with support\r\n        </a>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Remembered it? <a href=\"login.html\">Back to sign in</a></div>\r\n    </div>\r\n  ","script":""},"reset-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — New Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"forgot-password.html\">Nexas</a>\r\n        <h1>Choose a new password.</h1>\r\n        <p>We sent a code to am***a@mail.com. It expires in 15 minutes.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Updating your password\" data-to=\"login.html\" style=\"display:flex;flex-direction:column;gap:18px\">\r\n          <div class=\"field\">\r\n            <label>Verification code</label>\r\n            <div class=\"otp\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 5\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 6\">\r\n            </div>\r\n            <span class=\"hint\">Didn't arrive? <a class=\"link\" href=\"#\">Send again in 0:42</a></span>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">New password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"confirmNew\">Confirm password</label>\r\n            <input class=\"input\" id=\"confirmNew\" type=\"password\" autocomplete=\"new-password\" placeholder=\"Repeat new password\">\r\n          </div>\r\n\r\n          <button class=\"btn btn-fill\" type=\"submit\">Set new password</button>\r\n        </form>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Back to <a href=\"login.html\">sign in</a></div>\r\n    </div>\r\n  ","script":""}};</script>
 <script>
 /* ============================================================
+   Nexas — formatting
+   One place for money, numbers, percentages and time so locale
+   and currency changes never have to be chased through views.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+  var currency = 'USD';
+
+  function nf(min, max) {
+    return new Intl.NumberFormat(locale, { minimumFractionDigits: min, maximumFractionDigits: max });
+  }
+  var n2 = nf(2, 2), n0 = nf(0, 0);
+
+  var F = {
+    setLocale: function (l) { locale = l; n2 = nf(2, 2); n0 = nf(0, 0); },
+    setCurrency: function (c) { currency = c; },
+    currency: function () { return currency; },
+
+    /* 2,480.00 */
+    amount: function (v) { return n2.format(+v || 0); },
+
+    /* 2,480.00 USD — currency after the figure, the way traders read it */
+    money: function (v, cur) { return n2.format(+v || 0) + ' ' + (cur || currency); },
+
+    /* +12.40 / −3.05, always signed */
+    signed: function (v) {
+      var x = +v || 0;
+      return (x > 0 ? '+' : x < 0 ? '−' : '') + n2.format(Math.abs(x));
+    },
+    signedMoney: function (v, cur) { return F.signed(v) + ' ' + (cur || currency); },
+
+    /* 0.42% */
+    pct: function (v, digits) {
+      return (+v || 0).toFixed(digits == null ? 2 : digits) + '%';
+    },
+    signedPct: function (v) {
+      var x = +v || 0;
+      return (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(2) + '%';
+    },
+
+    /* price with the instrument's own precision */
+    price: function (v, digits) { return (+v || 0).toFixed(digits == null ? 2 : digits); },
+
+    count: function (v) { return n0.format(+v || 0); },
+
+    /* 21:35:16 in the viewer's timezone */
+    time: function (ts) {
+      return new Date(ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    },
+    clock: function (ts) {
+      return new Date(ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+    },
+    date: function (ts) {
+      return new Date(ts).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
+    },
+    dateTime: function (ts) { return F.date(ts) + ' · ' + F.time(ts); },
+
+    /* "just now", "4m ago", "2h ago" */
+    ago: function (ts) {
+      var s = Math.max(0, (Date.now() - ts) / 1000);
+      if (s < 45) return 'just now';
+      if (s < 3600) return Math.round(s / 60) + 'm ago';
+      if (s < 86400) return Math.round(s / 3600) + 'h ago';
+      return Math.round(s / 86400) + 'd ago';
+    },
+
+    /* 5 ticks · 1m 20s */
+    ticks: function (n) { return n + (n === 1 ? ' tick' : ' ticks'); },
+    duration: function (sec) {
+      sec = Math.max(0, Math.round(sec));
+      var m = Math.floor(sec / 60), s = sec % 60;
+      return m ? m + 'm ' + s + 's' : s + 's';
+    },
+
+    /* timezone label for the session footer */
+    zone: function () {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return 'UTC'; }
+    }
+  };
+
+  window.NexFmt = F;
+})();
+
+/* ============================================================
+   Nexas — mock API
+   Everything the UI knows about prices, money and contracts comes
+   through this module. It is deliberately shaped like the real
+   thing (subscribe to a feed, buy, sell, list) so swapping in a
+   WebSocket and REST calls means rewriting this file only.
+
+     NexAPI.ready(fn)                  once, after boot
+     NexAPI.on('tick'|'balance'|'contracts'|'connection'|'session', fn)
+     NexAPI.feed.subscribe(sym, fn)    -> unsubscribe()
+     NexAPI.contracts.buy(spec)        -> {ok, contract} | {ok:false, error}
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var KEY = 'nexas.v1';
+
+  /* ---------- instruments ---------- */
+  var SYMBOLS = [
+    { id: 'R_10',  name: 'Volatility 10 (1s) Index',  group: 'Volatility', start: 9601.01,  vol: 0.9,  digits: 2, rate: 1000 },
+    { id: 'R_25',  name: 'Volatility 25 Index',       group: 'Volatility', start: 2748.36,  vol: 1.4,  digits: 2, rate: 2000 },
+    { id: 'R_50',  name: 'Volatility 50 Index',       group: 'Volatility', start: 1204.77,  vol: 1.1,  digits: 2, rate: 2000 },
+    { id: 'R_75',  name: 'Volatility 75 (1s) Index',  group: 'Volatility', start: 43219.04, vol: 6.5,  digits: 2, rate: 1000 },
+    { id: 'R_100', name: 'Volatility 100 Index',      group: 'Volatility', start: 7788.92,  vol: 3.2,  digits: 2, rate: 2000 },
+    { id: 'BOOM',  name: 'Boom 500 Index',            group: 'Boom & Crash', start: 6114.50, vol: 2.0, digits: 2, rate: 1000 },
+    { id: 'CRASH', name: 'Crash 1000 Index',          group: 'Boom & Crash', start: 3902.18, vol: 1.7, digits: 2, rate: 1000 },
+    { id: 'STEP',  name: 'Step Index',                group: 'Step',       start: 9143.60,  vol: 0.5,  digits: 2, rate: 2000 }
+  ];
+  var BY_ID = {};
+  SYMBOLS.forEach(function (s) { BY_ID[s.id] = s; });
+
+  var PAYOUT = {            /* payout multiple by contract type */
+    even_odd: 1.953,
+    matches: 10.35,
+    differs: 1.084,
+    over: 1.72,
+    under: 1.72
+  };
+  var LIMITS = { min: 1, max: 5000, maxTicks: 10, minTicks: 1 };
+
+  /* ---------- tiny event bus ---------- */
+  function bus() {
+    var map = {};
+    return {
+      on: function (k, fn) {
+        (map[k] = map[k] || []).push(fn);
+        return function () { map[k] = map[k].filter(function (f) { return f !== fn; }); };
+      },
+      emit: function (k, d) { (map[k] || []).slice().forEach(function (f) { try { f(d); } catch (e) {} }); }
+    };
+  }
+  var B = bus();
+
+  /* ---------- persisted state ---------- */
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
+  }
+  var saved = load();
+  var S = {
+    session: saved.session || null,
+    account: saved.account || 'real',
+    balances: saved.balances || { real: 2480, demo: 10000 },
+    currency: 'USD',
+    verified: !!saved.verified,
+    consent: !!saved.consent,
+    riskAck: !!saved.riskAck,
+    contracts: saved.contracts || [],
+    transactions: saved.transactions || [],
+    auto: saved.auto || { runs: 10, multiplier: 2, takeProfit: 200, stopLoss: 100 }
+  };
+  var saveTimer;
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try {
+        localStorage.setItem(KEY, JSON.stringify({
+          session: S.session, account: S.account, balances: S.balances,
+          verified: S.verified, consent: S.consent, riskAck: S.riskAck,
+          contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
+          auto: S.auto
+        }));
+      } catch (e) {}
+    }, 120);
+  }
+
+  /* ---------- price feed ---------- */
+  var history = {};     /* symbol -> [{t, price}] */
+  var HIST = 600;
+
+  function seed(sym) {
+    var meta = BY_ID[sym], price = meta.start, now = Date.now(), out = [];
+    for (var i = HIST; i > 0; i--) {
+      price += (Math.random() - 0.5) * meta.vol;
+      out.push({ t: now - i * meta.rate, price: round(price, meta.digits) });
+    }
+    history[sym] = out;
+  }
+  function round(v, d) { return Math.round(v * Math.pow(10, d)) / Math.pow(10, d); }
+  function lastDigit(price, digits) {
+    return Math.abs(Math.round(price * Math.pow(10, digits))) % 10;
+  }
+  SYMBOLS.forEach(function (s) { seed(s.id); });
+
+  /* one clock for every symbol, paused while the tab is hidden */
+  var acc = {}, last = 0, raf = null, booted = false;
+  function loop(ts) {
+    raf = requestAnimationFrame(loop);
+    if (!last) last = ts;
+    var dt = Math.min(ts - last, 2000);
+    last = ts;
+    if (connection.status !== 'live') return;
+
+    SYMBOLS.forEach(function (meta) {
+      acc[meta.id] = (acc[meta.id] || 0) + dt;
+      while (acc[meta.id] >= meta.rate) {
+        acc[meta.id] -= meta.rate;
+        tick(meta);
+      }
+    });
+  }
+  function tick(meta) {
+    var h = history[meta.id];
+    var prev = h[h.length - 1].price;
+    var next = round(prev + (Math.random() - 0.5) * meta.vol, meta.digits);
+    var point = { t: Date.now(), price: next, digit: lastDigit(next, meta.digits) };
+    h.push(point);
+    if (h.length > HIST) h.shift();
+    advanceContracts(meta.id, point);
+    B.emit('tick', { symbol: meta.id, point: point, prev: prev });
+  }
+  function start() {
+    if (raf) return;
+    last = 0;
+    raf = requestAnimationFrame(loop);
+  }
+  function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stop(); else start();
+  });
+
+  /* ---------- connection ---------- */
+  var connection = { status: 'booting', since: Date.now(), latency: 42 };
+  function setConnection(status) {
+    if (connection.status === status) return;
+    connection.status = status;
+    connection.since = Date.now();
+    B.emit('connection', connection);
+  }
+  /* occasional realistic drop, so the UI's reconnect path is exercised */
+  setInterval(function () {
+    if (connection.status !== 'live' || document.hidden) return;
+    if (Math.random() > 0.02) return;
+    setConnection('reconnecting');
+    setTimeout(function () { setConnection('live'); }, 2600 + Math.random() * 2200);
+  }, 20000);
+  setInterval(function () {
+    if (connection.status === 'live') connection.latency = Math.round(28 + Math.random() * 60);
+  }, 4000);
+
+  /* ---------- money ---------- */
+  function balance() { return S.balances[S.account]; }
+  function adjust(delta, entry) {
+    S.balances[S.account] = round(S.balances[S.account] + delta, 2);
+    if (entry) {
+      S.transactions.unshift({
+        id: 'T' + Date.now() + Math.floor(Math.random() * 99),
+        t: Date.now(), kind: entry.kind, ref: entry.ref || '',
+        amount: round(delta, 2), balance: S.balances[S.account], account: S.account
+      });
+    }
+    persist();
+    B.emit('balance', { balance: balance(), account: S.account });
+  }
+
+  /* ---------- contracts ---------- */
+  function payoutFor(type, stake) {
+    return round(stake * (PAYOUT[type] || 1.95), 2);
+  }
+
+  function validate(spec) {
+    if (!S.session) return 'Sign in to place a trade';
+    if (connection.status !== 'live') return 'Waiting for the price feed';
+    var stake = +spec.stake;
+    if (!stake || stake < LIMITS.min) return 'Minimum stake is ' + LIMITS.min + ' ' + S.currency;
+    if (stake > LIMITS.max) return 'Maximum stake is ' + window.NexFmt.count(LIMITS.max) + ' ' + S.currency;
+    if (stake > balance()) return 'Not enough funds. Available ' + window.NexFmt.money(balance(), S.currency);
+    if (spec.ticks < LIMITS.minTicks || spec.ticks > LIMITS.maxTicks) return 'Duration must be 1–10 ticks';
+    return null;
+  }
+
+  function buy(spec) {
+    var error = validate(spec);
+    if (error) return { ok: false, error: error };
+
+    var meta = BY_ID[spec.symbol];
+    var h = history[spec.symbol];
+    var entry = h[h.length - 1];
+    var c = {
+      id: 'C' + Date.now() + Math.floor(Math.random() * 99),
+      symbol: spec.symbol, symbolName: meta.name,
+      type: spec.type, side: spec.side, barrier: spec.barrier == null ? null : spec.barrier,
+      stake: round(+spec.stake, 2), payout: payoutFor(spec.type, +spec.stake),
+      ticks: spec.ticks, elapsed: 0,
+      entrySpot: entry.price, entryTime: Date.now(),
+      exitSpot: null, exitTime: null,
+      status: 'open', profit: 0, value: round(+spec.stake, 2),
+      account: S.account, run: spec.run || null
+    };
+    S.contracts.unshift(c);
+    adjust(-c.stake, { kind: 'Trade', ref: label(c) });
+    B.emit('contracts', { reason: 'buy', contract: c });
+    return { ok: true, contract: c };
+  }
+
+  function label(c) {
+    if (c.type === 'even_odd') return c.side === 'even' ? 'Even' : 'Odd';
+    if (c.type === 'matches') return 'Matches ' + c.barrier;
+    if (c.type === 'differs') return 'Differs ' + c.barrier;
+    if (c.type === 'over') return 'Over ' + c.barrier;
+    if (c.type === 'under') return 'Under ' + c.barrier;
+    return c.type;
+  }
+
+  function winning(c, digit) {
+    switch (c.type) {
+      case 'even_odd': return (digit % 2 === 0) === (c.side === 'even');
+      case 'matches': return digit === c.barrier;
+      case 'differs': return digit !== c.barrier;
+      case 'over': return digit > c.barrier;
+      case 'under': return digit < c.barrier;
+    }
+    return false;
+  }
+
+  /* indicative resale value while a contract runs */
+  function mark(c, digit) {
+    var progress = c.elapsed / c.ticks;
+    var win = winning(c, digit);
+    var v = win
+      ? c.stake + (c.payout - c.stake) * progress * 0.82
+      : c.stake * (1 - progress * 0.88);
+    return round(Math.max(0, v), 2);
+  }
+
+  function advanceContracts(symbol, point) {
+    var changed = false;
+    S.contracts.forEach(function (c) {
+      if (c.status !== 'open' || c.symbol !== symbol) return;
+      c.elapsed++;
+      c.lastSpot = point.price;
+      c.lastDigit = point.digit;
+      c.value = mark(c, point.digit);
+      changed = true;
+      if (c.elapsed >= c.ticks) settle(c, point);
+    });
+    if (changed) { persist(); B.emit('contracts', { reason: 'tick' }); }
+  }
+
+  function settle(c, point) {
+    var won = winning(c, point.digit);
+    c.status = won ? 'won' : 'lost';
+    c.exitSpot = point.price;
+    c.exitDigit = point.digit;
+    c.exitTime = Date.now();
+    c.profit = round(won ? c.payout - c.stake : -c.stake, 2);
+    c.value = won ? c.payout : 0;
+    if (won) adjust(c.payout, { kind: 'Payout', ref: label(c) });
+    B.emit('settled', c);
+  }
+
+  function sell(id) {
+    var c = S.contracts.filter(function (x) { return x.id === id; })[0];
+    if (!c || c.status !== 'open') return { ok: false, error: 'Contract is no longer open' };
+    c.status = 'sold';
+    c.exitSpot = c.lastSpot;
+    c.exitTime = Date.now();
+    c.profit = round(c.value - c.stake, 2);
+    adjust(c.value, { kind: 'Sold', ref: label(c) });
+    B.emit('contracts', { reason: 'sell', contract: c });
+    B.emit('settled', c);
+    return { ok: true, contract: c };
+  }
+
+  /* ---------- session ---------- */
+  function signIn(email, method) {
+    S.session = {
+      token: 'demo.' + Math.random().toString(36).slice(2),
+      email: email || 'amara@mail.com',
+      name: 'Amara Kimani',
+      method: method || 'password',
+      at: Date.now()
+    };
+    persist();
+    B.emit('session', S.session);
+    return S.session;
+  }
+  function signOut() {
+    S.session = null;
+    persist();
+    B.emit('session', null);
+  }
+
+  /* ---------- boot ---------- */
+  var readyFns = [];
+  setTimeout(function () {
+    booted = true;
+    setConnection('live');
+    start();
+    readyFns.forEach(function (f) { f(); });
+    readyFns = [];
+    B.emit('ready');
+  }, 420);
+
+  window.NexAPI = {
+    limits: LIMITS,
+    payouts: PAYOUT,
+    symbols: SYMBOLS,
+    symbol: function (id) { return BY_ID[id] || SYMBOLS[0]; },
+    ready: function (fn) { booted ? fn() : readyFns.push(fn); },
+    isReady: function () { return booted; },
+    on: B.on,
+
+    feed: {
+      history: function (sym) { return history[sym] || []; },
+      last: function (sym) { var h = history[sym] || []; return h[h.length - 1]; },
+      subscribe: function (sym, fn) {
+        return B.on('tick', function (d) { if (d.symbol === sym) fn(d); });
+      }
+    },
+
+    account: {
+      kind: function () { return S.account; },
+      balance: balance,
+      currency: function () { return S.currency; },
+      balances: function () { return S.balances; },
+      use: function (kind) {
+        if (kind !== 'real' && kind !== 'demo') return;
+        S.account = kind;
+        persist();
+        B.emit('balance', { balance: balance(), account: kind });
+      },
+      credit: function (amount, kind) { adjust(Math.abs(+amount || 0), { kind: kind || 'Deposit' }); },
+      debit: function (amount, kind) { adjust(-Math.abs(+amount || 0), { kind: kind || 'Withdrawal' }); }
+    },
+
+    contracts: {
+      buy: buy, sell: sell, validate: validate, label: label,
+      payoutFor: payoutFor,
+      open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
+      closed: function () { return S.contracts.filter(function (c) { return c.status !== 'open'; }); },
+      all: function () { return S.contracts.slice(); },
+      get: function (id) { return S.contracts.filter(function (c) { return c.id === id; })[0]; },
+      today: function () {
+        var start = new Date(); start.setHours(0, 0, 0, 0);
+        return S.contracts.filter(function (c) { return c.entryTime >= start.getTime(); });
+      }
+    },
+
+    transactions: { list: function () { return S.transactions.slice(); } },
+
+    session: {
+      get: function () { return S.session; },
+      signIn: signIn,
+      signOut: signOut
+    },
+
+    kyc: {
+      verified: function () { return S.verified; },
+      submit: function () { S.verified = true; persist(); B.emit('kyc', true); }
+    },
+
+    connection: {
+      status: function () { return connection.status; },
+      latency: function () { return connection.latency; },
+      simulateDrop: function () {
+        setConnection('reconnecting');
+        setTimeout(function () { setConnection('live'); }, 2600);
+      }
+    },
+
+    prefs: {
+      consent: function () { return S.consent; },
+      setConsent: function (v) { S.consent = !!v; persist(); },
+      riskAck: function () { return S.riskAck; },
+      setRiskAck: function (v) { S.riskAck = !!v; persist(); },
+      auto: function () { return S.auto; },
+      setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); }
+    },
+
+    /* demo-data helper: gives a first-time viewer something to look at */
+    seedDemoHistory: function () {
+      if (S.contracts.length) return;
+      var now = Date.now(), types = [
+        ['even_odd', 'even', null], ['even_odd', 'odd', null],
+        ['matches', null, 4], ['over', null, 5], ['under', null, 3], ['differs', null, 7]
+      ];
+      for (var i = 0; i < 9; i++) {
+        var t = types[i % types.length];
+        var stake = [5, 10, 10, 25, 50][i % 5];
+        var won = Math.random() > 0.45;
+        var payout = payoutFor(t[0], stake);
+        S.contracts.push({
+          id: 'C' + (now - i * 900000), symbol: 'R_10', symbolName: 'Volatility 10 (1s) Index',
+          type: t[0], side: t[1], barrier: t[2], stake: stake, payout: payout,
+          ticks: 5, elapsed: 5,
+          entrySpot: round(9600 + Math.random() * 4, 2), entryTime: now - i * 900000 - 5000,
+          exitSpot: round(9600 + Math.random() * 4, 2), exitTime: now - i * 900000,
+          status: won ? 'won' : 'lost', profit: round(won ? payout - stake : -stake, 2),
+          value: won ? payout : 0, account: 'real'
+        });
+        S.transactions.push({
+          id: 'T' + (now - i * 900000), t: now - i * 900000, kind: won ? 'Payout' : 'Trade',
+          ref: label({ type: t[0], side: t[1], barrier: t[2] }),
+          amount: won ? payout : -stake, balance: S.balances.real, account: 'real'
+        });
+      }
+      persist();
+    }
+  };
+})();
+
+/* ============================================================
+   Nexas — chart
+   Canvas price chart: line or candles, zoom and pan, a crosshair
+   readout, and markers for the contracts currently running.
+   Redraws on requestAnimationFrame and only while visible.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  function css(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function Chart(canvas, opts) {
+    this.cv = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.symbol = opts.symbol;
+    this.type = 'line';        /* line | candle */
+    this.agg = 1;              /* points per candle */
+    this.count = 120;          /* visible points */
+    this.offset = 0;           /* points scrolled back from the live edge */
+    this.markers = [];
+    this.cross = null;
+    this.dirty = true;
+    this.padR = 64;
+    this.padB = 22;
+    this.padT = 12;
+
+    this._bind();
+    this._loop = this._loop.bind(this);
+    requestAnimationFrame(this._loop);
+  }
+
+  Chart.prototype._bind = function () {
+    var self = this, cv = this.cv;
+
+    this._onResize = function () { self.resize(); };
+    window.addEventListener('resize', this._onResize);
+
+    cv.addEventListener('pointermove', function (e) {
+      var r = cv.getBoundingClientRect();
+      self.cross = { x: e.clientX - r.left, y: e.clientY - r.top };
+      if (self.drag) {
+        var dx = self.cross.x - self.drag.x;
+        var per = (r.width - self.padR) / self.count;
+        var shift = Math.round(dx / per);
+        if (shift) {
+          self.offset = Math.max(0, Math.min(self.data().length - self.count, self.drag.offset + shift));
+        }
+      }
+      self.dirty = true;
+    });
+    cv.addEventListener('pointerleave', function () { self.cross = null; self.dirty = true; });
+    cv.addEventListener('pointerdown', function (e) {
+      var r = cv.getBoundingClientRect();
+      self.drag = { x: e.clientX - r.left, offset: self.offset };
+      cv.setPointerCapture(e.pointerId);
+    });
+    cv.addEventListener('pointerup', function (e) {
+      self.drag = null;
+      try { cv.releasePointerCapture(e.pointerId); } catch (err) {}
+    });
+    cv.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      self.zoom(e.deltaY > 0 ? 1.12 : 0.89);
+    }, { passive: false });
+  };
+
+  Chart.prototype.data = function () {
+    return window.NexAPI.feed.history(this.symbol);
+  };
+
+  Chart.prototype.setSymbol = function (s) { this.symbol = s; this.offset = 0; this.dirty = true; };
+  Chart.prototype.setType = function (t) { this.type = t; this.dirty = true; };
+  Chart.prototype.setAgg = function (n) { this.agg = n; this.dirty = true; };
+  Chart.prototype.setMarkers = function (list) { this.markers = list || []; this.dirty = true; };
+  Chart.prototype.zoom = function (factor) {
+    var max = Math.min(this.data().length, 400);
+    this.count = Math.max(30, Math.min(max, Math.round(this.count * factor)));
+    this.offset = Math.max(0, Math.min(this.data().length - this.count, this.offset));
+    this.dirty = true;
+  };
+  Chart.prototype.reset = function () { this.count = 120; this.offset = 0; this.dirty = true; };
+
+  Chart.prototype.resize = function () {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = this.cv.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    this.w = r.width; this.h = r.height;
+    this.cv.width = Math.round(r.width * dpr);
+    this.cv.height = Math.round(r.height * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.dirty = true;
+  };
+
+  Chart.prototype._loop = function () {
+    requestAnimationFrame(this._loop);
+    if (document.hidden || !this.dirty) return;
+    if (!this.w) this.resize();
+    if (!this.w) return;
+    this.dirty = false;
+    this.draw();
+  };
+
+  Chart.prototype.visible = function () {
+    var d = this.data();
+    var end = d.length - this.offset;
+    return d.slice(Math.max(0, end - this.count), end);
+  };
+
+  Chart.prototype.candles = function (points) {
+    if (this.agg <= 1) return null;
+    var out = [], i, j;
+    for (i = 0; i < points.length; i += this.agg) {
+      var slice = points.slice(i, i + this.agg);
+      if (!slice.length) break;
+      var o = slice[0].price, c = slice[slice.length - 1].price, hi = o, lo = o;
+      for (j = 0; j < slice.length; j++) {
+        hi = Math.max(hi, slice[j].price);
+        lo = Math.min(lo, slice[j].price);
+      }
+      out.push({ t: slice[0].t, o: o, h: hi, l: lo, c: c });
+    }
+    return out;
+  };
+
+  Chart.prototype.draw = function () {
+    var ctx = this.ctx, W = this.w, H = this.h;
+    var points = this.visible();
+    if (points.length < 2) return;
+
+    var candles = this.type === 'candle' ? this.candles(points) : null;
+    var min = Infinity, max = -Infinity, i;
+
+    if (candles) {
+      for (i = 0; i < candles.length; i++) { min = Math.min(min, candles[i].l); max = Math.max(max, candles[i].h); }
+    } else {
+      for (i = 0; i < points.length; i++) { min = Math.min(min, points[i].price); max = Math.max(max, points[i].price); }
+    }
+    var span = (max - min) || 1;
+    min -= span * 0.14; max += span * 0.14; span = max - min;
+
+    var w = W - this.padR, h = H - this.padB - this.padT;
+    var self = this;
+    function X(i) { return (i / (points.length - 1)) * w; }
+    function Y(v) { return self.padT + (max - v) / span * h; }
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = css('--chart-bg');
+    ctx.fillRect(0, 0, W, H);
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    /* grid + price axis */
+    for (var g = 0; g <= 4; g++) {
+      var gy = this.padT + h * g / 4;
+      ctx.strokeStyle = css('--chart-grid'); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, Math.round(gy) + 0.5); ctx.lineTo(w, Math.round(gy) + 0.5); ctx.stroke();
+      ctx.fillStyle = css('--chart-axis');
+      ctx.fillText((max - span * g / 4).toFixed(2), w + 9, gy);
+    }
+
+    /* time axis */
+    var fmt = window.NexFmt;
+    ctx.textAlign = 'center';
+    for (var k = 0; k <= 3; k++) {
+      var idx = Math.round((points.length - 1) * k / 3);
+      var tx = X(idx);
+      ctx.fillStyle = css('--chart-axis');
+      ctx.fillText(fmt.time(points[idx].t), Math.min(Math.max(tx, 26), w - 26), H - this.padB / 2 - 1);
+    }
+    ctx.textAlign = 'left';
+
+    /* series */
+    if (candles) {
+      var cw = Math.max(2, (w / candles.length) * 0.62);
+      for (i = 0; i < candles.length; i++) {
+        var c = candles[i];
+        var cx = (i + 0.5) / candles.length * w;
+        var up = c.c >= c.o;
+        ctx.strokeStyle = up ? css('--pos') : css('--neg');
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.round(cx) + 0.5, Y(c.h));
+        ctx.lineTo(Math.round(cx) + 0.5, Y(c.l));
+        ctx.stroke();
+        var top = Y(Math.max(c.o, c.c)), bot = Y(Math.min(c.o, c.c));
+        ctx.fillRect(cx - cw / 2, top, cw, Math.max(1, bot - top));
+      }
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(X(0), Y(points[0].price));
+      for (i = 1; i < points.length; i++) ctx.lineTo(X(i), Y(points[i].price));
+      ctx.strokeStyle = css('--chart-line');
+      ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.lineTo(X(points.length - 1), H - this.padB);
+      ctx.lineTo(X(0), H - this.padB);
+      ctx.closePath();
+      ctx.fillStyle = css('--chart-fill');
+      ctx.fill();
+    }
+
+    /* contract markers: entry spot line, entry dot, settled outcome */
+    var t0 = points[0].t, t1 = points[points.length - 1].t, tspan = (t1 - t0) || 1;
+    function XT(t) { return Math.max(0, Math.min(w, (t - t0) / tspan * w)); }
+
+    this.markers.forEach(function (m) {
+      if (m.entryTime < t0 - 60000) return;
+      var mx = XT(m.entryTime), my = Y(m.entrySpot);
+      var live = m.status === 'open';
+      var col = live ? css('--accent') : (m.profit >= 0 ? css('--pos') : css('--neg'));
+
+      if (live) {
+        ctx.setLineDash([2, 4]);
+        ctx.strokeStyle = col; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, Math.round(my) + 0.5); ctx.lineTo(w, Math.round(my) + 0.5); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.beginPath();
+      ctx.moveTo(mx, my - 5); ctx.lineTo(mx + 5, my); ctx.lineTo(mx, my + 5); ctx.lineTo(mx - 5, my);
+      ctx.closePath();
+      ctx.fillStyle = col; ctx.fill();
+
+      if (!live && m.exitTime) {
+        var ex = XT(m.exitTime), ey = Y(m.exitSpot);
+        ctx.beginPath(); ctx.arc(ex, ey, 3.4, 0, Math.PI * 2);
+        ctx.fillStyle = col; ctx.fill();
+      }
+    });
+
+    /* live price marker */
+    var lastPt = points[points.length - 1];
+    var ly = Y(lastPt.price);
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = css('--chart-axis'); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, Math.round(ly) + 0.5); ctx.lineTo(w, Math.round(ly) + 0.5); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(X(points.length - 1), ly, 2.8, 0, Math.PI * 2);
+    ctx.fillStyle = css('--chart-line'); ctx.fill();
+    this._tag(lastPt.price.toFixed(2), ly, css('--surface'), css('--text'), css('--line'));
+
+    /* crosshair readout */
+    if (this.cross && this.cross.x < w && !this.drag) {
+      var idx2 = Math.round((this.cross.x / w) * (points.length - 1));
+      idx2 = Math.max(0, Math.min(points.length - 1, idx2));
+      var p = points[idx2], px = X(idx2), py = Y(p.price);
+
+      ctx.setLineDash([2, 3]);
+      ctx.strokeStyle = css('--muted'); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(Math.round(px) + 0.5, this.padT); ctx.lineTo(Math.round(px) + 0.5, H - this.padB); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, Math.round(py) + 0.5); ctx.lineTo(w, Math.round(py) + 0.5); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = css('--accent'); ctx.fill();
+      this._tag(p.price.toFixed(2), py, css('--accent'), '#fff', css('--accent'));
+
+      /* time chip under the crosshair */
+      var tl = fmt.time(p.t);
+      ctx.font = '11px "IBM Plex Mono", monospace';
+      var tw = ctx.measureText(tl).width + 14;
+      var tx2 = Math.min(Math.max(px - tw / 2, 0), w - tw);
+      ctx.fillStyle = css('--surface-3');
+      ctx.fillRect(tx2, H - this.padB, tw, this.padB - 2);
+      ctx.fillStyle = css('--text');
+      ctx.textAlign = 'center';
+      ctx.fillText(tl, tx2 + tw / 2, H - this.padB / 2 - 1);
+      ctx.textAlign = 'left';
+    }
+  };
+
+  Chart.prototype._tag = function (text, y, bg, fg, border) {
+    var ctx = this.ctx, w = this.w - this.padR;
+    var tw = Math.min(ctx.measureText(text).width + 14, this.padR - 6);
+    var x = w + 4, ty = Math.max(2, Math.min(this.h - 24, y - 11));
+    ctx.fillStyle = bg;
+    ctx.fillRect(x, ty, tw, 22);
+    ctx.strokeStyle = border; ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, ty + 0.5, tw - 1, 21);
+    ctx.fillStyle = fg;
+    ctx.fillText(text, x + 7, ty + 11);
+  };
+
+  Chart.prototype.destroy = function () {
+    window.removeEventListener('resize', this._onResize);
+    this.dead = true;
+  };
+
+  window.NexChart = {
+    create: function (canvas, opts) { return new Chart(canvas, opts || {}); }
+  };
+})();
+
+/* ============================================================
    Nexas — modal definitions
-   Each modal is a list of steps. A step returns markup for the
-   sheet body; the engine in app.js handles the shell, the back
-   and close controls, and step transitions.
-     data-goto="stepId"      advance to another step
-     data-set="method:usdt"  write a value into modal state
-     data-done="message"     submit and close with a toast
+   Each modal is a set of steps; the engine in app.js renders the
+   shell and handles back, close and step transitions.
+     data-goto="stepId"       advance
+     data-set="method:usdt"   store a value on the modal state
+     data-action="deposit"    run a real action against NexAPI
+     data-done="message"      close with a toast
    ============================================================ */
 (function () {
   "use strict";
 
   var eye = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>';
+  var NAMES = { mpesa: 'M-Pesa', card: 'Card', usdt: 'USDT' };
+
+  function I(n, s) { return window.NexIcon(n, s); }
+  function F() { return window.NexFmt; }
+  function API() { return window.NexAPI; }
 
   function field(id, label, attrs, hint) {
     return '<div class="field"><label for="' + id + '">' + label + '</label>' +
@@ -747,14 +1716,18 @@ footer a:hover{color:var(--text-2)}
   }
   function method(value, iconName, name, note) {
     return '<button class="method" data-set="method:' + value + '" data-goto="form">' +
-      '<span class="ico">' + window.NexIcon(iconName, 19) + '</span>' +
-      '<span class="t"><b>' + name + '</b><span>' + note + '</span></span>' +
-      window.NexIcon('chev', 16) + '</button>';
+      '<span class="ico">' + I(iconName, 19) + '</span>' +
+      '<span class="t"><b>' + name + '</b><span>' + note + '</span></span>' + I('chev', 16) + '</button>';
+  }
+  function act(label, action, cls) {
+    return '<button class="btn ' + (cls || 'btn-fill') + '" type="button" data-action="' + action + '">' + label + '</button>';
   }
   function submit(label, done) {
     return '<button class="btn btn-fill" type="button" data-done="' + done + '">' + label + '</button>';
   }
-  var NAMES = { mpesa: 'M-Pesa', card: 'Card', usdt: 'USDT' };
+  function kv(k, v, attrs) {
+    return '<div class="kv"><span>' + k + '</span><b ' + (attrs || '') + '>' + v + '</b></div>';
+  }
 
   window.NexModals = {
 
@@ -765,17 +1738,85 @@ footer a:hover{color:var(--text-2)}
           title: 'Switch account',
           sub: 'Practise with virtual funds, or trade your real balance.',
           body: function () {
+            var kind = API().account.kind(), b = API().account.balances();
+            function row(id, name, note) {
+              return '<button class="choice' + (kind === id ? ' selected' : '') + '" data-action="useAccount" data-kind="' + id + '">' +
+                '<span class="dot"></span>' +
+                '<span class="c-t"><b>' + name + '</b><span>' + note + '</span></span>' +
+                '<span class="c-v num">' + F().amount(b[id]) + '</span></button>';
+            }
             return '<div class="choices">' +
-              '<button class="choice selected" data-done="Staying on the real account">' +
-                '<span class="dot"></span>' +
-                '<span class="c-t"><b>Real</b><span>USD · live funds</span></span>' +
-                '<span class="c-v num">2,480.00</span></button>' +
-              '<button class="choice" data-done="Switched to the demo account">' +
-                '<span class="dot"></span>' +
-                '<span class="c-t"><b>Demo</b><span>USD · practice funds</span></span>' +
-                '<span class="c-v num">10,000.00</span></button>' +
-            '</div>' +
-            '<p class="hint" style="margin:14px 2px 0">Open positions stay with the account they were taken on.</p>';
+              row('real', 'Real', 'USD · live funds') +
+              row('demo', 'Demo', 'USD · practice funds') +
+            '</div><p class="hint" style="margin:14px 2px 0">Open positions stay with the account they were taken on.</p>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- notifications ---------------- */
+    alerts: {
+      steps: {
+        list: {
+          title: 'Notifications',
+          sub: 'Account and platform activity.',
+          body: function () {
+            var tx = API().transactions.list().slice(0, 6);
+            if (!tx.length) {
+              return '<div class="empty" style="padding:30px 10px">' + I('bell', 24) +
+                '<b>Nothing new</b><span>Trade and payment activity will show here.</span></div>';
+            }
+            return '<div class="list" style="margin:0">' + tx.map(function (t) {
+              return '<div class="trow"><span class="ico ' + (t.amount >= 0 ? 'pos' : 'neg') + '">' +
+                I(t.amount >= 0 ? 'up' : 'down', 16) + '</span>' +
+                '<span class="t"><b>' + t.kind + (t.ref ? ' · ' + t.ref : '') + '</b>' +
+                '<span>' + F().ago(t.t) + '</span></span>' +
+                '<span class="p"><span class="num ' + (t.amount >= 0 ? 'pos' : 'neg') + '">' +
+                F().signed(t.amount) + '</span></span></div>';
+            }).join('') + '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- automated run settings ---------------- */
+    autorun: {
+      steps: {
+        form: {
+          title: 'Automated run',
+          sub: 'The run stops on its own when any of these is hit.',
+          body: function () {
+            var a = API().prefs.auto();
+            return '<div class="modal-form">' +
+              '<div class="pair">' +
+                field('autoRuns', 'Number of runs', 'value="' + a.runs + '" inputmode="numeric"') +
+                field('autoMult', 'Stake × on loss', 'value="' + a.multiplier + '" inputmode="decimal"') +
+              '</div>' +
+              '<div class="pair">' +
+                field('autoTP', 'Take profit', 'value="' + a.takeProfit + '" inputmode="decimal"') +
+                field('autoSL', 'Stop loss', 'value="' + a.stopLoss + '" inputmode="decimal"') +
+              '</div>' +
+              '<div class="notice">' + I('shield', 17) +
+                '<span>Doubling stake after a loss grows exposure fast: six losses at ×2 stakes 63 times your opening amount.</span></div>' +
+              act('Save settings', 'saveAuto') +
+            '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- keyboard shortcuts ---------------- */
+    shortcuts: {
+      steps: {
+        list: {
+          title: 'Keyboard shortcuts',
+          sub: 'Available on the terminal.',
+          body: function () {
+            var rows = [['D', 'Open deposit'], ['Esc', 'Close dialog'], ['?', 'This list'],
+              ['Scroll', 'Zoom the chart'], ['Drag', 'Pan the chart']];
+            return '<div class="totals">' + rows.map(function (r) {
+              return '<div class="kv"><span>' + r[1] + '</span><b><kbd>' + r[0] + '</kbd></b></div>';
+            }).join('') + '</div>';
           }
         }
       }
@@ -793,7 +1834,7 @@ footer a:hover{color:var(--text-2)}
               field('lastName', 'Last name', 'value="Kimani" autocomplete="family-name"') +
               field('displayName', 'Display name', 'value="Amara K."', 'Shown in live chat and copy trading.') +
               submit('Save changes', 'Name updated') +
-              '</div>';
+            '</div>';
           }
         }
       }
@@ -812,7 +1853,7 @@ footer a:hover{color:var(--text-2)}
               secret('confirmPassword', 'Confirm new password', 'Repeat new password') +
               '<span class="hint">Use eight characters or more, with a number and a symbol.</span>' +
               submit('Update password', 'Password updated') +
-              '</div>';
+            '</div>';
           }
         }
       }
@@ -825,21 +1866,23 @@ footer a:hover{color:var(--text-2)}
           title: 'Verify identity',
           sub: 'Reviewed within an hour. Needed before your first withdrawal.',
           body: function () {
-            return '<div class="modal-form">' +
-              '<div class="list" style="margin:0">' +
-                '<div class="row"><span class="ico" style="color:var(--pos);background:var(--pos-soft);border-color:transparent">' +
-                  window.NexIcon('check', 18) + '</span>' +
-                  '<span class="t"><b>Email address</b><span>am***a@mail.com</span></span>' +
-                  '<span class="badge ok">Done</span></div>' +
-                '<button class="row" data-goto="upload" data-set="doc:ID document">' +
-                  '<span class="ico">' + window.NexIcon('idcard', 18) + '</span>' +
-                  '<span class="t"><b>Government ID</b><span>Passport, national ID or licence</span></span>' +
-                  '<span class="badge warn">Required</span></button>' +
-                '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
-                  '<span class="ico">' + window.NexIcon('card', 18) + '</span>' +
-                  '<span class="t"><b>Proof of address</b><span>Bill or statement, last 3 months</span></span>' +
-                  '<span class="badge warn">Required</span></button>' +
-              '</div></div>';
+            if (API().kyc.verified()) {
+              return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
+                '<b>Identity verified</b><span>Withdrawals are open on this account.</span></div>';
+            }
+            return '<div class="modal-form"><div class="list" style="margin:0">' +
+              '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
+                '<span class="t"><b>Email address</b><span>am***a@mail.com</span></span>' +
+                '<span class="badge ok">Done</span></div>' +
+              '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
+                '<span class="ico">' + I('idcard', 18) + '</span>' +
+                '<span class="t"><b>Government ID</b><span>Passport, national ID or licence</span></span>' +
+                '<span class="badge warn">Required</span></button>' +
+              '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
+                '<span class="ico">' + I('card', 18) + '</span>' +
+                '<span class="t"><b>Proof of address</b><span>Bill or statement, last 3 months</span></span>' +
+                '<span class="badge warn">Required</span></button>' +
+            '</div></div>';
           }
         },
         upload: {
@@ -847,14 +1890,13 @@ footer a:hover{color:var(--text-2)}
           sub: 'JPG, PNG or PDF under 8 MB. All four corners visible.',
           body: function (state) {
             return '<div class="modal-form">' +
-              '<div class="dropzone">' +
-                window.NexIcon('up', 22) +
+              '<div class="dropzone">' + I('up', 22) +
                 '<b>' + (state.doc || 'Document') + '</b>' +
                 '<span>Take a photo or choose a file from this device</span>' +
-                '<button class="btn btn-ghost" type="button" data-done="Upload is not wired up in this draft">Choose file</button>' +
+                '<button class="btn btn-ghost" type="button" data-done="File picker is not wired up in this draft">Choose file</button>' +
               '</div>' +
-              submit('Submit for review', 'Submitted — we will email you within the hour') +
-              '</div>';
+              act('Submit for review', 'verify') +
+            '</div>';
           }
         }
       }
@@ -865,7 +1907,7 @@ footer a:hover{color:var(--text-2)}
       steps: {
         choose: {
           title: 'Deposit funds',
-          sub: 'Funds land in your real account. No fee from Nexas.',
+          sub: 'Funds land in the account you are trading. No fee from Nexas.',
           body: function () {
             return method('mpesa', 'phone', 'M-Pesa', 'Instant · KES 100 – 150,000') +
               method('card', 'card', 'Card', 'Visa / Mastercard · 1–3 minutes') +
@@ -873,45 +1915,40 @@ footer a:hover{color:var(--text-2)}
           }
         },
         form: {
-          title: function (state) { return 'Deposit with ' + (NAMES[state.method] || 'M-Pesa'); },
+          title: function (s) { return 'Deposit with ' + (NAMES[s.method] || 'M-Pesa'); },
           sub: 'Funds usually appear within two minutes.',
-          body: function (state) {
-            var m = state.method || 'mpesa', inner = '';
+          body: function (s) {
+            var m = s.method || 'mpesa', inner;
 
             if (m === 'mpesa') {
               inner = field('mpesaPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"',
                 'You will receive an STK push. Enter your PIN to confirm.');
             } else if (m === 'card') {
-              inner = field('cardNumber', 'Card number', 'placeholder="4242 4242 4242 4242" inputmode="numeric" class="input num"') +
+              inner = field('cardNumber', 'Card number', 'placeholder="4242 4242 4242 4242" inputmode="numeric"') +
                 '<div class="pair">' +
-                field('cardExp', 'Expiry', 'placeholder="MM / YY" inputmode="numeric"') +
-                field('cardCvc', 'CVC', 'placeholder="123" inputmode="numeric"') +
+                  field('cardExp', 'Expiry', 'placeholder="MM / YY" inputmode="numeric"') +
+                  field('cardCvc', 'CVC', 'placeholder="123" inputmode="numeric"') +
                 '</div>';
             } else {
               inner = '<div class="field"><label for="network">Network</label>' +
                 '<select class="input" id="network"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
                 '<div class="field"><label>Deposit address</label>' +
-                '<div class="input num address">TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu' +
-                '<button type="button" data-copy>Copy</button></div>' +
+                '<div class="input num address">TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu<button type="button" data-copy>Copy</button></div>' +
                 '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
             }
 
             return '<div class="modal-form">' +
               '<div class="field"><label for="amount">Amount</label>' +
                 '<div class="input-wrap"><input class="input num" id="amount" value="50" inputmode="decimal">' +
-                '<span class="suffix">USD</span></div>' +
-                '<div class="quick" data-amount-for="amount">' +
-                  '<button type="button" data-amount="10">$10</button>' +
-                  '<button type="button" data-amount="25">$25</button>' +
-                  '<button type="button" data-amount="50">$50</button>' +
-                  '<button type="button" data-amount="100">$100</button>' +
-                  '<button type="button" data-amount="250">$250</button>' +
-                '</div></div>' +
+                '<span class="suffix">' + API().account.currency() + '</span></div>' +
+                '<div class="quick">' + [10, 25, 50, 100, 250].map(function (n) {
+                  return '<button type="button" data-amount="' + n + '">' + n + '</button>';
+                }).join('') + '</div></div>' +
               inner +
-              '<div class="totals"><div class="kv"><span>Fee</span><b>$0.00</b></div>' +
-              '<div class="kv"><span>Credited</span><b data-total="amount">$50.00</b></div></div>' +
-              submit('Confirm deposit', 'Deposit request sent') +
-              '</div>';
+              '<div class="totals">' + kv('Fee', F().money(0)) +
+                kv('Credited to ' + API().account.kind(), F().money(50), 'data-total="amount"') + '</div>' +
+              act('Confirm deposit', 'deposit') +
+            '</div>';
           }
         }
       }
@@ -924,33 +1961,47 @@ footer a:hover{color:var(--text-2)}
           title: 'Withdraw funds',
           sub: 'Reviewed and paid within one hour.',
           body: function () {
-            return '<div class="balance-strip"><span class="label">Available</span><b class="num">2,480.00 USD</b></div>' +
+            return '<div class="balance-strip"><span class="label">Available</span>' +
+              '<b class="num">' + F().money(API().account.balance()) + '</b></div>' +
               method('mpesa', 'phone', 'M-Pesa', 'To the number on your profile') +
               method('usdt', 'coin', 'USDT', 'TRC-20 · network fee applies');
           }
         },
         form: {
-          title: function (state) { return 'Withdraw to ' + (NAMES[state.method] || 'M-Pesa'); },
+          title: function (s) { return 'Withdraw to ' + (NAMES[s.method] || 'M-Pesa'); },
           sub: 'Minimum $10. One free withdrawal per day.',
-          body: function (state) {
-            var inner = state.method === 'usdt'
+          body: function (s) {
+            var inner = s.method === 'usdt'
               ? '<div class="field"><label for="wNetwork">Network</label>' +
                 '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option></select></div>' +
-                field('wAddress', 'Wallet address', 'placeholder="T..." class="input num"', 'Check carefully. Transfers cannot be reversed.')
-              : field('wPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"', 'Must match the number registered to your verified name.');
+                field('wAddress', 'Wallet address', 'placeholder="T..."', 'Check carefully. Transfers cannot be reversed.')
+              : field('wPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"',
+                  'Must match the number registered to your verified name.');
 
             return '<div class="modal-form">' +
               '<div class="field"><label for="wAmount">Amount</label>' +
                 '<div class="input-wrap"><input class="input num" id="wAmount" value="100" inputmode="decimal">' +
-                '<span class="suffix">USD</span></div></div>' +
+                '<span class="suffix">' + API().account.currency() + '</span></div></div>' +
               inner +
-              '<div class="totals"><div class="kv"><span>Network fee</span><b>$1.00</b></div>' +
-              '<div class="kv"><span>You receive</span><b data-total="wAmount" data-fee="1">$99.00</b></div></div>' +
-              '<div class="notice">' + window.NexIcon('shield', 17) +
-                '<span>Identity verification is required before your first payout. ' +
-                '<button type="button" class="link" data-open="verify">Verify now</button></span></div>' +
-              submit('Request withdrawal', 'Withdrawal submitted for review') +
-              '</div>';
+              '<div class="totals">' + kv('Network fee', F().money(1)) +
+                kv('You receive', F().money(99), 'data-total="wAmount" data-fee="1"') + '</div>' +
+              (API().kyc.verified() ? '' :
+                '<div class="notice">' + I('shield', 17) +
+                '<span>Identity verification is required before your first payout.</span></div>') +
+              act('Request withdrawal', 'withdraw') +
+            '</div>';
+          }
+        },
+        kyc: {
+          title: 'Verification required',
+          sub: 'A one-time check before the first payout leaves your account.',
+          body: function () {
+            return '<div class="modal-form">' +
+              '<div class="notice">' + I('shield', 17) +
+                '<span>Your funds stay in your account. Verification usually clears within the hour.</span></div>' +
+              '<button class="btn btn-fill" type="button" data-open="verify">Verify identity</button>' +
+              '<button class="btn btn-ghost" type="button" data-close>Later</button>' +
+            '</div>';
           }
         }
       }
@@ -958,13 +2009,723 @@ footer a:hover{color:var(--text-2)}
   };
 })();
 
-</script>
-<script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = {"index":{"attrs":{"data-page":"trade","data-chrome":"app"},"title":"Nexas — Terminal","html":"\r\n    <div class=\"terminal\">\r\n\r\n      <div class=\"col-mid\">\r\n        <div class=\"ctabs\">\r\n          <button class=\"ctab\">Matches / Differs</button>\r\n          <button class=\"ctab active\">Even / Odd</button>\r\n          <button class=\"ctab\">Over / Under</button>\r\n        </div>\r\n\r\n        <div class=\"instrument\">\r\n          <div class=\"inst-mark\">\r\n            <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg>\r\n          </div>\r\n          <div>\r\n            <div class=\"inst-name\">Volatility 10 (1s) Index</div>\r\n            <div class=\"inst-price\">\r\n              <span class=\"p num\" id=\"px\">9601.01</span>\r\n              <span class=\"c num pos\" id=\"pxChg\">+0.01 (0.00%)</span>\r\n            </div>\r\n          </div>\r\n          <div class=\"inst-right\"><span class=\"chip\">1 tick</span></div>\r\n        </div>\r\n\r\n        <div class=\"chart-card\">\r\n          <canvas id=\"chart\"></canvas>\r\n          <div class=\"chart-tools\">\r\n            <button aria-label=\"Zoom in\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg></button>\r\n            <button aria-label=\"Reset zoom\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 109-9\"></path><path d=\"M3 4v5h5\"></path></svg></button>\r\n            <button aria-label=\"Zoom out\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg></button>\r\n          </div>\r\n        </div>\r\n\r\n        <div class=\"digits\" id=\"digits\"></div>\r\n      </div>\r\n\r\n      <div class=\"col-right\">\r\n        <div class=\"panel\">\r\n          <div>\r\n            <div class=\"label\" style=\"margin-bottom:9px\">Trade mode · runs until target hit</div>\r\n            <div class=\"seg\">\r\n              <button class=\"active\">Auto</button>\r\n              <button>Manual</button>\r\n            </div>\r\n          </div>\r\n\r\n          <div class=\"seg\">\r\n            <button class=\"active\">Stake</button>\r\n            <button>Payout</button>\r\n          </div>\r\n\r\n          <div class=\"stake\">\r\n            <button id=\"minus\" aria-label=\"Decrease stake\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg></button>\r\n            <div class=\"f\">\r\n              <input id=\"stake\" value=\"10\" inputmode=\"decimal\" aria-label=\"Stake\">\r\n              <span class=\"cur\">USD</span>\r\n            </div>\r\n            <button id=\"plus\" aria-label=\"Increase stake\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg></button>\r\n          </div>\r\n\r\n          <div class=\"quick\" id=\"quick\">\r\n            <button data-add=\"1\">+1</button>\r\n            <button data-add=\"5\">+5</button>\r\n            <button data-add=\"10\">+10</button>\r\n            <button data-add=\"25\">+25</button>\r\n            <button data-add=\"50\">+50</button>\r\n          </div>\r\n\r\n          <div class=\"session\"><span>Last session</span><span class=\"num\">0 trades · 0W / 0L</span></div>\r\n          <div class=\"session\"><span>Session P/L</span><span class=\"num pos\">+0.00 USD</span></div>\r\n        </div>\r\n\r\n        <div class=\"trade-dock\">\r\n          <div class=\"trade-actions\">\r\n            <button class=\"tbtn even\" data-side=\"Even\">\r\n              <div class=\"t\">Even</div>\r\n              <div class=\"s\">Payout <span data-payout>19.53</span> · 95.30%</div>\r\n            </button>\r\n            <button class=\"tbtn odd\" data-side=\"Odd\">\r\n              <div class=\"t\">Odd</div>\r\n              <div class=\"s\">Payout <span data-payout>19.53</span> · 95.30%</div>\r\n            </button>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n    </div>\r\n  ","script":""},"markets":{"attrs":{"data-page":"markets","data-chrome":"app"},"title":"Nexas — Markets","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"page-head\">\r\n        <h1>Markets</h1>\r\n        <p>Synthetic indices, generated continuously and open every hour of every day.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">All</button>\r\n        <button class=\"ctab\">Volatility</button>\r\n        <button class=\"ctab\">Boom &amp; Crash</button>\r\n        <button class=\"ctab\">Step</button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 10 (1s) Index</b><span>Synthetic · 1 tick</span></span>\r\n          <span class=\"p\"><span class=\"num\">9,601.01</span><span class=\"num pos\">+0.01%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 25 Index</b><span>Synthetic · 2 ticks</span></span>\r\n          <span class=\"p\"><span class=\"num\">2,748.36</span><span class=\"num neg\">−0.42%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 50 Index</b><span>Synthetic · 2 ticks</span></span>\r\n          <span class=\"p\"><span class=\"num\">1,204.77</span><span class=\"num pos\">+0.18%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 75 (1s) Index</b><span>Synthetic · 1 tick</span></span>\r\n          <span class=\"p\"><span class=\"num\">43,219.04</span><span class=\"num pos\">+1.06%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 100 Index</b><span>Synthetic · 2 ticks</span></span>\r\n          <span class=\"p\"><span class=\"num\">7,788.92</span><span class=\"num neg\">−0.31%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Boom 500 Index</b><span>Synthetic · spike up</span></span>\r\n          <span class=\"p\"><span class=\"num\">6,114.50</span><span class=\"num pos\">+0.64%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Crash 1000 Index</b><span>Synthetic · spike down</span></span>\r\n          <span class=\"p\"><span class=\"num\">3,902.18</span><span class=\"num neg\">−0.77%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Step Index</b><span>Synthetic · fixed step</span></span>\r\n          <span class=\"p\"><span class=\"num\">9,143.60</span><span class=\"num pos\">+0.05%</span></span></a>\r\n      </div>\r\n      <div style=\"height:20px\"></div>\r\n    </div>\r\n  ","script":""},"positions":{"attrs":{"data-page":"positions","data-chrome":"app"},"title":"Nexas — Positions","html":"\r\n    <div class=\"shell\" style=\"display:flex;flex-direction:column;flex:1\">\r\n      <div class=\"page-head\">\r\n        <h1>Positions</h1>\r\n        <p>Everything you have open, closed and settled.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">Open</button>\r\n        <button class=\"ctab\">Closed</button>\r\n        <button class=\"ctab\">Transactions</button>\r\n      </div>\r\n\r\n      <div class=\"summary\">\r\n        <span class=\"label\">Session profit / loss</span>\r\n        <div class=\"big pos\">+0.00</div>\r\n        <div class=\"sub\">0 trades today · 0 won · 0 lost</div>\r\n      </div>\r\n\r\n      <div class=\"empty\">\r\n        <svg width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"></rect><path d=\"M3 9h18M9 9v11\"></path></svg>\r\n        <b>No open positions</b>\r\n        <span>Contracts you take will be listed here.</span>\r\n      </div>\r\n    </div>\r\n  ","script":""},"responsible":{"attrs":{"data-page":"responsible","data-chrome":"app"},"title":"Nexas — Responsible Trading","html":"\r\n    <div class=\"page\">\r\n      <span class=\"label page-kicker\">Responsible trading</span>\r\n      <h1>Trade with intent, not impulse.</h1>\r\n      <p class=\"lede\">Trading carries real risk. Nexas gives you the controls to decide, in advance, how much time and money you are willing to commit — and holds you to it.</p>\r\n\r\n      <div class=\"rule\"></div>\r\n\r\n      <h2>Set your limits before you trade</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\r\n          <div>\r\n            <b>Session duration</b>\r\n            <p>Cap how long a single session can run. The terminal closes out and locks when the clock ends.</p>\r\n            <span class=\"chip\">Currently 60 minutes</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\r\n          <div>\r\n            <b>Loss and stake ceilings</b>\r\n            <p>Daily, weekly and monthly ceilings on total stake and net loss. Any increase takes 24 hours to apply.</p>\r\n            <span class=\"chip\">Daily loss $250</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"></rect><path d=\"M4 10h16M8 3v4M16 3v4\"></path></svg>\r\n          <div>\r\n            <b>Cooling-off and self-exclusion</b>\r\n            <p>Pause new positions for 24 hours, or close access entirely for a period you choose. Withdrawals stay open.</p>\r\n            <span class=\"chip\">Not active</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <h2>What the numbers actually look like</h2>\r\n      <div class=\"stats\">\r\n        <div class=\"stat\"><b>70%</b><span>of retail accounts lose money over a twelve-month period</span></div>\r\n        <div class=\"stat\"><b>1 in 5</b><span>traders exceed the deposit they originally planned</span></div>\r\n        <div class=\"stat\"><b>24h</b><span>delay applied to any increase in your limits</span></div>\r\n        <div class=\"stat\"><b>$0</b><span>cost to set, lower or activate any control</span></div>\r\n      </div>\r\n\r\n      <h2>Signs worth taking seriously</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>Chasing losses</h3><p>Raising stake size to recover a previous loss rather than following a plan.</p></div>\r\n        <div class=\"card\"><h3>Borrowed funds</h3><p>Trading with money set aside for rent, bills, school fees or credit repayment.</p></div>\r\n        <div class=\"card\"><h3>Concealment</h3><p>Hiding the extent of your trading from people close to you.</p></div>\r\n      </div>\r\n\r\n      <h2>Get support</h2>\r\n      <p>If trading has stopped feeling like a decision and started feeling like a compulsion, speak to someone independent of us. Our team can also apply a self-exclusion on your behalf at any time, without questions.</p>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>GamCare</h3><p>Free, confidential support and live chat, available around the clock.</p></div>\r\n        <div class=\"card\"><h3>Gambling Therapy</h3><p>Multilingual online support for people affected worldwide.</p></div>\r\n        <div class=\"card\"><h3>Nexas support</h3><p>Reach us in-app at any hour to apply limits or close an account.</p></div>\r\n      </div>\r\n\r\n      <div style=\"margin-top:22px\"><a class=\"btn btn-ghost\" href=\"chat.html\">Talk to our team</a></div>\r\n    </div>\r\n\r\n    <footer>\r\n      <div class=\"fl\">\r\n        <a href=\"responsible.html\">Responsible Trading</a>\r\n        <a href=\"#\">Risk Disclosure</a>\r\n        <a href=\"#\">Terms</a>\r\n        <a href=\"#\">Privacy</a>\r\n        <a href=\"#\">Complaints</a>\r\n        <a href=\"#\">Security</a>\r\n      </div>\r\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Past results do not indicate future outcomes.</p>\r\n    </footer>\r\n  ","script":""},"account":{"attrs":{"data-page":"account","data-chrome":"app","data-back":"index.html","data-title":"Account"},"title":"Nexas — Account","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"summary\" style=\"display:flex;align-items:center;gap:14px\">\r\n        <div class=\"avatar\" style=\"width:52px;height:52px;font-size:22px\">A</div>\r\n        <div style=\"flex:1;min-width:0\">\r\n          <div style=\"font-weight:600;font-size:16px\">Amara Kimani</div>\r\n          <div style=\"color:var(--muted);font-size:12.5px\">am***a@mail.com</div>\r\n        </div>\r\n        <span class=\"badge warn\">Unverified</span>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <button class=\"row\" data-open=\"profile\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"></rect><path d=\"M7 10h3M7 14h6M15 9h3v4h-3z\"></path></svg></span>\r\n          <span class=\"t\"><b>Change name</b><span>Amara Kimani</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"password\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V7a4 4 0 118 0v4\"></path></svg></span>\r\n          <span class=\"t\"><b>Update password</b><span>Last changed 4 months ago</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"verify\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path><path d=\"M9 12l2 2 4-4\"></path></svg></span>\r\n          <span class=\"t\"><b>Verify identity</b><span>Required before your first withdrawal</span></span>\r\n          <span class=\"badge warn\">2 steps left</span>\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"row danger\" href=\"login.html\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4\"></path><path d=\"M16 17l5-5-5-5M21 12H9\"></path></svg></span>\r\n          <span class=\"t\"><b>Log out</b></span>\r\n        </a>\r\n      </div>\r\n      <div style=\"height:24px\"></div>\r\n    </div>\r\n  ","script":""},"chat":{"attrs":{"data-page":"chat","data-chrome":"app","data-back":"account.html","data-title":"Live chat"},"title":"Nexas — Live Chat","html":"\r\n    <div class=\"chat\">\r\n      <div class=\"chat-head\">\r\n        <div class=\"avatar\">J</div>\r\n        <div>\r\n          <b>Joseph · Nexas support</b>\r\n          <span>Online now</span>\r\n        </div>\r\n      </div>\r\n\r\n      <div class=\"chat-log\" id=\"chatLog\">\r\n        <div class=\"chat-day\">Today</div>\r\n        <div class=\"msg them\">Hello Amara, you are through to Nexas support. How can I help?<span class=\"time\">09:12</span></div>\r\n        <div class=\"msg me\">Hi — my M-Pesa deposit hasn't shown up yet.<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg them\">Let me check. Could you confirm the last four digits of the phone number you used?<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg me\">Ends 4471.<span class=\"time\">09:14</span></div>\r\n        <div class=\"msg them\">Thank you. I can see the transaction pending with the provider. It will credit automatically within ten minutes, and I'll stay on the chat until it does.<span class=\"time\">09:15</span></div>\r\n      </div>\r\n\r\n      <form class=\"chat-bar\" id=\"chatForm\">\r\n        <button class=\"iconbtn\" type=\"button\" aria-label=\"Attach file\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7\"></path></svg>\r\n        </button>\r\n        <input class=\"input\" id=\"chatInput\" placeholder=\"Write a message\" autocomplete=\"off\" aria-label=\"Message\">\r\n        <button class=\"chat-send\" type=\"submit\" aria-label=\"Send\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l16-8-6 16-2.5-6z\"></path></svg>\r\n        </button>\r\n      </form>\r\n    </div>\r\n  ","script":""},"login":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Sign In","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Welcome back.</h1>\r\n        <p>Sign in to pick up where you left off.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Signing you in\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"email\">Email address</label>\r\n            <input class=\"input\" id=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"password\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"password\" type=\"password\" autocomplete=\"current-password\" placeholder=\"••••••••\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div style=\"display:flex;justify-content:space-between;align-items:center\">\r\n              <label class=\"checkline\" style=\"font-size:12.5px\"><input type=\"checkbox\" id=\"remember\"> Keep me signed in</label>\r\n              <a class=\"link\" href=\"forgot-password.html\">Forgot password?</a>\r\n            </div>\r\n          </div>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Sign in</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Signing you in with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">New to Nexas? <a href=\"signup.html\">Create an account</a></div>\r\n    </div>\r\n  ","script":""},"signup":{"attrs":{"data-page":"signup","data-chrome":"auth"},"title":"Nexas — Create Account","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Open your account.</h1>\r\n        <p>Two minutes to set up. Deposit when you are ready.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Setting up your account\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">\r\n            <div class=\"field\">\r\n              <label for=\"sFirst\">First name</label>\r\n              <input class=\"input\" id=\"sFirst\" autocomplete=\"given-name\" placeholder=\"Amara\">\r\n            </div>\r\n            <div class=\"field\">\r\n              <label for=\"sLast\">Last name</label>\r\n              <input class=\"input\" id=\"sLast\" autocomplete=\"family-name\" placeholder=\"Kimani\">\r\n            </div>\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"sEmail\">Email address</label>\r\n            <input class=\"input\" id=\"sEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n          <label class=\"checkline\">\r\n            <input type=\"checkbox\" id=\"terms\">\r\n            <span>I am 18 or older and accept the <a class=\"link\" href=\"#\">Terms</a> and <a class=\"link\" href=\"responsible.html\">Risk Disclosure</a>.</span>\r\n          </label>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Create account</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Setting up your account with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Already registered? <a href=\"login.html\">Sign in</a></div>\r\n    </div>\r\n  ","script":""},"forgot-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Forgot Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"login.html\">Nexas</a>\r\n        <h1>Reset your password.</h1>\r\n        <p>Enter the email on your account and we will send a six-digit code.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-demo-form=\"Reset code sent\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"resetEmail\">Email address</label>\r\n            <input class=\"input\" id=\"resetEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <a class=\"btn btn-fill\" href=\"reset-password.html\">Send reset code</a>\r\n        </form>\r\n\r\n        <div class=\"divider\">still stuck?</div>\r\n\r\n        <a class=\"btn btn-ghost\" href=\"chat.html\">\r\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\r\n          Chat with support\r\n        </a>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Remembered it? <a href=\"login.html\">Back to sign in</a></div>\r\n    </div>\r\n  ","script":""},"reset-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — New Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"forgot-password.html\">Nexas</a>\r\n        <h1>Choose a new password.</h1>\r\n        <p>We sent a code to am***a@mail.com. It expires in 15 minutes.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Updating your password\" data-to=\"login.html\" style=\"display:flex;flex-direction:column;gap:18px\">\r\n          <div class=\"field\">\r\n            <label>Verification code</label>\r\n            <div class=\"otp\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 5\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 6\">\r\n            </div>\r\n            <span class=\"hint\">Didn't arrive? <a class=\"link\" href=\"#\">Send again in 0:42</a></span>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">New password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"confirmNew\">Confirm password</label>\r\n            <input class=\"input\" id=\"confirmNew\" type=\"password\" autocomplete=\"new-password\" placeholder=\"Repeat new password\">\r\n          </div>\r\n\r\n          <button class=\"btn btn-fill\" type=\"submit\">Set new password</button>\r\n        </form>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Back to <a href=\"login.html\">sign in</a></div>\r\n    </div>\r\n  ","script":""}};</script>
-<script>
 /* ============================================================
-   Nexas — shared runtime
-   Injects the app chrome (top bar, drawer, tab bar, modals) into
-   every page so each page file holds only its own content.
+   Nexas — terminal
+   Renders the contract panel for the selected trade type, runs
+   validation, places and sells contracts, drives the automated
+   run loop, and keeps the chart, digits and open positions in
+   step with the feed.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var API, F, I;
+  var el = {};                                   /* mounted nodes */
+  var chart = null;
+  var unsub = [];
+
+  var S = {
+    symbol: 'R_10',
+    tab: 'even_odd',        /* even_odd | matches | over_under */
+    side: 'even',
+    barrier: 5,
+    stake: 10,
+    ticks: 5,
+    mode: 'manual',         /* manual | auto */
+    error: null,
+    run: null
+  };
+
+  /* ---------- helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  function html(node, markup) { if (node) node.innerHTML = markup; }
+
+  function typeFor(side) {
+    if (S.tab === 'even_odd') return 'even_odd';
+    if (S.tab === 'matches') return side === 'matches' ? 'matches' : 'differs';
+    return side === 'over' ? 'over' : 'under';
+  }
+  function payoutFor(side) {
+    return API.contracts.payoutFor(typeFor(side), S.stake);
+  }
+  function pct(side) {
+    var t = typeFor(side);
+    return ((API.payouts[t] - 1) * 100).toFixed(2) + '%';
+  }
+
+  /* ---------- instrument header ---------- */
+  function renderInstrument() {
+    var meta = API.symbol(S.symbol);
+    var h = API.feed.history(S.symbol);
+    var last = h[h.length - 1], prev = h[h.length - 2] || last;
+    var d = last.price - prev.price;
+    var conn = API.connection.status();
+
+    html(el.instrument,
+      '<button class="inst-mark" id="symbolBtn" aria-label="Change instrument">' +
+        I('chart', 16) + '</button>' +
+      '<div class="inst-main">' +
+        '<button class="inst-name" id="symbolName">' + meta.name + I('chevD', 13) + '</button>' +
+        '<div class="inst-price">' +
+          '<span class="p num" aria-live="polite">' + F.price(last.price, meta.digits) + '</span>' +
+          '<span class="c num ' + (d >= 0 ? 'pos' : 'neg') + '">' + F.signed(d) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="inst-right">' +
+        '<span class="feed ' + conn + '"><i></i>' +
+        (conn === 'live' ? F.count(API.connection.latency()) + 'ms' : 'reconnecting') + '</span>' +
+      '</div>');
+  }
+
+  /* ---------- digits ---------- */
+  function renderDigits() {
+    var meta = API.symbol(S.symbol);
+    var h = API.feed.history(S.symbol).slice(-120);
+    var counts = [0,0,0,0,0,0,0,0,0,0];
+    h.forEach(function (p) {
+      var dg = p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;
+      counts[dg]++;
+    });
+    var total = h.length || 1;
+    var pctArr = counts.map(function (c) { return c / total * 100; });
+    var max = Math.max.apply(null, pctArr);
+    var cur = h[h.length - 1];
+    var curDigit = cur.digit == null ? Math.abs(Math.round(cur.price * 100)) % 10 : cur.digit;
+
+    var picking = S.tab !== 'even_odd';
+    var out = '';
+    for (var i = 0; i < 10; i++) {
+      var cls = 'digit' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
+        (picking && i === S.barrier ? ' picked' : '');
+      out += '<button class="' + cls + '" data-digit="' + i + '"' + (picking ? '' : ' tabindex="-1"') + '>' +
+        '<b>' + i + '</b><i>' + pctArr[i].toFixed(1) + '</i></button>';
+    }
+    html(el.digits, out);
+  }
+
+  /* ---------- contract tabs ---------- */
+  function renderTabs() {
+    var tabs = [['even_odd', 'Even / Odd'], ['matches', 'Matches / Differs'], ['over_under', 'Over / Under']];
+    html(el.tabs, tabs.map(function (t) {
+      return '<button class="ctab' + (S.tab === t[0] ? ' active' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
+    }).join(''));
+  }
+
+  /* ---------- panel ---------- */
+  function renderPanel() {
+    var today = API.contracts.today();
+    var wins = today.filter(function (c) { return c.status === 'won'; }).length;
+    var losses = today.filter(function (c) { return c.status === 'lost'; }).length;
+    var pnl = today.reduce(function (a, c) { return a + (c.status === 'open' ? 0 : c.profit); }, 0);
+    var auto = API.prefs.auto();
+
+    var barrierRow = S.tab === 'even_odd' ? '' :
+      '<div class="stack-row">' +
+        '<span class="label">' + (S.tab === 'matches' ? 'Digit to match' : 'Barrier digit') + '</span>' +
+        '<div class="pickline">' +
+          '<button class="stepbtn" data-barrier="-1" aria-label="Lower digit">' + I('minus', 14) + '</button>' +
+          '<b class="num">' + S.barrier + '</b>' +
+          '<button class="stepbtn" data-barrier="1" aria-label="Raise digit">' + I('plus', 14) + '</button>' +
+        '</div>' +
+      '</div>';
+
+    var runRow = S.mode !== 'auto' ? '' :
+      '<div class="runbar' + (S.run ? ' active' : '') + '">' +
+        '<div>' +
+          '<span class="label">Automated run</span>' +
+          '<div class="runbar-t">' + (S.run
+            ? S.run.done + ' of ' + S.run.total + ' · ' + F.signedMoney(S.run.pnl)
+            : auto.runs + ' runs · ×' + auto.multiplier + ' on loss') + '</div>' +
+        '</div>' +
+        (S.run
+          ? '<button class="btn-stop" id="runStop">Stop</button>'
+          : '<button class="btn-mini" data-open="autorun">Settings</button>') +
+      '</div>';
+
+    html(el.panel,
+      '<div class="seg" id="modeSeg">' +
+        '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '">Auto</button>' +
+        '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '">Manual</button>' +
+      '</div>' +
+      runRow +
+      barrierRow +
+      '<div class="stack-row">' +
+        '<span class="label">Duration</span>' +
+        '<div class="pickline">' +
+          '<button class="stepbtn" data-ticks="-1" aria-label="Fewer ticks">' + I('minus', 14) + '</button>' +
+          '<b class="num">' + S.ticks + '</b><span class="unit">ticks</span>' +
+          '<button class="stepbtn" data-ticks="1" aria-label="More ticks">' + I('plus', 14) + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="seg" id="stakeSeg"><button class="active">Stake</button><button>Payout</button></div>' +
+        '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
+          '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
+          '<div class="f"><input id="stake" value="' + S.stake + '" inputmode="decimal" aria-label="Stake">' +
+            '<span class="cur">' + API.account.currency() + '</span></div>' +
+          '<button id="plus" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
+        '</div>' +
+        (S.error ? '<div class="field-error" role="alert">' + S.error + '</div>' : '') +
+        '<div class="quick" id="quick">' +
+          [1, 5, 10, 25, 50].map(function (n) { return '<button data-add="' + n + '">+' + n + '</button>'; }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="session"><span>Today</span><span class="num">' + today.length + ' trades · ' +
+        wins + 'W / ' + losses + 'L</span></div>' +
+      '<div class="session"><span>Session P/L</span><span class="num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' +
+        F.signedMoney(pnl) + '</span></div>');
+  }
+
+  /* ---------- dock (the two CTAs) ---------- */
+  function renderDock() {
+    var sides = S.tab === 'even_odd' ? [['even', 'Even'], ['odd', 'Odd']]
+      : S.tab === 'matches' ? [['matches', 'Matches ' + S.barrier], ['differs', 'Differs ' + S.barrier]]
+      : [['over', 'Over ' + S.barrier], ['under', 'Under ' + S.barrier]];
+
+    var blocked = API.connection.status() !== 'live';
+    html(el.dock,
+      '<div class="trade-actions">' + sides.map(function (s, i) {
+        return '<button class="tbtn ' + (i === 0 ? 'even' : 'odd') + '" data-side="' + s[0] + '"' +
+          (blocked ? ' disabled' : '') + '>' +
+          '<div class="t">' + s[1] + '</div>' +
+          '<div class="s">Payout ' + F.amount(payoutFor(s[0])) + ' · ' + pct(s[0]) + '</div>' +
+        '</button>';
+      }).join('') + '</div>');
+  }
+
+  /* ---------- open positions, under the chart ---------- */
+  function renderActive() {
+    var open = API.contracts.open();
+    if (!open.length) { html(el.active, ''); return; }
+
+    html(el.active, '<div class="active-wrap">' + open.map(function (c) {
+      var left = Math.max(0, c.ticks - c.elapsed);
+      var pl = c.value - c.stake;
+      return '<div class="active">' +
+        '<div class="active-top">' +
+          '<b>' + API.contracts.label(c) + '</b>' +
+          '<span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
+        '</div>' +
+        '<div class="active-meta">' +
+          '<span>' + F.money(c.stake) + ' · ' + F.ticks(c.ticks) + '</span>' +
+          '<span class="num">entry ' + F.price(c.entrySpot) + '</span>' +
+        '</div>' +
+        '<div class="bar"><i style="width:' + Math.round(c.elapsed / c.ticks * 100) + '%"></i></div>' +
+        '<div class="active-foot">' +
+          '<span>' + left + ' left</span>' +
+          '<button class="btn-mini" data-sell="' + c.id + '">Sell ' + F.amount(c.value) + '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') + '</div>');
+  }
+
+  function renderAll() {
+    renderTabs(); renderInstrument(); renderDigits();
+    if (!typing()) renderPanel();
+    renderDock(); renderActive();
+    if (chart) chart.setMarkers(API.contracts.all().filter(function (c) { return c.symbol === S.symbol; }).slice(0, 12));
+  }
+
+  /* update the error + CTA state in place, so typing is never interrupted */
+  function refreshValidity() {
+    var box = el.panel.querySelector('.stake');
+    if (!box) return renderPanel();
+    box.classList.toggle('invalid', !!S.error);
+    var err = el.panel.querySelector('.field-error');
+    if (S.error && !err) {
+      err = document.createElement('div');
+      err.className = 'field-error';
+      err.setAttribute('role', 'alert');
+      box.parentNode.insertBefore(err, box.nextSibling);
+    }
+    if (err) {
+      if (!S.error) err.remove();
+      else err.textContent = S.error;
+    }
+    renderDock();
+  }
+
+  function typing() {
+    var a = document.activeElement;
+    return a && a.id === 'stake';
+  }
+
+  /* ---------- validation ---------- */
+  function check() {
+    S.error = API.contracts.validate({ stake: S.stake, ticks: S.ticks, symbol: S.symbol });
+    return !S.error;
+  }
+
+  /* ---------- placing ---------- */
+  function place(side, runId) {
+    var res = API.contracts.buy({
+      symbol: S.symbol, type: typeFor(side), side: side,
+      barrier: S.tab === 'even_odd' ? null : S.barrier,
+      stake: S.stake, ticks: S.ticks, run: runId || null
+    });
+    if (!res.ok) {
+      S.error = res.error;
+      renderPanel();
+      window.NexToast(res.error);
+      return null;
+    }
+    S.error = null;
+    renderPanel(); renderActive();
+    return res.contract;
+  }
+
+  /* ---------- automated runs ---------- */
+  function startRun(side) {
+    var cfg = API.prefs.auto();
+    S.run = {
+      id: 'R' + Date.now(), side: side, total: cfg.runs, done: 0, pnl: 0,
+      base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
+      takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss
+    };
+    renderPanel();
+    place(side, S.run.id);
+  }
+  function stopRun(reason) {
+    if (!S.run) return;
+    var r = S.run;
+    S.run = null;
+    S.stake = r.base;
+    renderPanel();
+    if (reason) window.NexToast(reason);
+  }
+  function onSettled(c) {
+    if (c.status !== 'open') {
+      window.NexToast(c.status === 'won'
+        ? 'Won ' + F.money(c.payout) + ' on ' + API.contracts.label(c)
+        : c.status === 'sold' ? 'Sold at ' + F.money(c.value)
+        : 'Lost ' + F.money(c.stake) + ' on ' + API.contracts.label(c));
+    }
+    if (!S.run || c.run !== S.run.id) { renderAll(); return; }
+
+    var r = S.run;
+    r.done++;
+    r.pnl = Math.round((r.pnl + c.profit) * 100) / 100;
+    r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
+    S.stake = r.stake;
+
+    if (r.pnl >= r.takeProfit) return stopRun('Take-profit reached at ' + F.signedMoney(r.pnl));
+    if (-r.pnl >= r.stopLoss) return stopRun('Stop-loss reached at ' + F.signedMoney(r.pnl));
+    if (r.done >= r.total) return stopRun('Run finished at ' + F.signedMoney(r.pnl));
+    if (!check()) return stopRun('Run stopped: ' + S.error);
+
+    renderAll();
+    setTimeout(function () { if (S.run) place(r.side, r.id); }, 700);
+  }
+
+  /* ---------- events ---------- */
+  function wire(root) {
+    root.addEventListener('click', function (e) {
+      var t = e.target;
+
+      var tab = t.closest('[data-tab]');
+      if (tab) {
+        S.tab = tab.getAttribute('data-tab');
+        stopRun();
+        renderAll();
+        return;
+      }
+
+      var mode = t.closest('[data-mode]');
+      if (mode) {
+        S.mode = mode.getAttribute('data-mode');
+        if (S.mode === 'manual') stopRun();
+        renderPanel();
+        return;
+      }
+
+      var dg = t.closest('[data-digit]');
+      if (dg && S.tab !== 'even_odd') {
+        S.barrier = +dg.getAttribute('data-digit');
+        renderDigits(); renderPanel(); renderDock();
+        return;
+      }
+
+      var bStep = t.closest('[data-barrier]');
+      if (bStep) {
+        S.barrier = Math.max(0, Math.min(9, S.barrier + (+bStep.getAttribute('data-barrier'))));
+        renderDigits(); renderPanel(); renderDock();
+        return;
+      }
+
+      var tStep = t.closest('[data-ticks]');
+      if (tStep) {
+        S.ticks = Math.max(1, Math.min(10, S.ticks + (+tStep.getAttribute('data-ticks'))));
+        check(); renderPanel();
+        return;
+      }
+
+      if (t.closest('#plus')) { setStake(S.stake + 1); return; }
+      if (t.closest('#minus')) { setStake(S.stake - 1); return; }
+
+      var add = t.closest('[data-add]');
+      if (add) { setStake(S.stake + (+add.getAttribute('data-add'))); return; }
+
+      var sell = t.closest('[data-sell]');
+      if (sell) {
+        var r = API.contracts.sell(sell.getAttribute('data-sell'));
+        if (!r.ok) window.NexToast(r.error);
+        renderAll();
+        return;
+      }
+
+      if (t.closest('#runStop')) { stopRun('Run stopped'); return; }
+
+      var side = t.closest('[data-side]');
+      if (side) {
+        if (!check()) { renderPanel(); window.NexToast(S.error); return; }
+        var which = side.getAttribute('data-side');
+        if (S.mode === 'auto') { S.run ? stopRun('Run stopped') : startRun(which); }
+        else place(which);
+        return;
+      }
+
+      /* chart controls */
+      var zoom = t.closest('[data-zoom]');
+      if (zoom && chart) {
+        var z = zoom.getAttribute('data-zoom');
+        z === 'in' ? chart.zoom(0.8) : z === 'out' ? chart.zoom(1.25) : chart.reset();
+        return;
+      }
+      var view = t.closest('[data-view]');
+      if (view && chart) {
+        var v = view.getAttribute('data-view');
+        el.opts.querySelectorAll('[data-view]').forEach(function (b) { b.classList.remove('active'); });
+        view.classList.add('active');
+        if (v === 'line') { chart.setType('line'); chart.setAgg(1); }
+        else { chart.setType('candle'); chart.setAgg(+v); }
+        return;
+      }
+    });
+
+    root.addEventListener('input', function (e) {
+      if (e.target.id !== 'stake') return;
+      S.stake = Math.max(0, +e.target.value || 0);
+      check();
+      refreshValidity();
+    });
+    root.addEventListener('blur', function (e) {
+      if (e.target.id === 'stake') renderPanel();
+    }, true);
+  }
+
+  function setStake(v) {
+    S.stake = Math.max(0, Math.round(v * 100) / 100);
+    check();
+    if (typing()) { var f = el.panel.querySelector('#stake'); if (f) f.value = S.stake; refreshValidity(); }
+    else { renderPanel(); renderDock(); }
+  }
+
+  /* ---------- mount ---------- */
+  function init() {
+    API = window.NexAPI; F = window.NexFmt; I = window.NexIcon;
+    var root = $('terminal');
+    if (!root) return;
+
+    el.tabs = $('contractTabs');
+    el.instrument = $('instrument');
+    el.digits = $('digits');
+    el.panel = $('panel');
+    el.dock = $('dock');
+    el.active = $('activeList');
+    el.opts = $('chartOpts');
+
+    unsub.forEach(function (f) { f(); });
+    unsub = [];
+    if (chart) { chart.destroy(); chart = null; }
+    if (root.__wired) { mounted(); return; }
+    root.__wired = true;
+    wire(root);
+
+    mounted();
+  }
+
+  function mounted() {
+    API.ready(function () {
+      API.seedDemoHistory();
+      chart = window.NexChart.create($('chart'), { symbol: S.symbol });
+      chart.resize();
+      document.body.classList.remove('loading');
+      renderAll();
+
+      unsub.push(API.on('tick', function (d) {
+        if (d.symbol !== S.symbol) return;
+        renderInstrument(); renderDigits(); renderActive();
+        if (chart) chart.dirty = true;
+      }));
+      unsub.push(API.on('settled', onSettled));
+      unsub.push(API.on('balance', function () { check(); typing() ? refreshValidity() : renderPanel(); }));
+      unsub.push(API.on('connection', function () { renderInstrument(); renderDock(); }));
+    });
+  }
+
+  window.NexTrade = { init: init, state: S };
+})();
+
+/* ============================================================
+   Nexas — positions
+   Open contracts, settled history and the cash ledger, with
+   filters, a detail sheet and CSV export.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var API, F, I;
+  var view = 'open';
+  var filter = { range: 'today', type: 'all' };
+  var el = {};
+
+  function within(ts) {
+    var d = new Date(); d.setHours(0, 0, 0, 0);
+    if (filter.range === 'today') return ts >= d.getTime();
+    if (filter.range === '7d') return ts >= Date.now() - 7 * 864e5;
+    if (filter.range === '30d') return ts >= Date.now() - 30 * 864e5;
+    return true;
+  }
+  function typeOk(c) {
+    if (filter.type === 'all') return true;
+    if (filter.type === 'digits') return c.type === 'matches' || c.type === 'differs';
+    if (filter.type === 'evenodd') return c.type === 'even_odd';
+    return c.type === 'over' || c.type === 'under';
+  }
+
+  function rows() {
+    if (view === 'open') return API.contracts.open();
+    if (view === 'closed') {
+      return API.contracts.closed().filter(function (c) { return within(c.exitTime || c.entryTime) && typeOk(c); });
+    }
+    return API.transactions.list().filter(function (t) { return within(t.t); });
+  }
+
+  /* ---------- summary ---------- */
+  function renderSummary() {
+    var closed = API.contracts.closed().filter(function (c) { return within(c.exitTime || c.entryTime) && typeOk(c); });
+    var open = API.contracts.open();
+    var pnl = closed.reduce(function (a, c) { return a + c.profit; }, 0);
+    var wins = closed.filter(function (c) { return c.profit > 0; }).length;
+    var rate = closed.length ? Math.round(wins / closed.length * 100) : 0;
+    var staked = closed.reduce(function (a, c) { return a + c.stake; }, 0);
+
+    el.summary.innerHTML =
+      '<div class="pnl-head">' +
+        '<div><span class="label">Net profit / loss</span>' +
+        '<div class="big num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pnl) + '</div>' +
+        '<div class="sub">' + API.account.currency() + ' · ' + labelRange() + '</div></div>' +
+        '<div class="pnl-side">' +
+          '<div class="kv"><span>Win rate</span><b class="num">' + rate + '%</b></div>' +
+          '<div class="kv"><span>Settled</span><b class="num">' + closed.length + '</b></div>' +
+          '<div class="kv"><span>Staked</span><b class="num">' + F.amount(staked) + '</b></div>' +
+          '<div class="kv"><span>Running</span><b class="num">' + open.length + '</b></div>' +
+        '</div>' +
+      '</div>';
+  }
+  function labelRange() {
+    return { today: 'today', '7d': 'last 7 days', '30d': 'last 30 days', all: 'all time' }[filter.range];
+  }
+
+  /* ---------- filters ---------- */
+  function renderFilters() {
+    if (view === 'open') { el.filters.innerHTML = ''; return; }
+    var ranges = [['today', 'Today'], ['7d', '7 days'], ['30d', '30 days'], ['all', 'All']];
+    var types = [['all', 'All types'], ['evenodd', 'Even / Odd'], ['digits', 'Matches / Differs'], ['overunder', 'Over / Under']];
+
+    el.filters.innerHTML =
+      '<div class="filters">' +
+        '<div class="chipline">' + ranges.map(function (r) {
+          return '<button class="fchip' + (filter.range === r[0] ? ' on' : '') + '" data-range="' + r[0] + '">' + r[1] + '</button>';
+        }).join('') + '</div>' +
+        (view === 'closed'
+          ? '<select class="input sm" id="typeFilter" aria-label="Contract type">' + types.map(function (t) {
+              return '<option value="' + t[0] + '"' + (filter.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>';
+            }).join('') + '</select>'
+          : '') +
+        '<button class="btn-mini" id="exportBtn">' + I('down', 14) + 'CSV</button>' +
+      '</div>';
+  }
+
+  /* ---------- list ---------- */
+  function renderList() {
+    var data = rows();
+    if (!data.length) {
+      el.list.innerHTML = '<div class="empty">' +
+        I('book', 26) +
+        '<b>Nothing here yet</b>' +
+        '<span>' + (view === 'open' ? 'Contracts you take will appear here while they run.'
+          : view === 'closed' ? 'No settled contracts in this period.'
+          : 'No money movements in this period.') + '</span></div>';
+      return;
+    }
+
+    if (view === 'transactions') {
+      el.list.innerHTML = '<div class="list">' + data.map(function (t) {
+        return '<div class="trow">' +
+          '<span class="ico ' + (t.amount >= 0 ? 'pos' : 'neg') + '">' + I(t.amount >= 0 ? 'up' : 'down', 16) + '</span>' +
+          '<span class="t"><b>' + t.kind + (t.ref ? ' · ' + t.ref : '') + '</b>' +
+          '<span>' + F.dateTime(t.t) + '</span></span>' +
+          '<span class="p"><span class="num ' + (t.amount >= 0 ? 'pos' : 'neg') + '">' + F.signed(t.amount) + '</span>' +
+          '<span class="num sub">' + F.amount(t.balance) + '</span></span>' +
+        '</div>';
+      }).join('') + '</div>';
+      return;
+    }
+
+    el.list.innerHTML = '<div class="list">' + data.map(function (c) {
+      var live = c.status === 'open';
+      var pl = live ? c.value - c.stake : c.profit;
+      return '<button class="trow" data-detail="' + c.id + '">' +
+        '<span class="ico ' + (live ? 'live' : pl >= 0 ? 'pos' : 'neg') + '">' +
+          (live ? I('clock', 16) : I(pl >= 0 ? 'check' : 'close', 16)) + '</span>' +
+        '<span class="t"><b>' + API.contracts.label(c) + '</b>' +
+          '<span>' + c.symbolName.replace(' Index', '') + ' · ' + F.money(c.stake) +
+          (live ? ' · ' + Math.max(0, c.ticks - c.elapsed) + ' ticks left' : ' · ' + F.clock(c.exitTime)) + '</span></span>' +
+        '<span class="p"><span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
+          '<span class="num sub">' + (live ? 'value ' + F.amount(c.value) : c.status) + '</span></span>' +
+      '</button>';
+    }).join('') + '</div>';
+  }
+
+  /* ---------- detail ---------- */
+  function detail(id) {
+    var c = API.contracts.get(id);
+    if (!c) return;
+    var live = c.status === 'open';
+    var pl = live ? c.value - c.stake : c.profit;
+
+    window.NexModals.detail = {
+      steps: {
+        main: {
+          title: API.contracts.label(c),
+          sub: c.symbolName,
+          body: function () {
+            return '<div class="modal-form">' +
+              '<div class="detail-pl ' + (pl >= 0 ? 'pos' : 'neg') + '"><span class="label">' +
+                (live ? 'Indicative' : 'Result') + '</span><b class="num">' + F.signedMoney(pl) + '</b></div>' +
+              '<div class="totals">' +
+                kv('Contract', API.contracts.label(c)) +
+                kv('Stake', F.money(c.stake)) +
+                kv('Payout if won', F.money(c.payout)) +
+                kv('Duration', F.ticks(c.ticks)) +
+                kv('Entry spot', F.price(c.entrySpot)) +
+                kv('Entry time', F.dateTime(c.entryTime)) +
+                (c.exitSpot != null ? kv('Exit spot', F.price(c.exitSpot)) : '') +
+                (c.exitTime ? kv('Exit time', F.dateTime(c.exitTime)) : '') +
+                kv('Reference', c.id) +
+              '</div>' +
+              (live
+                ? '<button class="btn btn-fill" data-sell-modal="' + c.id + '">Sell for ' + F.money(c.value) + '</button>'
+                : '') +
+            '</div>';
+          }
+        }
+      }
+    };
+    window.NexModal.open('detail');
+  }
+  function kv(k, v) { return '<div class="kv"><span>' + k + '</span><b>' + v + '</b></div>'; }
+
+  /* ---------- export ---------- */
+  function csv() {
+    var data = rows(), head, lines;
+    if (view === 'transactions') {
+      head = ['time', 'kind', 'reference', 'amount', 'balance'];
+      lines = data.map(function (t) {
+        return [new Date(t.t).toISOString(), t.kind, t.ref, t.amount, t.balance];
+      });
+    } else {
+      head = ['id', 'contract', 'symbol', 'stake', 'payout', 'ticks', 'entry', 'exit', 'status', 'profit', 'time'];
+      lines = data.map(function (c) {
+        return [c.id, API.contracts.label(c), c.symbolName, c.stake, c.payout, c.ticks,
+          c.entrySpot, c.exitSpot == null ? '' : c.exitSpot, c.status, c.profit,
+          new Date(c.entryTime).toISOString()];
+      });
+    }
+    var text = [head].concat(lines).map(function (r) {
+      return r.map(function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\n');
+
+    /* the hosted preview sandbox blocks downloads; copy instead */
+    if (window.NEXAS_BUNDLE) {
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
+      window.NexToast('CSV copied to the clipboard (' + (data.length) + ' rows)');
+      return;
+    }
+    try {
+      var blob = new Blob([text], { type: 'text/csv' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'nexas-' + view + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.NexToast('CSV exported');
+    } catch (e) {
+      navigator.clipboard && navigator.clipboard.writeText(text);
+      window.NexToast('Download blocked here — CSV copied to the clipboard');
+    }
+  }
+
+  /* ---------- mount ---------- */
+  function renderAll() { renderSummary(); renderFilters(); renderList(); }
+
+  function init() {
+    API = window.NexAPI; F = window.NexFmt; I = window.NexIcon;
+    var root = document.getElementById('positions');
+    if (!root) return;
+
+    el.summary = document.getElementById('posSummary');
+    el.filters = document.getElementById('posFilters');
+    el.list = document.getElementById('posList');
+
+    root.addEventListener('click', function (e) {
+      var tab = e.target.closest('[data-posview]');
+      if (tab) {
+        view = tab.getAttribute('data-posview');
+        tab.parentElement.querySelectorAll('[data-posview]').forEach(function (b) { b.classList.remove('active'); });
+        tab.classList.add('active');
+        renderAll();
+        return;
+      }
+      var r = e.target.closest('[data-range]');
+      if (r) { filter.range = r.getAttribute('data-range'); renderAll(); return; }
+      var d = e.target.closest('[data-detail]');
+      if (d) { detail(d.getAttribute('data-detail')); return; }
+      if (e.target.closest('#exportBtn')) { csv(); return; }
+    });
+    root.addEventListener('change', function (e) {
+      if (e.target.id === 'typeFilter') { filter.type = e.target.value; renderAll(); }
+    });
+    document.addEventListener('click', function (e) {
+      var s = e.target.closest('[data-sell-modal]');
+      if (!s) return;
+      var res = API.contracts.sell(s.getAttribute('data-sell-modal'));
+      window.NexModal.close();
+      window.NexToast(res.ok ? 'Contract sold' : res.error);
+    });
+
+    if (window.__nexPosOff) window.__nexPosOff.forEach(function (f) { f(); });
+    window.__nexPosOff = [];
+
+    API.ready(function () {
+      API.seedDemoHistory();
+      document.body.classList.remove('loading');
+      renderAll();
+      window.__nexPosOff.push(API.on('contracts', renderAll));
+      window.__nexPosOff.push(API.on('balance', renderAll));
+    });
+  }
+
+  window.NexPositions = { init: init };
+})();
+
+/* ============================================================
+   Nexas — shell
+   Injects the chrome (top bar, drawer, tab bar), owns the modal
+   engine, theme, session guard, connection banner and consent
+   surfaces. Page-specific logic lives in trade.js / positions.js.
    ============================================================ */
 (function () {
   "use strict";
@@ -990,19 +2751,19 @@ footer a:hover{color:var(--text-2)}
     bell: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9|M13.7 21a2 2 0 01-3.4 0',
     idcard: 'M3 5h18v14H3z|M7 10h3M7 14h6M15 9h3v4h-3z',
     lock: 'M5 11h14v10H5z|M8 11V7a4 4 0 118 0v4',
-    tag: 'M12 5v14M5 12h14',
     phone: 'M9 2h6a2 2 0 012 2v16a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2z|M10.8 18.6h2.4',
     card: 'M3 8.5A2.5 2.5 0 015.5 6h13A2.5 2.5 0 0121 8.5v7a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 15.5z|M3 10.5h18',
     coin: 'M12 6.2v11.6|M14.7 9.4A2.7 2.7 0 0012 8.2c-1.5 0-2.7.9-2.7 2s1.2 1.9 2.7 1.9 2.7.8 2.7 1.9-1.2 2-2.7 2a2.7 2.7 0 01-2.6-1.3',
     send: 'M4 12l16-8-6 16-2.5-6z',
-    check: 'M5 13l4 4L19 7'
+    check: 'M5 13l4 4L19 7',
+    minus: 'M5 12h14',
+    plus: 'M12 5v14M5 12h14',
+    clock: 'M12 7v5l3 2',
+    sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4'
   };
   function icon(name, size) {
-    var d = I[name] || '';
-    var parts = d.split('|');
-    var body = '';
-    var circle = (name === 'globe' || name === 'user' || name === 'coin');
-    if (circle) body += '<circle cx="12" cy="12" r="9"></circle>';
+    var d = I[name] || '', parts = d.split('|'), body = '';
+    if (name === 'globe' || name === 'coin' || name === 'clock') body += '<circle cx="12" cy="12" r="9"></circle>';
     if (name === 'user') body = '<circle cx="12" cy="8" r="3.4"></circle>';
     if (name === 'book') body = '<rect x="3" y="4" width="18" height="16" rx="2"></rect>';
     for (var i = 0; i < parts.length; i++) if (parts[i]) body += '<path d="' + parts[i] + '"></path>';
@@ -1011,18 +2772,26 @@ footer a:hover{color:var(--text-2)}
   }
   window.NexIcon = icon;
 
-  /* ---------- routing helpers (works as files, or bundled preview) ---------- */
+  var API = window.NexAPI, F = window.NexFmt;
+
+  /* ---------- routing ---------- */
   var BUNDLE = !!window.NEXAS_BUNDLE;
   function href(file) { return BUNDLE ? '#/' + file.replace('.html', '') : file; }
-  window.NexHref = href;
-  function currentPage() {
-    return document.body.getAttribute('data-page') || 'trade';
+  function go(file) {
+    if (BUNDLE) location.hash = '#/' + file.replace('.html', '');
+    else location.href = file;
   }
+  window.NexHref = href;
+  window.NexGo = go;
+  function currentPage() { return document.body.getAttribute('data-page') || 'trade'; }
 
   /* ---------- theme ---------- */
   var THEME_KEY = 'nexas.theme';
-  function storedTheme() {
-    try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+  function storedTheme() { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } }
+  function isDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
   function applyTheme(t) {
     if (t) document.documentElement.setAttribute('data-theme', t);
@@ -1030,12 +2799,6 @@ footer a:hover{color:var(--text-2)}
     try { t ? localStorage.setItem(THEME_KEY, t) : localStorage.removeItem(THEME_KEY); } catch (e) {}
     var sw = document.getElementById('themeSwitch');
     if (sw) sw.setAttribute('aria-checked', String(isDark()));
-    if (window.NexChart) window.NexChart.redraw();
-  }
-  function isDark() {
-    var t = document.documentElement.getAttribute('data-theme');
-    if (t) return t === 'dark';
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
   applyTheme(storedTheme());
 
@@ -1047,8 +2810,12 @@ footer a:hover{color:var(--text-2)}
     { id: 'responsible', label: 'Limits', file: 'responsible.html', icon: 'shield' }
   ];
 
-  /* Top bar has three zones: one control on the left, the account
-     balance as the anchor, and a single green action on the right. */
+  function balanceMarkup() {
+    var kind = API.account.kind();
+    return '<i class="acct-dot ' + kind + '"></i><span class="acct-kind">' + kind + '</span>' +
+      '<span class="bal num">' + F.amount(API.account.balance()) + '</span>' + icon('chevD', 12);
+  }
+
   function topbar(page) {
     var back = document.body.getAttribute('data-back');
     var title = document.body.getAttribute('data-title');
@@ -1071,33 +2838,11 @@ footer a:hover{color:var(--text-2)}
       '<a class="wordmark only-desk" href="' + href('index.html') + '">Nexas</a>' +
       menu +
       '<span class="spacer"></span>' +
-      '<button class="acct" data-open="switch">' +
-        '<i class="acct-dot"></i><span class="acct-kind">Real</span>' +
-        '<span class="bal num">2,480.00</span>' + icon('chevD', 12) +
-      '</button>' +
+      '<button class="acct" data-open="switch" id="acctBtn" aria-label="Switch account">' + balanceMarkup() + '</button>' +
       '<button class="btn-primary" data-open="deposit">Deposit</button>' +
-      '<button class="iconbtn bell" aria-label="Notifications">' + icon('bell', 18) + '<i></i></button>' +
+      '<button class="iconbtn bell" data-open="alerts" aria-label="Notifications">' + icon('bell', 18) + '<i></i></button>' +
     '</header>';
   }
-
-  /* ---------- sign-in transition ---------- */
-  function splash(message, to) {
-    var el = document.createElement('div');
-    el.className = 'splash';
-    el.innerHTML =
-      '<div class="splash-inner">' +
-        '<div class="pulse"><i></i><i></i><i></i></div>' +
-        '<div class="splash-word">Nexas</div>' +
-        '<div class="splash-msg">' + message + '</div>' +
-      '</div>';
-    document.body.appendChild(el);
-    requestAnimationFrame(function () { el.classList.add('open'); });
-    setTimeout(function () {
-      if (BUNDLE) { location.hash = '#/' + to.replace('.html', ''); el.remove(); }
-      else location.href = to;
-    }, 1700);
-  }
-  window.NexSplash = splash;
 
   function drawer() {
     function item(label, opts) {
@@ -1108,27 +2853,23 @@ footer a:hover{color:var(--text-2)}
       var tail = opts.tail || (opts.href || opts.modal ? icon('chev', 15) : '');
       return '<' + tag + ' class="ditem ' + (opts.cls || '') + '"' + attrs + '>' +
         icon(opts.icon, 17) + '<span>' + label + '</span>' +
-        (tail ? '<i class="chev">' + tail + '</i>' : '') +
-        '</' + tag + '>';
+        (tail ? '<i class="chev">' + tail + '</i>' : '') + '</' + tag + '>';
     }
-    /* a group is a disclosure: the header toggles its nested links open */
     function group(label, iconName, items, open) {
       return '<div class="dgroup' + (open ? ' open' : '') + '">' +
-        '<button class="ditem dgroup-head">' + icon(iconName, 17) +
+        '<button class="ditem dgroup-head" aria-expanded="' + !!open + '">' + icon(iconName, 17) +
           '<span>' + label + '</span><i class="chev caret">' + icon('chevD', 15) + '</i></button>' +
-        '<div class="dgroup-body">' + items.join('') + '</div>' +
-      '</div>';
+        '<div class="dgroup-body">' + items.join('') + '</div></div>';
     }
+    var s = API.session.get() || {};
 
-    return '' +
-      '<div class="scrim" id="scrim"></div>' +
+    return '<div class="scrim" id="scrim"></div>' +
       '<aside class="drawer" id="drawer" aria-label="Menu">' +
         '<a class="drawer-user" href="' + href('account.html') + '">' +
-          '<div class="avatar">A</div>' +
-          '<div><b>Amara Kimani</b><span>am***a@mail.com</span></div>' +
+          '<div class="avatar">' + (s.name || 'A').charAt(0) + '</div>' +
+          '<div><b>' + (s.name || 'Guest') + '</b><span>' + (s.email || 'not signed in') + '</span></div>' +
           icon('chev', 16) +
         '</a>' +
-
         '<div class="dnav">' +
           group('Account', 'user', [
             item('Profile and name', { icon: 'idcard', modal: 'profile' }),
@@ -1140,7 +2881,6 @@ footer a:hover{color:var(--text-2)}
             item('Withdraw', { icon: 'up', modal: 'withdraw' })
           ], false) +
         '</div>' +
-
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
           item('Live chat', { icon: 'chat', href: 'chat.html' }) +
@@ -1151,9 +2891,8 @@ footer a:hover{color:var(--text-2)}
             cls: 'theme-toggle'
           }) +
         '</div>' +
-
         '<div class="drawer-foot">' +
-          '<a class="ditem danger" href="' + href('login.html') + '">' + icon('out', 17) + '<span>Log out</span></a>' +
+          '<button class="ditem danger" id="signOut">' + icon('out', 17) + '<span>Log out</span></button>' +
         '</div>' +
       '</aside>';
   }
@@ -1165,41 +2904,32 @@ footer a:hover{color:var(--text-2)}
     }).join('') + '</nav>';
   }
 
-  /* ---------- modal engine ----------
-     Step definitions live in assets/js/modals.js. Operations that used to
-     be their own page (name, password, verification, deposit, withdrawal)
-     run here instead; only genuinely page-sized things still route away. */
+  /* ---------- modal engine ---------- */
   var state = { key: null, step: null, trail: [], data: {} };
+  var lastFocus = null;
 
   function host() {
     var h = document.getElementById('modalHost');
-    if (!h) {
-      h = document.createElement('div');
-      h.id = 'modalHost';
-      document.body.appendChild(h);
-    }
+    if (!h) { h = document.createElement('div'); h.id = 'modalHost'; document.body.appendChild(h); }
     return h;
   }
-
+  var closeToken = 0;
   function openModal(key, stepId) {
     var def = window.NexModals && window.NexModals[key];
     if (!def) return;
+    closeToken++;
+    lastFocus = document.activeElement;
     state = { key: key, step: stepId || Object.keys(def.steps)[0], trail: [], data: {} };
     renderModal(true);
   }
-  function gotoStep(id) {
-    state.trail.push(state.step);
-    state.step = id;
-    renderModal(false);
-  }
+  function gotoStep(id) { state.trail.push(state.step); state.step = id; renderModal(false); }
   function backStep() {
     if (!state.trail.length) return closeModals();
     state.step = state.trail.pop();
     renderModal(false);
   }
   function renderModal(fresh) {
-    var def = window.NexModals[state.key];
-    var step = def.steps[state.step];
+    var def = window.NexModals[state.key], step = def.steps[state.step];
     var title = typeof step.title === 'function' ? step.title(state.data) : step.title;
     var sub = typeof step.sub === 'function' ? step.sub(state.data) : step.sub;
 
@@ -1207,29 +2937,45 @@ footer a:hover{color:var(--text-2)}
       '<div class="modal' + (fresh ? '' : ' open') + '" role="dialog" aria-modal="true" aria-label="' + title + '">' +
         '<div class="modal-bg" data-close></div>' +
         '<div class="modal-box">' +
-          '<div class="grabber"></div>' +
           '<div class="modal-head">' +
             (state.trail.length ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>' : '') +
             '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
             '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +
-          '</div>' +
-          step.body(state.data) +
-        '</div>' +
-      '</div>';
+          '</div>' + step.body(state.data) +
+        '</div></div>';
 
     if (fresh) requestAnimationFrame(function () {
       var m = host().querySelector('.modal');
       if (m) m.classList.add('open');
     });
-    bindMeter();
+    var first = host().querySelector('input, select, button:not([data-close])');
+    if (first) first.focus();
+    var pw = host().querySelector('#newPassword');
+    if (pw) paintMeter(pw);
   }
   function closeModals() {
     var m = host().querySelector('.modal');
     if (!m) return;
     m.classList.remove('open');
-    setTimeout(function () { host().innerHTML = ''; }, 220);
+    var token = ++closeToken;
+    setTimeout(function () { if (token === closeToken) host().innerHTML = ''; }, 220);
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
-  window.NexModal = { open: openModal, close: closeModals };
+  window.NexModal = { open: openModal, close: closeModals, step: gotoStep, data: function () { return state.data; } };
+
+  /* focus trap: modal first, otherwise the open drawer */
+  function trap(e) {
+    if (e.key !== 'Tab') return;
+    var drawerEl = document.getElementById('drawer');
+    var box = host().querySelector('.modal-box') ||
+      (drawerEl && drawerEl.classList.contains('open') ? drawerEl : null);
+    if (!box) return;
+    var f = box.querySelectorAll('a[href], button:not([disabled]), input, select, textarea');
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 
   /* ---------- toast ---------- */
   var toastEl;
@@ -1237,37 +2983,120 @@ footer a:hover{color:var(--text-2)}
     if (!toastEl) {
       toastEl = document.createElement('div');
       toastEl.className = 'toast';
+      toastEl.setAttribute('role', 'status');
+      toastEl.setAttribute('aria-live', 'polite');
       document.body.appendChild(toastEl);
     }
     toastEl.textContent = msg;
     toastEl.classList.add('open');
     clearTimeout(toastEl._t);
-    toastEl._t = setTimeout(function () { toastEl.classList.remove('open'); }, 2400);
+    toastEl._t = setTimeout(function () { toastEl.classList.remove('open'); }, 2600);
   };
 
-  /* ---------- boot chrome ---------- */
+  /* ---------- connection banner ---------- */
+  function connectionBanner() {
+    var b = document.getElementById('connBanner');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'connBanner';
+      b.className = 'conn-banner';
+      b.setAttribute('role', 'status');
+      document.body.appendChild(b);
+    }
+    var st = API.connection.status();
+    b.className = 'conn-banner' + (st === 'live' ? '' : ' show');
+    b.innerHTML = st === 'live' ? '' : '<span class="spin"></span>' +
+      (st === 'reconnecting' ? 'Reconnecting to the price feed' : 'Connecting');
+    document.body.classList.toggle('feed-down', st !== 'live');
+  }
+
+  /* ---------- consent + risk ---------- */
+  function consentBar() {
+    if (API.prefs.consent()) return;
+    var c = document.createElement('div');
+    c.className = 'consent';
+    c.innerHTML = '<p>We use essential cookies to keep you signed in. Nothing is shared with advertisers.</p>' +
+      '<div class="consent-btns">' +
+        '<button class="btn-mini" data-consent="essential">Essential only</button>' +
+        '<button class="btn-mini solid" data-consent="all">Accept</button>' +
+      '</div>';
+    document.body.appendChild(c);
+  }
+  function riskStrip() {
+    if (document.body.getAttribute('data-chrome') !== 'app') return;
+    if (API.prefs.riskAck()) return;
+    var main = document.querySelector('main');
+    if (!main) return;
+    var r = document.createElement('div');
+    r.className = 'risk-strip';
+    r.id = 'riskStrip';
+    r.innerHTML = '<span>' + icon('shield', 15) + 'Trading synthetic indices carries risk. You can lose your full stake.</span>' +
+      '<button class="iconbtn" id="riskClose" aria-label="Dismiss">' + icon('close', 15) + '</button>';
+    main.insertBefore(r, main.firstChild);
+  }
+
+  /* ---------- sign-in transition ---------- */
+  function splash(message, to) {
+    var el = document.createElement('div');
+    el.className = 'splash';
+    el.innerHTML = '<div class="splash-inner">' +
+      '<div class="pulse"><i></i><i></i><i></i></div>' +
+      '<div class="splash-word">Nexas</div>' +
+      '<div class="splash-msg" role="status">' + message + '</div></div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('open'); });
+    setTimeout(function () {
+      if (BUNDLE) { go(to); el.remove(); } else location.href = to;
+    }, 1600);
+  }
+  window.NexSplash = splash;
+
+  /* ---------- session guard ---------- */
+  function guard() {
+    if (document.body.getAttribute('data-chrome') !== 'app') return true;
+    if (API.session.get()) return true;
+    go('login.html');
+    return false;
+  }
+
+  /* ---------- password meter ---------- */
+  function paintMeter(input) {
+    var v = input.value, score = 0;
+    if (v.length >= 8) score++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+    if (/\d/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    var wrap = input.closest('.field') || document;
+    wrap.querySelectorAll('.meter i').forEach(function (bar, i) { bar.classList.toggle('on', i < score); });
+  }
+
+  /* ---------- chrome mount ---------- */
   function mountChrome(root) {
     var chrome = document.body.getAttribute('data-chrome');
-    if (chrome === 'auth' || chrome === 'plain') {
-      host();
-      return;
-    }
+    host();
+    if (chrome === 'auth' || chrome === 'plain') return;
     var page = currentPage();
     var sub = !!document.body.getAttribute('data-back');
     if (sub) document.body.classList.add('no-tabs');
-    host();
     root.insertAdjacentHTML('afterbegin', topbar(page));
     root.insertAdjacentHTML('beforeend', drawer() + (sub ? '' : tabbar(page)));
   }
 
+  function setDrawer(open) {
+    var d = document.getElementById('drawer'), s = document.getElementById('scrim');
+    if (!d) return;
+    d.classList.toggle('open', open);
+    s.classList.toggle('open', open);
+    document.body.classList.toggle('locked', open);
+  }
+
+  /* ---------- global events ---------- */
   function wire() {
     document.addEventListener('click', function (e) {
-      var t = e.target.closest ? e.target : null;
-      if (!t) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
 
-      var menuBtn = t.closest('#menuBtn');
-      if (menuBtn) { setDrawer(true); return; }
-
+      if (t.closest('#menuBtn')) { setDrawer(true); return; }
       if (t.closest('#scrim')) { setDrawer(false); return; }
 
       var themeBtn = t.closest('.theme-toggle');
@@ -1280,11 +3109,32 @@ footer a:hover{color:var(--text-2)}
       }
 
       var grp = t.closest('.dgroup-head');
-      if (grp) { grp.parentElement.classList.toggle('open'); return; }
+      if (grp) {
+        var opened = grp.parentElement.classList.toggle('open');
+        grp.setAttribute('aria-expanded', String(opened));
+        return;
+      }
+
+      if (t.closest('#signOut')) { API.session.signOut(); splash('Signing you out', 'login.html'); return; }
+
+      var consent = t.closest('[data-consent]');
+      if (consent) {
+        API.prefs.setConsent(true);
+        var bar = consent.closest('.consent');
+        if (bar) bar.remove();
+        return;
+      }
+      if (t.closest('#riskClose')) {
+        API.prefs.setRiskAck(true);
+        var strip = document.getElementById('riskStrip');
+        if (strip) strip.remove();
+        return;
+      }
 
       var sp = t.closest('[data-splash]');
       if (sp && sp.tagName !== 'FORM') {
         e.preventDefault();
+        API.session.signIn(null, 'google');
         splash(sp.getAttribute('data-splash'), sp.getAttribute('data-to') || 'index.html');
         return;
       }
@@ -1295,7 +3145,6 @@ footer a:hover{color:var(--text-2)}
       if (t.closest('[data-close]')) { closeModals(); return; }
       if (t.closest('[data-modal-back]')) { backStep(); return; }
 
-      /* inside a modal: set state, step forward, submit, copy, amounts */
       var setter = t.closest('[data-set]');
       if (setter) {
         var pair = setter.getAttribute('data-set').split(':');
@@ -1304,13 +3153,12 @@ footer a:hover{color:var(--text-2)}
       var step = t.closest('[data-goto]');
       if (step) { gotoStep(step.getAttribute('data-goto')); return; }
 
+      var action = t.closest('[data-action]');
+      if (action) { runAction(action.getAttribute('data-action'), action); return; }
+
       var done = t.closest('[data-done]');
-      if (done) {
-        var msg = done.getAttribute('data-done');
-        closeModals();
-        window.NexToast(msg);
-        return;
-      }
+      if (done) { closeModals(); window.NexToast(done.getAttribute('data-done')); return; }
+
       if (t.closest('[data-copy]')) { window.NexToast('Address copied'); return; }
 
       var amt = t.closest('[data-amount]');
@@ -1329,214 +3177,114 @@ footer a:hover{color:var(--text-2)}
       }
 
       var seg = t.closest('.seg button, .ctabs .ctab');
-      if (seg) {
+      if (seg && !seg.hasAttribute('data-tab') && !seg.hasAttribute('data-mode') && !seg.hasAttribute('data-posview')) {
         var parent = seg.parentElement;
         parent.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
         seg.classList.add('active');
       }
     });
 
-    /* live totals and strength meters, inside modals and on pages */
     document.addEventListener('input', function (e) {
       var el = e.target;
       if (el.id === 'newPassword') paintMeter(el);
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
         var fee = +(total.getAttribute('data-fee') || 0);
-        var v = Math.max(0, (+el.value || 0) - fee);
-        total.textContent = '$' + v.toFixed(2);
+        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee));
       }
     });
 
     document.addEventListener('submit', function (e) {
       var f = e.target;
-      if (f.hasAttribute && f.hasAttribute('data-splash')) {
+      if (!f.hasAttribute) return;
+      if (f.hasAttribute('data-splash')) {
         e.preventDefault();
+        var email = f.querySelector('input[type=email]');
+        API.session.signIn(email && email.value, 'password');
         splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
+        return;
+      }
+      if (f.hasAttribute('data-demo-form')) {
+        e.preventDefault();
+        window.NexToast(f.getAttribute('data-demo-form'));
       }
     });
 
     document.addEventListener('keydown', function (e) {
+      trap(e);
       if (e.key === 'Escape') { closeModals(); setDrawer(false); }
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'd') openModal('deposit');
+      if (e.key === '?') openModal('shortcuts');
     });
   }
 
-  function paintMeter(input) {
-    var v = input.value, score = 0;
-    if (v.length >= 8) score++;
-    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
-    if (/\d/.test(v)) score++;
-    if (/[^A-Za-z0-9]/.test(v)) score++;
-    var wrap = input.closest('.field') || document;
-    wrap.querySelectorAll('.meter i').forEach(function (bar, i) { bar.classList.toggle('on', i < score); });
-  }
-  function bindMeter() {
-    var pw = host().querySelector('#newPassword');
-    if (pw) paintMeter(pw);
-  }
-
-  function setDrawer(open) {
-    var d = document.getElementById('drawer');
-    var s = document.getElementById('scrim');
-    if (!d) return;
-    d.classList.toggle('open', open);
-    s.classList.toggle('open', open);
-  }
-
-  /* ---------- shared page behaviours ---------- */
-  function initStake() {
-    var stake = document.getElementById('stake');
-    if (!stake) return;
-    function set(v) {
-      v = Math.max(1, Math.round(v * 100) / 100);
-      stake.value = v;
-      var p = (v * 1.953).toFixed(2);
-      document.querySelectorAll('[data-payout]').forEach(function (el) { el.textContent = p; });
+  /* actions that touch money or verification */
+  function runAction(name, node) {
+    if (name === 'deposit') {
+      var amount = +((document.getElementById('amount') || {}).value) || 0;
+      if (amount <= 0) return window.NexToast('Enter an amount to deposit');
+      API.account.credit(amount, 'Deposit');
+      closeModals();
+      window.NexToast('Deposited ' + F.money(amount));
+      return;
     }
-    var plus = document.getElementById('plus'), minus = document.getElementById('minus');
-    if (plus) plus.addEventListener('click', function () { set(+stake.value + 1); });
-    if (minus) minus.addEventListener('click', function () { set(+stake.value - 1); });
-    stake.addEventListener('change', function () { set(+stake.value || 1); });
-    var q = document.getElementById('quick');
-    if (q) q.addEventListener('click', function (e) {
-      var b = e.target.closest('button');
-      if (b) set(+stake.value + +b.getAttribute('data-add'));
-    });
-    document.querySelectorAll('.tbtn').forEach(function (b) {
-      b.addEventListener('click', function () {
-        window.NexToast(b.getAttribute('data-side') + ' taken at ' + stake.value + ' USD');
+    if (name === 'withdraw') {
+      if (!API.kyc.verified()) { gotoStep('kyc'); return; }
+      var w = +((document.getElementById('wAmount') || {}).value) || 0;
+      if (w <= 0) return window.NexToast('Enter an amount to withdraw');
+      if (w > API.account.balance()) return window.NexToast('Not enough funds');
+      API.account.debit(w, 'Withdrawal');
+      closeModals();
+      window.NexToast('Withdrawal of ' + F.money(w) + ' submitted');
+      return;
+    }
+    if (name === 'verify') {
+      API.kyc.submit();
+      closeModals();
+      window.NexToast('Identity submitted — usually cleared within the hour');
+      return;
+    }
+    if (name === 'useAccount') {
+      var kind = node.getAttribute('data-kind');
+      API.account.use(kind);
+      closeModals();
+      window.NexToast('Switched to the ' + kind + ' account');
+      return;
+    }
+    if (name === 'saveAuto') {
+      API.prefs.setAuto({
+        runs: +document.getElementById('autoRuns').value || 10,
+        multiplier: +document.getElementById('autoMult').value || 2,
+        takeProfit: +document.getElementById('autoTP').value || 200,
+        stopLoss: +document.getElementById('autoSL').value || 100
       });
+      closeModals();
+      window.NexToast('Run settings saved');
+      return;
+    }
+  }
+
+  /* ---------- live chrome updates ---------- */
+  function bindChrome() {
+    API.on('balance', function () {
+      var b = document.getElementById('acctBtn');
+      if (b) b.innerHTML = balanceMarkup();
     });
-    set(+stake.value || 10);
+    API.on('connection', connectionBanner);
+    connectionBanner();
   }
 
-  function initChart() {
-    var cv = document.getElementById('chart');
-    if (!cv) return;
-    var ctx = cv.getContext('2d');
-    var data = [], last = 9601.01, prev = last;
-    for (var k = 0; k < 220; k++) { last += (Math.random() - 0.5) * 1.6; data.push(last); }
-    var W = 0, H = 0;
-
-    function css(name) {
-      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    }
-    function size() {
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      var r = cv.getBoundingClientRect();
-      if (!r.width) return;
-      W = r.width; H = r.height;
-      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      draw();
-    }
-    function draw() {
-      if (!W) return;
-      var padR = 62, padB = 14, padT = 12;
-      var min = Infinity, max = -Infinity, i;
-      for (i = 0; i < data.length; i++) { if (data[i] < min) min = data[i]; if (data[i] > max) max = data[i]; }
-      var span = (max - min) || 1;
-      min -= span * 0.12; max += span * 0.12; span = max - min;
-      var w = W - padR, h = H - padB - padT;
-
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = css('--chart-bg'); ctx.fillRect(0, 0, W, H);
-      ctx.font = '11px "IBM Plex Mono", monospace';
-      ctx.textBaseline = 'middle';
-
-      for (var g = 0; g <= 4; g++) {
-        var y = padT + h * g / 4;
-        ctx.strokeStyle = css('--chart-grid'); ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(w, Math.round(y) + 0.5); ctx.stroke();
-        ctx.fillStyle = css('--chart-axis');
-        ctx.fillText((max - span * g / 4).toFixed(2), w + 10, y);
-      }
-      function X(i2) { return i2 / (data.length - 1) * w; }
-      function Y(v) { return padT + (max - v) / span * h; }
-
-      ctx.beginPath(); ctx.moveTo(X(0), Y(data[0]));
-      for (i = 1; i < data.length; i++) ctx.lineTo(X(i), Y(data[i]));
-      ctx.strokeStyle = css('--chart-line'); ctx.lineWidth = 1.3; ctx.lineJoin = 'round'; ctx.stroke();
-      ctx.lineTo(X(data.length - 1), H - padB); ctx.lineTo(X(0), H - padB); ctx.closePath();
-      ctx.fillStyle = css('--chart-fill'); ctx.fill();
-
-      var v2 = data[data.length - 1], y2 = Y(v2);
-      ctx.setLineDash([3, 4]); ctx.strokeStyle = css('--chart-axis');
-      ctx.beginPath(); ctx.moveTo(0, Math.round(y2) + 0.5); ctx.lineTo(w, Math.round(y2) + 0.5); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(X(data.length - 1), y2, 2.6, 0, Math.PI * 2);
-      ctx.fillStyle = css('--chart-line'); ctx.fill();
-
-      var lbl = v2.toFixed(2), bw = Math.min(ctx.measureText(lbl).width + 16, padR - 8);
-      var bx = w + 6, by = y2 - 11;
-      ctx.fillStyle = css('--surface'); roundRect(bx, by, bw, 22, 6); ctx.fill();
-      ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; roundRect(bx + .5, by + .5, bw - 1, 21, 6); ctx.stroke();
-      ctx.fillStyle = css('--text'); ctx.fillText(lbl, bx + 8, y2);
-    }
-    function roundRect(x, y, w2, h2, r) {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w2, y, x + w2, y + h2, r);
-      ctx.arcTo(x + w2, y + h2, x, y + h2, r);
-      ctx.arcTo(x, y + h2, x, y, r);
-      ctx.arcTo(x, y, x + w2, y, r);
-      ctx.closePath();
-    }
-
-    var digitsEl = document.getElementById('digits');
-    var dist = [10.0, 8.0, 9.8, 9.5, 10.8, 11.5, 10.3, 11.5, 6.8, 11.0];
-    var current = 3;
-    function renderDigits() {
-      if (!digitsEl) return;
-      var max = Math.max.apply(null, dist), html = '';
-      for (var i = 0; i < 10; i++) {
-        html += '<div class="digit' + (dist[i] === max ? ' hot' : '') + (i === current ? ' cur' : '') +
-          '"><b>' + i + '</b><i>' + dist[i].toFixed(1) + '%</i></div>';
-      }
-      digitsEl.innerHTML = html;
-    }
-    renderDigits();
-
-    function tick() {
-      var next = data[data.length - 1] + (Math.random() - 0.5) * 1.8;
-      data.push(next); data.shift();
-      var px = document.getElementById('px');
-      if (px) px.textContent = next.toFixed(2);
-      var d = next - prev, chg = document.getElementById('pxChg');
-      if (chg) {
-        chg.textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + ' (' + (d >= 0 ? '+' : '') + (d / prev * 100).toFixed(2) + '%)';
-        chg.className = 'c num ' + (d >= 0 ? 'pos' : 'neg');
-      }
-      prev = next;
-      current = Math.floor(Math.abs(next * 100)) % 10;
-      for (var i = 0; i < 10; i++) {
-        dist[i] += (Math.random() - 0.5) * 0.25;
-        if (dist[i] < 4) dist[i] = 4;
-        if (dist[i] > 16) dist[i] = 16;
-      }
-      renderDigits(); draw();
-    }
-
-    window.NexChart = { redraw: draw, resize: size };
-    window.addEventListener('resize', size);
-    size();
-    window.__nexTick = setInterval(tick, 1000);
-  }
-
+  /* ---------- chat ---------- */
   function initChat() {
     var log = document.getElementById('chatLog');
     if (!log) return;
-    var form = document.getElementById('chatForm');
-    var input = document.getElementById('chatInput');
-    function time() {
-      var d = new Date();
-      return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-    }
+    var form = document.getElementById('chatForm'), input = document.getElementById('chatInput');
     function add(text, who) {
-      var el = document.createElement('div');
-      el.className = 'msg ' + who;
-      el.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + time() + '</span>';
-      log.appendChild(el);
+      var m = document.createElement('div');
+      m.className = 'msg ' + who;
+      m.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + F.clock(Date.now()) + '</span>';
+      log.appendChild(m);
       log.scrollTop = log.scrollHeight;
     }
     form.addEventListener('submit', function (e) {
@@ -1545,38 +3293,51 @@ footer a:hover{color:var(--text-2)}
       if (!v) return;
       add(v, 'me');
       input.value = '';
-      setTimeout(function () {
-        add('Thanks — checking that for you now. One moment.', 'them');
-      }, 900);
+      setTimeout(function () { add('Thanks — checking that for you now. One moment.', 'them'); }, 900);
     });
     log.scrollTop = log.scrollHeight;
   }
 
-  function initForms() {
-    document.querySelectorAll('[data-demo-form]').forEach(function (f) {
-      f.addEventListener('submit', function (e) {
-        e.preventDefault();
-        window.NexToast(f.getAttribute('data-demo-form'));
-      });
-    });
-    var otp = document.querySelector('.otp');
-    if (otp) {
-      otp.addEventListener('input', function (e) {
-        var boxes = [].slice.call(otp.querySelectorAll('input'));
-        var i = boxes.indexOf(e.target);
-        if (e.target.value && i < boxes.length - 1) boxes[i + 1].focus();
-      });
+  /* ---------- markets ---------- */
+  function initMarkets() {
+    var listHost = document.getElementById('marketList');
+    if (!listHost) return;
+    function render() {
+      listHost.innerHTML = '<div class="list">' + API.symbols.map(function (s) {
+        var h = API.feed.history(s.id);
+        var last = h[h.length - 1], first = h[Math.max(0, h.length - 60)];
+        var chg = (last.price - first.price) / first.price * 100;
+        return '<a class="mkt" href="' + href('index.html') + '">' +
+          '<span class="inst-mark">' + icon('chart', 14) + '</span>' +
+          '<span class="n"><b>' + s.name + '</b><span>' + s.group + '</span></span>' +
+          '<span class="p"><span class="num">' + F.price(last.price, s.digits) + '</span>' +
+          '<span class="num ' + (chg >= 0 ? 'pos' : 'neg') + '">' + F.signedPct(chg) + '</span></span></a>';
+      }).join('') + '</div>';
     }
+    API.ready(function () {
+      document.body.classList.remove('loading');
+      render();
+      clearInterval(window.__nexMkt);
+      window.__nexMkt = setInterval(render, 2000);
+    });
   }
 
+  /* ---------- boot ---------- */
   function boot() {
-    if (window.__nexTick) { clearInterval(window.__nexTick); window.__nexTick = null; }
+    API = window.NexAPI; F = window.NexFmt;
+    clearInterval(window.__nexMkt);
+    if (!guard()) return;
+    document.body.classList.add('loading');
     mountChrome(document.querySelector('.app') || document.body);
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
-    initStake();
-    initChart();
+    bindChrome();
+    consentBar();
+    riskStrip();
     initChat();
-    initForms();
+    initMarkets();
+    if (window.NexTrade) window.NexTrade.init();
+    if (window.NexPositions) window.NexPositions.init();
+    if (document.body.getAttribute('data-chrome') !== 'app') document.body.classList.remove('loading');
     if (document.querySelector('.trade-dock')) document.body.classList.add('has-sticky');
   }
   window.NexBoot = boot;
@@ -1584,6 +3345,11 @@ footer a:hover{color:var(--text-2)}
   if (!BUNDLE) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
   }
 })();
 

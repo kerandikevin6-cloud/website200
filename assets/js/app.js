@@ -1,7 +1,8 @@
 /* ============================================================
-   Nexas — shared runtime
-   Injects the app chrome (top bar, drawer, tab bar, modals) into
-   every page so each page file holds only its own content.
+   Nexas — shell
+   Injects the chrome (top bar, drawer, tab bar), owns the modal
+   engine, theme, session guard, connection banner and consent
+   surfaces. Page-specific logic lives in trade.js / positions.js.
    ============================================================ */
 (function () {
   "use strict";
@@ -27,19 +28,19 @@
     bell: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9|M13.7 21a2 2 0 01-3.4 0',
     idcard: 'M3 5h18v14H3z|M7 10h3M7 14h6M15 9h3v4h-3z',
     lock: 'M5 11h14v10H5z|M8 11V7a4 4 0 118 0v4',
-    tag: 'M12 5v14M5 12h14',
     phone: 'M9 2h6a2 2 0 012 2v16a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2z|M10.8 18.6h2.4',
     card: 'M3 8.5A2.5 2.5 0 015.5 6h13A2.5 2.5 0 0121 8.5v7a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 15.5z|M3 10.5h18',
     coin: 'M12 6.2v11.6|M14.7 9.4A2.7 2.7 0 0012 8.2c-1.5 0-2.7.9-2.7 2s1.2 1.9 2.7 1.9 2.7.8 2.7 1.9-1.2 2-2.7 2a2.7 2.7 0 01-2.6-1.3',
     send: 'M4 12l16-8-6 16-2.5-6z',
-    check: 'M5 13l4 4L19 7'
+    check: 'M5 13l4 4L19 7',
+    minus: 'M5 12h14',
+    plus: 'M12 5v14M5 12h14',
+    clock: 'M12 7v5l3 2',
+    sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4'
   };
   function icon(name, size) {
-    var d = I[name] || '';
-    var parts = d.split('|');
-    var body = '';
-    var circle = (name === 'globe' || name === 'user' || name === 'coin');
-    if (circle) body += '<circle cx="12" cy="12" r="9"></circle>';
+    var d = I[name] || '', parts = d.split('|'), body = '';
+    if (name === 'globe' || name === 'coin' || name === 'clock') body += '<circle cx="12" cy="12" r="9"></circle>';
     if (name === 'user') body = '<circle cx="12" cy="8" r="3.4"></circle>';
     if (name === 'book') body = '<rect x="3" y="4" width="18" height="16" rx="2"></rect>';
     for (var i = 0; i < parts.length; i++) if (parts[i]) body += '<path d="' + parts[i] + '"></path>';
@@ -48,18 +49,26 @@
   }
   window.NexIcon = icon;
 
-  /* ---------- routing helpers (works as files, or bundled preview) ---------- */
+  var API = window.NexAPI, F = window.NexFmt;
+
+  /* ---------- routing ---------- */
   var BUNDLE = !!window.NEXAS_BUNDLE;
   function href(file) { return BUNDLE ? '#/' + file.replace('.html', '') : file; }
-  window.NexHref = href;
-  function currentPage() {
-    return document.body.getAttribute('data-page') || 'trade';
+  function go(file) {
+    if (BUNDLE) location.hash = '#/' + file.replace('.html', '');
+    else location.href = file;
   }
+  window.NexHref = href;
+  window.NexGo = go;
+  function currentPage() { return document.body.getAttribute('data-page') || 'trade'; }
 
   /* ---------- theme ---------- */
   var THEME_KEY = 'nexas.theme';
-  function storedTheme() {
-    try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+  function storedTheme() { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } }
+  function isDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
   function applyTheme(t) {
     if (t) document.documentElement.setAttribute('data-theme', t);
@@ -67,12 +76,6 @@
     try { t ? localStorage.setItem(THEME_KEY, t) : localStorage.removeItem(THEME_KEY); } catch (e) {}
     var sw = document.getElementById('themeSwitch');
     if (sw) sw.setAttribute('aria-checked', String(isDark()));
-    if (window.NexChart) window.NexChart.redraw();
-  }
-  function isDark() {
-    var t = document.documentElement.getAttribute('data-theme');
-    if (t) return t === 'dark';
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
   applyTheme(storedTheme());
 
@@ -84,8 +87,12 @@
     { id: 'responsible', label: 'Limits', file: 'responsible.html', icon: 'shield' }
   ];
 
-  /* Top bar has three zones: one control on the left, the account
-     balance as the anchor, and a single green action on the right. */
+  function balanceMarkup() {
+    var kind = API.account.kind();
+    return '<i class="acct-dot ' + kind + '"></i><span class="acct-kind">' + kind + '</span>' +
+      '<span class="bal num">' + F.amount(API.account.balance()) + '</span>' + icon('chevD', 12);
+  }
+
   function topbar(page) {
     var back = document.body.getAttribute('data-back');
     var title = document.body.getAttribute('data-title');
@@ -108,33 +115,11 @@
       '<a class="wordmark only-desk" href="' + href('index.html') + '">Nexas</a>' +
       menu +
       '<span class="spacer"></span>' +
-      '<button class="acct" data-open="switch">' +
-        '<i class="acct-dot"></i><span class="acct-kind">Real</span>' +
-        '<span class="bal num">2,480.00</span>' + icon('chevD', 12) +
-      '</button>' +
+      '<button class="acct" data-open="switch" id="acctBtn" aria-label="Switch account">' + balanceMarkup() + '</button>' +
       '<button class="btn-primary" data-open="deposit">Deposit</button>' +
-      '<button class="iconbtn bell" aria-label="Notifications">' + icon('bell', 18) + '<i></i></button>' +
+      '<button class="iconbtn bell" data-open="alerts" aria-label="Notifications">' + icon('bell', 18) + '<i></i></button>' +
     '</header>';
   }
-
-  /* ---------- sign-in transition ---------- */
-  function splash(message, to) {
-    var el = document.createElement('div');
-    el.className = 'splash';
-    el.innerHTML =
-      '<div class="splash-inner">' +
-        '<div class="pulse"><i></i><i></i><i></i></div>' +
-        '<div class="splash-word">Nexas</div>' +
-        '<div class="splash-msg">' + message + '</div>' +
-      '</div>';
-    document.body.appendChild(el);
-    requestAnimationFrame(function () { el.classList.add('open'); });
-    setTimeout(function () {
-      if (BUNDLE) { location.hash = '#/' + to.replace('.html', ''); el.remove(); }
-      else location.href = to;
-    }, 1700);
-  }
-  window.NexSplash = splash;
 
   function drawer() {
     function item(label, opts) {
@@ -145,27 +130,23 @@
       var tail = opts.tail || (opts.href || opts.modal ? icon('chev', 15) : '');
       return '<' + tag + ' class="ditem ' + (opts.cls || '') + '"' + attrs + '>' +
         icon(opts.icon, 17) + '<span>' + label + '</span>' +
-        (tail ? '<i class="chev">' + tail + '</i>' : '') +
-        '</' + tag + '>';
+        (tail ? '<i class="chev">' + tail + '</i>' : '') + '</' + tag + '>';
     }
-    /* a group is a disclosure: the header toggles its nested links open */
     function group(label, iconName, items, open) {
       return '<div class="dgroup' + (open ? ' open' : '') + '">' +
-        '<button class="ditem dgroup-head">' + icon(iconName, 17) +
+        '<button class="ditem dgroup-head" aria-expanded="' + !!open + '">' + icon(iconName, 17) +
           '<span>' + label + '</span><i class="chev caret">' + icon('chevD', 15) + '</i></button>' +
-        '<div class="dgroup-body">' + items.join('') + '</div>' +
-      '</div>';
+        '<div class="dgroup-body">' + items.join('') + '</div></div>';
     }
+    var s = API.session.get() || {};
 
-    return '' +
-      '<div class="scrim" id="scrim"></div>' +
+    return '<div class="scrim" id="scrim"></div>' +
       '<aside class="drawer" id="drawer" aria-label="Menu">' +
         '<a class="drawer-user" href="' + href('account.html') + '">' +
-          '<div class="avatar">A</div>' +
-          '<div><b>Amara Kimani</b><span>am***a@mail.com</span></div>' +
+          '<div class="avatar">' + (s.name || 'A').charAt(0) + '</div>' +
+          '<div><b>' + (s.name || 'Guest') + '</b><span>' + (s.email || 'not signed in') + '</span></div>' +
           icon('chev', 16) +
         '</a>' +
-
         '<div class="dnav">' +
           group('Account', 'user', [
             item('Profile and name', { icon: 'idcard', modal: 'profile' }),
@@ -177,7 +158,6 @@
             item('Withdraw', { icon: 'up', modal: 'withdraw' })
           ], false) +
         '</div>' +
-
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
           item('Live chat', { icon: 'chat', href: 'chat.html' }) +
@@ -188,9 +168,8 @@
             cls: 'theme-toggle'
           }) +
         '</div>' +
-
         '<div class="drawer-foot">' +
-          '<a class="ditem danger" href="' + href('login.html') + '">' + icon('out', 17) + '<span>Log out</span></a>' +
+          '<button class="ditem danger" id="signOut">' + icon('out', 17) + '<span>Log out</span></button>' +
         '</div>' +
       '</aside>';
   }
@@ -202,41 +181,32 @@
     }).join('') + '</nav>';
   }
 
-  /* ---------- modal engine ----------
-     Step definitions live in assets/js/modals.js. Operations that used to
-     be their own page (name, password, verification, deposit, withdrawal)
-     run here instead; only genuinely page-sized things still route away. */
+  /* ---------- modal engine ---------- */
   var state = { key: null, step: null, trail: [], data: {} };
+  var lastFocus = null;
 
   function host() {
     var h = document.getElementById('modalHost');
-    if (!h) {
-      h = document.createElement('div');
-      h.id = 'modalHost';
-      document.body.appendChild(h);
-    }
+    if (!h) { h = document.createElement('div'); h.id = 'modalHost'; document.body.appendChild(h); }
     return h;
   }
-
+  var closeToken = 0;
   function openModal(key, stepId) {
     var def = window.NexModals && window.NexModals[key];
     if (!def) return;
+    closeToken++;
+    lastFocus = document.activeElement;
     state = { key: key, step: stepId || Object.keys(def.steps)[0], trail: [], data: {} };
     renderModal(true);
   }
-  function gotoStep(id) {
-    state.trail.push(state.step);
-    state.step = id;
-    renderModal(false);
-  }
+  function gotoStep(id) { state.trail.push(state.step); state.step = id; renderModal(false); }
   function backStep() {
     if (!state.trail.length) return closeModals();
     state.step = state.trail.pop();
     renderModal(false);
   }
   function renderModal(fresh) {
-    var def = window.NexModals[state.key];
-    var step = def.steps[state.step];
+    var def = window.NexModals[state.key], step = def.steps[state.step];
     var title = typeof step.title === 'function' ? step.title(state.data) : step.title;
     var sub = typeof step.sub === 'function' ? step.sub(state.data) : step.sub;
 
@@ -244,29 +214,45 @@
       '<div class="modal' + (fresh ? '' : ' open') + '" role="dialog" aria-modal="true" aria-label="' + title + '">' +
         '<div class="modal-bg" data-close></div>' +
         '<div class="modal-box">' +
-          '<div class="grabber"></div>' +
           '<div class="modal-head">' +
             (state.trail.length ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>' : '') +
             '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
             '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +
-          '</div>' +
-          step.body(state.data) +
-        '</div>' +
-      '</div>';
+          '</div>' + step.body(state.data) +
+        '</div></div>';
 
     if (fresh) requestAnimationFrame(function () {
       var m = host().querySelector('.modal');
       if (m) m.classList.add('open');
     });
-    bindMeter();
+    var first = host().querySelector('input, select, button:not([data-close])');
+    if (first) first.focus();
+    var pw = host().querySelector('#newPassword');
+    if (pw) paintMeter(pw);
   }
   function closeModals() {
     var m = host().querySelector('.modal');
     if (!m) return;
     m.classList.remove('open');
-    setTimeout(function () { host().innerHTML = ''; }, 220);
+    var token = ++closeToken;
+    setTimeout(function () { if (token === closeToken) host().innerHTML = ''; }, 220);
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
-  window.NexModal = { open: openModal, close: closeModals };
+  window.NexModal = { open: openModal, close: closeModals, step: gotoStep, data: function () { return state.data; } };
+
+  /* focus trap: modal first, otherwise the open drawer */
+  function trap(e) {
+    if (e.key !== 'Tab') return;
+    var drawerEl = document.getElementById('drawer');
+    var box = host().querySelector('.modal-box') ||
+      (drawerEl && drawerEl.classList.contains('open') ? drawerEl : null);
+    if (!box) return;
+    var f = box.querySelectorAll('a[href], button:not([disabled]), input, select, textarea');
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 
   /* ---------- toast ---------- */
   var toastEl;
@@ -274,37 +260,120 @@
     if (!toastEl) {
       toastEl = document.createElement('div');
       toastEl.className = 'toast';
+      toastEl.setAttribute('role', 'status');
+      toastEl.setAttribute('aria-live', 'polite');
       document.body.appendChild(toastEl);
     }
     toastEl.textContent = msg;
     toastEl.classList.add('open');
     clearTimeout(toastEl._t);
-    toastEl._t = setTimeout(function () { toastEl.classList.remove('open'); }, 2400);
+    toastEl._t = setTimeout(function () { toastEl.classList.remove('open'); }, 2600);
   };
 
-  /* ---------- boot chrome ---------- */
+  /* ---------- connection banner ---------- */
+  function connectionBanner() {
+    var b = document.getElementById('connBanner');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'connBanner';
+      b.className = 'conn-banner';
+      b.setAttribute('role', 'status');
+      document.body.appendChild(b);
+    }
+    var st = API.connection.status();
+    b.className = 'conn-banner' + (st === 'live' ? '' : ' show');
+    b.innerHTML = st === 'live' ? '' : '<span class="spin"></span>' +
+      (st === 'reconnecting' ? 'Reconnecting to the price feed' : 'Connecting');
+    document.body.classList.toggle('feed-down', st !== 'live');
+  }
+
+  /* ---------- consent + risk ---------- */
+  function consentBar() {
+    if (API.prefs.consent()) return;
+    var c = document.createElement('div');
+    c.className = 'consent';
+    c.innerHTML = '<p>We use essential cookies to keep you signed in. Nothing is shared with advertisers.</p>' +
+      '<div class="consent-btns">' +
+        '<button class="btn-mini" data-consent="essential">Essential only</button>' +
+        '<button class="btn-mini solid" data-consent="all">Accept</button>' +
+      '</div>';
+    document.body.appendChild(c);
+  }
+  function riskStrip() {
+    if (document.body.getAttribute('data-chrome') !== 'app') return;
+    if (API.prefs.riskAck()) return;
+    var main = document.querySelector('main');
+    if (!main) return;
+    var r = document.createElement('div');
+    r.className = 'risk-strip';
+    r.id = 'riskStrip';
+    r.innerHTML = '<span>' + icon('shield', 15) + 'Trading synthetic indices carries risk. You can lose your full stake.</span>' +
+      '<button class="iconbtn" id="riskClose" aria-label="Dismiss">' + icon('close', 15) + '</button>';
+    main.insertBefore(r, main.firstChild);
+  }
+
+  /* ---------- sign-in transition ---------- */
+  function splash(message, to) {
+    var el = document.createElement('div');
+    el.className = 'splash';
+    el.innerHTML = '<div class="splash-inner">' +
+      '<div class="pulse"><i></i><i></i><i></i></div>' +
+      '<div class="splash-word">Nexas</div>' +
+      '<div class="splash-msg" role="status">' + message + '</div></div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('open'); });
+    setTimeout(function () {
+      if (BUNDLE) { go(to); el.remove(); } else location.href = to;
+    }, 1600);
+  }
+  window.NexSplash = splash;
+
+  /* ---------- session guard ---------- */
+  function guard() {
+    if (document.body.getAttribute('data-chrome') !== 'app') return true;
+    if (API.session.get()) return true;
+    go('login.html');
+    return false;
+  }
+
+  /* ---------- password meter ---------- */
+  function paintMeter(input) {
+    var v = input.value, score = 0;
+    if (v.length >= 8) score++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+    if (/\d/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    var wrap = input.closest('.field') || document;
+    wrap.querySelectorAll('.meter i').forEach(function (bar, i) { bar.classList.toggle('on', i < score); });
+  }
+
+  /* ---------- chrome mount ---------- */
   function mountChrome(root) {
     var chrome = document.body.getAttribute('data-chrome');
-    if (chrome === 'auth' || chrome === 'plain') {
-      host();
-      return;
-    }
+    host();
+    if (chrome === 'auth' || chrome === 'plain') return;
     var page = currentPage();
     var sub = !!document.body.getAttribute('data-back');
     if (sub) document.body.classList.add('no-tabs');
-    host();
     root.insertAdjacentHTML('afterbegin', topbar(page));
     root.insertAdjacentHTML('beforeend', drawer() + (sub ? '' : tabbar(page)));
   }
 
+  function setDrawer(open) {
+    var d = document.getElementById('drawer'), s = document.getElementById('scrim');
+    if (!d) return;
+    d.classList.toggle('open', open);
+    s.classList.toggle('open', open);
+    document.body.classList.toggle('locked', open);
+  }
+
+  /* ---------- global events ---------- */
   function wire() {
     document.addEventListener('click', function (e) {
-      var t = e.target.closest ? e.target : null;
-      if (!t) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
 
-      var menuBtn = t.closest('#menuBtn');
-      if (menuBtn) { setDrawer(true); return; }
-
+      if (t.closest('#menuBtn')) { setDrawer(true); return; }
       if (t.closest('#scrim')) { setDrawer(false); return; }
 
       var themeBtn = t.closest('.theme-toggle');
@@ -317,11 +386,32 @@
       }
 
       var grp = t.closest('.dgroup-head');
-      if (grp) { grp.parentElement.classList.toggle('open'); return; }
+      if (grp) {
+        var opened = grp.parentElement.classList.toggle('open');
+        grp.setAttribute('aria-expanded', String(opened));
+        return;
+      }
+
+      if (t.closest('#signOut')) { API.session.signOut(); splash('Signing you out', 'login.html'); return; }
+
+      var consent = t.closest('[data-consent]');
+      if (consent) {
+        API.prefs.setConsent(true);
+        var bar = consent.closest('.consent');
+        if (bar) bar.remove();
+        return;
+      }
+      if (t.closest('#riskClose')) {
+        API.prefs.setRiskAck(true);
+        var strip = document.getElementById('riskStrip');
+        if (strip) strip.remove();
+        return;
+      }
 
       var sp = t.closest('[data-splash]');
       if (sp && sp.tagName !== 'FORM') {
         e.preventDefault();
+        API.session.signIn(null, 'google');
         splash(sp.getAttribute('data-splash'), sp.getAttribute('data-to') || 'index.html');
         return;
       }
@@ -332,7 +422,6 @@
       if (t.closest('[data-close]')) { closeModals(); return; }
       if (t.closest('[data-modal-back]')) { backStep(); return; }
 
-      /* inside a modal: set state, step forward, submit, copy, amounts */
       var setter = t.closest('[data-set]');
       if (setter) {
         var pair = setter.getAttribute('data-set').split(':');
@@ -341,13 +430,12 @@
       var step = t.closest('[data-goto]');
       if (step) { gotoStep(step.getAttribute('data-goto')); return; }
 
+      var action = t.closest('[data-action]');
+      if (action) { runAction(action.getAttribute('data-action'), action); return; }
+
       var done = t.closest('[data-done]');
-      if (done) {
-        var msg = done.getAttribute('data-done');
-        closeModals();
-        window.NexToast(msg);
-        return;
-      }
+      if (done) { closeModals(); window.NexToast(done.getAttribute('data-done')); return; }
+
       if (t.closest('[data-copy]')) { window.NexToast('Address copied'); return; }
 
       var amt = t.closest('[data-amount]');
@@ -366,214 +454,114 @@
       }
 
       var seg = t.closest('.seg button, .ctabs .ctab');
-      if (seg) {
+      if (seg && !seg.hasAttribute('data-tab') && !seg.hasAttribute('data-mode') && !seg.hasAttribute('data-posview')) {
         var parent = seg.parentElement;
         parent.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
         seg.classList.add('active');
       }
     });
 
-    /* live totals and strength meters, inside modals and on pages */
     document.addEventListener('input', function (e) {
       var el = e.target;
       if (el.id === 'newPassword') paintMeter(el);
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
         var fee = +(total.getAttribute('data-fee') || 0);
-        var v = Math.max(0, (+el.value || 0) - fee);
-        total.textContent = '$' + v.toFixed(2);
+        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee));
       }
     });
 
     document.addEventListener('submit', function (e) {
       var f = e.target;
-      if (f.hasAttribute && f.hasAttribute('data-splash')) {
+      if (!f.hasAttribute) return;
+      if (f.hasAttribute('data-splash')) {
         e.preventDefault();
+        var email = f.querySelector('input[type=email]');
+        API.session.signIn(email && email.value, 'password');
         splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
+        return;
+      }
+      if (f.hasAttribute('data-demo-form')) {
+        e.preventDefault();
+        window.NexToast(f.getAttribute('data-demo-form'));
       }
     });
 
     document.addEventListener('keydown', function (e) {
+      trap(e);
       if (e.key === 'Escape') { closeModals(); setDrawer(false); }
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'd') openModal('deposit');
+      if (e.key === '?') openModal('shortcuts');
     });
   }
 
-  function paintMeter(input) {
-    var v = input.value, score = 0;
-    if (v.length >= 8) score++;
-    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
-    if (/\d/.test(v)) score++;
-    if (/[^A-Za-z0-9]/.test(v)) score++;
-    var wrap = input.closest('.field') || document;
-    wrap.querySelectorAll('.meter i').forEach(function (bar, i) { bar.classList.toggle('on', i < score); });
-  }
-  function bindMeter() {
-    var pw = host().querySelector('#newPassword');
-    if (pw) paintMeter(pw);
-  }
-
-  function setDrawer(open) {
-    var d = document.getElementById('drawer');
-    var s = document.getElementById('scrim');
-    if (!d) return;
-    d.classList.toggle('open', open);
-    s.classList.toggle('open', open);
-  }
-
-  /* ---------- shared page behaviours ---------- */
-  function initStake() {
-    var stake = document.getElementById('stake');
-    if (!stake) return;
-    function set(v) {
-      v = Math.max(1, Math.round(v * 100) / 100);
-      stake.value = v;
-      var p = (v * 1.953).toFixed(2);
-      document.querySelectorAll('[data-payout]').forEach(function (el) { el.textContent = p; });
+  /* actions that touch money or verification */
+  function runAction(name, node) {
+    if (name === 'deposit') {
+      var amount = +((document.getElementById('amount') || {}).value) || 0;
+      if (amount <= 0) return window.NexToast('Enter an amount to deposit');
+      API.account.credit(amount, 'Deposit');
+      closeModals();
+      window.NexToast('Deposited ' + F.money(amount));
+      return;
     }
-    var plus = document.getElementById('plus'), minus = document.getElementById('minus');
-    if (plus) plus.addEventListener('click', function () { set(+stake.value + 1); });
-    if (minus) minus.addEventListener('click', function () { set(+stake.value - 1); });
-    stake.addEventListener('change', function () { set(+stake.value || 1); });
-    var q = document.getElementById('quick');
-    if (q) q.addEventListener('click', function (e) {
-      var b = e.target.closest('button');
-      if (b) set(+stake.value + +b.getAttribute('data-add'));
-    });
-    document.querySelectorAll('.tbtn').forEach(function (b) {
-      b.addEventListener('click', function () {
-        window.NexToast(b.getAttribute('data-side') + ' taken at ' + stake.value + ' USD');
+    if (name === 'withdraw') {
+      if (!API.kyc.verified()) { gotoStep('kyc'); return; }
+      var w = +((document.getElementById('wAmount') || {}).value) || 0;
+      if (w <= 0) return window.NexToast('Enter an amount to withdraw');
+      if (w > API.account.balance()) return window.NexToast('Not enough funds');
+      API.account.debit(w, 'Withdrawal');
+      closeModals();
+      window.NexToast('Withdrawal of ' + F.money(w) + ' submitted');
+      return;
+    }
+    if (name === 'verify') {
+      API.kyc.submit();
+      closeModals();
+      window.NexToast('Identity submitted — usually cleared within the hour');
+      return;
+    }
+    if (name === 'useAccount') {
+      var kind = node.getAttribute('data-kind');
+      API.account.use(kind);
+      closeModals();
+      window.NexToast('Switched to the ' + kind + ' account');
+      return;
+    }
+    if (name === 'saveAuto') {
+      API.prefs.setAuto({
+        runs: +document.getElementById('autoRuns').value || 10,
+        multiplier: +document.getElementById('autoMult').value || 2,
+        takeProfit: +document.getElementById('autoTP').value || 200,
+        stopLoss: +document.getElementById('autoSL').value || 100
       });
+      closeModals();
+      window.NexToast('Run settings saved');
+      return;
+    }
+  }
+
+  /* ---------- live chrome updates ---------- */
+  function bindChrome() {
+    API.on('balance', function () {
+      var b = document.getElementById('acctBtn');
+      if (b) b.innerHTML = balanceMarkup();
     });
-    set(+stake.value || 10);
+    API.on('connection', connectionBanner);
+    connectionBanner();
   }
 
-  function initChart() {
-    var cv = document.getElementById('chart');
-    if (!cv) return;
-    var ctx = cv.getContext('2d');
-    var data = [], last = 9601.01, prev = last;
-    for (var k = 0; k < 220; k++) { last += (Math.random() - 0.5) * 1.6; data.push(last); }
-    var W = 0, H = 0;
-
-    function css(name) {
-      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    }
-    function size() {
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      var r = cv.getBoundingClientRect();
-      if (!r.width) return;
-      W = r.width; H = r.height;
-      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      draw();
-    }
-    function draw() {
-      if (!W) return;
-      var padR = 62, padB = 14, padT = 12;
-      var min = Infinity, max = -Infinity, i;
-      for (i = 0; i < data.length; i++) { if (data[i] < min) min = data[i]; if (data[i] > max) max = data[i]; }
-      var span = (max - min) || 1;
-      min -= span * 0.12; max += span * 0.12; span = max - min;
-      var w = W - padR, h = H - padB - padT;
-
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = css('--chart-bg'); ctx.fillRect(0, 0, W, H);
-      ctx.font = '11px "IBM Plex Mono", monospace';
-      ctx.textBaseline = 'middle';
-
-      for (var g = 0; g <= 4; g++) {
-        var y = padT + h * g / 4;
-        ctx.strokeStyle = css('--chart-grid'); ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(w, Math.round(y) + 0.5); ctx.stroke();
-        ctx.fillStyle = css('--chart-axis');
-        ctx.fillText((max - span * g / 4).toFixed(2), w + 10, y);
-      }
-      function X(i2) { return i2 / (data.length - 1) * w; }
-      function Y(v) { return padT + (max - v) / span * h; }
-
-      ctx.beginPath(); ctx.moveTo(X(0), Y(data[0]));
-      for (i = 1; i < data.length; i++) ctx.lineTo(X(i), Y(data[i]));
-      ctx.strokeStyle = css('--chart-line'); ctx.lineWidth = 1.3; ctx.lineJoin = 'round'; ctx.stroke();
-      ctx.lineTo(X(data.length - 1), H - padB); ctx.lineTo(X(0), H - padB); ctx.closePath();
-      ctx.fillStyle = css('--chart-fill'); ctx.fill();
-
-      var v2 = data[data.length - 1], y2 = Y(v2);
-      ctx.setLineDash([3, 4]); ctx.strokeStyle = css('--chart-axis');
-      ctx.beginPath(); ctx.moveTo(0, Math.round(y2) + 0.5); ctx.lineTo(w, Math.round(y2) + 0.5); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(X(data.length - 1), y2, 2.6, 0, Math.PI * 2);
-      ctx.fillStyle = css('--chart-line'); ctx.fill();
-
-      var lbl = v2.toFixed(2), bw = Math.min(ctx.measureText(lbl).width + 16, padR - 8);
-      var bx = w + 6, by = y2 - 11;
-      ctx.fillStyle = css('--surface'); roundRect(bx, by, bw, 22, 6); ctx.fill();
-      ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; roundRect(bx + .5, by + .5, bw - 1, 21, 6); ctx.stroke();
-      ctx.fillStyle = css('--text'); ctx.fillText(lbl, bx + 8, y2);
-    }
-    function roundRect(x, y, w2, h2, r) {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w2, y, x + w2, y + h2, r);
-      ctx.arcTo(x + w2, y + h2, x, y + h2, r);
-      ctx.arcTo(x, y + h2, x, y, r);
-      ctx.arcTo(x, y, x + w2, y, r);
-      ctx.closePath();
-    }
-
-    var digitsEl = document.getElementById('digits');
-    var dist = [10.0, 8.0, 9.8, 9.5, 10.8, 11.5, 10.3, 11.5, 6.8, 11.0];
-    var current = 3;
-    function renderDigits() {
-      if (!digitsEl) return;
-      var max = Math.max.apply(null, dist), html = '';
-      for (var i = 0; i < 10; i++) {
-        html += '<div class="digit' + (dist[i] === max ? ' hot' : '') + (i === current ? ' cur' : '') +
-          '"><b>' + i + '</b><i>' + dist[i].toFixed(1) + '%</i></div>';
-      }
-      digitsEl.innerHTML = html;
-    }
-    renderDigits();
-
-    function tick() {
-      var next = data[data.length - 1] + (Math.random() - 0.5) * 1.8;
-      data.push(next); data.shift();
-      var px = document.getElementById('px');
-      if (px) px.textContent = next.toFixed(2);
-      var d = next - prev, chg = document.getElementById('pxChg');
-      if (chg) {
-        chg.textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + ' (' + (d >= 0 ? '+' : '') + (d / prev * 100).toFixed(2) + '%)';
-        chg.className = 'c num ' + (d >= 0 ? 'pos' : 'neg');
-      }
-      prev = next;
-      current = Math.floor(Math.abs(next * 100)) % 10;
-      for (var i = 0; i < 10; i++) {
-        dist[i] += (Math.random() - 0.5) * 0.25;
-        if (dist[i] < 4) dist[i] = 4;
-        if (dist[i] > 16) dist[i] = 16;
-      }
-      renderDigits(); draw();
-    }
-
-    window.NexChart = { redraw: draw, resize: size };
-    window.addEventListener('resize', size);
-    size();
-    window.__nexTick = setInterval(tick, 1000);
-  }
-
+  /* ---------- chat ---------- */
   function initChat() {
     var log = document.getElementById('chatLog');
     if (!log) return;
-    var form = document.getElementById('chatForm');
-    var input = document.getElementById('chatInput');
-    function time() {
-      var d = new Date();
-      return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-    }
+    var form = document.getElementById('chatForm'), input = document.getElementById('chatInput');
     function add(text, who) {
-      var el = document.createElement('div');
-      el.className = 'msg ' + who;
-      el.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + time() + '</span>';
-      log.appendChild(el);
+      var m = document.createElement('div');
+      m.className = 'msg ' + who;
+      m.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + F.clock(Date.now()) + '</span>';
+      log.appendChild(m);
       log.scrollTop = log.scrollHeight;
     }
     form.addEventListener('submit', function (e) {
@@ -582,38 +570,51 @@
       if (!v) return;
       add(v, 'me');
       input.value = '';
-      setTimeout(function () {
-        add('Thanks — checking that for you now. One moment.', 'them');
-      }, 900);
+      setTimeout(function () { add('Thanks — checking that for you now. One moment.', 'them'); }, 900);
     });
     log.scrollTop = log.scrollHeight;
   }
 
-  function initForms() {
-    document.querySelectorAll('[data-demo-form]').forEach(function (f) {
-      f.addEventListener('submit', function (e) {
-        e.preventDefault();
-        window.NexToast(f.getAttribute('data-demo-form'));
-      });
-    });
-    var otp = document.querySelector('.otp');
-    if (otp) {
-      otp.addEventListener('input', function (e) {
-        var boxes = [].slice.call(otp.querySelectorAll('input'));
-        var i = boxes.indexOf(e.target);
-        if (e.target.value && i < boxes.length - 1) boxes[i + 1].focus();
-      });
+  /* ---------- markets ---------- */
+  function initMarkets() {
+    var listHost = document.getElementById('marketList');
+    if (!listHost) return;
+    function render() {
+      listHost.innerHTML = '<div class="list">' + API.symbols.map(function (s) {
+        var h = API.feed.history(s.id);
+        var last = h[h.length - 1], first = h[Math.max(0, h.length - 60)];
+        var chg = (last.price - first.price) / first.price * 100;
+        return '<a class="mkt" href="' + href('index.html') + '">' +
+          '<span class="inst-mark">' + icon('chart', 14) + '</span>' +
+          '<span class="n"><b>' + s.name + '</b><span>' + s.group + '</span></span>' +
+          '<span class="p"><span class="num">' + F.price(last.price, s.digits) + '</span>' +
+          '<span class="num ' + (chg >= 0 ? 'pos' : 'neg') + '">' + F.signedPct(chg) + '</span></span></a>';
+      }).join('') + '</div>';
     }
+    API.ready(function () {
+      document.body.classList.remove('loading');
+      render();
+      clearInterval(window.__nexMkt);
+      window.__nexMkt = setInterval(render, 2000);
+    });
   }
 
+  /* ---------- boot ---------- */
   function boot() {
-    if (window.__nexTick) { clearInterval(window.__nexTick); window.__nexTick = null; }
+    API = window.NexAPI; F = window.NexFmt;
+    clearInterval(window.__nexMkt);
+    if (!guard()) return;
+    document.body.classList.add('loading');
     mountChrome(document.querySelector('.app') || document.body);
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
-    initStake();
-    initChart();
+    bindChrome();
+    consentBar();
+    riskStrip();
     initChat();
-    initForms();
+    initMarkets();
+    if (window.NexTrade) window.NexTrade.init();
+    if (window.NexPositions) window.NexPositions.init();
+    if (document.body.getAttribute('data-chrome') !== 'app') document.body.classList.remove('loading');
     if (document.querySelector('.trade-dock')) document.body.classList.add('has-sticky');
   }
   window.NexBoot = boot;
@@ -621,5 +622,10 @@
   if (!BUNDLE) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
   }
 })();

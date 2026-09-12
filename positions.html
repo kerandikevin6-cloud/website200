@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nexas — Positions</title>
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/css/app.css">
@@ -11,33 +12,29 @@
 <body data-page="positions" data-chrome="app">
 <div class="app">
   <main>
-    <div class="shell" style="display:flex;flex-direction:column;flex:1">
+    <div class="shell" id="positions">
       <div class="page-head">
         <h1>Positions</h1>
-        <p>Everything you have open, closed and settled.</p>
+        <p>Everything open, settled and paid, on this account.</p>
       </div>
 
       <div class="ctabs">
-        <button class="ctab active">Open</button>
-        <button class="ctab">Closed</button>
-        <button class="ctab">Transactions</button>
+        <button class="ctab active" data-posview="open">Open</button>
+        <button class="ctab" data-posview="closed">Closed</button>
+        <button class="ctab" data-posview="transactions">Ledger</button>
       </div>
 
-      <div class="summary">
-        <span class="label">Session profit / loss</span>
-        <div class="big pos">+0.00</div>
-        <div class="sub">0 trades today · 0 won · 0 lost</div>
-      </div>
-
-      <div class="empty">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18M9 9v11"></path></svg>
-        <b>No open positions</b>
-        <span>Contracts you take will be listed here.</span>
-      </div>
+      <div id="posSummary"><div class="sk sk-summary"></div></div>
+      <div id="posFilters"></div>
+      <div id="posList"><div class="sk sk-list"></div></div>
+      <div style="height:22px"></div>
     </div>
   </main>
 </div>
+<script src="assets/js/format.js"></script>
+<script src="assets/js/api.js"></script>
 <script src="assets/js/modals.js"></script>
+<script src="assets/js/positions.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

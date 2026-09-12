@@ -1,0 +1,85 @@
+/* ============================================================
+   Nexas — formatting
+   One place for money, numbers, percentages and time so locale
+   and currency changes never have to be chased through views.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+  var currency = 'USD';
+
+  function nf(min, max) {
+    return new Intl.NumberFormat(locale, { minimumFractionDigits: min, maximumFractionDigits: max });
+  }
+  var n2 = nf(2, 2), n0 = nf(0, 0);
+
+  var F = {
+    setLocale: function (l) { locale = l; n2 = nf(2, 2); n0 = nf(0, 0); },
+    setCurrency: function (c) { currency = c; },
+    currency: function () { return currency; },
+
+    /* 2,480.00 */
+    amount: function (v) { return n2.format(+v || 0); },
+
+    /* 2,480.00 USD — currency after the figure, the way traders read it */
+    money: function (v, cur) { return n2.format(+v || 0) + ' ' + (cur || currency); },
+
+    /* +12.40 / −3.05, always signed */
+    signed: function (v) {
+      var x = +v || 0;
+      return (x > 0 ? '+' : x < 0 ? '−' : '') + n2.format(Math.abs(x));
+    },
+    signedMoney: function (v, cur) { return F.signed(v) + ' ' + (cur || currency); },
+
+    /* 0.42% */
+    pct: function (v, digits) {
+      return (+v || 0).toFixed(digits == null ? 2 : digits) + '%';
+    },
+    signedPct: function (v) {
+      var x = +v || 0;
+      return (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(2) + '%';
+    },
+
+    /* price with the instrument's own precision */
+    price: function (v, digits) { return (+v || 0).toFixed(digits == null ? 2 : digits); },
+
+    count: function (v) { return n0.format(+v || 0); },
+
+    /* 21:35:16 in the viewer's timezone */
+    time: function (ts) {
+      return new Date(ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    },
+    clock: function (ts) {
+      return new Date(ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+    },
+    date: function (ts) {
+      return new Date(ts).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
+    },
+    dateTime: function (ts) { return F.date(ts) + ' · ' + F.time(ts); },
+
+    /* "just now", "4m ago", "2h ago" */
+    ago: function (ts) {
+      var s = Math.max(0, (Date.now() - ts) / 1000);
+      if (s < 45) return 'just now';
+      if (s < 3600) return Math.round(s / 60) + 'm ago';
+      if (s < 86400) return Math.round(s / 3600) + 'h ago';
+      return Math.round(s / 86400) + 'd ago';
+    },
+
+    /* 5 ticks · 1m 20s */
+    ticks: function (n) { return n + (n === 1 ? ' tick' : ' ticks'); },
+    duration: function (sec) {
+      sec = Math.max(0, Math.round(sec));
+      var m = Math.floor(sec / 60), s = sec % 60;
+      return m ? m + 'm ' + s + 's' : s + 's';
+    },
+
+    /* timezone label for the session footer */
+    zone: function () {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return 'UTC'; }
+    }
+  };
+
+  window.NexFmt = F;
+})();
