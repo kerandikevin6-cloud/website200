@@ -1,0 +1,1623 @@
+<title>Nexas Terminal</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ============================================================
+   Nexas — design system
+   Tokens first. Light is the base palette, dark overrides.
+   No gradients anywhere. Curved edges. Trading green / red CTAs.
+   ============================================================ */
+
+:root{
+  /* neutrals — cool grey, biased slightly toward the blue accent */
+  --bg:#FFFFFF;
+  --surface:#FFFFFF;
+  --surface-2:#F5F6F8;
+  --surface-3:#EBEDF0;
+  --line:#DDE1E6;
+  --line-soft:#EAECEF;
+  --text:#15181B;
+  --text-2:#4C5258;
+  --muted:#767D84;
+
+  /* brand + semantic */
+  --accent:#007FFA;
+  --accent-soft:#EAF3FF;
+  --pos:#0E8F58;
+  --pos-soft:#E7F4ED;
+  --neg:#C3352C;
+  --neg-soft:#FBEBEA;
+
+  /* chart */
+  --chart-line:#15181B;
+  --chart-grid:#E6E8EA;
+  --chart-fill:rgba(21,24,27,.05);
+  --chart-axis:#8A9097;
+  --chart-bg:#FFFFFF;
+
+  --shadow:0 1px 2px rgba(16,20,24,.06), 0 8px 24px rgba(16,20,24,.05);
+  --shadow-lg:0 24px 64px rgba(12,16,20,.18);
+
+  --r-xl:20px;
+  --r-lg:16px;
+  --r:12px;
+  --r-sm:10px;
+
+  --sans:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+  --topbar-h:58px;
+  --tabbar-h:62px;
+  color-scheme:light;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A1420;
+    --surface:#0F1D2D;
+    --surface-2:#152639;
+    --surface-3:#1C3047;
+    --line:#24384F;
+    --line-soft:#1A2B3E;
+    --text:#E6EDF5;
+    --text-2:#A8B7C7;
+    --muted:#7488A0;
+
+    --accent:#3D9BFF;
+    --accent-soft:#122C45;
+    --pos:#17A06A;
+    --pos-soft:#0E2B26;
+    --neg:#D9483F;
+    --neg-soft:#2E1A1C;
+
+    --chart-line:#E6EDF5;
+    --chart-grid:#17293C;
+    --chart-fill:rgba(230,237,245,.05);
+    --chart-axis:#6B809A;
+    --chart-bg:#0A1420;
+
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --shadow-lg:0 24px 64px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+
+:root[data-theme="dark"]{
+  --bg:#0A1420;
+  --surface:#0F1D2D;
+  --surface-2:#152639;
+  --surface-3:#1C3047;
+  --line:#24384F;
+  --line-soft:#1A2B3E;
+  --text:#E6EDF5;
+  --text-2:#A8B7C7;
+  --muted:#7488A0;
+
+  --accent:#3D9BFF;
+  --accent-soft:#122C45;
+  --pos:#17A06A;
+  --pos-soft:#0E2B26;
+  --neg:#D9483F;
+  --neg-soft:#2E1A1C;
+
+  --chart-line:#E6EDF5;
+  --chart-grid:#17293C;
+  --chart-fill:rgba(230,237,245,.05);
+  --chart-axis:#6B809A;
+  --chart-bg:#0A1420;
+
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-lg:0 24px 64px rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+
+/* ---------------- base ---------------- */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+input,select,textarea{font:inherit}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.pos{color:var(--pos)} .neg{color:var(--neg)}
+.hide{display:none!important}
+.only-desk{display:none}
+
+/* ---------------- app shell ---------------- */
+.app{display:flex;flex-direction:column;min-height:100dvh}
+main{flex:1;display:flex;flex-direction:column;width:100%}
+body[data-chrome="app"] main{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom))}
+body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
+body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 86px + env(safe-area-inset-bottom))}
+
+/* ---------------- top bar ---------------- */
+.topbar{
+  position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;
+  padding:0 12px;height:var(--topbar-h);
+  background:var(--bg);border-bottom:1px solid var(--line-soft);
+}
+.topbar .spacer{flex:1}
+.iconbtn{
+  width:36px;height:36px;display:grid;place-items:center;
+  border-radius:var(--r-sm);color:var(--text-2);flex:none;
+}
+.iconbtn:hover{color:var(--text);background:var(--surface-3)}
+.brand{display:flex;align-items:center;gap:9px;margin-right:auto}
+.brand-mark{
+  width:28px;height:28px;border:1px solid var(--accent);border-radius:9px;
+  display:grid;place-items:center;color:var(--accent);
+  font-family:var(--serif);font-size:16px;line-height:1;padding-bottom:2px;
+}
+.brand-name{font-size:13px;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
+.acct{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:0;
+}
+.acct:hover{color:var(--text);background:var(--surface-3)}
+.acct-dot{width:7px;height:7px;border-radius:50%;background:var(--pos);flex:none}
+.acct-kind{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.acct .bal{font-size:13.5px;color:var(--text)}
+.btn-primary{
+  padding:9px 16px;background:var(--pos);color:#fff;border-radius:0;
+  font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap;
+}
+.btn-primary:hover{filter:brightness(1.07)}
+
+/* ---------------- drawer ---------------- */
+.scrim{
+  position:fixed;inset:0;background:rgba(8,10,12,.55);backdrop-filter:blur(2px);
+  z-index:50;opacity:0;pointer-events:none;transition:opacity .22s ease;
+}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;left:0;bottom:0;width:min(74vw,284px);z-index:60;
+  background:var(--surface);border-right:1px solid var(--line-soft);
+  border-radius:0;
+  transform:translateX(-102%);transition:transform .26s cubic-bezier(.32,.72,0,1);
+  display:flex;flex-direction:column;overflow-y:auto;
+}
+.drawer.open{transform:none}
+.drawer-user{display:flex;align-items:center;gap:11px;padding:18px 14px}
+.avatar{
+  width:42px;height:42px;border-radius:50%;background:var(--accent-soft);
+  border:1px solid var(--line);display:grid;place-items:center;
+  color:var(--accent);font-family:var(--serif);font-size:18px;
+}
+.drawer-user b{display:block;font-weight:600;font-size:14px}
+.drawer-user span{color:var(--muted);font-size:12px}
+.drawer-sect{padding:15px 14px 6px}
+.dnav{padding:0 8px 10px;display:flex;flex-direction:column;gap:2px}
+.ditem{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:11px 10px;color:var(--text-2);text-align:left;border-radius:var(--r);
+}
+.ditem:hover{background:var(--surface-2);color:var(--text)}
+.ditem.active{background:var(--surface-3);color:var(--text)}
+.ditem svg{opacity:.75;flex:none}
+.ditem span{flex:1;font-size:13.5px}
+.ditem .chev{opacity:.45}
+.ditem.danger{color:var(--neg)}
+.ditem.danger svg{opacity:.9}
+.ditem.danger:hover{background:var(--neg-soft);color:var(--neg)}
+.switch{
+  width:38px;height:22px;border-radius:999px;background:var(--surface-3);
+  border:1px solid var(--line);position:relative;flex:none;transition:background .18s ease;
+}
+.switch::after{
+  content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--muted);transition:transform .18s ease,background .18s ease;
+}
+.switch[aria-checked="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(16px);background:var(--accent)}
+.drawer-foot{margin-top:auto;padding:10px;border-top:1px solid var(--line-soft)}
+
+/* ---------------- bottom tab bar ---------------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:45;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--bg);border-top:1px solid var(--line-soft);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tabbar a{
+  display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 0 12px;
+  color:var(--muted);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+}
+.tabbar a.active{color:var(--text)}
+.tabbar a.active svg{color:var(--accent)}
+
+/* ---------------- terminal ---------------- */
+.ctabs{display:flex;border-bottom:1px solid var(--line-soft)}
+.ctabs::-webkit-scrollbar{display:none}
+.ctab{
+  flex:1 1 0;text-align:center;padding:13px 6px 12px;font-size:13px;color:var(--muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px;background:none;
+}
+.ctab + .ctab{border-left:1px solid var(--line-soft)}
+.ctab:hover{color:var(--text-2)}
+.ctab.active{color:var(--text);border-bottom-color:var(--pos)}
+
+.instrument{display:flex;align-items:center;gap:12px;padding:4px 16px 14px}
+.inst-mark{
+  width:36px;height:36px;border-radius:var(--r);background:var(--surface-2);
+  border:1px solid var(--line-soft);display:grid;place-items:center;color:var(--text-2);flex:none;
+}
+.inst-name{font-size:13.5px;font-weight:500}
+.inst-price{display:flex;align-items:baseline;gap:8px;margin-top:2px}
+.inst-price .p{font-size:13px}
+.inst-price .c{font-size:11.5px}
+.inst-right{margin-left:auto}
+.chip{
+  display:inline-block;padding:5px 10px;border:1px solid var(--line);
+  border-radius:999px;font-size:11px;color:var(--text-2);background:var(--surface)
+}
+
+.chart-card{
+  margin:0;border:none;border-top:1px solid var(--line-soft);
+  border-bottom:1px solid var(--line-soft);border-radius:0;
+  background:var(--chart-bg);overflow:hidden;position:relative;
+}
+#chart{display:block;width:100%;height:252px}
+.chart-tools{
+  position:absolute;left:10px;bottom:10px;display:flex;flex-direction:column;
+  border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);
+}
+.chart-tools button{width:30px;height:30px;display:grid;place-items:center;color:var(--muted)}
+.chart-tools button+button{border-top:1px solid var(--line-soft)}
+.chart-tools button:hover{color:var(--text);background:var(--surface-2)}
+
+.digits{display:flex;gap:8px;padding:16px 12px;overflow-x:auto;scrollbar-width:none;justify-content:space-between}
+.digits::-webkit-scrollbar{display:none}
+.digit{
+  flex:0 0 auto;width:56px;height:56px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid var(--line-soft);background:var(--surface);
+}
+.digit b{font-family:var(--mono);font-size:15px;font-weight:500;line-height:1}
+.digit i{font-style:normal;font-size:9.5px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.digit.hot{border-color:var(--accent)}
+.digit.hot i{color:var(--accent)}
+.digit.cur{background:var(--surface-3)}
+
+.panel{padding:4px 14px 16px;display:flex;flex-direction:column;gap:14px}
+.seg{display:flex;border-bottom:1px solid var(--line-soft)}
+.seg button{
+  flex:1 1 0;text-align:center;padding:11px 0 12px;font-size:13px;color:var(--muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.seg button + button{border-left:1px solid var(--line-soft)}
+.seg button:hover{color:var(--text-2)}
+.seg button.active{color:var(--text);border-bottom-color:var(--pos)}
+.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cell{
+  background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r);
+  padding:11px 8px;text-align:center;
+}
+.cell .label{display:block;margin-bottom:6px;font-size:9px}
+.cell .v{font-family:var(--mono);font-size:15px}
+.cell .v small{color:var(--muted);font-size:11px;margin-right:2px}
+
+.stake{
+  display:flex;align-items:center;border:1px solid var(--line);
+  border-radius:0;background:var(--surface);overflow:hidden;
+}
+.stake button{width:48px;height:50px;display:grid;place-items:center;color:var(--text-2)}
+.stake button:hover{background:var(--surface-2);color:var(--text)}
+.stake .f{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px}
+.stake input{
+  width:88px;background:none;border:none;outline:none;color:var(--text);
+  text-align:right;font-family:var(--mono);font-size:18px;
+}
+.stake .cur{color:var(--muted);font-size:11px;letter-spacing:.1em}
+.quick{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.quick button{
+  padding:10px 0;border:1px solid var(--line-soft);border-radius:0;
+  background:var(--surface);color:var(--text-2);font-family:var(--mono);font-size:12px;
+}
+.quick button:hover{border-color:var(--line);color:var(--text)}
+.session{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:2px}
+.session .num{color:var(--text-2)}
+
+/* sticky trade CTAs, above the tab bar */
+.trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.tbtn{
+  padding:16px 12px;border-radius:0;text-align:center;color:#fff;
+}
+.tbtn .t{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.tbtn .s{font-size:10.5px;margin-top:3px;font-family:var(--mono);opacity:.85}
+.tbtn.even{background:var(--pos)}
+.tbtn.odd{background:var(--neg)}
+.tbtn:active{filter:brightness(.94)}
+.trade-dock{
+  position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  z-index:44;padding:0;background:var(--bg);
+}
+
+/* ---------------- lists / settings rows ---------------- */
+.list{
+  margin:0 14px;background:var(--surface);border:1px solid var(--line-soft);
+  border-radius:var(--r-lg);overflow:hidden;
+}
+.list + .list{margin-top:14px}
+.row{display:flex;align-items:center;gap:14px;padding:15px 16px;width:100%;text-align:left;color:inherit}
+.row + .row{border-top:1px solid var(--line-soft)}
+.row:hover{background:var(--surface-2)}
+.row .ico{
+  width:36px;height:36px;border-radius:var(--r-sm);background:var(--surface-2);
+  border:1px solid var(--line-soft);display:grid;place-items:center;color:var(--text-2);flex:none;
+}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-weight:500;font-size:13.5px}
+.row .t span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.row .chev{color:var(--muted);flex:none}
+.row.danger .t b{color:var(--neg)}
+.row.danger .ico{color:var(--neg);background:var(--neg-soft);border-color:transparent}
+.badge{
+  font-size:10.5px;padding:4px 9px;border-radius:999px;letter-spacing:.04em;
+  background:var(--surface-3);color:var(--text-2);
+}
+.badge.ok{background:var(--pos-soft);color:var(--pos)}
+.badge.warn{background:var(--accent-soft);color:var(--accent)}
+
+/* ---------------- markets ---------------- */
+.mkt{display:flex;align-items:center;gap:14px;padding:14px 16px;width:100%}
+.mkt + .mkt{border-top:1px solid var(--line-soft)}
+.mkt .n{flex:1;min-width:0}
+.mkt .n b{display:block;font-weight:500;font-size:13.5px}
+.mkt .n span{font-size:10.5px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.mkt .p{text-align:right;font-family:var(--mono);font-size:13px}
+.mkt .p span{display:block;font-size:11px;margin-top:3px}
+
+/* ---------------- page type ---------------- */
+.page{padding:22px 18px 34px;width:100%;max-width:760px;margin:0 auto}
+.page-kicker{color:var(--accent);margin-bottom:12px;display:block}
+.page h1{
+  font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.14;
+  margin:0 0 12px;letter-spacing:-.01em;text-wrap:balance;
+}
+.page h2{font-size:15px;font-weight:600;margin:30px 0 10px}
+.page p{color:var(--text-2);margin:0 0 14px;max-width:66ch;line-height:1.7}
+.lede{font-size:15.5px;line-height:1.75}
+.rule{height:1px;background:var(--line-soft);margin:24px 0}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:18px}
+.card h3{margin:0 0 6px;font-size:14px;font-weight:600}
+.card p{margin:0;font-size:13px;color:var(--muted);line-height:1.65}
+.tool{display:flex;align-items:flex-start;gap:14px}
+.tool > svg{color:var(--accent);flex:none;margin-top:2px}
+.tool b{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+.tool p{margin:0;font-size:13px;color:var(--muted);line-height:1.65}
+.tool .chip{margin-top:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line-soft);border-radius:0;padding:16px}
+.stat b{display:block;font-family:var(--mono);font-size:23px;font-weight:500;margin-bottom:6px}
+.stat span{font-size:11.5px;color:var(--muted);line-height:1.5;display:block}
+.empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;padding:64px 20px;text-align:center;
+}
+.empty svg{color:var(--line);margin-bottom:4px}
+.empty b{font-weight:600;font-size:14px}
+.empty span{color:var(--muted);font-size:12.5px}
+.page-head{padding:18px 18px 10px}
+.page-head h1{font-family:var(--serif);font-weight:400;font-size:28px;margin:0 0 4px;letter-spacing:-.01em}
+.page-head p{color:var(--muted);font-size:13px;margin:0;max-width:52ch}
+
+/* ---------------- forms / auth ---------------- */
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-size:12px;color:var(--text-2);font-weight:500}
+.input{
+  width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--surface);color:var(--text);outline:none;
+}
+.input::placeholder{color:var(--muted)}
+.input:focus{border-color:var(--accent)}
+.input-wrap{position:relative;display:flex;align-items:center}
+.input-wrap .input{padding-right:44px}
+.input-wrap button{position:absolute;right:6px;width:34px;height:34px;display:grid;place-items:center;color:var(--muted);border-radius:var(--r-sm)}
+.hint{font-size:11.5px;color:var(--muted)}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  padding:14px;border-radius:var(--r);font-weight:600;font-size:14px;
+}
+.btn-fill{background:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn-fill{color:#06182B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn-fill{color:#06182B}}
+.btn-fill:hover{filter:brightness(1.07)}
+.btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--text)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-pos{background:var(--pos);color:#fff}
+.btn-neg{background:var(--neg);color:#fff}
+
+.auth{
+  min-height:100dvh;display:flex;flex-direction:column;justify-content:center;
+  padding:32px 20px 40px;max-width:420px;margin:0 auto;width:100%;
+}
+.auth .brand{margin:0 0 26px;justify-content:flex-start}
+.auth h1{font-family:var(--serif);font-weight:400;font-size:30px;margin:0 0 8px;letter-spacing:-.01em}
+.auth > p{color:var(--muted);margin:0 0 24px;font-size:13.5px}
+.auth form{display:flex;flex-direction:column;gap:16px}
+.auth-card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:0;padding:24px 22px;
+}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11.5px;margin:18px 0}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.auth-foot{text-align:center;margin-top:22px;font-size:13px;color:var(--muted)}
+.auth-foot a{color:var(--accent);font-weight:500}
+.link{color:var(--accent);font-size:12.5px;font-weight:500}
+.checkline{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--muted);line-height:1.55}
+.checkline input{margin-top:2px;accent-color:var(--accent);width:16px;height:16px}
+
+.otp{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.otp input{
+  aspect-ratio:1;text-align:center;font-family:var(--mono);font-size:18px;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--surface);
+  color:var(--text);outline:none;min-width:0;
+}
+.otp input:focus{border-color:var(--accent)}
+.meter{display:flex;gap:5px;margin-top:2px}
+.meter i{flex:1;height:3px;border-radius:2px;background:var(--surface-3)}
+.meter i.on{background:var(--pos)}
+
+/* ---------------- modal / sheet ---------------- */
+.modal{
+  position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+  padding:18px;opacity:0;pointer-events:none;transition:opacity .2s ease;
+}
+.modal.open{opacity:1;pointer-events:auto}
+.modal-bg{position:absolute;inset:0;background:rgba(8,10,12,.55);backdrop-filter:blur(2px)}
+.modal-box{
+  position:relative;width:100%;max-width:420px;background:var(--surface);
+  border:1px solid var(--line);border-radius:0;
+  padding:18px 18px 20px;
+  transform:translateY(10px) scale(.985);transition:transform .24s cubic-bezier(.32,.72,0,1);
+  box-shadow:var(--shadow-lg);max-height:86dvh;overflow-y:auto;
+}
+.modal.open .modal-box{transform:none}
+.grabber{display:none}
+.grabber{width:38px;height:4px;border-radius:2px;background:var(--line);margin:8px auto 14px}
+.modal-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:0 2px}
+.modal-head h2{font-size:16px;font-weight:600;margin:0}
+.modal-head p{font-size:12.5px;color:var(--muted);margin:3px 0 0}
+.modal-head .iconbtn{margin-left:auto}
+.method{
+  display:flex;align-items:center;gap:14px;width:100%;padding:14px;text-align:left;
+  border:1px solid var(--line-soft);border-radius:0;background:var(--surface);
+}
+.method + .method{margin-top:8px}
+.method:hover{border-color:var(--line);background:var(--surface-2)}
+.method .ico{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:var(--accent-soft);border:none;flex:none;color:var(--accent);
+}
+.method .t{flex:1}
+.method .t b{display:block;font-size:13.5px;font-weight:600}
+.method .t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* ---------------- chat ---------------- */
+.chat{display:flex;flex-direction:column;flex:1;min-height:0}
+.chat-head{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-bottom:1px solid var(--line-soft);background:var(--bg);
+}
+.chat-head .avatar{width:36px;height:36px;font-size:15px}
+.chat-head b{display:block;font-size:13.5px;font-weight:600}
+.chat-head span{font-size:11.5px;color:var(--pos);display:flex;align-items:center;gap:6px}
+.chat-head span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--pos)}
+.chat-log{flex:1;padding:18px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.msg{max-width:78%;padding:11px 14px;border-radius:var(--r-lg);font-size:13.5px;line-height:1.6}
+.msg.them{background:var(--surface);border:1px solid var(--line-soft);border-bottom-left-radius:4px;align-self:flex-start}
+.msg.me{background:var(--accent);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+:root[data-theme="dark"] .msg.me{color:#06182B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .msg.me{color:#06182B}}
+.msg .time{display:block;font-size:10px;opacity:.6;margin-top:5px;font-family:var(--mono)}
+.chat-day{text-align:center;font-size:11px;color:var(--muted);margin:4px 0}
+.chat-bar{
+  position:sticky;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 14px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line-soft);background:var(--bg);
+}
+.chat-bar .input{border-radius:999px}
+.chat-send{
+  width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;flex:none;
+}
+:root[data-theme="dark"] .chat-send{color:#06182B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chat-send{color:#06182B}}
+
+/* ---------------- misc ---------------- */
+.summary{
+  margin:14px;padding:18px;border-radius:var(--r-lg);
+  background:var(--surface);border:1px solid var(--line-soft);
+}
+.summary .label{display:block;margin-bottom:6px}
+.summary .big{font-family:var(--mono);font-size:28px;font-variant-numeric:tabular-nums}
+.summary .sub{font-size:12px;color:var(--muted);margin-top:6px}
+.kv{display:flex;justify-content:space-between;gap:16px;font-size:13px;padding:9px 0}
+.kv + .kv{border-top:1px solid var(--line-soft)}
+.kv span{color:var(--muted)}
+.kv b{font-weight:500;font-family:var(--mono)}
+.stack{display:flex;flex-direction:column;gap:14px;padding:14px}
+.toast{
+  position:fixed;left:50%;bottom:calc(var(--tabbar-h) + 26px);transform:translate(-50%,10px);
+  z-index:90;background:var(--text);color:var(--bg);padding:11px 18px;border-radius:999px;
+  font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;
+}
+.toast.open{opacity:1;transform:translate(-50%,0)}
+footer{border-top:1px solid var(--line-soft);padding:24px 18px 32px;color:var(--muted);font-size:11.5px}
+footer .fl{display:flex;flex-wrap:wrap;gap:14px 20px;margin-bottom:16px}
+footer a:hover{color:var(--text-2)}
+
+/* ---------------- desktop ---------------- */
+@media (min-width:900px){
+  .only-desk{display:flex}
+  .only-mob{display:none!important}
+  body[data-chrome="app"] main,
+  body[data-chrome="app"].has-sticky main{padding-bottom:0}
+  .tabbar{display:none}
+  .trade-dock{position:static;padding:0;border:none;background:none;margin-top:14px}
+  .topbar{padding:0 22px;height:64px;gap:20px}
+  .deskmenu{display:flex;gap:2px;margin-right:auto}
+  .deskmenu a{padding:8px 13px;border-radius:999px;color:var(--text-2);font-size:13px}
+  .deskmenu a:hover{background:var(--surface-2);color:var(--text)}
+  .deskmenu a.active{background:var(--surface-3);color:var(--text)}
+  .brand{margin-right:0}
+  .terminal{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:16px;flex:1;align-items:start}
+  .terminal .col-mid{min-width:0}
+  #chart{height:min(52vh,430px)}
+  .panel{
+    background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);
+    padding:16px;position:sticky;top:calc(64px + 16px);
+  }
+  .page{padding:44px 32px 56px}
+  .page h1{font-size:44px}
+  .cards{flex-direction:row}
+  .cards .card{flex:1}
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .list,.summary,.chart-card{margin-left:0;margin-right:0}
+  .shell{max-width:760px;margin:0 auto;width:100%;padding:0 20px}
+  .modal{align-items:center;padding:20px}
+  .modal-box{border-radius:var(--r-xl);padding-bottom:20px}
+  .grabber{display:none}
+  .chat-log{padding:24px}
+}
+
+/* ---------------- drawer disclosure groups ---------------- */
+.dgroup{display:flex;flex-direction:column}
+.dgroup-head .caret{transition:transform .2s ease}
+.dgroup.open > .dgroup-head{color:var(--text)}
+.dgroup.open > .dgroup-head .caret{transform:rotate(180deg)}
+.dgroup-body{display:none;flex-direction:column;gap:2px;padding:2px 0 6px 10px;margin-left:8px;border-left:1px solid var(--line-soft)}
+.dgroup.open > .dgroup-body{display:flex}
+.dgroup-body .ditem{padding:10px 12px}
+.dgroup-body .ditem span{font-size:13px}
+.ditem .chev{display:flex;opacity:.45}
+.drawer-user{color:inherit}
+.drawer-user > svg{margin-left:auto;color:var(--muted)}
+
+/* ---------------- modal internals ---------------- */
+.modal-form{display:flex;flex-direction:column;gap:15px;padding:2px 2px 4px}
+.modal-form .quick{grid-template-columns:repeat(5,1fr);margin-top:2px}
+.modal-form .list{margin:0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.input-wrap .suffix{position:absolute;right:14px;color:var(--muted);font-size:12px;pointer-events:none}
+.address{display:flex;align-items:center;gap:10px;word-break:break-all;font-size:12px}
+.address button{margin-left:auto;color:var(--accent);font-size:12px;font-family:var(--sans);flex:none}
+.totals{border-top:1px solid var(--line-soft);padding-top:4px}
+.balance-strip{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 14px;margin-bottom:12px;border-radius:var(--r);
+  background:var(--surface-2);border:1px solid var(--line-soft);
+}
+.balance-strip b{font-size:15px}
+.notice{
+  display:flex;gap:11px;padding:12px 13px;border-radius:var(--r);
+  background:var(--accent-soft);color:var(--text-2);font-size:12.5px;line-height:1.55;
+}
+.notice svg{color:var(--accent);flex:none;margin-top:1px}
+.notice .link{background:none;padding:0;font-family:inherit}
+.dropzone{
+  display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;
+  padding:26px 18px;border:1px dashed var(--line);border-radius:var(--r-lg);background:var(--surface-2);
+}
+.dropzone > svg{color:var(--accent);margin-bottom:2px}
+.dropzone b{font-size:14px}
+.dropzone span{color:var(--muted);font-size:12.5px;max-width:34ch}
+.dropzone .btn{width:auto;padding:10px 18px;margin-top:6px}
+
+/* ---------------- top bar zones ---------------- */
+.topbar-title{
+  flex:1;text-align:center;font-size:15px;font-weight:600;letter-spacing:-.01em;
+}
+.wordmark{
+  font-size:14px;letter-spacing:.24em;text-transform:uppercase;font-weight:600;
+  padding-right:6px;
+}
+.topbar .acct{flex:none}
+.topbar .iconbtn[aria-hidden="true"]{pointer-events:none}
+
+/* ---------------- sign-in transition ---------------- */
+.splash{
+  position:fixed;inset:0;z-index:100;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .3s ease;
+}
+.splash.open{opacity:1}
+.splash-inner{display:flex;flex-direction:column;align-items:center;gap:22px;padding:24px}
+.pulse{position:relative;width:56px;height:56px}
+.pulse i{
+  position:absolute;inset:0;border-radius:50%;border:1px solid var(--accent);
+  opacity:0;animation:ring 1.9s cubic-bezier(.2,.6,.3,1) infinite;
+}
+.pulse i:nth-child(2){animation-delay:.28s}
+.pulse i:nth-child(3){animation-delay:.56s}
+.pulse::after{
+  content:"";position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+  border-radius:50%;background:var(--accent);
+}
+@keyframes ring{
+  0%{transform:scale(.2);opacity:0}
+  35%{opacity:.9}
+  100%{transform:scale(1);opacity:0}
+}
+.splash-word{
+  font-size:17px;letter-spacing:.42em;text-transform:uppercase;font-weight:600;
+  padding-left:.42em;animation:rise .5s ease both;
+}
+.splash-msg{color:var(--muted);font-size:13px;animation:rise .5s .1s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pulse i{animation:none;opacity:.5;transform:scale(1)}}
+
+/* ---------------- auth header ---------------- */
+.auth-head{text-align:center;margin-bottom:26px}
+.auth-head .wordmark{
+  display:inline-block;font-size:15px;letter-spacing:.34em;padding-left:.34em;margin-bottom:20px;
+}
+.auth-head h1{font-family:var(--serif);font-weight:400;font-size:31px;margin:0 0 8px;letter-spacing:-.01em}
+.auth-head p{color:var(--muted);margin:0;font-size:13.5px}
+.auth .auth-foot{margin-top:20px}
+
+/* ---------------- account switcher ---------------- */
+.choices{display:flex;flex-direction:column}
+.choice{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  padding:15px 2px;color:var(--text-2);
+}
+.choice + .choice{border-top:1px solid var(--line-soft)}
+.choice:hover{color:var(--text)}
+.choice .dot{
+  width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line);
+  flex:none;position:relative;
+}
+.choice.selected .dot{border-color:var(--accent)}
+.choice.selected .dot::after{
+  content:"";position:absolute;inset:3.5px;border-radius:50%;background:var(--accent);
+}
+.choice .c-t{flex:1;min-width:0}
+.choice .c-t b{display:block;font-size:14px;font-weight:600;color:var(--text)}
+.choice .c-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.choice .c-v{font-size:14px;color:var(--text)}
+
+/* ---------------- notification bell ---------------- */
+.iconbtn.bell{position:relative}
+.iconbtn.bell i{
+  position:absolute;top:7px;right:8px;width:6px;height:6px;border-radius:50%;
+  background:var(--neg);border:1.5px solid var(--bg);
+}
+
+</style>
+
+<div class="app" id="app"></div>
+
+<script>
+/* ============================================================
+   Nexas — modal definitions
+   Each modal is a list of steps. A step returns markup for the
+   sheet body; the engine in app.js handles the shell, the back
+   and close controls, and step transitions.
+     data-goto="stepId"      advance to another step
+     data-set="method:usdt"  write a value into modal state
+     data-done="message"     submit and close with a toast
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var eye = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>';
+
+  function field(id, label, attrs, hint) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label>' +
+      '<input class="input" id="' + id + '" ' + (attrs || '') + '>' +
+      (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+  }
+  function secret(id, label, placeholder, meter) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label>' +
+      '<div class="input-wrap"><input class="input" id="' + id + '" type="password" placeholder="' + placeholder + '">' +
+      '<button type="button" data-reveal aria-label="Show password">' + eye + '</button></div>' +
+      (meter ? '<div class="meter"><i></i><i></i><i></i><i></i></div>' : '') + '</div>';
+  }
+  function method(value, iconName, name, note) {
+    return '<button class="method" data-set="method:' + value + '" data-goto="form">' +
+      '<span class="ico">' + window.NexIcon(iconName, 19) + '</span>' +
+      '<span class="t"><b>' + name + '</b><span>' + note + '</span></span>' +
+      window.NexIcon('chev', 16) + '</button>';
+  }
+  function submit(label, done) {
+    return '<button class="btn btn-fill" type="button" data-done="' + done + '">' + label + '</button>';
+  }
+  var NAMES = { mpesa: 'M-Pesa', card: 'Card', usdt: 'USDT' };
+
+  window.NexModals = {
+
+    /* ---------------- account switcher ---------------- */
+    switch: {
+      steps: {
+        list: {
+          title: 'Switch account',
+          sub: 'Practise with virtual funds, or trade your real balance.',
+          body: function () {
+            return '<div class="choices">' +
+              '<button class="choice selected" data-done="Staying on the real account">' +
+                '<span class="dot"></span>' +
+                '<span class="c-t"><b>Real</b><span>USD · live funds</span></span>' +
+                '<span class="c-v num">2,480.00</span></button>' +
+              '<button class="choice" data-done="Switched to the demo account">' +
+                '<span class="dot"></span>' +
+                '<span class="c-t"><b>Demo</b><span>USD · practice funds</span></span>' +
+                '<span class="c-v num">10,000.00</span></button>' +
+            '</div>' +
+            '<p class="hint" style="margin:14px 2px 0">Open positions stay with the account they were taken on.</p>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- profile ---------------- */
+    profile: {
+      steps: {
+        form: {
+          title: 'Profile and name',
+          sub: 'Your name must match the ID you verify with.',
+          body: function () {
+            return '<div class="modal-form">' +
+              field('firstName', 'First name', 'value="Amara" autocomplete="given-name"') +
+              field('lastName', 'Last name', 'value="Kimani" autocomplete="family-name"') +
+              field('displayName', 'Display name', 'value="Amara K."', 'Shown in live chat and copy trading.') +
+              submit('Save changes', 'Name updated') +
+              '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- password ---------------- */
+    password: {
+      steps: {
+        form: {
+          title: 'Update password',
+          sub: 'You stay signed in on this device.',
+          body: function () {
+            return '<div class="modal-form">' +
+              secret('currentPassword', 'Current password', '••••••••') +
+              secret('newPassword', 'New password', 'At least 8 characters', true) +
+              secret('confirmPassword', 'Confirm new password', 'Repeat new password') +
+              '<span class="hint">Use eight characters or more, with a number and a symbol.</span>' +
+              submit('Update password', 'Password updated') +
+              '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- identity ---------------- */
+    verify: {
+      steps: {
+        list: {
+          title: 'Verify identity',
+          sub: 'Reviewed within an hour. Needed before your first withdrawal.',
+          body: function () {
+            return '<div class="modal-form">' +
+              '<div class="list" style="margin:0">' +
+                '<div class="row"><span class="ico" style="color:var(--pos);background:var(--pos-soft);border-color:transparent">' +
+                  window.NexIcon('check', 18) + '</span>' +
+                  '<span class="t"><b>Email address</b><span>am***a@mail.com</span></span>' +
+                  '<span class="badge ok">Done</span></div>' +
+                '<button class="row" data-goto="upload" data-set="doc:ID document">' +
+                  '<span class="ico">' + window.NexIcon('idcard', 18) + '</span>' +
+                  '<span class="t"><b>Government ID</b><span>Passport, national ID or licence</span></span>' +
+                  '<span class="badge warn">Required</span></button>' +
+                '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
+                  '<span class="ico">' + window.NexIcon('card', 18) + '</span>' +
+                  '<span class="t"><b>Proof of address</b><span>Bill or statement, last 3 months</span></span>' +
+                  '<span class="badge warn">Required</span></button>' +
+              '</div></div>';
+          }
+        },
+        upload: {
+          title: 'Upload document',
+          sub: 'JPG, PNG or PDF under 8 MB. All four corners visible.',
+          body: function (state) {
+            return '<div class="modal-form">' +
+              '<div class="dropzone">' +
+                window.NexIcon('up', 22) +
+                '<b>' + (state.doc || 'Document') + '</b>' +
+                '<span>Take a photo or choose a file from this device</span>' +
+                '<button class="btn btn-ghost" type="button" data-done="Upload is not wired up in this draft">Choose file</button>' +
+              '</div>' +
+              submit('Submit for review', 'Submitted — we will email you within the hour') +
+              '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- deposit ---------------- */
+    deposit: {
+      steps: {
+        choose: {
+          title: 'Deposit funds',
+          sub: 'Funds land in your real account. No fee from Nexas.',
+          body: function () {
+            return method('mpesa', 'phone', 'M-Pesa', 'Instant · KES 100 – 150,000') +
+              method('card', 'card', 'Card', 'Visa / Mastercard · 1–3 minutes') +
+              method('usdt', 'coin', 'USDT', 'TRC-20 and ERC-20 · from $10');
+          }
+        },
+        form: {
+          title: function (state) { return 'Deposit with ' + (NAMES[state.method] || 'M-Pesa'); },
+          sub: 'Funds usually appear within two minutes.',
+          body: function (state) {
+            var m = state.method || 'mpesa', inner = '';
+
+            if (m === 'mpesa') {
+              inner = field('mpesaPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"',
+                'You will receive an STK push. Enter your PIN to confirm.');
+            } else if (m === 'card') {
+              inner = field('cardNumber', 'Card number', 'placeholder="4242 4242 4242 4242" inputmode="numeric" class="input num"') +
+                '<div class="pair">' +
+                field('cardExp', 'Expiry', 'placeholder="MM / YY" inputmode="numeric"') +
+                field('cardCvc', 'CVC', 'placeholder="123" inputmode="numeric"') +
+                '</div>';
+            } else {
+              inner = '<div class="field"><label for="network">Network</label>' +
+                '<select class="input" id="network"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
+                '<div class="field"><label>Deposit address</label>' +
+                '<div class="input num address">TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu' +
+                '<button type="button" data-copy>Copy</button></div>' +
+                '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
+            }
+
+            return '<div class="modal-form">' +
+              '<div class="field"><label for="amount">Amount</label>' +
+                '<div class="input-wrap"><input class="input num" id="amount" value="50" inputmode="decimal">' +
+                '<span class="suffix">USD</span></div>' +
+                '<div class="quick" data-amount-for="amount">' +
+                  '<button type="button" data-amount="10">$10</button>' +
+                  '<button type="button" data-amount="25">$25</button>' +
+                  '<button type="button" data-amount="50">$50</button>' +
+                  '<button type="button" data-amount="100">$100</button>' +
+                  '<button type="button" data-amount="250">$250</button>' +
+                '</div></div>' +
+              inner +
+              '<div class="totals"><div class="kv"><span>Fee</span><b>$0.00</b></div>' +
+              '<div class="kv"><span>Credited</span><b data-total="amount">$50.00</b></div></div>' +
+              submit('Confirm deposit', 'Deposit request sent') +
+              '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- withdraw ---------------- */
+    withdraw: {
+      steps: {
+        choose: {
+          title: 'Withdraw funds',
+          sub: 'Reviewed and paid within one hour.',
+          body: function () {
+            return '<div class="balance-strip"><span class="label">Available</span><b class="num">2,480.00 USD</b></div>' +
+              method('mpesa', 'phone', 'M-Pesa', 'To the number on your profile') +
+              method('usdt', 'coin', 'USDT', 'TRC-20 · network fee applies');
+          }
+        },
+        form: {
+          title: function (state) { return 'Withdraw to ' + (NAMES[state.method] || 'M-Pesa'); },
+          sub: 'Minimum $10. One free withdrawal per day.',
+          body: function (state) {
+            var inner = state.method === 'usdt'
+              ? '<div class="field"><label for="wNetwork">Network</label>' +
+                '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option></select></div>' +
+                field('wAddress', 'Wallet address', 'placeholder="T..." class="input num"', 'Check carefully. Transfers cannot be reversed.')
+              : field('wPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"', 'Must match the number registered to your verified name.');
+
+            return '<div class="modal-form">' +
+              '<div class="field"><label for="wAmount">Amount</label>' +
+                '<div class="input-wrap"><input class="input num" id="wAmount" value="100" inputmode="decimal">' +
+                '<span class="suffix">USD</span></div></div>' +
+              inner +
+              '<div class="totals"><div class="kv"><span>Network fee</span><b>$1.00</b></div>' +
+              '<div class="kv"><span>You receive</span><b data-total="wAmount" data-fee="1">$99.00</b></div></div>' +
+              '<div class="notice">' + window.NexIcon('shield', 17) +
+                '<span>Identity verification is required before your first payout. ' +
+                '<button type="button" class="link" data-open="verify">Verify now</button></span></div>' +
+              submit('Request withdrawal', 'Withdrawal submitted for review') +
+              '</div>';
+          }
+        }
+      }
+    }
+  };
+})();
+
+</script>
+<script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = {"index":{"attrs":{"data-page":"trade","data-chrome":"app"},"title":"Nexas — Terminal","html":"\r\n    <div class=\"terminal\">\r\n\r\n      <div class=\"col-mid\">\r\n        <div class=\"ctabs\">\r\n          <button class=\"ctab\">Matches / Differs</button>\r\n          <button class=\"ctab active\">Even / Odd</button>\r\n          <button class=\"ctab\">Over / Under</button>\r\n        </div>\r\n\r\n        <div class=\"instrument\">\r\n          <div class=\"inst-mark\">\r\n            <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg>\r\n          </div>\r\n          <div>\r\n            <div class=\"inst-name\">Volatility 10 (1s) Index</div>\r\n            <div class=\"inst-price\">\r\n              <span class=\"p num\" id=\"px\">9601.01</span>\r\n              <span class=\"c num pos\" id=\"pxChg\">+0.01 (0.00%)</span>\r\n            </div>\r\n          </div>\r\n          <div class=\"inst-right\"><span class=\"chip\">1 tick</span></div>\r\n        </div>\r\n\r\n        <div class=\"chart-card\">\r\n          <canvas id=\"chart\"></canvas>\r\n          <div class=\"chart-tools\">\r\n            <button aria-label=\"Zoom in\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg></button>\r\n            <button aria-label=\"Reset zoom\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 109-9\"></path><path d=\"M3 4v5h5\"></path></svg></button>\r\n            <button aria-label=\"Zoom out\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg></button>\r\n          </div>\r\n        </div>\r\n\r\n        <div class=\"digits\" id=\"digits\"></div>\r\n      </div>\r\n\r\n      <div class=\"col-right\">\r\n        <div class=\"panel\">\r\n          <div>\r\n            <div class=\"label\" style=\"margin-bottom:9px\">Trade mode · runs until target hit</div>\r\n            <div class=\"seg\">\r\n              <button class=\"active\">Auto</button>\r\n              <button>Manual</button>\r\n            </div>\r\n          </div>\r\n\r\n          <div class=\"seg\">\r\n            <button class=\"active\">Stake</button>\r\n            <button>Payout</button>\r\n          </div>\r\n\r\n          <div class=\"stake\">\r\n            <button id=\"minus\" aria-label=\"Decrease stake\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg></button>\r\n            <div class=\"f\">\r\n              <input id=\"stake\" value=\"10\" inputmode=\"decimal\" aria-label=\"Stake\">\r\n              <span class=\"cur\">USD</span>\r\n            </div>\r\n            <button id=\"plus\" aria-label=\"Increase stake\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg></button>\r\n          </div>\r\n\r\n          <div class=\"quick\" id=\"quick\">\r\n            <button data-add=\"1\">+1</button>\r\n            <button data-add=\"5\">+5</button>\r\n            <button data-add=\"10\">+10</button>\r\n            <button data-add=\"25\">+25</button>\r\n            <button data-add=\"50\">+50</button>\r\n          </div>\r\n\r\n          <div class=\"session\"><span>Last session</span><span class=\"num\">0 trades · 0W / 0L</span></div>\r\n          <div class=\"session\"><span>Session P/L</span><span class=\"num pos\">+0.00 USD</span></div>\r\n        </div>\r\n\r\n        <div class=\"trade-dock\">\r\n          <div class=\"trade-actions\">\r\n            <button class=\"tbtn even\" data-side=\"Even\">\r\n              <div class=\"t\">Even</div>\r\n              <div class=\"s\">Payout <span data-payout>19.53</span> · 95.30%</div>\r\n            </button>\r\n            <button class=\"tbtn odd\" data-side=\"Odd\">\r\n              <div class=\"t\">Odd</div>\r\n              <div class=\"s\">Payout <span data-payout>19.53</span> · 95.30%</div>\r\n            </button>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n    </div>\r\n  ","script":""},"markets":{"attrs":{"data-page":"markets","data-chrome":"app"},"title":"Nexas — Markets","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"page-head\">\r\n        <h1>Markets</h1>\r\n        <p>Synthetic indices, generated continuously and open every hour of every day.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">All</button>\r\n        <button class=\"ctab\">Volatility</button>\r\n        <button class=\"ctab\">Boom &amp; Crash</button>\r\n        <button class=\"ctab\">Step</button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 10 (1s) Index</b><span>Synthetic · 1 tick</span></span>\r\n          <span class=\"p\"><span class=\"num\">9,601.01</span><span class=\"num pos\">+0.01%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 25 Index</b><span>Synthetic · 2 ticks</span></span>\r\n          <span class=\"p\"><span class=\"num\">2,748.36</span><span class=\"num neg\">−0.42%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 50 Index</b><span>Synthetic · 2 ticks</span></span>\r\n          <span class=\"p\"><span class=\"num\">1,204.77</span><span class=\"num pos\">+0.18%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 75 (1s) Index</b><span>Synthetic · 1 tick</span></span>\r\n          <span class=\"p\"><span class=\"num\">43,219.04</span><span class=\"num pos\">+1.06%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Volatility 100 Index</b><span>Synthetic · 2 ticks</span></span>\r\n          <span class=\"p\"><span class=\"num\">7,788.92</span><span class=\"num neg\">−0.31%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Boom 500 Index</b><span>Synthetic · spike up</span></span>\r\n          <span class=\"p\"><span class=\"num\">6,114.50</span><span class=\"num pos\">+0.64%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Crash 1000 Index</b><span>Synthetic · spike down</span></span>\r\n          <span class=\"p\"><span class=\"num\">3,902.18</span><span class=\"num neg\">−0.77%</span></span></a>\r\n        <a class=\"mkt\" href=\"index.html\"><span class=\"inst-mark\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l4-6 4 3 4-8 6 11\"></path></svg></span>\r\n          <span class=\"n\"><b>Step Index</b><span>Synthetic · fixed step</span></span>\r\n          <span class=\"p\"><span class=\"num\">9,143.60</span><span class=\"num pos\">+0.05%</span></span></a>\r\n      </div>\r\n      <div style=\"height:20px\"></div>\r\n    </div>\r\n  ","script":""},"positions":{"attrs":{"data-page":"positions","data-chrome":"app"},"title":"Nexas — Positions","html":"\r\n    <div class=\"shell\" style=\"display:flex;flex-direction:column;flex:1\">\r\n      <div class=\"page-head\">\r\n        <h1>Positions</h1>\r\n        <p>Everything you have open, closed and settled.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">Open</button>\r\n        <button class=\"ctab\">Closed</button>\r\n        <button class=\"ctab\">Transactions</button>\r\n      </div>\r\n\r\n      <div class=\"summary\">\r\n        <span class=\"label\">Session profit / loss</span>\r\n        <div class=\"big pos\">+0.00</div>\r\n        <div class=\"sub\">0 trades today · 0 won · 0 lost</div>\r\n      </div>\r\n\r\n      <div class=\"empty\">\r\n        <svg width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"></rect><path d=\"M3 9h18M9 9v11\"></path></svg>\r\n        <b>No open positions</b>\r\n        <span>Contracts you take will be listed here.</span>\r\n      </div>\r\n    </div>\r\n  ","script":""},"responsible":{"attrs":{"data-page":"responsible","data-chrome":"app"},"title":"Nexas — Responsible Trading","html":"\r\n    <div class=\"page\">\r\n      <span class=\"label page-kicker\">Responsible trading</span>\r\n      <h1>Trade with intent, not impulse.</h1>\r\n      <p class=\"lede\">Trading carries real risk. Nexas gives you the controls to decide, in advance, how much time and money you are willing to commit — and holds you to it.</p>\r\n\r\n      <div class=\"rule\"></div>\r\n\r\n      <h2>Set your limits before you trade</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\r\n          <div>\r\n            <b>Session duration</b>\r\n            <p>Cap how long a single session can run. The terminal closes out and locks when the clock ends.</p>\r\n            <span class=\"chip\">Currently 60 minutes</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\r\n          <div>\r\n            <b>Loss and stake ceilings</b>\r\n            <p>Daily, weekly and monthly ceilings on total stake and net loss. Any increase takes 24 hours to apply.</p>\r\n            <span class=\"chip\">Daily loss $250</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"></rect><path d=\"M4 10h16M8 3v4M16 3v4\"></path></svg>\r\n          <div>\r\n            <b>Cooling-off and self-exclusion</b>\r\n            <p>Pause new positions for 24 hours, or close access entirely for a period you choose. Withdrawals stay open.</p>\r\n            <span class=\"chip\">Not active</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <h2>What the numbers actually look like</h2>\r\n      <div class=\"stats\">\r\n        <div class=\"stat\"><b>70%</b><span>of retail accounts lose money over a twelve-month period</span></div>\r\n        <div class=\"stat\"><b>1 in 5</b><span>traders exceed the deposit they originally planned</span></div>\r\n        <div class=\"stat\"><b>24h</b><span>delay applied to any increase in your limits</span></div>\r\n        <div class=\"stat\"><b>$0</b><span>cost to set, lower or activate any control</span></div>\r\n      </div>\r\n\r\n      <h2>Signs worth taking seriously</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>Chasing losses</h3><p>Raising stake size to recover a previous loss rather than following a plan.</p></div>\r\n        <div class=\"card\"><h3>Borrowed funds</h3><p>Trading with money set aside for rent, bills, school fees or credit repayment.</p></div>\r\n        <div class=\"card\"><h3>Concealment</h3><p>Hiding the extent of your trading from people close to you.</p></div>\r\n      </div>\r\n\r\n      <h2>Get support</h2>\r\n      <p>If trading has stopped feeling like a decision and started feeling like a compulsion, speak to someone independent of us. Our team can also apply a self-exclusion on your behalf at any time, without questions.</p>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>GamCare</h3><p>Free, confidential support and live chat, available around the clock.</p></div>\r\n        <div class=\"card\"><h3>Gambling Therapy</h3><p>Multilingual online support for people affected worldwide.</p></div>\r\n        <div class=\"card\"><h3>Nexas support</h3><p>Reach us in-app at any hour to apply limits or close an account.</p></div>\r\n      </div>\r\n\r\n      <div style=\"margin-top:22px\"><a class=\"btn btn-ghost\" href=\"chat.html\">Talk to our team</a></div>\r\n    </div>\r\n\r\n    <footer>\r\n      <div class=\"fl\">\r\n        <a href=\"responsible.html\">Responsible Trading</a>\r\n        <a href=\"#\">Risk Disclosure</a>\r\n        <a href=\"#\">Terms</a>\r\n        <a href=\"#\">Privacy</a>\r\n        <a href=\"#\">Complaints</a>\r\n        <a href=\"#\">Security</a>\r\n      </div>\r\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Past results do not indicate future outcomes.</p>\r\n    </footer>\r\n  ","script":""},"account":{"attrs":{"data-page":"account","data-chrome":"app","data-back":"index.html","data-title":"Account"},"title":"Nexas — Account","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"summary\" style=\"display:flex;align-items:center;gap:14px\">\r\n        <div class=\"avatar\" style=\"width:52px;height:52px;font-size:22px\">A</div>\r\n        <div style=\"flex:1;min-width:0\">\r\n          <div style=\"font-weight:600;font-size:16px\">Amara Kimani</div>\r\n          <div style=\"color:var(--muted);font-size:12.5px\">am***a@mail.com</div>\r\n        </div>\r\n        <span class=\"badge warn\">Unverified</span>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <button class=\"row\" data-open=\"profile\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"></rect><path d=\"M7 10h3M7 14h6M15 9h3v4h-3z\"></path></svg></span>\r\n          <span class=\"t\"><b>Change name</b><span>Amara Kimani</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"password\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V7a4 4 0 118 0v4\"></path></svg></span>\r\n          <span class=\"t\"><b>Update password</b><span>Last changed 4 months ago</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"verify\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path><path d=\"M9 12l2 2 4-4\"></path></svg></span>\r\n          <span class=\"t\"><b>Verify identity</b><span>Required before your first withdrawal</span></span>\r\n          <span class=\"badge warn\">2 steps left</span>\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"row danger\" href=\"login.html\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4\"></path><path d=\"M16 17l5-5-5-5M21 12H9\"></path></svg></span>\r\n          <span class=\"t\"><b>Log out</b></span>\r\n        </a>\r\n      </div>\r\n      <div style=\"height:24px\"></div>\r\n    </div>\r\n  ","script":""},"chat":{"attrs":{"data-page":"chat","data-chrome":"app","data-back":"account.html","data-title":"Live chat"},"title":"Nexas — Live Chat","html":"\r\n    <div class=\"chat\">\r\n      <div class=\"chat-head\">\r\n        <div class=\"avatar\">J</div>\r\n        <div>\r\n          <b>Joseph · Nexas support</b>\r\n          <span>Online now</span>\r\n        </div>\r\n      </div>\r\n\r\n      <div class=\"chat-log\" id=\"chatLog\">\r\n        <div class=\"chat-day\">Today</div>\r\n        <div class=\"msg them\">Hello Amara, you are through to Nexas support. How can I help?<span class=\"time\">09:12</span></div>\r\n        <div class=\"msg me\">Hi — my M-Pesa deposit hasn't shown up yet.<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg them\">Let me check. Could you confirm the last four digits of the phone number you used?<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg me\">Ends 4471.<span class=\"time\">09:14</span></div>\r\n        <div class=\"msg them\">Thank you. I can see the transaction pending with the provider. It will credit automatically within ten minutes, and I'll stay on the chat until it does.<span class=\"time\">09:15</span></div>\r\n      </div>\r\n\r\n      <form class=\"chat-bar\" id=\"chatForm\">\r\n        <button class=\"iconbtn\" type=\"button\" aria-label=\"Attach file\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7\"></path></svg>\r\n        </button>\r\n        <input class=\"input\" id=\"chatInput\" placeholder=\"Write a message\" autocomplete=\"off\" aria-label=\"Message\">\r\n        <button class=\"chat-send\" type=\"submit\" aria-label=\"Send\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l16-8-6 16-2.5-6z\"></path></svg>\r\n        </button>\r\n      </form>\r\n    </div>\r\n  ","script":""},"login":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Sign In","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Welcome back.</h1>\r\n        <p>Sign in to pick up where you left off.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Signing you in\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"email\">Email address</label>\r\n            <input class=\"input\" id=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"password\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"password\" type=\"password\" autocomplete=\"current-password\" placeholder=\"••••••••\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div style=\"display:flex;justify-content:space-between;align-items:center\">\r\n              <label class=\"checkline\" style=\"font-size:12.5px\"><input type=\"checkbox\" id=\"remember\"> Keep me signed in</label>\r\n              <a class=\"link\" href=\"forgot-password.html\">Forgot password?</a>\r\n            </div>\r\n          </div>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Sign in</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Signing you in with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">New to Nexas? <a href=\"signup.html\">Create an account</a></div>\r\n    </div>\r\n  ","script":""},"signup":{"attrs":{"data-page":"signup","data-chrome":"auth"},"title":"Nexas — Create Account","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Open your account.</h1>\r\n        <p>Two minutes to set up. Deposit when you are ready.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Setting up your account\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">\r\n            <div class=\"field\">\r\n              <label for=\"sFirst\">First name</label>\r\n              <input class=\"input\" id=\"sFirst\" autocomplete=\"given-name\" placeholder=\"Amara\">\r\n            </div>\r\n            <div class=\"field\">\r\n              <label for=\"sLast\">Last name</label>\r\n              <input class=\"input\" id=\"sLast\" autocomplete=\"family-name\" placeholder=\"Kimani\">\r\n            </div>\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"sEmail\">Email address</label>\r\n            <input class=\"input\" id=\"sEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n          <label class=\"checkline\">\r\n            <input type=\"checkbox\" id=\"terms\">\r\n            <span>I am 18 or older and accept the <a class=\"link\" href=\"#\">Terms</a> and <a class=\"link\" href=\"responsible.html\">Risk Disclosure</a>.</span>\r\n          </label>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Create account</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Setting up your account with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Already registered? <a href=\"login.html\">Sign in</a></div>\r\n    </div>\r\n  ","script":""},"forgot-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Forgot Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"login.html\">Nexas</a>\r\n        <h1>Reset your password.</h1>\r\n        <p>Enter the email on your account and we will send a six-digit code.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-demo-form=\"Reset code sent\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"resetEmail\">Email address</label>\r\n            <input class=\"input\" id=\"resetEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <a class=\"btn btn-fill\" href=\"reset-password.html\">Send reset code</a>\r\n        </form>\r\n\r\n        <div class=\"divider\">still stuck?</div>\r\n\r\n        <a class=\"btn btn-ghost\" href=\"chat.html\">\r\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\r\n          Chat with support\r\n        </a>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Remembered it? <a href=\"login.html\">Back to sign in</a></div>\r\n    </div>\r\n  ","script":""},"reset-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — New Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"forgot-password.html\">Nexas</a>\r\n        <h1>Choose a new password.</h1>\r\n        <p>We sent a code to am***a@mail.com. It expires in 15 minutes.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Updating your password\" data-to=\"login.html\" style=\"display:flex;flex-direction:column;gap:18px\">\r\n          <div class=\"field\">\r\n            <label>Verification code</label>\r\n            <div class=\"otp\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 5\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 6\">\r\n            </div>\r\n            <span class=\"hint\">Didn't arrive? <a class=\"link\" href=\"#\">Send again in 0:42</a></span>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">New password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"confirmNew\">Confirm password</label>\r\n            <input class=\"input\" id=\"confirmNew\" type=\"password\" autocomplete=\"new-password\" placeholder=\"Repeat new password\">\r\n          </div>\r\n\r\n          <button class=\"btn btn-fill\" type=\"submit\">Set new password</button>\r\n        </form>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Back to <a href=\"login.html\">sign in</a></div>\r\n    </div>\r\n  ","script":""}};</script>
+<script>
+/* ============================================================
+   Nexas — shared runtime
+   Injects the app chrome (top bar, drawer, tab bar, modals) into
+   every page so each page file holds only its own content.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  /* ---------- icons ---------- */
+  var I = {
+    menu: 'M3 6h18M3 12h18M3 18h18',
+    chart: 'M3 17l6-6 4 4 7-7|M14 8h6v6',
+    globe: 'M3 12h18|M12 3a15 15 0 010 18 15 15 0 010-18',
+    book: 'M3 9h18M9 9v11',
+    shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+    user: 'M4 20a8 8 0 0116 0',
+    down: 'M12 5v14M5 12l7 7 7-7',
+    up: 'M12 19V5M5 12l7-7 7 7',
+    chat: 'M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z',
+    moon: 'M20 14a8 8 0 01-10-10 8 8 0 1010 10z',
+    sun: 'M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+    out: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4|M16 17l5-5-5-5M21 12H9',
+    chev: 'M9 18l6-6-6-6',
+    chevD: 'M6 9l6 6 6-6',
+    back: 'M15 18l-6-6 6-6',
+    close: 'M6 6l12 12M18 6L6 18',
+    bell: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9|M13.7 21a2 2 0 01-3.4 0',
+    idcard: 'M3 5h18v14H3z|M7 10h3M7 14h6M15 9h3v4h-3z',
+    lock: 'M5 11h14v10H5z|M8 11V7a4 4 0 118 0v4',
+    tag: 'M12 5v14M5 12h14',
+    phone: 'M9 2h6a2 2 0 012 2v16a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2z|M10.8 18.6h2.4',
+    card: 'M3 8.5A2.5 2.5 0 015.5 6h13A2.5 2.5 0 0121 8.5v7a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 15.5z|M3 10.5h18',
+    coin: 'M12 6.2v11.6|M14.7 9.4A2.7 2.7 0 0012 8.2c-1.5 0-2.7.9-2.7 2s1.2 1.9 2.7 1.9 2.7.8 2.7 1.9-1.2 2-2.7 2a2.7 2.7 0 01-2.6-1.3',
+    send: 'M4 12l16-8-6 16-2.5-6z',
+    check: 'M5 13l4 4L19 7'
+  };
+  function icon(name, size) {
+    var d = I[name] || '';
+    var parts = d.split('|');
+    var body = '';
+    var circle = (name === 'globe' || name === 'user' || name === 'coin');
+    if (circle) body += '<circle cx="12" cy="12" r="9"></circle>';
+    if (name === 'user') body = '<circle cx="12" cy="8" r="3.4"></circle>';
+    if (name === 'book') body = '<rect x="3" y="4" width="18" height="16" rx="2"></rect>';
+    for (var i = 0; i < parts.length; i++) if (parts[i]) body += '<path d="' + parts[i] + '"></path>';
+    return '<svg width="' + (size || 17) + '" height="' + (size || 17) + '" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
+  }
+  window.NexIcon = icon;
+
+  /* ---------- routing helpers (works as files, or bundled preview) ---------- */
+  var BUNDLE = !!window.NEXAS_BUNDLE;
+  function href(file) { return BUNDLE ? '#/' + file.replace('.html', '') : file; }
+  window.NexHref = href;
+  function currentPage() {
+    return document.body.getAttribute('data-page') || 'trade';
+  }
+
+  /* ---------- theme ---------- */
+  var THEME_KEY = 'nexas.theme';
+  function storedTheme() {
+    try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+  }
+  function applyTheme(t) {
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    try { t ? localStorage.setItem(THEME_KEY, t) : localStorage.removeItem(THEME_KEY); } catch (e) {}
+    var sw = document.getElementById('themeSwitch');
+    if (sw) sw.setAttribute('aria-checked', String(isDark()));
+    if (window.NexChart) window.NexChart.redraw();
+  }
+  function isDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  applyTheme(storedTheme());
+
+  /* ---------- chrome ---------- */
+  var TABS = [
+    { id: 'trade', label: 'Trade', file: 'index.html', icon: 'chart' },
+    { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'globe' },
+    { id: 'positions', label: 'Positions', file: 'positions.html', icon: 'book' },
+    { id: 'responsible', label: 'Limits', file: 'responsible.html', icon: 'shield' }
+  ];
+
+  /* Top bar has three zones: one control on the left, the account
+     balance as the anchor, and a single green action on the right. */
+  function topbar(page) {
+    var back = document.body.getAttribute('data-back');
+    var title = document.body.getAttribute('data-title');
+
+    if (title) {
+      return '<header class="topbar">' +
+        '<a class="iconbtn" href="' + href(back || 'index.html') + '" aria-label="Back">' + icon('back', 19) + '</a>' +
+        '<div class="topbar-title">' + title + '</div>' +
+        '<span class="iconbtn" aria-hidden="true"></span>' +
+      '</header>';
+    }
+
+    var menu = '<nav class="deskmenu only-desk">' + TABS.map(function (t) {
+      return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
+        (t.id === 'responsible' ? 'Responsible Trading' : t.label) + '</a>';
+    }).join('') + '</nav>';
+
+    return '<header class="topbar">' +
+      '<button class="iconbtn only-mob" id="menuBtn" aria-label="Open menu">' + icon('menu', 19) + '</button>' +
+      '<a class="wordmark only-desk" href="' + href('index.html') + '">Nexas</a>' +
+      menu +
+      '<span class="spacer"></span>' +
+      '<button class="acct" data-open="switch">' +
+        '<i class="acct-dot"></i><span class="acct-kind">Real</span>' +
+        '<span class="bal num">2,480.00</span>' + icon('chevD', 12) +
+      '</button>' +
+      '<button class="btn-primary" data-open="deposit">Deposit</button>' +
+      '<button class="iconbtn bell" aria-label="Notifications">' + icon('bell', 18) + '<i></i></button>' +
+    '</header>';
+  }
+
+  /* ---------- sign-in transition ---------- */
+  function splash(message, to) {
+    var el = document.createElement('div');
+    el.className = 'splash';
+    el.innerHTML =
+      '<div class="splash-inner">' +
+        '<div class="pulse"><i></i><i></i><i></i></div>' +
+        '<div class="splash-word">Nexas</div>' +
+        '<div class="splash-msg">' + message + '</div>' +
+      '</div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('open'); });
+    setTimeout(function () {
+      if (BUNDLE) { location.hash = '#/' + to.replace('.html', ''); el.remove(); }
+      else location.href = to;
+    }, 1700);
+  }
+  window.NexSplash = splash;
+
+  function drawer() {
+    function item(label, opts) {
+      opts = opts || {};
+      var tag = opts.href ? 'a' : 'button';
+      var attrs = opts.href ? ' href="' + href(opts.href) + '"' : '';
+      if (opts.modal) attrs += ' data-open="' + opts.modal + '"';
+      var tail = opts.tail || (opts.href || opts.modal ? icon('chev', 15) : '');
+      return '<' + tag + ' class="ditem ' + (opts.cls || '') + '"' + attrs + '>' +
+        icon(opts.icon, 17) + '<span>' + label + '</span>' +
+        (tail ? '<i class="chev">' + tail + '</i>' : '') +
+        '</' + tag + '>';
+    }
+    /* a group is a disclosure: the header toggles its nested links open */
+    function group(label, iconName, items, open) {
+      return '<div class="dgroup' + (open ? ' open' : '') + '">' +
+        '<button class="ditem dgroup-head">' + icon(iconName, 17) +
+          '<span>' + label + '</span><i class="chev caret">' + icon('chevD', 15) + '</i></button>' +
+        '<div class="dgroup-body">' + items.join('') + '</div>' +
+      '</div>';
+    }
+
+    return '' +
+      '<div class="scrim" id="scrim"></div>' +
+      '<aside class="drawer" id="drawer" aria-label="Menu">' +
+        '<a class="drawer-user" href="' + href('account.html') + '">' +
+          '<div class="avatar">A</div>' +
+          '<div><b>Amara Kimani</b><span>am***a@mail.com</span></div>' +
+          icon('chev', 16) +
+        '</a>' +
+
+        '<div class="dnav">' +
+          group('Account', 'user', [
+            item('Profile and name', { icon: 'idcard', modal: 'profile' }),
+            item('Update password', { icon: 'lock', modal: 'password' }),
+            item('Verify identity', { icon: 'shield', modal: 'verify' })
+          ], true) +
+          group('Funds', 'coin', [
+            item('Deposit', { icon: 'down', modal: 'deposit' }),
+            item('Withdraw', { icon: 'up', modal: 'withdraw' })
+          ], false) +
+        '</div>' +
+
+        '<div class="drawer-sect label">Support</div>' +
+        '<div class="dnav">' +
+          item('Live chat', { icon: 'chat', href: 'chat.html' }) +
+          item('Responsible trading', { icon: 'shield', href: 'responsible.html' }) +
+          item('Light / dark theme', {
+            icon: isDark() ? 'moon' : 'sun',
+            tail: '<i class="switch" id="themeSwitch" role="switch" aria-checked="' + isDark() + '"></i>',
+            cls: 'theme-toggle'
+          }) +
+        '</div>' +
+
+        '<div class="drawer-foot">' +
+          '<a class="ditem danger" href="' + href('login.html') + '">' + icon('out', 17) + '<span>Log out</span></a>' +
+        '</div>' +
+      '</aside>';
+  }
+
+  function tabbar(page) {
+    return '<nav class="tabbar only-mob">' + TABS.map(function (t) {
+      return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
+        icon(t.icon, 18) + t.label + '</a>';
+    }).join('') + '</nav>';
+  }
+
+  /* ---------- modal engine ----------
+     Step definitions live in assets/js/modals.js. Operations that used to
+     be their own page (name, password, verification, deposit, withdrawal)
+     run here instead; only genuinely page-sized things still route away. */
+  var state = { key: null, step: null, trail: [], data: {} };
+
+  function host() {
+    var h = document.getElementById('modalHost');
+    if (!h) {
+      h = document.createElement('div');
+      h.id = 'modalHost';
+      document.body.appendChild(h);
+    }
+    return h;
+  }
+
+  function openModal(key, stepId) {
+    var def = window.NexModals && window.NexModals[key];
+    if (!def) return;
+    state = { key: key, step: stepId || Object.keys(def.steps)[0], trail: [], data: {} };
+    renderModal(true);
+  }
+  function gotoStep(id) {
+    state.trail.push(state.step);
+    state.step = id;
+    renderModal(false);
+  }
+  function backStep() {
+    if (!state.trail.length) return closeModals();
+    state.step = state.trail.pop();
+    renderModal(false);
+  }
+  function renderModal(fresh) {
+    var def = window.NexModals[state.key];
+    var step = def.steps[state.step];
+    var title = typeof step.title === 'function' ? step.title(state.data) : step.title;
+    var sub = typeof step.sub === 'function' ? step.sub(state.data) : step.sub;
+
+    host().innerHTML =
+      '<div class="modal' + (fresh ? '' : ' open') + '" role="dialog" aria-modal="true" aria-label="' + title + '">' +
+        '<div class="modal-bg" data-close></div>' +
+        '<div class="modal-box">' +
+          '<div class="grabber"></div>' +
+          '<div class="modal-head">' +
+            (state.trail.length ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>' : '') +
+            '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
+            '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +
+          '</div>' +
+          step.body(state.data) +
+        '</div>' +
+      '</div>';
+
+    if (fresh) requestAnimationFrame(function () {
+      var m = host().querySelector('.modal');
+      if (m) m.classList.add('open');
+    });
+    bindMeter();
+  }
+  function closeModals() {
+    var m = host().querySelector('.modal');
+    if (!m) return;
+    m.classList.remove('open');
+    setTimeout(function () { host().innerHTML = ''; }, 220);
+  }
+  window.NexModal = { open: openModal, close: closeModals };
+
+  /* ---------- toast ---------- */
+  var toastEl;
+  window.NexToast = function (msg) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.className = 'toast';
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.classList.add('open');
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(function () { toastEl.classList.remove('open'); }, 2400);
+  };
+
+  /* ---------- boot chrome ---------- */
+  function mountChrome(root) {
+    var chrome = document.body.getAttribute('data-chrome');
+    if (chrome === 'auth' || chrome === 'plain') {
+      host();
+      return;
+    }
+    var page = currentPage();
+    var sub = !!document.body.getAttribute('data-back');
+    if (sub) document.body.classList.add('no-tabs');
+    host();
+    root.insertAdjacentHTML('afterbegin', topbar(page));
+    root.insertAdjacentHTML('beforeend', drawer() + (sub ? '' : tabbar(page)));
+  }
+
+  function wire() {
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target : null;
+      if (!t) return;
+
+      var menuBtn = t.closest('#menuBtn');
+      if (menuBtn) { setDrawer(true); return; }
+
+      if (t.closest('#scrim')) { setDrawer(false); return; }
+
+      var themeBtn = t.closest('.theme-toggle');
+      if (themeBtn) {
+        e.preventDefault();
+        applyTheme(isDark() ? 'light' : 'dark');
+        var ic = themeBtn.querySelector('svg');
+        if (ic) ic.outerHTML = icon(isDark() ? 'moon' : 'sun', 17);
+        return;
+      }
+
+      var grp = t.closest('.dgroup-head');
+      if (grp) { grp.parentElement.classList.toggle('open'); return; }
+
+      var sp = t.closest('[data-splash]');
+      if (sp && sp.tagName !== 'FORM') {
+        e.preventDefault();
+        splash(sp.getAttribute('data-splash'), sp.getAttribute('data-to') || 'index.html');
+        return;
+      }
+
+      var mod = t.closest('[data-open]');
+      if (mod) { e.preventDefault(); setDrawer(false); openModal(mod.getAttribute('data-open')); return; }
+
+      if (t.closest('[data-close]')) { closeModals(); return; }
+      if (t.closest('[data-modal-back]')) { backStep(); return; }
+
+      /* inside a modal: set state, step forward, submit, copy, amounts */
+      var setter = t.closest('[data-set]');
+      if (setter) {
+        var pair = setter.getAttribute('data-set').split(':');
+        state.data[pair[0]] = pair[1];
+      }
+      var step = t.closest('[data-goto]');
+      if (step) { gotoStep(step.getAttribute('data-goto')); return; }
+
+      var done = t.closest('[data-done]');
+      if (done) {
+        var msg = done.getAttribute('data-done');
+        closeModals();
+        window.NexToast(msg);
+        return;
+      }
+      if (t.closest('[data-copy]')) { window.NexToast('Address copied'); return; }
+
+      var amt = t.closest('[data-amount]');
+      if (amt) {
+        var box = amt.closest('.field').querySelector('input');
+        box.value = amt.getAttribute('data-amount');
+        box.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+
+      var reveal = t.closest('[data-reveal]');
+      if (reveal) {
+        var inp = reveal.parentElement.querySelector('input');
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+        return;
+      }
+
+      var seg = t.closest('.seg button, .ctabs .ctab');
+      if (seg) {
+        var parent = seg.parentElement;
+        parent.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+        seg.classList.add('active');
+      }
+    });
+
+    /* live totals and strength meters, inside modals and on pages */
+    document.addEventListener('input', function (e) {
+      var el = e.target;
+      if (el.id === 'newPassword') paintMeter(el);
+      var total = document.querySelector('[data-total="' + el.id + '"]');
+      if (total) {
+        var fee = +(total.getAttribute('data-fee') || 0);
+        var v = Math.max(0, (+el.value || 0) - fee);
+        total.textContent = '$' + v.toFixed(2);
+      }
+    });
+
+    document.addEventListener('submit', function (e) {
+      var f = e.target;
+      if (f.hasAttribute && f.hasAttribute('data-splash')) {
+        e.preventDefault();
+        splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeModals(); setDrawer(false); }
+    });
+  }
+
+  function paintMeter(input) {
+    var v = input.value, score = 0;
+    if (v.length >= 8) score++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+    if (/\d/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    var wrap = input.closest('.field') || document;
+    wrap.querySelectorAll('.meter i').forEach(function (bar, i) { bar.classList.toggle('on', i < score); });
+  }
+  function bindMeter() {
+    var pw = host().querySelector('#newPassword');
+    if (pw) paintMeter(pw);
+  }
+
+  function setDrawer(open) {
+    var d = document.getElementById('drawer');
+    var s = document.getElementById('scrim');
+    if (!d) return;
+    d.classList.toggle('open', open);
+    s.classList.toggle('open', open);
+  }
+
+  /* ---------- shared page behaviours ---------- */
+  function initStake() {
+    var stake = document.getElementById('stake');
+    if (!stake) return;
+    function set(v) {
+      v = Math.max(1, Math.round(v * 100) / 100);
+      stake.value = v;
+      var p = (v * 1.953).toFixed(2);
+      document.querySelectorAll('[data-payout]').forEach(function (el) { el.textContent = p; });
+    }
+    var plus = document.getElementById('plus'), minus = document.getElementById('minus');
+    if (plus) plus.addEventListener('click', function () { set(+stake.value + 1); });
+    if (minus) minus.addEventListener('click', function () { set(+stake.value - 1); });
+    stake.addEventListener('change', function () { set(+stake.value || 1); });
+    var q = document.getElementById('quick');
+    if (q) q.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (b) set(+stake.value + +b.getAttribute('data-add'));
+    });
+    document.querySelectorAll('.tbtn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        window.NexToast(b.getAttribute('data-side') + ' taken at ' + stake.value + ' USD');
+      });
+    });
+    set(+stake.value || 10);
+  }
+
+  function initChart() {
+    var cv = document.getElementById('chart');
+    if (!cv) return;
+    var ctx = cv.getContext('2d');
+    var data = [], last = 9601.01, prev = last;
+    for (var k = 0; k < 220; k++) { last += (Math.random() - 0.5) * 1.6; data.push(last); }
+    var W = 0, H = 0;
+
+    function css(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+    function size() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var r = cv.getBoundingClientRect();
+      if (!r.width) return;
+      W = r.width; H = r.height;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+    function draw() {
+      if (!W) return;
+      var padR = 62, padB = 14, padT = 12;
+      var min = Infinity, max = -Infinity, i;
+      for (i = 0; i < data.length; i++) { if (data[i] < min) min = data[i]; if (data[i] > max) max = data[i]; }
+      var span = (max - min) || 1;
+      min -= span * 0.12; max += span * 0.12; span = max - min;
+      var w = W - padR, h = H - padB - padT;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = css('--chart-bg'); ctx.fillRect(0, 0, W, H);
+      ctx.font = '11px "IBM Plex Mono", monospace';
+      ctx.textBaseline = 'middle';
+
+      for (var g = 0; g <= 4; g++) {
+        var y = padT + h * g / 4;
+        ctx.strokeStyle = css('--chart-grid'); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(w, Math.round(y) + 0.5); ctx.stroke();
+        ctx.fillStyle = css('--chart-axis');
+        ctx.fillText((max - span * g / 4).toFixed(2), w + 10, y);
+      }
+      function X(i2) { return i2 / (data.length - 1) * w; }
+      function Y(v) { return padT + (max - v) / span * h; }
+
+      ctx.beginPath(); ctx.moveTo(X(0), Y(data[0]));
+      for (i = 1; i < data.length; i++) ctx.lineTo(X(i), Y(data[i]));
+      ctx.strokeStyle = css('--chart-line'); ctx.lineWidth = 1.3; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.lineTo(X(data.length - 1), H - padB); ctx.lineTo(X(0), H - padB); ctx.closePath();
+      ctx.fillStyle = css('--chart-fill'); ctx.fill();
+
+      var v2 = data[data.length - 1], y2 = Y(v2);
+      ctx.setLineDash([3, 4]); ctx.strokeStyle = css('--chart-axis');
+      ctx.beginPath(); ctx.moveTo(0, Math.round(y2) + 0.5); ctx.lineTo(w, Math.round(y2) + 0.5); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(X(data.length - 1), y2, 2.6, 0, Math.PI * 2);
+      ctx.fillStyle = css('--chart-line'); ctx.fill();
+
+      var lbl = v2.toFixed(2), bw = Math.min(ctx.measureText(lbl).width + 16, padR - 8);
+      var bx = w + 6, by = y2 - 11;
+      ctx.fillStyle = css('--surface'); roundRect(bx, by, bw, 22, 6); ctx.fill();
+      ctx.strokeStyle = css('--line'); ctx.lineWidth = 1; roundRect(bx + .5, by + .5, bw - 1, 21, 6); ctx.stroke();
+      ctx.fillStyle = css('--text'); ctx.fillText(lbl, bx + 8, y2);
+    }
+    function roundRect(x, y, w2, h2, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w2, y, x + w2, y + h2, r);
+      ctx.arcTo(x + w2, y + h2, x, y + h2, r);
+      ctx.arcTo(x, y + h2, x, y, r);
+      ctx.arcTo(x, y, x + w2, y, r);
+      ctx.closePath();
+    }
+
+    var digitsEl = document.getElementById('digits');
+    var dist = [10.0, 8.0, 9.8, 9.5, 10.8, 11.5, 10.3, 11.5, 6.8, 11.0];
+    var current = 3;
+    function renderDigits() {
+      if (!digitsEl) return;
+      var max = Math.max.apply(null, dist), html = '';
+      for (var i = 0; i < 10; i++) {
+        html += '<div class="digit' + (dist[i] === max ? ' hot' : '') + (i === current ? ' cur' : '') +
+          '"><b>' + i + '</b><i>' + dist[i].toFixed(1) + '%</i></div>';
+      }
+      digitsEl.innerHTML = html;
+    }
+    renderDigits();
+
+    function tick() {
+      var next = data[data.length - 1] + (Math.random() - 0.5) * 1.8;
+      data.push(next); data.shift();
+      var px = document.getElementById('px');
+      if (px) px.textContent = next.toFixed(2);
+      var d = next - prev, chg = document.getElementById('pxChg');
+      if (chg) {
+        chg.textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + ' (' + (d >= 0 ? '+' : '') + (d / prev * 100).toFixed(2) + '%)';
+        chg.className = 'c num ' + (d >= 0 ? 'pos' : 'neg');
+      }
+      prev = next;
+      current = Math.floor(Math.abs(next * 100)) % 10;
+      for (var i = 0; i < 10; i++) {
+        dist[i] += (Math.random() - 0.5) * 0.25;
+        if (dist[i] < 4) dist[i] = 4;
+        if (dist[i] > 16) dist[i] = 16;
+      }
+      renderDigits(); draw();
+    }
+
+    window.NexChart = { redraw: draw, resize: size };
+    window.addEventListener('resize', size);
+    size();
+    window.__nexTick = setInterval(tick, 1000);
+  }
+
+  function initChat() {
+    var log = document.getElementById('chatLog');
+    if (!log) return;
+    var form = document.getElementById('chatForm');
+    var input = document.getElementById('chatInput');
+    function time() {
+      var d = new Date();
+      return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    }
+    function add(text, who) {
+      var el = document.createElement('div');
+      el.className = 'msg ' + who;
+      el.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + time() + '</span>';
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = input.value.trim();
+      if (!v) return;
+      add(v, 'me');
+      input.value = '';
+      setTimeout(function () {
+        add('Thanks — checking that for you now. One moment.', 'them');
+      }, 900);
+    });
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function initForms() {
+    document.querySelectorAll('[data-demo-form]').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        window.NexToast(f.getAttribute('data-demo-form'));
+      });
+    });
+    var otp = document.querySelector('.otp');
+    if (otp) {
+      otp.addEventListener('input', function (e) {
+        var boxes = [].slice.call(otp.querySelectorAll('input'));
+        var i = boxes.indexOf(e.target);
+        if (e.target.value && i < boxes.length - 1) boxes[i + 1].focus();
+      });
+    }
+  }
+
+  function boot() {
+    if (window.__nexTick) { clearInterval(window.__nexTick); window.__nexTick = null; }
+    mountChrome(document.querySelector('.app') || document.body);
+    if (!window.__nexWired) { wire(); window.__nexWired = true; }
+    initStake();
+    initChart();
+    initChat();
+    initForms();
+    if (document.querySelector('.trade-dock')) document.body.classList.add('has-sticky');
+  }
+  window.NexBoot = boot;
+
+  if (!BUNDLE) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+    else boot();
+  }
+})();
+
+</script>
+<script>
+(function () {
+  var app = document.getElementById('app');
+
+  function route() {
+    var name = (location.hash || '#/index').replace('#/', '').split('?')[0] || 'index';
+    var page = window.NEXAS_PAGES[name] || window.NEXAS_PAGES.index;
+
+    document.body.className = '';
+    Object.keys(page.attrs).forEach(function (k) { document.body.setAttribute(k, page.attrs[k]); });
+    ['data-back', 'data-title'].forEach(function (k) {
+      if (!page.attrs[k]) document.body.removeAttribute(k);
+    });
+
+    app.innerHTML = '<main>' + page.html + '</main>';
+    window.NexBoot();
+    if (page.script) { try { new Function(page.script)(); } catch (e) {} }
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href || href.indexOf('.html') === -1) return;
+    e.preventDefault();
+    location.hash = '#/' + href.replace('.html', '');
+  });
+
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>

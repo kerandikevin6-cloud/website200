@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nexas — Positions</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="positions" data-chrome="app">
+<div class="app">
+  <main>
+    <div class="shell" style="display:flex;flex-direction:column;flex:1">
+      <div class="page-head">
+        <h1>Positions</h1>
+        <p>Everything you have open, closed and settled.</p>
+      </div>
+
+      <div class="ctabs">
+        <button class="ctab active">Open</button>
+        <button class="ctab">Closed</button>
+        <button class="ctab">Transactions</button>
+      </div>
+
+      <div class="summary">
+        <span class="label">Session profit / loss</span>
+        <div class="big pos">+0.00</div>
+        <div class="sub">0 trades today · 0 won · 0 lost</div>
+      </div>
+
+      <div class="empty">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18M9 9v11"></path></svg>
+        <b>No open positions</b>
+        <span>Contracts you take will be listed here.</span>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="assets/js/modals.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
