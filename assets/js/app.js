@@ -128,16 +128,17 @@
 
   /* ---------- theme ---------- */
   var THEME_KEY = 'nexas.theme';
-  function storedTheme() { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } }
+  /* Dark is the product's default. Light is opt-in and, once chosen,
+     remembered — so a new visitor always arrives in dark. */
+  function storedTheme() {
+    try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { return 'dark'; }
+  }
   function isDark() {
-    var t = document.documentElement.getAttribute('data-theme');
-    if (t) return t === 'dark';
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return document.documentElement.getAttribute('data-theme') !== 'light';
   }
   function applyTheme(t) {
-    if (t) document.documentElement.setAttribute('data-theme', t);
-    else document.documentElement.removeAttribute('data-theme');
-    try { t ? localStorage.setItem(THEME_KEY, t) : localStorage.removeItem(THEME_KEY); } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+    try { localStorage.setItem(THEME_KEY, t === 'light' ? 'light' : 'dark'); } catch (e) {}
     var sw = document.getElementById('themeSwitch');
     if (sw) sw.setAttribute('aria-checked', String(isDark()));
   }
@@ -227,7 +228,7 @@
           group('Funds', 'coin', [
             item('Deposit', { icon: 'down', modal: 'deposit' }),
             item('Withdraw', { icon: 'up', modal: 'withdraw' })
-          ], false) +
+          ], true) +
         '</div>' +
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
@@ -263,13 +264,53 @@
     if (!h) { h = document.createElement('div'); h.id = 'modalHost'; document.body.appendChild(h); }
     return h;
   }
+  /* ---------- overlays and the back button ----------
+     A dialog or the drawer is a place the person went, so Back should
+     bring them out of it rather than off the page entirely. Opening one
+     pushes a history entry; Back pops it and we close instead of
+     navigating. Closing from the UI rewinds that entry so the stack does
+     not fill up with dead states. */
+  /* One history entry covers "something is open", whatever that is.
+     Pushing and popping per call raced badly: choosing Deposit from the
+     drawer closed the drawer (queueing a history.back) and opened the
+     dialog in the same tick, so the late pop arrived and shut the dialog
+     again. Intent is tracked in flags and reconciled once per tick, so
+     handing over from one overlay to another touches history not at all. */
+  var overlayDepth = 0;
+  var modalOpen = false, drawerOpen = false;
+  var syncTimer = null;
+
+  function syncOverlay() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(function () {
+      var want = modalOpen || drawerOpen;
+      if (want && !overlayDepth) {
+        overlayDepth = 1;
+        try { history.pushState({ nexOverlay: true }, ''); } catch (e) { overlayDepth = 0; }
+      } else if (!want && overlayDepth) {
+        overlayDepth = 0;
+        try { history.back(); } catch (e) {}
+      }
+    }, 0);
+  }
+
+  window.addEventListener('popstate', function () {
+    if (!overlayDepth) return;                /* a real navigation */
+    overlayDepth = 0;
+    clearTimeout(syncTimer);                  /* no queued push may undo this */
+    if (modalOpen) closeModals(true);
+    if (drawerOpen) setDrawer(false, true);
+  });
+
   var closeToken = 0;
-  function openModal(key, stepId) {
+  function openModal(key, stepId, data) {
     var def = window.NexModals && window.NexModals[key];
     if (!def) return;
     closeToken++;
     lastFocus = document.activeElement;
-    state = { key: key, step: stepId || Object.keys(def.steps)[0], trail: [], data: {} };
+    modalOpen = true;
+    syncOverlay();
+    state = { key: key, step: stepId || Object.keys(def.steps)[0], trail: [], data: data || {} };
     renderModal(true);
   }
   function gotoStep(id) { state.trail.push(state.step); state.step = id; renderModal(false); }
@@ -288,7 +329,9 @@
         '<div class="modal-bg" data-close></div>' +
         '<div class="modal-box">' +
           '<div class="modal-head">' +
-            (state.trail.length ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>' : '') +
+            (state.trail.length && !step.noBack
+              ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>'
+              : '') +
             '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
             '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +
           '</div>' + step.body(state.data) +
@@ -310,10 +353,12 @@
     var pw = host().querySelector('#newPassword');
     if (pw) paintMeter(pw);
   }
-  function closeModals() {
+  function closeModals(fromPop) {
     payToken++;                               /* nothing pending may land now */
     var m = host().querySelector('.modal');
-    if (!m) return;
+    if (!m) { modalOpen = false; return; }
+    modalOpen = false;
+    if (!fromPop) syncOverlay();
     m.classList.remove('open');
     var token = ++closeToken;
     setTimeout(function () { if (token === closeToken) host().innerHTML = ''; }, 220);
@@ -472,6 +517,38 @@
     reader.readAsDataURL(file);
   }
 
+  /* ---------- loader ---------- */
+  function loader(cls) {
+    return '<span class="scaleloader ' + (cls || '') + '" role="status" aria-label="Loading">' +
+      '<i></i><i></i><i></i><i></i><i></i></span>';
+  }
+  window.NexLoader = loader;
+
+  /* A block for a panel or a page that has nothing to show yet. */
+  window.NexLoading = function (label) {
+    return '<div class="loading-block">' + loader() +
+      '<span>' + (label || 'Loading') + '</span></div>';
+  };
+
+  /* The app is useless until the price feed answers, so hold a veil over
+     it rather than showing a dead terminal with zeroes in it. */
+  function bootVeil() {
+    if (document.body.getAttribute('data-chrome') !== 'app') return;
+    if (document.getElementById('bootVeil')) return;
+    var v = document.createElement('div');
+    v.className = 'boot';
+    v.id = 'bootVeil';
+    v.innerHTML = '<div class="boot-word">Nexas</div>' + loader() +
+      '<span>Connecting to the feed</span>';
+    document.body.appendChild(v);
+  }
+  function dropVeil() {
+    var v = document.getElementById('bootVeil');
+    if (!v) return;
+    v.classList.add('gone');
+    setTimeout(function () { if (v.parentNode) v.parentNode.removeChild(v); }, 320);
+  }
+
   /* ---------- toast ---------- */
   var toastEl;
   window.NexToast = function (msg) {
@@ -517,18 +594,6 @@
       '</div>';
     document.body.appendChild(c);
   }
-  function riskStrip() {
-    if (document.body.getAttribute('data-chrome') !== 'app') return;
-    if (API.prefs.riskAck()) return;
-    var main = document.querySelector('main');
-    if (!main) return;
-    var r = document.createElement('div');
-    r.className = 'risk-strip';
-    r.id = 'riskStrip';
-    r.innerHTML = '<span>' + icon('shield', 15) + 'Trading synthetic indices carries risk. You can lose your full stake.</span>' +
-      '<button class="iconbtn" id="riskClose" aria-label="Dismiss">' + icon('close', 15) + '</button>';
-    main.insertBefore(r, main.firstChild);
-  }
 
   /* ---------- sign-in transition ---------- */
   function splash(message, to) {
@@ -553,6 +618,82 @@
     /* A signed-out visitor should meet the pitch, not a login form. */
     go('landing.html');
     return false;
+  }
+
+  /* ---------- form validation ----------
+     Everything the person types is checked before anything is submitted,
+     and the message lands under the field that is wrong rather than in a
+     toast that disappears. */
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function markField(input, msg) {
+    var wrap = input.closest('.field') || input.parentNode;
+    var err = wrap.querySelector('.field-error');
+    if (!msg) { if (err) err.remove(); wrap.classList.remove('bad'); return true; }
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'field-error';
+      err.setAttribute('role', 'alert');
+      wrap.appendChild(err);
+    }
+    err.textContent = msg;
+    wrap.classList.add('bad');
+    return false;
+  }
+
+  function validateForm(f) {
+    var firstBad = null;
+    function fail(input, msg) {
+      markField(input, msg);
+      if (!firstBad) firstBad = input;
+    }
+
+    var email = f.querySelector('input[type=email]');
+    if (email) {
+      var v = email.value.trim();
+      if (!v) fail(email, 'Enter your email address');
+      else if (!EMAIL_RE.test(v)) fail(email, 'That does not look like an email address');
+      else markField(email, null);
+    }
+
+    /* A new password is held to the full rules; an existing one only has
+       to be present, since the rules may have changed since they set it. */
+    var fresh = f.querySelector('#newPassword');
+    if (fresh) {
+      var bad = fresh.value ? pwFirstFailure(fresh.value) : 'Choose a password';
+      if (bad) fail(fresh, bad);
+      else markField(fresh, null);
+
+      var again = f.querySelector('#confirmNew');
+      if (again) {
+        if (!again.value) fail(again, 'Repeat the password');
+        else if (again.value !== fresh.value) fail(again, 'These do not match');
+        else markField(again, null);
+      }
+    } else {
+      var pw = f.querySelector('input[type=password]');
+      if (pw && !pw.value) fail(pw, 'Enter your password');
+      else if (pw) markField(pw, null);
+    }
+
+    var terms = f.querySelector('input[type=checkbox][required], .checkline input[type=checkbox]');
+    if (terms && !terms.checked) {
+      window.NexToast('Accept the terms to continue');
+      if (!firstBad) firstBad = terms;
+    }
+
+    var otp = f.querySelectorAll('.otp input');
+    if (otp.length) {
+      var code = '';
+      for (var i = 0; i < otp.length; i++) code += (otp[i].value || '').trim();
+      if (code.length < otp.length) {
+        window.NexToast('Enter the ' + otp.length + '-digit code');
+        if (!firstBad) firstBad = otp[0];
+      }
+    }
+
+    if (firstBad) { firstBad.focus(); return false; }
+    return true;
   }
 
   /* ---------- password rules ----------
@@ -632,9 +773,11 @@
     root.insertAdjacentHTML('beforeend', drawer() + (sub ? '' : tabbar(page)));
   }
 
-  function setDrawer(open) {
+  function setDrawer(open, fromPop) {
     var d = document.getElementById('drawer'), s = document.getElementById('scrim');
     if (!d) return;
+    drawerOpen = !!open;
+    if (!fromPop) syncOverlay();
     d.classList.toggle('open', open);
     s.classList.toggle('open', open);
     document.body.classList.toggle('locked', open);
@@ -672,12 +815,6 @@
         API.prefs.setConsent(true);
         var bar = consent.closest('.consent');
         if (bar) bar.remove();
-        return;
-      }
-      if (t.closest('#riskClose')) {
-        API.prefs.setRiskAck(true);
-        var strip = document.getElementById('riskStrip');
-        if (strip) strip.remove();
         return;
       }
 
@@ -756,6 +893,10 @@
     document.addEventListener('input', function (e) {
       var el = e.target;
       if (el.id === 'newPassword') paintMeter(el);
+      if (el.classList && el.classList.contains('input')) {
+        var holder = el.closest('.field');
+        if (holder && holder.classList.contains('bad')) markField(el, null);
+      }
       if (el.classList && el.classList.contains('phone-input')) {
         var atEnd = el.selectionStart === el.value.length;
         var c = API.geo.country();
@@ -778,18 +919,7 @@
       if (!f.hasAttribute) return;
       if (f.hasAttribute('data-splash')) {
         e.preventDefault();
-        /* The auth pages post the same password rules as the modal. */
-        var pw = f.querySelector('#newPassword');
-        if (pw) {
-          var bad = pwFirstFailure(pw.value);
-          if (bad) { window.NexToast(bad); pw.focus(); return; }
-          var again = f.querySelector('#confirmNew');
-          if (again && again.value !== pw.value) {
-            window.NexToast('Passwords do not match');
-            again.focus();
-            return;
-          }
-        }
+        if (!validateForm(f)) return;
         var email = f.querySelector('input[type=email]');
         API.session.signIn(email && email.value, 'password');
         splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
@@ -840,10 +970,11 @@
       var rate = isLocal ? pay.rate : 1;
       var money = isLocal ? pay.cur : API.account.currency();
 
+      var floor = isLocal ? (pay.min || 1) : 10;
       if (amount <= 0) return fieldError('amount', 'Enter an amount to deposit');
+      if (amount < floor) return fieldError('amount',
+        'Minimum deposit is ' + F.count(floor) + ' ' + money);
       var usd = amount / rate;
-      if (usd < 1) return fieldError('amount', 'Minimum deposit is ' +
-        F.count(Math.ceil(rate)) + ' ' + money);
 
       if (state.data.method === 'mpesa') {
         var ph = document.getElementById('mpesaPhone');
@@ -886,33 +1017,50 @@
       if (!cf) return fieldError('confirmPassword', 'Repeat the new password');
       if (cf !== nw) return fieldError('confirmPassword', 'These do not match');
 
-      closeModals();
-      window.NexToast('Password updated');
+      gotoStep('done');
+      return;
+    }
+    if (name === 'saveProfile') {
+      clearErrors();
+      var first = ((document.getElementById('firstName') || {}).value || '').trim();
+      var last = ((document.getElementById('lastName') || {}).value || '').trim();
+      var shown = ((document.getElementById('displayName') || {}).value || '').trim();
+
+      if (!first) return fieldError('firstName', 'Enter your first name');
+      if (!last) return fieldError('lastName', 'Enter your last name');
+      if (/\d/.test(first + last)) return fieldError('firstName', 'Names cannot contain numbers');
+      if (!shown) return fieldError('displayName', 'Pick a name to show other traders');
+
+      state.data.savedName = shown;
+      gotoStep('done');
       return;
     }
     if (name === 'verify') {
       if (node && node.disabled) return;
       API.kyc.submit();
-      closeModals();
-      window.NexToast('Identity submitted — usually cleared within the hour');
+      gotoStep('done');
       return;
     }
     if (name === 'useAccount') {
       var kind = node.getAttribute('data-kind');
       API.account.use(kind);
-      closeModals();
-      window.NexToast('Switched to the ' + kind + ' account');
+      gotoStep('done');
       return;
     }
     if (name === 'saveAuto') {
-      API.prefs.setAuto({
-        runs: +document.getElementById('autoRuns').value || 10,
-        multiplier: +document.getElementById('autoMult').value || 2,
-        takeProfit: +document.getElementById('autoTP').value || 200,
-        stopLoss: +document.getElementById('autoSL').value || 100
-      });
-      closeModals();
-      window.NexToast('Run settings saved');
+      clearErrors();
+      var runs = +document.getElementById('autoRuns').value || 0;
+      var mult = +document.getElementById('autoMult').value || 0;
+      var tp = +document.getElementById('autoTP').value || 0;
+      var sl = +document.getElementById('autoSL').value || 0;
+
+      if (runs < 1 || runs > 500) return fieldError('autoRuns', 'Between 1 and 500 runs');
+      if (mult < 1 || mult > 5) return fieldError('autoMult', 'Between 1 and 5');
+      if (tp <= 0) return fieldError('autoTP', 'Set a take-profit above zero');
+      if (sl <= 0) return fieldError('autoSL', 'Set a stop-loss above zero');
+
+      API.prefs.setAuto({ runs: runs, multiplier: mult, takeProfit: tp, stopLoss: sl });
+      gotoStep('done');
       return;
     }
   }
@@ -934,6 +1082,8 @@
     if (!log) return;
     var form = document.getElementById('chatForm'), input = document.getElementById('chatInput');
     function add(text, who) {
+      var blank = log.querySelector('.empty');
+      if (blank) blank.remove();
       var m = document.createElement('div');
       m.className = 'msg ' + who;
       m.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + F.clock(Date.now()) + '</span>';
@@ -981,11 +1131,12 @@
     clearInterval(window.__nexMkt);
     if (!guard()) return;
     document.body.classList.add('loading');
+    bootVeil();
+    API.ready(dropVeil);
     mountChrome(document.querySelector('.app') || document.body);
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
     bindChrome();
     consentBar();
-    riskStrip();
     initChat();
     initMarkets();
     if (window.NexTrade) window.NexTrade.init();

@@ -242,7 +242,6 @@
     window.__nexPosOff = [];
 
     API.ready(function () {
-      API.seedDemoHistory();
       document.body.classList.remove('loading');
       renderAll();
       window.__nexPosOff.push(API.on('contracts', renderAll));

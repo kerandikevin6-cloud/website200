@@ -178,48 +178,64 @@
         F.signedMoney(pnl) + '</span></div>');
   }
 
-  /* ---------- dock (the two CTAs) ---------- */
-  function renderDock() {
-    var sides = S.tab === 'even_odd' ? [['even', 'Even'], ['odd', 'Odd']]
+  /* ---------- dock (the two CTAs) ----------
+     Idle, each side shows its name and what it pays, nothing else. Once
+     a side is running it turns amber and becomes the stop control, with
+     its progress drawn along the bottom of the button itself — that is
+     the whole progress display, so nothing has to appear elsewhere on
+     the page and push the layout around. */
+  function sidesFor() {
+    return S.tab === 'even_odd' ? [['even', 'Even'], ['odd', 'Odd']]
       : S.tab === 'matches' ? [['matches', 'Matches ' + S.barrier], ['differs', 'Differs ' + S.barrier]]
       : [['over', 'Over ' + S.barrier], ['under', 'Under ' + S.barrier]];
+  }
 
+  /* the live contract for a side on this instrument, if any */
+  function runningOn(side) {
+    var open = API.contracts.open();
+    for (var i = 0; i < open.length; i++) {
+      if (open[i].symbol === S.symbol && open[i].side === side) return open[i];
+    }
+    return null;
+  }
+
+  function renderDock() {
     var blocked = API.connection.status() !== 'live';
+    var busy = false;
+    var sides = sidesFor();
+    for (var i = 0; i < sides.length; i++) if (runningOn(sides[i][0])) busy = true;
+    if (S.run) busy = true;
+
     html(el.dock,
-      '<div class="trade-actions">' + sides.map(function (s, i) {
-        return '<button class="tbtn ' + (i === 0 ? 'even' : 'odd') + '" data-side="' + s[0] + '"' +
-          (blocked ? ' disabled' : '') + '>' +
-          '<div class="t">' + s[1] + '</div>' +
-          '<div class="s">Payout ' + F.amount(payoutFor(s[0])) + ' · ' + pct(s[0]) + '</div>' +
+      '<div class="trade-actions">' + sides.map(function (sd, i) {
+        var live = runningOn(sd[0]);
+        var isRun = S.run && S.run.side === sd[0];
+        var tone = i === 0 ? 'even' : 'odd';
+
+        if (live || isRun) {
+          var pcTicks = live ? Math.min(100, Math.round(live.elapsed / live.ticks * 100)) : 0;
+          var sub = isRun
+            ? S.run.done + ' of ' + S.run.total + ' · ' + F.signed(S.run.pnl)
+            : (live.ticks - live.elapsed) + ' left · ' + F.signed(live.value - live.stake);
+          return '<button class="tbtn stop" data-stop="' + sd[0] + '">' +
+            '<div class="t">Stop</div>' +
+            '<div class="s">' + sub + '</div>' +
+            '<i class="tbtn-bar" style="width:' + (isRun
+              ? Math.round(S.run.done / S.run.total * 100) : pcTicks) + '%"></i>' +
+          '</button>';
+        }
+
+        return '<button class="tbtn ' + tone + '" data-side="' + sd[0] + '"' +
+          (blocked || busy ? ' disabled' : '') + '>' +
+          '<div class="t">' + sd[1] + '</div>' +
+          '<div class="s">' + F.amount(payoutFor(sd[0])) + '</div>' +
         '</button>';
       }).join('') + '</div>');
   }
 
-  /* ---------- open positions, under the chart ---------- */
-  function renderActive() {
-    var open = API.contracts.open();
-    if (!open.length) { html(el.active, ''); return; }
-
-    html(el.active, '<div class="active-wrap">' + open.map(function (c) {
-      var left = Math.max(0, c.ticks - c.elapsed);
-      var pl = c.value - c.stake;
-      return '<div class="open-card">' +
-        '<div class="active-top">' +
-          '<b>' + API.contracts.label(c) + '</b>' +
-          '<span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
-        '</div>' +
-        '<div class="active-meta">' +
-          '<span>' + F.money(c.stake) + ' · ' + F.ticks(c.ticks) + '</span>' +
-          '<span class="num">entry ' + F.price(c.entrySpot) + '</span>' +
-        '</div>' +
-        '<div class="bar"><i style="width:' + Math.round(c.elapsed / c.ticks * 100) + '%"></i></div>' +
-        '<div class="active-foot">' +
-          '<span>' + left + ' left</span>' +
-          '<button class="btn-mini" data-sell="' + c.id + '">Sell ' + F.amount(c.value) + '</button>' +
-        '</div>' +
-      '</div>';
-    }).join('') + '</div>');
-  }
+  /* The old card under the chart is gone: progress lives on the button
+     and the full detail comes up as a result dialog when it finishes. */
+  function renderActive() { html(el.active, ''); }
 
   function renderAll() {
     renderTabs(); renderInstrument(); renderDigits();
@@ -273,7 +289,7 @@
       return null;
     }
     S.error = null;
-    renderPanel(); renderActive();
+    renderPanel(); renderActive(); renderDock();
     return res.contract;
   }
 
@@ -294,14 +310,24 @@
     S.run = null;
     S.stake = r.base;
     renderPanel();
-    if (reason) window.NexToast(reason);
+    renderDock();
+    if (reason && window.NexModal) window.NexModal.open('runResult', null, { run: r, reason: reason });
+    else if (reason) window.NexToast(reason);
   }
+  function showResult(c) {
+    if (window.NexModal) window.NexModal.open('result', null, { contract: c });
+  }
+
   function onSettled(c) {
-    if (c.status !== 'open') {
+    /* A hand-placed contract gets the full result dialog. Contracts
+       inside an automated run would throw a dialog every few seconds,
+       so those stay as toasts and the run reports once at the end. */
+    if (c.status !== 'open' && !c.run) showResult(c);
+    else if (c.status !== 'open') {
       window.NexToast(c.status === 'won'
-        ? 'Won ' + F.money(c.payout) + ' on ' + API.contracts.label(c)
+        ? 'Won ' + F.money(c.payout)
         : c.status === 'sold' ? 'Sold at ' + F.money(c.value)
-        : 'Lost ' + F.money(c.stake) + ' on ' + API.contracts.label(c));
+        : 'Lost ' + F.money(c.stake));
     }
     if (!S.run || c.run !== S.run.id) { renderAll(); return; }
 
@@ -371,6 +397,19 @@
 
       if (t.closest('#runStop')) { stopRun('Run stopped'); return; }
 
+      var stop = t.closest('[data-stop]');
+      if (stop) {
+        var which2 = stop.getAttribute('data-stop');
+        if (S.run) { stopRun('Run stopped'); renderAll(); return; }
+        var live = runningOn(which2);
+        if (live) {
+          var sold = API.contracts.sell(live.id);
+          if (!sold.ok) window.NexToast(sold.error);
+        }
+        renderAll();
+        return;
+      }
+
       var side = t.closest('[data-side]');
       if (side) {
         if (!check()) { renderPanel(); window.NexToast(S.error); return; }
@@ -439,7 +478,6 @@
 
   function mounted() {
     API.ready(function () {
-      API.seedDemoHistory();
       chart = window.NexChart.create($('chart'), { symbol: S.symbol });
       chart.resize();
       document.body.classList.remove('loading');
@@ -447,7 +485,10 @@
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
-        renderInstrument(); renderDigits(); renderActive();
+        renderInstrument(); renderDigits();
+        /* only while something is live, so the idle dock is not rebuilt
+           under the finger once a second for no reason */
+        if (S.run || API.contracts.open().length) renderDock();
         if (chart) chart.dirty = true;
       }));
       unsub.push(API.on('settled', onSettled));

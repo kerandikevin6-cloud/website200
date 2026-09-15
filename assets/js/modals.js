@@ -47,6 +47,31 @@
       (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
   }
 
+  /* Just enough logo to confirm what is accepted. It sits above the
+     form as a small chip rather than a banner — the white ground is
+     only there because these marks are drawn for light backgrounds. */
+  function brandMark(src, alt, inkSrc) {
+    /* Only a mark that needs a second version is theme-tagged. The
+       M-Pesa badge is a solid green plate and reads on either ground,
+       so it ships once and is never hidden. */
+    if (!inkSrc) {
+      return '<div class="paylogo"><img src="' + src + '" alt="' + alt + '" loading="lazy"></div>';
+    }
+    return '<div class="paylogo">' +
+      '<img class="on-dark" src="' + src + '" alt="' + alt + '" loading="lazy">' +
+      '<img class="on-light" src="' + inkSrc + '" alt="' + alt + '" loading="lazy">' +
+    '</div>';
+  }
+
+  /* A rail that is not live yet: shown, so people can see it is coming,
+     but inert. */
+  function methodOff(iconName, name, note) {
+    return '<div class="method off" aria-disabled="true">' +
+      '<span class="ico">' + I(iconName, 19) + '</span>' +
+      '<span class="t"><b>' + name + '</b><span>' + note + '</span></span>' +
+      '<span class="badge">Soon</span></div>';
+  }
+
   function method(value, iconName, name, note) {
     return '<button class="method" data-set="method:' + value + '" data-goto="form">' +
       '<span class="ico">' + I(iconName, 19) + '</span>' +
@@ -62,33 +87,62 @@
      follows the same country; USDT is a dollar rail, so it stays in USD. */
   function payCur(methodId) {
     var c = API().geo.country();
-    if (methodId === 'usdt' || !c.cur) return { cur: API().account.currency(), rate: 1, quick: [10, 25, 50, 100, 250] };
-    return { cur: c.cur, rate: c.rate, quick: c.quick };
-  }
-  function localAmount(v, cur) {
-    return window.NexFmt.count(Math.round(v)) + ' ' + cur;
+    if (methodId === 'usdt' || !c.cur) {
+      return { cur: API().account.currency(), rate: 1, min: 10, quick: [10, 25, 50, 100, 250] };
+    }
+    return { cur: c.cur, rate: c.rate, min: c.min, quick: c.quick };
   }
 
   /* The waiting and done screens are shared by deposit and withdraw, so
      both rails behave the same while we are still on mock money. */
   function waitingBody(headline, note) {
     return '<div class="await">' +
-      '<div class="await-orb"><i></i><i></i><i></i></div>' +
+      window.NexLoader() +
       '<b>' + headline + '</b>' +
       '<span>' + note + '</span>' +
       '<button class="btn btn-ghost" type="button" data-close>Cancel</button>' +
     '</div>';
   }
-  function doneBody(headline, note, rows) {
+  /* Every operation that changes something ends on one of these, so a
+     save, a payment and a document upload all confirm the same way
+     instead of some flashing a toast and others closing silently. */
+  function doneBody(headline, note, rows, cta) {
     return '<div class="done">' +
       '<span class="done-mark">' + I('check', 30) + '</span>' +
       '<b>' + headline + '</b>' +
       '<span>' + note + '</span>' +
       '</div>' +
       '<div class="modal-form">' +
-        '<div class="totals">' + rows + '</div>' +
+        (rows ? '<div class="totals">' + rows + '</div>' : '') +
+        (cta || '') +
         '<button class="btn btn-fill" type="button" data-close>Done</button>' +
       '</div>';
+  }
+  function okStep(title, sub, headline, note, rows, cta) {
+    return {
+      title: title,
+      sub: sub,
+      noBack: true,
+      body: function (s) {
+        return doneBody(
+          typeof headline === 'function' ? headline(s) : headline,
+          typeof note === 'function' ? note(s) : note,
+          typeof rows === 'function' ? rows(s) : rows,
+          typeof cta === 'function' ? cta(s) : cta
+        );
+      }
+    };
+  }
+
+  /* Shows enough of the address to recognise it, not enough to leak it
+     to whoever is looking over the person's shoulder. */
+  function maskEmail() {
+    var e = ((API().session.get() || {}).email || '').trim();
+    if (!e || e.indexOf('@') < 1) return 'Not set';
+    var parts = e.split('@');
+    var name = parts[0];
+    var shown = name.length <= 2 ? name.charAt(0) : name.charAt(0) + '***' + name.charAt(name.length - 1);
+    return shown + '@' + parts[1];
   }
 
   function kv(k, v, attrs) {
@@ -116,7 +170,20 @@
               row('demo', 'Demo', 'USD · practice funds') +
             '</div><p class="hint" style="margin:14px 2px 0">Open positions stay with the account they were taken on.</p>';
           }
-        }
+        },
+        done: okStep(
+          'Account switched',
+          'The terminal is now trading this balance.',
+          function () { return 'Trading the ' + API().account.kind() + ' account'; },
+          function () {
+            return API().account.kind() === 'demo'
+              ? 'Virtual funds, real prices. Nothing here touches your real balance.'
+              : 'Real funds. Every contract you place from here costs actual money.';
+          },
+          function () {
+            return kv('Account', API().account.kind()) +
+              kv('Balance', F().money(API().account.balance()));
+          })
       }
     },
 
@@ -167,7 +234,19 @@
               act('Save settings', 'saveAuto') +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Run settings saved',
+          'They apply to the next automated run you start.',
+          'Settings saved',
+          'The run will stop on its own when any one of these is reached.',
+          function () {
+            var a = API().prefs.auto();
+            return kv('Runs', a.runs) +
+              kv('Stake × on loss', a.multiplier) +
+              kv('Take profit', F().money(a.takeProfit)) +
+              kv('Stop loss', F().money(a.stopLoss));
+          })
       }
     },
 
@@ -195,14 +274,30 @@
           title: 'Profile and name',
           sub: 'Your name must match the ID you verify with.',
           body: function () {
+            var who = API().session.get() || {};
+            var parts = (who.name || '').trim().split(/\s+/);
+            var first = parts[0] || '';
+            var last = parts.slice(1).join(' ');
             return '<div class="modal-form">' +
-              field('firstName', 'First name', 'value="Amara" autocomplete="given-name"') +
-              field('lastName', 'Last name', 'value="Kimani" autocomplete="family-name"') +
-              field('displayName', 'Display name', 'value="Amara K."', 'Shown in live chat and copy trading.') +
-              submit('Save changes', 'Name updated') +
+              field('firstName', 'First name',
+                'value="' + first + '" autocomplete="given-name" placeholder="First name"') +
+              field('lastName', 'Last name',
+                'value="' + last + '" autocomplete="family-name" placeholder="Last name"') +
+              field('displayName', 'Display name',
+                'value="' + (who.displayName || '') + '" placeholder="How other traders see you"',
+                'Shown in support chat and copy trading.') +
+              act('Save changes', 'saveProfile') +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Profile saved',
+          'Your details are up to date.',
+          'Profile updated',
+          function (s) {
+            return 'You are now shown as ' + (s.savedName || 'your new name') +
+              ' across the platform.';
+          })
       }
     },
 
@@ -226,7 +321,12 @@
               act('Update password', 'savePassword') +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Password changed',
+          'You stay signed in on this device.',
+          'Password updated',
+          'Anywhere else you were signed in has been signed out. Use the new password next time you log in.')
       }
     },
 
@@ -243,7 +343,7 @@
             }
             return '<div class="modal-form"><div class="list" style="margin:0">' +
               '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
-                '<span class="t"><b>Email address</b><span>am***a@mail.com</span></span>' +
+                '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
                 '<span class="badge ok">Done</span></div>' +
               '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
                 '<span class="ico">' + I('idcard', 18) + '</span>' +
@@ -287,7 +387,17 @@
                 'Submit for review</button>' +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Documents received',
+          'Nothing more is needed from you right now.',
+          'Submitted for review',
+          'Most checks clear within the hour. We will let you know either way, and you can keep trading while it runs.',
+          function () {
+            return kv('Status', '<span class="badge warn">In review</span>') +
+              kv('Usually takes', 'Under an hour') +
+              kv('Unlocks', 'Withdrawals');
+          })
       }
     },
 
@@ -300,12 +410,12 @@
           body: function () {
             var c = API().geo.country();
             var money = c.cur || 'USD';
-            var lo = c.rate ? Math.round(1 * c.rate / 10) * 10 : 1;
+            var lo = c.min || 10;
             var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
             return method('mpesa', 'phone', 'M-Pesa',
                 'Instant · ' + money + ' ' + F().count(lo) + ' – ' + F().count(hi)) +
-              method('card', 'card', 'Card', 'Visa, Mastercard, Verve · secured by Paystack') +
-              method('usdt', 'coin', 'USDT', 'TRC-20 and ERC-20 · from $10');
+              method('card', 'card', 'Card', 'Visa and Mastercard · secured by Paystack') +
+              methodOff('coin', 'USDT', 'Crypto deposits are not open yet');
           }
         },
         form: {
@@ -314,24 +424,23 @@
           body: function (s) {
             var m = s.method || 'mpesa', inner;
 
+            var logo = '';
             if (m === 'mpesa') {
+              logo = brandMark('assets/mpesa.png', 'M-Pesa');
               inner = phoneField('mpesaPhone', 'M-Pesa number',
                 'You will receive an STK push on this number. Enter your PIN to confirm.');
             } else if (m === 'card') {
-              /* No card fields here by design. Taking a PAN on our own form
-                 would drag this page into PCI scope for no benefit, so the
-                 details are only ever typed on Paystack's checkout. */
+              /* No card fields here by design: taking a PAN on our own form
+                 would drag this page into PCI scope for no benefit. One
+                 short line is all this step needs — the rest is Paystack's
+                 job, and the whole sheet fits without scrolling. */
+              logo = brandMark('assets/cards.png', 'Visa and Mastercard', 'assets/cards-ink.png');
               inner = '<div class="handoff">' +
-                  '<span class="handoff-mark">' + I('lock', 19) + '</span>' +
+                  '<span class="handoff-mark">' + I('lock', 18) + '</span>' +
                   '<div class="handoff-t">' +
-                    '<b>You finish this payment on Paystack</b>' +
-                    '<p>Your card number is entered on Paystack\'s own secure checkout. ' +
-                    'Nexas never sees or stores it. You will be brought back here once ' +
-                    'the payment clears.</p>' +
+                    '<p>Card details are entered on Paystack\'s secure checkout. ' +
+                    'Nexas never sees your card number.</p>' +
                   '</div>' +
-                '</div>' +
-                '<div class="handoff-marks">' +
-                  '<span>Visa</span><span>Mastercard</span><span>Verve</span><span>3-D Secure</span>' +
                 '</div>';
             } else {
               inner = '<div class="field"><label for="network">Network</label>' +
@@ -345,34 +454,31 @@
 
             var pay = payCur(m);
             var start = pay.quick[1];
+            var floor = pay.min || pay.quick[0];
 
             return '<div class="modal-form">' +
+              logo +
               '<div class="field"><label for="amount">Amount</label>' +
                 '<div class="input-wrap"><input class="input num" id="amount" value="' + start +
                   '" inputmode="decimal">' +
                 '<span class="suffix">' + pay.cur + '</span></div>' +
                 '<div class="quick">' + pay.quick.map(function (n) {
                   return '<button type="button" data-amount="' + n + '">' + F().count(n) + '</button>';
-                }).join('') + '</div></div>' +
+                }).join('') + '</div>' +
+                '<span class="hint">Minimum ' + F().count(floor) + ' ' + pay.cur + '</span></div>' +
               inner +
-              '<div class="totals">' +
-                kv('Fee', localAmount(0, pay.cur)) +
-                (pay.rate === 1 ? '' :
-                  kv('Rate', '1 USD = ' + F().count(pay.rate) + ' ' + pay.cur)) +
-                kv('Credited to ' + API().account.kind(), F().money(start / pay.rate),
-                   'data-total="amount" data-fx="' + pay.rate + '"') +
-              '</div>' +
               (m === 'card'
-                ? '<a class="btn btn-fill" href="' + PAYSTACK + '" target="_blank" rel="noopener noreferrer">' +
+                ? '<a class="btn btn-pos" href="' + PAYSTACK + '" target="_blank" rel="noopener noreferrer">' +
                     I('lock', 16) + 'Continue to Paystack</a>' +
                   '<span class="hint" style="text-align:center">Opens Paystack in a new tab</span>'
-                : act('Confirm deposit', 'deposit')) +
+                : act('Confirm deposit', 'deposit', 'btn-pos')) +
             '</div>';
           }
         },
         pending: {
           title: 'Waiting for payment',
           sub: 'Leave this open until it clears.',
+          noBack: true,
           body: function (s) {
             return waitingBody(
               s.method === 'mpesa' ? 'Check your phone' : 'Authorising with your bank',
@@ -385,6 +491,7 @@
         success: {
           title: 'Deposit received',
           sub: 'The funds are in your trading balance.',
+          noBack: true,
           body: function (s) {
             return doneBody('Payment confirmed',
               s.payLabel + ' received and credited.',
@@ -392,6 +499,79 @@
               kv('Credited', F().money(s.credited)) +
               kv('New balance', F().money(API().account.balance())) +
               kv('Reference', '<span class="num">' + s.ref + '</span>'));
+          }
+        }
+      }
+    },
+
+    /* ---------------- contract result ----------------
+       What the old card under the chart used to say, shown once the
+       contract is actually settled and there is something to report. */
+    result: {
+      steps: {
+        main: {
+          title: function (s) {
+            var c = s.contract || {};
+            return c.status === 'won' ? 'Contract won'
+              : c.status === 'sold' ? 'Sold early' : 'Contract lost';
+          },
+          sub: function (s) { return (s.contract || {}).symbolName || ''; },
+          noBack: true,
+          body: function (s) {
+            var c = s.contract || {};
+            var won = c.status === 'won';
+            var sold = c.status === 'sold';
+            var cls = c.profit >= 0 ? 'pos' : 'neg';
+
+            return '<div class="outcome ' + cls + '">' +
+                '<span class="label">' + API().contracts.label(c) + '</span>' +
+                '<b class="num">' + F().signedMoney(c.profit) + '</b>' +
+                '<span class="outcome-sub">' +
+                  (won ? 'Paid ' + F().money(c.payout)
+                    : sold ? 'Closed at ' + F().money(c.value)
+                    : 'Stake not returned') +
+                '</span>' +
+              '</div>' +
+              '<div class="modal-form">' +
+                '<div class="totals">' +
+                  kv('Stake', F().money(c.stake)) +
+                  kv('Duration', F().ticks(c.ticks)) +
+                  kv('Entry', '<span class="num">' + F().price(c.entrySpot) + '</span>') +
+                  kv('Exit', '<span class="num">' + F().price(c.exitSpot) + '</span>') +
+                  kv('Balance', F().money(API().account.balance())) +
+                '</div>' +
+                '<button class="btn btn-fill" type="button" data-close>Done</button>' +
+              '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- automated run result ---------------- */
+    runResult: {
+      steps: {
+        main: {
+          title: 'Run finished',
+          sub: function (s) { return s.reason || ''; },
+          noBack: true,
+          body: function (s) {
+            var r = s.run || {};
+            var cls = r.pnl >= 0 ? 'pos' : 'neg';
+            return '<div class="outcome ' + cls + '">' +
+                '<span class="label">' + (r.done || 0) + ' of ' + (r.total || 0) + ' contracts</span>' +
+                '<b class="num">' + F().signedMoney(r.pnl || 0) + '</b>' +
+                '<span class="outcome-sub">Session result</span>' +
+              '</div>' +
+              '<div class="modal-form">' +
+                '<div class="totals">' +
+                  kv('Contracts placed', r.done || 0) +
+                  kv('Opening stake', F().money(r.base || 0)) +
+                  kv('Take profit', F().money(r.takeProfit || 0)) +
+                  kv('Stop loss', F().money(r.stopLoss || 0)) +
+                  kv('Balance', F().money(API().account.balance())) +
+                '</div>' +
+                '<button class="btn btn-fill" type="button" data-close>Done</button>' +
+              '</div>';
           }
         }
       }
@@ -516,7 +696,7 @@
             return '<div class="balance-strip"><span class="label">Available</span>' +
               '<b class="num">' + F().money(API().account.balance()) + '</b></div>' +
               method('mpesa', 'phone', 'M-Pesa', 'To the number on your profile') +
-              method('usdt', 'coin', 'USDT', 'TRC-20 · network fee applies');
+              methodOff('coin', 'USDT', 'Crypto payouts are not open yet');
           }
         },
         form: {
@@ -540,13 +720,14 @@
               (API().kyc.verified() ? '' :
                 '<div class="notice">' + I('shield', 17) +
                 '<span>Identity verification is required before your first payout.</span></div>') +
-              act('Request withdrawal', 'withdraw') +
+              act('Request withdrawal', 'withdraw', 'btn-pos') +
             '</div>';
           }
         },
         pending: {
           title: 'Sending your payout',
           sub: 'This usually clears in under a minute.',
+          noBack: true,
           body: function (s) {
             return waitingBody('Payout in progress',
               'We are sending ' + F().money(s.sent) + ' to your ' +
@@ -556,6 +737,7 @@
         success: {
           title: 'Payout sent',
           sub: 'Your provider will confirm by SMS.',
+          noBack: true,
           body: function (s) {
             return doneBody('Withdrawal complete',
               F().money(s.sent) + ' is on its way.',

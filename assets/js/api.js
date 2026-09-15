@@ -15,6 +15,40 @@
 
   var KEY = 'nexas.v1';
 
+  /* ============================================================
+     BACKEND SEAM
+     Every value the UI shows passes through this module, so wiring a
+     server means replacing the bodies below and nothing else. Set a
+     base URL to point at a real API:
+
+       <script>window.NEXAS_API = "https://api.example.com";</script>
+
+     Endpoints this module expects, in the shape it already uses:
+
+       GET   /session                 -> {id,email,name,displayName,verified}
+       POST  /session                 sign in     {email,password}
+       DELETE/session                 sign out
+       GET   /account                 -> {kind,currency,balances:{real,demo}}
+       POST  /account/use             {kind}
+       GET   /instruments             -> [{id,name,group,digits}]
+       WS    /feed?symbols=...        -> {symbol,price,digit,t}
+       GET   /contracts?status=       -> [contract]
+       POST  /contracts               buy  {symbol,type,side,barrier,stake,ticks}
+       POST  /contracts/:id/sell
+       GET   /transactions            -> [entry]
+       POST  /payments/deposit        {method,amount,currency,phone} -> {ref,status}
+       POST  /payments/withdraw       {method,amount,destination}    -> {ref,status}
+       GET   /payments/:ref           -> {status}   (poll while pending)
+       POST  /kyc/documents           multipart    -> {status}
+       GET   /referrals               -> {code,link,funded,list:[...]}
+       GET   /geo                     -> {country}  (server-side IP lookup)
+
+     Until NEXAS_API is set, the module runs the local simulation below
+     so the interface is fully usable without a server.
+     ============================================================ */
+  var BASE = (typeof window !== 'undefined' && window.NEXAS_API) || null;
+  var LIVE = !!BASE;
+
   /* ---------- instruments ---------- */
   var SYMBOLS = [
     { id: 'R_10',  name: 'Volatility 10 (1s) Index',  group: 'Volatility', start: 9601.01,  vol: 0.9,  digits: 2, rate: 1000 },
@@ -47,19 +81,19 @@
      local money, rounded to figures people actually send. */
   var COUNTRIES = {
     KE: { name: 'Kenya',        dial: '254', sample: '712 345 678',  len: 9,
-          cur: 'KES', rate: 129,   quick: [500, 1000, 2500, 5000, 10000] },
+          cur: 'KES', rate: 129,   min: 100,    quick: [100, 500, 1000, 2500, 5000] },
     UG: { name: 'Uganda',       dial: '256', sample: '712 345 678',  len: 9,
-          cur: 'UGX', rate: 3720,  quick: [20000, 50000, 100000, 200000, 500000] },
+          cur: 'UGX', rate: 3720,  min: 3000,   quick: [3000, 10000, 25000, 50000, 100000] },
     TZ: { name: 'Tanzania',     dial: '255', sample: '712 345 678',  len: 9,
-          cur: 'TZS', rate: 2640,  quick: [10000, 25000, 50000, 100000, 250000] },
+          cur: 'TZS', rate: 2640,  min: 2000,   quick: [2000, 5000, 10000, 25000, 50000] },
     RW: { name: 'Rwanda',       dial: '250', sample: '788 123 456',  len: 9,
-          cur: 'RWF', rate: 1330,  quick: [5000, 10000, 25000, 50000, 100000] },
+          cur: 'RWF', rate: 1330,  min: 1000,   quick: [1000, 5000, 10000, 25000, 50000] },
     NG: { name: 'Nigeria',      dial: '234', sample: '802 123 4567', len: 10,
-          cur: 'NGN', rate: 1550,  quick: [5000, 10000, 25000, 50000, 100000] },
+          cur: 'NGN', rate: 1550,  min: 1000,   quick: [1000, 5000, 10000, 25000, 50000] },
     GH: { name: 'Ghana',        dial: '233', sample: '24 123 4567',  len: 9,
-          cur: 'GHS', rate: 15.2,  quick: [50, 100, 250, 500, 1000] },
+          cur: 'GHS', rate: 15.2,  min: 10,     quick: [10, 50, 100, 250, 500] },
     ZA: { name: 'South Africa', dial: '27',  sample: '71 123 4567',  len: 9,
-          cur: 'ZAR', rate: 18.3,  quick: [100, 250, 500, 1000, 2500] }
+          cur: 'ZAR', rate: 18.3,  min: 20,     quick: [20, 100, 250, 500, 1000] }
   };
   var DEFAULT_COUNTRY = 'KE';
 
@@ -126,7 +160,9 @@
     referrals: saved.referrals || null,
     session: saved.session || null,
     account: saved.account || 'real',
-    balances: saved.balances || { real: 2480, demo: 10000 },
+    /* A real account starts empty. The demo balance is a product
+       feature, not seed data, so it opens with virtual funds. */
+    balances: saved.balances || { real: 0, demo: 10000 },
     currency: 'USD',
     verified: !!saved.verified,
     consent: !!saved.consent,
@@ -238,19 +274,9 @@
     { funded: 6,  boost: 0.010 },
     { funded: 12, boost: 0.015 }
   ];
-  var REF_NAMES = ['J. Mwangi', 'A. Otieno', 'S. Wanjiru', 'D. Kiptoo', 'P. Njeri', 'M. Achieng'];
   function seedReferrals() {
     if (S.referrals) return;
-    var now = Date.now(), out = [];
-    for (var i = 0; i < 4; i++) {
-      out.push({
-        id: 'RF' + (now - i * 86400000),
-        name: REF_NAMES[i],
-        joined: now - (i * 4 + 2) * 86400000,
-        funded: i < 3
-      });
-    }
-    S.referrals = out;
+    S.referrals = [];
     persist();
   }
   function fundedCount() {
@@ -401,7 +427,11 @@
     var c = S.contracts.filter(function (x) { return x.id === id; })[0];
     if (!c || c.status !== 'open') return { ok: false, error: 'Contract is no longer open' };
     c.status = 'sold';
-    c.exitSpot = c.lastSpot;
+    /* lastSpot is only set once a tick has advanced the contract, so a
+       contract sold before its first tick had no exit price at all. */
+    var hs = history[c.symbol] || [];
+    c.exitSpot = c.lastSpot != null ? c.lastSpot
+      : (hs.length ? hs[hs.length - 1].price : c.entrySpot);
     c.exitTime = Date.now();
     c.profit = round(c.value - c.stake, 2);
     adjust(c.value, { kind: 'Sold', ref: label(c) });
@@ -538,36 +568,6 @@
       setRiskAck: function (v) { S.riskAck = !!v; persist(); },
       auto: function () { return S.auto; },
       setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); }
-    },
-
-    /* demo-data helper: gives a first-time viewer something to look at */
-    seedDemoHistory: function () {
-      if (S.contracts.length) return;
-      var now = Date.now(), types = [
-        ['even_odd', 'even', null], ['even_odd', 'odd', null],
-        ['matches', null, 4], ['over', null, 5], ['under', null, 3], ['differs', null, 7]
-      ];
-      for (var i = 0; i < 9; i++) {
-        var t = types[i % types.length];
-        var stake = [5, 10, 10, 25, 50][i % 5];
-        var won = Math.random() > 0.45;
-        var payout = payoutFor(t[0], stake);
-        S.contracts.push({
-          id: 'C' + (now - i * 900000), symbol: 'R_10', symbolName: 'Volatility 10 (1s) Index',
-          type: t[0], side: t[1], barrier: t[2], stake: stake, payout: payout,
-          ticks: 5, elapsed: 5,
-          entrySpot: round(9600 + Math.random() * 4, 2), entryTime: now - i * 900000 - 5000,
-          exitSpot: round(9600 + Math.random() * 4, 2), exitTime: now - i * 900000,
-          status: won ? 'won' : 'lost', profit: round(won ? payout - stake : -stake, 2),
-          value: won ? payout : 0, account: 'real'
-        });
-        S.transactions.push({
-          id: 'T' + (now - i * 900000), t: now - i * 900000, kind: won ? 'Payout' : 'Trade',
-          ref: label({ type: t[0], side: t[1], barrier: t[2] }),
-          amount: won ? payout : -stake, balance: S.balances.real, account: 'real'
-        });
-      }
-      persist();
     }
   };
 })();

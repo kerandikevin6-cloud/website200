@@ -9,16 +9,19 @@
    ============================================================ */
 
 :root{
-  /* neutrals — cool grey, biased slightly toward the blue accent */
-  --bg:#FFFFFF;
+  /* neutrals — cool grey, biased slightly toward the blue accent.
+     The page ground is off-white and panels are pure white, so cards,
+     bars and dialogs sit *on* the page instead of dissolving into it.
+     White-on-white was the whole problem with the old light mode. */
+  --bg:#F4F6F8;
   --surface:#FFFFFF;
-  --surface-2:#F5F6F8;
-  --surface-3:#EBEDF0;
-  --line:#DDE1E6;
-  --line-soft:#EAECEF;
-  --text:#15181B;
-  --text-2:#4C5258;
-  --muted:#767D84;
+  --surface-2:#EDEFF3;
+  --surface-3:#E1E5EB;
+  --line:#D3D9E0;
+  --line-soft:#E2E6EB;
+  --text:#101519;
+  --text-2:#434A52;
+  --muted:#6B737C;
 
   /* brand + semantic */
   --accent:#007FFA;
@@ -34,14 +37,14 @@
   --warn-soft:#FDF1E3;
 
   /* chart */
-  --chart-line:#15181B;
-  --chart-grid:#E6E8EA;
-  --chart-fill:rgba(21,24,27,.05);
-  --chart-axis:#8A9097;
+  --chart-line:#101519;
+  --chart-grid:#E7EAEE;
+  --chart-fill:rgba(16,21,25,.05);
+  --chart-axis:#828A93;
   --chart-bg:#FFFFFF;
 
-  --shadow:0 1px 2px rgba(16,20,24,.06), 0 8px 24px rgba(16,20,24,.05);
-  --shadow-lg:0 24px 64px rgba(12,16,20,.18);
+  --shadow:0 1px 2px rgba(16,24,34,.05), 0 10px 28px rgba(16,24,34,.07);
+  --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
   --r-xl:20px;
   --r-lg:16px;
@@ -1539,18 +1542,18 @@ body.locked{overflow:hidden}
    a heading and room to explain why there is no card field here. */
 .handoff{
   display:flex;gap:14px;align-items:flex-start;padding:16px;
-  border:1px solid var(--line-soft);border-radius:var(--r-lg);background:var(--surface-2);
+  border:1px solid var(--line-soft);border-radius:0;background:var(--surface-2);
 }
 .handoff-mark{
   width:38px;height:38px;flex:none;display:grid;place-items:center;
-  border-radius:var(--r);background:var(--pos-soft);color:var(--pos);
+  border-radius:0;background:var(--pos-soft);color:var(--pos);
 }
 .handoff-t{min-width:0}
 .handoff-t b{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
 .handoff-t p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.7}
 .handoff-marks{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
 .handoff-marks span{
-  padding:5px 10px;border:1px solid var(--line-soft);border-radius:999px;
+  padding:5px 10px;border:1px solid var(--line-soft);border-radius:0;
   font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
   background:var(--surface);
 }
@@ -1587,11 +1590,252 @@ body.locked{overflow:hidden}
 .lfaq details[open] .lplus{color:var(--text)}
 .lfaq details[open] .lplus::after{transform:translate(-50%,-50%) scaleY(0);opacity:0}
 
+
+/* ---------------- payment buttons ----------------
+   Anything that moves money is green, so the action that costs
+   something never wears the same colour as an ordinary form submit. */
+.btn-pos{background:var(--pos);color:#fff}
+.btn-pos:hover{filter:brightness(1.07)}
+.btn-pos:disabled{filter:none}
+
+
+/* ---------------- light mode depth ----------------
+   With an off-white ground these need to be explicitly white, or they
+   read as a hole in the page rather than a surface on it. */
+.chart-card{background:var(--surface)}
+.digits,.panel,.trade-dock,.instrument,.ctabs{background:var(--surface)}
+.topbar{background:var(--surface)}
+.tabbar{background:var(--surface)}
+body[data-chrome="app"] main{background:var(--bg)}
+.list,.summary,.pnl-head,.ltable,.lpanel,.lfaq{box-shadow:var(--shadow)}
+.lsec:not(.tint):not(.lhero){background:var(--surface)}
+
+/* the terminal column reads as one continuous panel */
+@media (min-width:900px){
+  .terminal .col-mid{
+    background:var(--surface);border:1px solid var(--line-soft);
+    border-radius:var(--r-lg);overflow:hidden;
+  }
+}
+
+
+/* ---------------- a running side ----------------
+   Amber, and the progress is a bar along the foot of the button, so a
+   live contract needs no extra panel anywhere on the page. */
+.tbtn.stop{position:relative;background:var(--warn);color:#fff;overflow:hidden}
+.tbtn.stop .s{font-variant-numeric:tabular-nums}
+.tbtn-bar{
+  position:absolute;left:0;bottom:0;height:3px;background:rgba(255,255,255,.85);
+  transition:width .3s ease;
+}
+.tbtn[disabled]{opacity:.34}
+
+/* ---------------- outcome header ---------------- */
+.outcome{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:26px 22px 22px;text-align:center;
+}
+.outcome b{font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1}
+.outcome.pos b{color:var(--pos)}
+.outcome.neg b{color:var(--neg)}
+.outcome-sub{font-size:12.5px;color:var(--muted)}
+
+
+/* ---------------- the drawer is always dark ----------------
+   A dark rail against a light page is the point: it separates
+   navigation from the work surface instead of being another white
+   sheet next to a white sheet. These are fixed values, not tokens,
+   because the panel does not follow the theme. */
+.drawer{
+  --d-bg:#111A24;
+  --d-surface:#1A2632;
+  --d-line:rgba(255,255,255,.09);
+  --d-text:#E9EFF6;
+  --d-text-2:#B3C1D0;
+  --d-muted:#7F8FA1;
+  background:var(--d-bg);color:var(--d-text);
+  border-right:1px solid var(--d-line);
+}
+.drawer .drawer-user b{color:var(--d-text)}
+.drawer .drawer-user span{color:var(--d-muted)}
+.drawer .avatar{
+  background:rgba(61,155,255,.16);border-color:rgba(61,155,255,.32);color:#6FB6FF;
+}
+.drawer .drawer-sect{color:var(--d-muted)}
+.drawer .ditem{color:var(--d-text-2)}
+.drawer .ditem:hover{background:var(--d-surface);color:var(--d-text)}
+.drawer .ditem.active{background:var(--d-surface);color:var(--d-text)}
+.drawer .dgroup.open > .dgroup-head{color:var(--d-text)}
+.drawer .dgroup-body{border-left-color:var(--d-line)}
+.drawer .drawer-foot{border-top-color:var(--d-line)}
+.drawer .ditem.danger{color:#FF8478}
+.drawer .ditem.danger:hover{background:rgba(255,132,120,.12);color:#FF9B90}
+.drawer .switch{background:var(--d-surface);border-color:var(--d-line)}
+.drawer .switch::after{background:var(--d-muted)}
+.drawer .switch[aria-checked="true"]{background:rgba(61,155,255,.2);border-color:#3D9BFF}
+.drawer .switch[aria-checked="true"]::after{background:#6FB6FF}
+@media (hover:none){
+  .drawer .ditem:hover{background:none;color:var(--d-text-2)}
+}
+
+
+/* ---------------- loader ----------------
+   react-spinners' ScaleLoader, rebuilt in CSS because this app is plain
+   JS with no React runtime: five 4x35 bars, 2px apart, scaling on a
+   staggered delay, in the same indigo. Everything that waits uses this
+   one, so a spinner never means two different things. */
+:root{--loader:#6366F1}
+.scaleloader{display:inline-flex;align-items:center;gap:4px;height:35px}
+.scaleloader i{
+  display:block;width:4px;height:35px;border-radius:2px;
+  background:var(--loader);transform-origin:center;
+  animation:scaleload 1s ease-in-out infinite;
+}
+.scaleloader i:nth-child(1){animation-delay:-.08s}
+.scaleloader i:nth-child(2){animation-delay:-.16s}
+.scaleloader i:nth-child(3){animation-delay:-.24s}
+.scaleloader i:nth-child(4){animation-delay:-.32s}
+.scaleloader i:nth-child(5){animation-delay:-.40s}
+.scaleloader.sm{height:22px}
+.scaleloader.sm i{height:22px;width:3px}
+@keyframes scaleload{
+  0%,80%,100%{transform:scaleY(.38)}
+  40%{transform:scaleY(1)}
+}
+/* Without motion the bars would sit frozen at 38% and read as broken, so
+   they hold full height and the label carries the meaning instead. */
+@media (prefers-reduced-motion:reduce){
+  .scaleloader i{transform:scaleY(1)}
+}
+
+/* a centred block for a whole page or panel */
+.loading-block{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:64px 20px;text-align:center;
+}
+.loading-block span{font-size:12.5px;color:var(--muted);letter-spacing:.04em}
+
+/* the boot veil, over the app until the feed answers */
+.boot{
+  position:fixed;inset:0;z-index:95;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;
+  background:var(--bg);opacity:1;transition:opacity .28s ease;
+}
+.boot.gone{opacity:0;pointer-events:none}
+.boot-word{
+  font-family:var(--serif);font-size:26px;letter-spacing:.02em;color:var(--text);
+}
+.boot span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+
+
+/* ---------------- Learn: the landing page's rhythm ----------------
+   Same idea as the marketing page: air above a heading is what tells
+   you a new idea has started, and the body gets a readable measure
+   rather than filling the column. */
+.page{padding:36px 22px 64px;max-width:820px}
+.page h1{font-size:36px;line-height:1.14;margin:0 0 20px}
+.page .lede{font-size:17px;line-height:1.85;margin-bottom:8px!important}
+.page h2{
+  font-size:12px;letter-spacing:.13em;margin:64px 0 22px;
+  padding-top:0;border:none;
+}
+.page p{font-size:14.5px;line-height:1.85;margin:0 0 20px}
+.page .rule{margin:48px 0 0}
+.cards{gap:18px}
+.card{padding:26px}
+.card h3{font-size:15.5px;margin-bottom:12px}
+.card p{font-size:14px;line-height:1.85}
+.tool{gap:18px}
+.tool > svg{width:42px;height:42px;padding:10px}
+.tool b{font-size:15.5px;margin-bottom:9px}
+.tool p{font-size:14px;line-height:1.85}
+.stats{gap:18px;margin-top:4px}
+.stat{padding:24px 22px}
+.stat b{font-size:28px;margin-bottom:12px}
+.stat span{font-size:12.5px;line-height:1.7}
+.stats + p,.cards + p{margin-top:32px}
+
+@media (min-width:900px){
+  .page{padding:56px 32px 88px}
+  .page h1{font-size:42px}
+  .page h2{margin-top:80px}
+}
+
+
+/* ---------------- Learn: minimal ----------------
+   Square corners like the rest of the site, and far less furniture:
+   flat panels with one hairline instead of bordered, shadowed, rounded
+   boxes. The type does the work; the boxes just hold it apart. */
+.card,.stat{border-radius:0;box-shadow:none}
+.page .card{
+  background:var(--surface);border:1px solid var(--line-soft);
+  padding:24px 22px;
+}
+.page .cards{gap:0;border:1px solid var(--line-soft);background:var(--surface)}
+.page .cards > .card{border:none;border-top:1px solid var(--line-soft)}
+.page .cards > .card:first-child{border-top:none}
+
+.page .stats{
+  gap:0;border:1px solid var(--line-soft);background:var(--surface);
+  grid-template-columns:1fr 1fr;
+}
+.page .stat{
+  border:none;border-top:1px solid var(--line-soft);border-left:1px solid var(--line-soft);
+  padding:22px 20px;
+}
+.page .stat:nth-child(-n+2){border-top:none}
+.page .stat:nth-child(2n+1){border-left:none}
+
+/* the icon tile loses its fill — a rule and a colour is enough */
+.page .tool > svg{
+  width:auto;height:auto;padding:0;background:none;
+  min-width:20px;min-height:20px;max-width:20px;max-height:20px;margin-top:3px;
+}
+.page .tool{gap:16px}
+
+.page .rule{display:none}
+.page .lede{color:var(--text-2)}
+.page h2{margin-top:56px;padding-top:0}
+.page h2:first-of-type{margin-top:48px}
+
+@media (min-width:900px){
+  .page .stats{grid-template-columns:repeat(4,1fr)}
+  .page .stat:nth-child(-n+4){border-top:none}
+  .page .stat:nth-child(2n+1){border-left:1px solid var(--line-soft)}
+  .page .stat:nth-child(4n+1){border-left:none}
+  .page .cards{display:grid;grid-template-columns:repeat(3,1fr)}
+  .page .cards > .card{border-top:none;border-left:1px solid var(--line-soft)}
+  .page .cards > .card:first-child{border-left:none}
+}
+
+
+/* ---------------- payment brand mark ----------------
+   Always on white: these logos are drawn for a light ground and would
+   lose their edges against the dark theme. */
+/* No plate: the marks were rebuilt with transparent backgrounds and
+   light ink so they sit straight on the panel. The card lockup carries
+   a dark-ink twin for when the page is light, since a white VISA would
+   disappear there. */
+.paylogo{
+  display:flex;justify-content:center;align-items:center;
+  background:none;border:none;padding:2px 0 0;
+}
+.paylogo img{display:block;width:auto;height:22px;object-fit:contain}
+.paylogo .on-light{display:none}
+:root[data-theme="light"] .paylogo .on-dark{display:none}
+:root[data-theme="light"] .paylogo .on-light{display:block}
+
+/* a rail that is listed but not live */
+.method.off{opacity:.5;cursor:default;pointer-events:none}
+.method.off .badge{
+  background:var(--surface-3);color:var(--muted);
+}
+
 </style>
 
 <div class="app" id="app"></div>
 
-<script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = {"landing":{"attrs":{"data-page":"landing","data-chrome":"plain"},"title":"Nexas &mdash; Trade synthetic indices","html":"\n\n    <!-- ---------------- nav ---------------- -->\n    <header class=\"lnav\">\n      <div class=\"lnav-in\">\n        <a class=\"wordmark\" href=\"landing.html\">Nexas</a>\n        <nav class=\"lnav-links\">\n          <a href=\"#market\">Live market</a>\n          <a href=\"#how\">How it works</a>\n          <a href=\"#contracts\">Contracts</a>\n          <a href=\"#faq\">FAQ</a>\n        </nav>\n        <div class=\"lnav-cta\">\n          <a class=\"btn-ghost-sm\" href=\"login.html\">Log in</a>\n          <a class=\"btn-solid-sm\" href=\"signup.html\">Create account</a>\n        </div>\n      </div>\n    </header>\n\n    <!-- ---------------- hero: white ---------------- -->\n    <section class=\"lsec lhero\">\n      <div class=\"lsec-in\">\n        <h1>The market never closes.<br>Neither does your terminal.</h1>\n        <p class=\"lhero-p\">Nexas is a trading terminal for digit contracts on synthetic indices &mdash; price series generated continuously by a published random process. No earnings calls, no market open, no waiting for Monday.</p>\n        <div class=\"lcta\">\n          <a class=\"btn btn-fill\" href=\"signup.html\">Create a free account</a>\n          <a class=\"btn btn-ghost\" href=\"login.html\">Try the demo balance</a>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- live market: blue ---------------- -->\n    <section class=\"lsec tint blue\" id=\"market\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">Live market</span>\n          <h2>This is the feed, running right now.</h2>\n          <p>Not a screenshot. The chart below is the same Volatility 10 series the terminal trades, ticking as you read this. The last digit of each price is what settles a contract.</p>\n        </div>\n\n        <div class=\"lshot\">\n          <div class=\"lshot-head\">\n            <span class=\"lshot-name\">Volatility 10 (1s) Index</span>\n            <span class=\"lshot-live\"><i></i>live</span>\n          </div>\n          <div class=\"lshot-chart\">\n            <svg class=\"chart-map\" viewBox=\"0 0 1000 500\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\">\n              <path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M527.8 147.2L555.6 159.7L569.4 161.1L586.1 162.5L597.2 172.2L602.8 188.9L608.3 208.3L619.4 218.1L633.3 219.4L641.7 216.7L633.3 236.1L625.0 244.4L613.9 255.6L611.1 269.4L612.5 294.4L597.2 316.7L588.9 330.6L575.0 344.4L561.1 344.4L551.4 345.8L541.7 325.0L533.3 311.1L533.3 294.4L536.1 275.0L525.0 252.8L526.4 238.9L513.9 238.9L500.0 234.7L486.1 236.1L475.0 236.1L463.9 225.0L451.4 209.2L455.6 191.7L463.9 175.0L472.2 166.7L483.3 150.6L500.0 150.0L508.3 147.8L527.8 147.2ZM473.6 142.5L475.0 130.6L495.8 122.2L487.5 115.3L500.0 112.5L505.6 108.3L511.1 102.8L522.2 97.2L522.2 91.7L513.9 87.5L530.6 72.2L538.9 63.9L550.0 56.9L569.4 52.8L591.7 58.3L611.1 61.1L638.9 58.3L666.7 55.6L688.9 47.2L708.3 50.0L736.1 44.4L777.8 36.1L813.9 44.4L855.6 47.2L888.9 47.2L922.2 55.6L944.4 55.6L972.2 66.7L994.4 69.4L977.8 77.8L952.8 83.3L944.4 94.4L933.3 108.3L897.2 100.0L888.9 122.2L869.4 130.6L861.1 130.6L852.8 141.7L838.9 141.7L836.1 163.9L825.0 183.3L805.6 191.7L800.0 205.6L791.7 222.2L788.9 244.4L777.8 233.3L772.2 222.2L769.4 205.6L761.1 200.0L750.0 188.9L741.7 191.7L722.2 208.3L713.9 227.8L702.8 208.3L700.0 191.7L688.9 186.1L680.6 180.6L669.4 180.6L658.3 180.6L647.2 175.0L638.9 169.4L633.3 166.7L655.6 177.8L661.1 188.9L652.8 200.0L644.4 202.8L633.3 211.1L625.0 215.3L619.4 208.3L608.3 191.7L600.0 180.6L594.4 172.2L597.2 161.1L600.0 150.0L591.7 150.0L583.3 138.9L572.2 138.9L561.1 138.9L555.6 138.9L547.2 133.3L538.9 133.3L533.3 127.8L522.2 127.8L508.3 130.6L500.0 138.9L494.4 147.2L486.1 150.0L480.6 147.2L473.6 142.5ZM41.7 83.3L69.4 80.6L83.3 80.6L111.1 83.3L130.6 91.7L138.9 100.0L150.0 111.1L155.6 116.7L158.3 127.8L161.1 147.2L169.4 155.6L175.0 161.1L183.3 172.2L194.4 186.1L208.3 194.4L225.0 205.6L238.9 205.6L244.4 208.3L255.6 205.6L258.3 213.9L269.4 225.0L280.6 225.0L272.2 208.3L258.3 191.7L250.0 191.7L247.2 197.2L236.1 197.2L230.6 188.9L238.9 177.8L252.8 169.4L266.7 166.7L275.0 180.6L277.8 175.0L275.0 163.9L280.6 158.3L291.7 152.8L294.4 138.9L305.6 130.6L316.7 125.0L322.2 122.2L333.3 119.4L344.4 108.3L341.7 100.0L322.2 88.9L305.6 86.1L283.3 94.4L277.8 105.6L269.4 97.2L280.6 77.8L263.9 66.7L236.1 61.1L208.3 61.1L180.6 58.3L152.8 55.6L125.0 58.3L97.2 55.6L66.7 52.8L47.2 66.7L33.3 69.4L41.7 83.3ZM280.6 225.0L291.7 219.4L302.8 216.7L316.7 219.4L327.8 222.2L333.3 227.8L347.2 233.3L358.3 238.9L361.1 250.0L377.8 255.6L394.4 263.9L402.8 272.2L397.2 283.3L391.7 294.4L386.1 311.1L366.7 319.4L366.7 327.8L352.8 344.4L341.7 355.6L327.8 361.1L319.4 375.0L311.1 388.9L311.1 394.4L300.0 400.0L291.7 388.9L291.7 380.6L297.2 366.7L297.2 352.8L302.8 333.3L305.6 313.9L305.6 300.0L288.9 288.9L280.6 272.2L275.0 266.7L277.8 255.6L283.3 247.2L286.1 233.3L280.6 225.0ZM813.9 311.1L816.7 322.2L819.4 344.4L830.6 344.4L844.4 341.7L858.3 338.9L872.2 341.7L880.6 347.2L888.9 355.6L905.6 358.3L916.7 352.8L925.0 338.9L925.0 327.8L925.0 319.4L913.9 311.1L905.6 302.8L897.2 291.7L894.4 280.6L886.1 297.2L877.8 283.3L869.4 280.6L861.1 283.3L852.8 288.9L847.2 288.9L838.9 297.2L827.8 305.6L813.9 311.1ZM375.0 83.3L361.1 72.2L355.6 61.1L347.2 50.0L347.2 38.9L361.1 27.8L388.9 19.4L422.2 22.2L438.9 33.3L438.9 50.0L427.8 61.1L408.3 66.7L383.3 80.6L375.0 83.3ZM636.1 283.3L638.9 291.7L638.9 302.8L631.9 319.4L625.0 319.4L622.2 305.6L620.8 297.2L627.8 286.1L636.1 283.3ZM891.7 125.0L902.8 127.8L897.2 133.3L891.7 138.9L888.9 150.0L880.6 147.2L875.0 155.6L866.7 155.6L861.1 163.9L863.9 158.3L875.0 150.0L883.3 144.4L891.7 125.0ZM486.1 88.9L491.7 87.5L494.4 91.7L497.2 100.0L502.8 104.2L502.8 108.3L494.4 109.7L486.1 111.1L486.1 102.8L483.3 97.2L486.1 88.9ZM802.8 244.4L813.9 238.9L825.0 238.9L830.6 247.2L825.0 258.3L808.3 258.3L802.8 252.8L802.8 244.4ZM763.9 236.1L775.0 241.7L788.9 255.6L794.4 266.7L788.9 266.7L777.8 250.0L763.9 244.4L763.9 236.1ZM863.9 252.8L877.8 255.6L891.7 258.3L908.3 266.7L916.7 275.0L900.0 272.2L883.3 272.2L869.4 261.1L863.9 252.8ZM980.6 347.2L994.4 355.6L991.7 361.1L983.3 363.9L975.0 372.2L966.7 380.6L963.9 375.0L975.0 366.7L980.6 347.2ZM833.3 200.0L838.9 202.8L844.4 213.9L850.0 222.2L850.0 230.6L838.9 233.3L833.3 222.2L833.3 211.1L833.3 200.0ZM433.3 69.4L447.2 66.7L461.1 68.1L461.1 72.2L447.2 73.9L436.1 72.2L433.3 69.4ZM722.2 223.6L727.8 230.6L722.2 233.3L720.8 227.8L722.2 223.6ZM263.9 188.9L280.6 186.1L291.7 194.4L283.3 194.4L266.7 190.3L263.9 188.9ZM830.6 247.2L847.2 247.2L847.2 255.6L836.1 263.9L830.6 258.3L830.6 247.2ZM791.7 266.7L816.7 269.4L816.7 273.6L794.4 269.4L791.7 266.7Z\"></path>\n            </svg>\n            <canvas id=\"landingChart\" aria-label=\"Live price chart\"></canvas>\n          </div>\n          <div class=\"lshot-digits\" id=\"landingDigits\"></div>\n          <div class=\"lshot-foot\">\n            <span>Last digit settles the contract</span>\n            <span class=\"num\" id=\"landingPrice\">&mdash;</span>\n          </div>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- how: white ---------------- -->\n    <section class=\"lsec\" id=\"how\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">How it works</span>\n          <h2>Three steps, and it is over in seconds.</h2>\n          <p>A contract asks one question about the last digit of the next few ticks. You pick the answer, set a stake, and it settles itself.</p>\n        </div>\n        <div class=\"lgrid\">\n          <article class=\"lcard\">\n            <span class=\"lnum\">01</span>\n            <h3>Fund the account</h3>\n            <p>M-Pesa, card or USDT. Mobile money lands in about two minutes and is quoted in your own currency, so you send the figure you expect to send.</p>\n          </article>\n          <article class=\"lcard\">\n            <span class=\"lnum\">02</span>\n            <h3>Pick a contract</h3>\n            <p>Even or odd, over or under a barrier, matches or differs from one digit. Every payout is on the button before you commit anything.</p>\n          </article>\n          <article class=\"lcard\">\n            <span class=\"lnum\">03</span>\n            <h3>Watch it settle</h3>\n            <p>One to ten ticks later it is done. Wins are credited immediately, and every contract stays on your ledger with its entry and exit price.</p>\n          </article>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- contracts: purple ---------------- -->\n    <section class=\"lsec tint purple\" id=\"contracts\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">Contracts</span>\n          <h2>Five ways to read one digit.</h2>\n          <p>Each digit 0&ndash;9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. We publish it rather than bury it.</p>\n        </div>\n        <div class=\"ltable\">\n          <div class=\"ltrow lthead\"><span>Contract</span><span>You win when</span><span class=\"num\">True odds</span></div>\n          <div class=\"ltrow\"><span>Even / Odd</span><span>The last digit is even, or odd</span><span class=\"num\">50%</span></div>\n          <div class=\"ltrow\"><span>Over</span><span>The digit lands above your barrier</span><span class=\"num\">10&ndash;90%</span></div>\n          <div class=\"ltrow\"><span>Under</span><span>The digit lands below your barrier</span><span class=\"num\">10&ndash;90%</span></div>\n          <div class=\"ltrow\"><span>Matches</span><span>The digit is exactly the one you chose</span><span class=\"num\">10%</span></div>\n          <div class=\"ltrow\"><span>Differs</span><span>The digit is anything but the one you chose</span><span class=\"num\">90%</span></div>\n        </div>\n        <p class=\"lsmall\">Payouts sit slightly below fair value &mdash; that margin is how the platform earns. Differs wins nine times in ten and still runs a negative expectation. <a href=\"learn.html\">Read the full breakdown</a>.</p>\n      </div>\n    </section>\n\n    <!-- ---------------- ai: white ---------------- -->\n    <section class=\"lsec\" id=\"ai\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">AI scanner</span>\n          <h2>It tells you when there is nothing worth trading.</h2>\n          <p>The scanner reads the last 180 ticks on all eight instruments, scores every contract it could write against them, and ranks by expected return rather than by win rate.</p>\n        </div>\n        <div class=\"lpanel\">\n          <div class=\"lsig\"><span class=\"lsig-b\">Over 3</span><span>Volatility 75 (1s)</span><b class=\"num pos\">+1.42% EV</b></div>\n          <div class=\"lsig\"><span class=\"lsig-b\">Even</span><span>Volatility 10 (1s)</span><b class=\"num pos\">+0.38% EV</b></div>\n          <div class=\"lsig\"><span class=\"lsig-b\">Differs 7</span><span>Step Index</span><b class=\"num neg\">&minus;0.91% EV</b></div>\n          <div class=\"lsig\"><span class=\"lsig-b\">Under 6</span><span>Crash 1000</span><b class=\"num neg\">&minus;1.20% EV</b></div>\n        </div>\n        <p class=\"lsmall centered\">Most of the time the honest answer is that no edge clears the payout margin, and it says so.</p>\n      </div>\n    </section>\n\n    <!-- ---------------- funding: blue ---------------- -->\n    <section class=\"lsec tint blue\" id=\"funding\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">Funding</span>\n          <h2>Pay the way you already pay.</h2>\n        </div>\n        <div class=\"lgrid\">\n          <article class=\"lcard\">\n            <h3>M-Pesa</h3>\n            <p>An STK push to your own number. Amounts are shown in your local currency with the exchange rate stated, so nothing is a surprise.</p>\n            <span class=\"chip\">About two minutes</span>\n          </article>\n          <article class=\"lcard\">\n            <h3>Card</h3>\n            <p>Visa, Mastercard and Verve through Paystack. Your card number is entered on Paystack&rsquo;s checkout and never touches our servers.</p>\n            <span class=\"chip\">Secured by Paystack</span>\n          </article>\n          <article class=\"lcard\">\n            <h3>USDT</h3>\n            <p>TRC-20, ERC-20 and BEP-20. Send to the address shown and the balance credits on confirmation.</p>\n            <span class=\"chip\">From $10</span>\n          </article>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- faq: white ---------------- -->\n    <section class=\"lsec\" id=\"faq\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">FAQ</span>\n          <h2>The questions worth asking first.</h2>\n        </div>\n        <div class=\"lfaq\">\n          <details>\n            <summary>What is a synthetic index?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>A price series generated by a published random process rather than by a real-world market. Nothing external moves it &mdash; no news, no earnings, no opening bell. The number in the name is its volatility: Volatility 10 moves gently, Volatility 100 moves ten times as hard.</p>\n          </details>\n          <details>\n            <summary>Can I actually make money doing this?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Every contract is priced slightly below fair value, so the expected return on each one starts negative. Over enough contracts that margin is what you pay to trade. People do finish sessions ahead, but no strategy on this platform turns a negative expectation positive, and anyone telling you otherwise is selling something.</p>\n          </details>\n          <details>\n            <summary>Is there a free way to try it?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Yes. Every account opens with a demo balance running on the same feed, the same pricing and the same contracts, with virtual funds. Place a hundred contracts there and look at the total before you fund anything.</p>\n          </details>\n          <details>\n            <summary>How fast are withdrawals?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Payouts are reviewed and sent within the hour to the M-Pesa number or USDT address on your profile. Identity verification is a one-time check before your first payout leaves the account.</p>\n          </details>\n          <details>\n            <summary>What does the referral programme pay?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Not cash. Each referral who funds an account raises your payout tier, which lifts what every winning contract pays you &mdash; up to a cap that deliberately stays below the house margin. It makes your own trading cheaper rather than paying you to recruit.</p>\n          </details>\n          <details>\n            <summary>What happens if I lose connection mid-contract?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>The contract settles on the feed regardless of whether your screen is open. The result and the credit are on your ledger when you come back.</p>\n          </details>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- close: purple ---------------- -->\n    <section class=\"lsec tint purple lclose\">\n      <div class=\"lsec-in\">\n        <h2>Open an account and start on the demo balance.</h2>\n        <p>No deposit required to look around. Fund it when, and if, you decide to.</p>\n        <div class=\"lcta\">\n          <a class=\"btn btn-fill\" href=\"signup.html\">Create a free account</a>\n          <a class=\"btn btn-ghost\" href=\"learn.html\">Learn the contracts first</a>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- footer ---------------- -->\n    <footer class=\"lfoot\">\n      <div class=\"lsec-in\">\n        <div class=\"lfoot-top\">\n          <div class=\"lfoot-brand\">\n            <a class=\"wordmark\" href=\"landing.html\">Nexas</a>\n            <p>A trading terminal for digit contracts on synthetic indices. Open every hour of every day.</p>\n          </div>\n          <div class=\"lfoot-cols\">\n            <div>\n              <b>Platform</b>\n              <a href=\"login.html\">Terminal</a>\n              <a href=\"markets.html\">Markets</a>\n              <a href=\"positions.html\">Positions</a>\n              <a href=\"login.html\">AI scanner</a>\n            </div>\n            <div>\n              <b>Learn</b>\n              <a href=\"learn.html\">Trading guide</a>\n              <a href=\"#contracts\">Contract types</a>\n              <a href=\"#faq\">FAQ</a>\n              <a href=\"responsible.html\">Responsible trading</a>\n            </div>\n            <div>\n              <b>Company</b>\n              <a href=\"chat.html\">Support</a>\n              <a href=\"#\">Terms</a>\n              <a href=\"#\">Privacy</a>\n              <a href=\"#\">Complaints</a>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"lfoot-risk\">\n          <b>Risk warning</b>\n          <p>Trading synthetic indices carries a high level of risk and is not suitable for everyone. You can lose your full stake. Every contract on this platform is priced with a margin in the platform&rsquo;s favour, so the expected return on each one is negative. Never trade with money you cannot afford to lose, and set your limits before you start, not during a losing run.</p>\n        </div>\n\n        <div class=\"lfoot-bar\">\n          <span>&copy; 2026 Nexas. A demonstration interface.</span>\n          <span>Nothing on this site is financial advice.</span>\n        </div>\n      </div>\n    </footer>\n\n  ","script":"/* The market section shows the real feed rather than a picture of one:\n   the same chart module the terminal uses, on the same series. */\n(function () {\n  var canvas = document.getElementById('landingChart');\n  if (!canvas || !window.NexChart) return;\n  var API = window.NexAPI, F = window.NexFmt, SYM = 'R_10';\n\n  API.ready(function () {\n    var chart = window.NexChart.create(canvas, { symbol: SYM });\n    chart.resize();\n\n    function digits() {\n      var h = API.feed.history(SYM).slice(-10);\n      var out = '';\n      for (var i = 0; i < h.length; i++) {\n        var p = h[i];\n        var d = p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;\n        out += '<span class=\"lsd' + (i === h.length - 1 ? ' on' : '') + '\">' + d + '</span>';\n      }\n      document.getElementById('landingDigits').innerHTML = out;\n      var last = API.feed.last(SYM);\n      if (last) document.getElementById('landingPrice').textContent = F.price(last.price);\n    }\n\n    digits();\n    API.on('tick', function (t) {\n      if (t.symbol !== SYM) return;\n      if (chart) chart.dirty = true;\n      digits();\n    });\n  });\n})();\n\n/* FAQ: opening one answer closes the one before it, so the section\n   never grows into a wall of open text. Done here rather than with the\n   native [name] grouping, which older browsers ignore. */\n(function () {\n  var items = document.querySelectorAll('.lfaq details');\n  for (var i = 0; i < items.length; i++) {\n    items[i].addEventListener('toggle', function () {\n      if (!this.open) return;\n      for (var j = 0; j < items.length; j++) {\n        if (items[j] !== this) items[j].open = false;\n      }\n    });\n  }\n})();"},"index":{"attrs":{"data-page":"trade","data-chrome":"app"},"title":"Nexas — Terminal","html":"\n    <div class=\"terminal\" id=\"terminal\">\n\n      <div class=\"col-mid\">\n        <div class=\"ctabs\" id=\"contractTabs\"><div class=\"sk sk-tabs\"></div></div>\n        <div class=\"instrument\" id=\"instrument\"><div class=\"sk sk-inst\"></div></div>\n\n        <div class=\"chart-card\">\n          <svg class=\"chart-map\" viewBox=\"0 0 1000 500\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\">\n            <path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M527.8 147.2L555.6 159.7L569.4 161.1L586.1 162.5L597.2 172.2L602.8 188.9L608.3 208.3L619.4 218.1L633.3 219.4L641.7 216.7L633.3 236.1L625.0 244.4L613.9 255.6L611.1 269.4L612.5 294.4L597.2 316.7L588.9 330.6L575.0 344.4L561.1 344.4L551.4 345.8L541.7 325.0L533.3 311.1L533.3 294.4L536.1 275.0L525.0 252.8L526.4 238.9L513.9 238.9L500.0 234.7L486.1 236.1L475.0 236.1L463.9 225.0L451.4 209.2L455.6 191.7L463.9 175.0L472.2 166.7L483.3 150.6L500.0 150.0L508.3 147.8L527.8 147.2ZM473.6 142.5L475.0 130.6L495.8 122.2L487.5 115.3L500.0 112.5L505.6 108.3L511.1 102.8L522.2 97.2L522.2 91.7L513.9 87.5L530.6 72.2L538.9 63.9L550.0 56.9L569.4 52.8L591.7 58.3L611.1 61.1L638.9 58.3L666.7 55.6L688.9 47.2L708.3 50.0L736.1 44.4L777.8 36.1L813.9 44.4L855.6 47.2L888.9 47.2L922.2 55.6L944.4 55.6L972.2 66.7L994.4 69.4L977.8 77.8L952.8 83.3L944.4 94.4L933.3 108.3L897.2 100.0L888.9 122.2L869.4 130.6L861.1 130.6L852.8 141.7L838.9 141.7L836.1 163.9L825.0 183.3L805.6 191.7L800.0 205.6L791.7 222.2L788.9 244.4L777.8 233.3L772.2 222.2L769.4 205.6L761.1 200.0L750.0 188.9L741.7 191.7L722.2 208.3L713.9 227.8L702.8 208.3L700.0 191.7L688.9 186.1L680.6 180.6L669.4 180.6L658.3 180.6L647.2 175.0L638.9 169.4L633.3 166.7L655.6 177.8L661.1 188.9L652.8 200.0L644.4 202.8L633.3 211.1L625.0 215.3L619.4 208.3L608.3 191.7L600.0 180.6L594.4 172.2L597.2 161.1L600.0 150.0L591.7 150.0L583.3 138.9L572.2 138.9L561.1 138.9L555.6 138.9L547.2 133.3L538.9 133.3L533.3 127.8L522.2 127.8L508.3 130.6L500.0 138.9L494.4 147.2L486.1 150.0L480.6 147.2L473.6 142.5ZM41.7 83.3L69.4 80.6L83.3 80.6L111.1 83.3L130.6 91.7L138.9 100.0L150.0 111.1L155.6 116.7L158.3 127.8L161.1 147.2L169.4 155.6L175.0 161.1L183.3 172.2L194.4 186.1L208.3 194.4L225.0 205.6L238.9 205.6L244.4 208.3L255.6 205.6L258.3 213.9L269.4 225.0L280.6 225.0L272.2 208.3L258.3 191.7L250.0 191.7L247.2 197.2L236.1 197.2L230.6 188.9L238.9 177.8L252.8 169.4L266.7 166.7L275.0 180.6L277.8 175.0L275.0 163.9L280.6 158.3L291.7 152.8L294.4 138.9L305.6 130.6L316.7 125.0L322.2 122.2L333.3 119.4L344.4 108.3L341.7 100.0L322.2 88.9L305.6 86.1L283.3 94.4L277.8 105.6L269.4 97.2L280.6 77.8L263.9 66.7L236.1 61.1L208.3 61.1L180.6 58.3L152.8 55.6L125.0 58.3L97.2 55.6L66.7 52.8L47.2 66.7L33.3 69.4L41.7 83.3ZM280.6 225.0L291.7 219.4L302.8 216.7L316.7 219.4L327.8 222.2L333.3 227.8L347.2 233.3L358.3 238.9L361.1 250.0L377.8 255.6L394.4 263.9L402.8 272.2L397.2 283.3L391.7 294.4L386.1 311.1L366.7 319.4L366.7 327.8L352.8 344.4L341.7 355.6L327.8 361.1L319.4 375.0L311.1 388.9L311.1 394.4L300.0 400.0L291.7 388.9L291.7 380.6L297.2 366.7L297.2 352.8L302.8 333.3L305.6 313.9L305.6 300.0L288.9 288.9L280.6 272.2L275.0 266.7L277.8 255.6L283.3 247.2L286.1 233.3L280.6 225.0ZM813.9 311.1L816.7 322.2L819.4 344.4L830.6 344.4L844.4 341.7L858.3 338.9L872.2 341.7L880.6 347.2L888.9 355.6L905.6 358.3L916.7 352.8L925.0 338.9L925.0 327.8L925.0 319.4L913.9 311.1L905.6 302.8L897.2 291.7L894.4 280.6L886.1 297.2L877.8 283.3L869.4 280.6L861.1 283.3L852.8 288.9L847.2 288.9L838.9 297.2L827.8 305.6L813.9 311.1ZM375.0 83.3L361.1 72.2L355.6 61.1L347.2 50.0L347.2 38.9L361.1 27.8L388.9 19.4L422.2 22.2L438.9 33.3L438.9 50.0L427.8 61.1L408.3 66.7L383.3 80.6L375.0 83.3ZM636.1 283.3L638.9 291.7L638.9 302.8L631.9 319.4L625.0 319.4L622.2 305.6L620.8 297.2L627.8 286.1L636.1 283.3ZM891.7 125.0L902.8 127.8L897.2 133.3L891.7 138.9L888.9 150.0L880.6 147.2L875.0 155.6L866.7 155.6L861.1 163.9L863.9 158.3L875.0 150.0L883.3 144.4L891.7 125.0ZM486.1 88.9L491.7 87.5L494.4 91.7L497.2 100.0L502.8 104.2L502.8 108.3L494.4 109.7L486.1 111.1L486.1 102.8L483.3 97.2L486.1 88.9ZM802.8 244.4L813.9 238.9L825.0 238.9L830.6 247.2L825.0 258.3L808.3 258.3L802.8 252.8L802.8 244.4ZM763.9 236.1L775.0 241.7L788.9 255.6L794.4 266.7L788.9 266.7L777.8 250.0L763.9 244.4L763.9 236.1ZM863.9 252.8L877.8 255.6L891.7 258.3L908.3 266.7L916.7 275.0L900.0 272.2L883.3 272.2L869.4 261.1L863.9 252.8ZM980.6 347.2L994.4 355.6L991.7 361.1L983.3 363.9L975.0 372.2L966.7 380.6L963.9 375.0L975.0 366.7L980.6 347.2ZM833.3 200.0L838.9 202.8L844.4 213.9L850.0 222.2L850.0 230.6L838.9 233.3L833.3 222.2L833.3 211.1L833.3 200.0ZM433.3 69.4L447.2 66.7L461.1 68.1L461.1 72.2L447.2 73.9L436.1 72.2L433.3 69.4ZM722.2 223.6L727.8 230.6L722.2 233.3L720.8 227.8L722.2 223.6ZM263.9 188.9L280.6 186.1L291.7 194.4L283.3 194.4L266.7 190.3L263.9 188.9ZM830.6 247.2L847.2 247.2L847.2 255.6L836.1 263.9L830.6 258.3L830.6 247.2ZM791.7 266.7L816.7 269.4L816.7 273.6L794.4 269.4L791.7 266.7Z\"></path>\n          </svg>\n          <canvas id=\"chart\" aria-label=\"Price chart\"></canvas>\n          <div class=\"chart-tools\">\n            <button data-zoom=\"in\" aria-label=\"Zoom in\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n            </button>\n            <button data-zoom=\"reset\" aria-label=\"Reset zoom\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 109-9\"></path><path d=\"M3 4v5h5\"></path></svg>\n            </button>\n            <button data-zoom=\"out\" aria-label=\"Zoom out\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg>\n            </button>\n          </div>\n        </div>\n\n        <div class=\"digits\" id=\"digits\"></div>\n        <div id=\"activeList\"></div>\n      </div>\n\n      <div class=\"col-right\">\n        <div class=\"panel\" id=\"panel\"><div class=\"sk sk-panel\"></div></div>\n        <div class=\"trade-dock\" id=\"dock\"></div>\n      </div>\n\n    </div>\n  ","script":""},"ai":{"attrs":{"data-page":"ai","data-chrome":"app"},"title":"Nexas — AI Scanner","html":"\n    <div class=\"shell\">\n      <div id=\"aiPage\"><div class=\"sk sk-list\"></div></div>\n    </div>\n  ","script":""},"markets":{"attrs":{"data-page":"markets","data-chrome":"app"},"title":"Nexas — Markets","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"page-head\">\r\n        <h1>Markets</h1>\r\n        <p>Synthetic indices, generated continuously and open every hour of every day.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">All</button>\r\n        <button class=\"ctab\">Volatility</button>\r\n        <button class=\"ctab\">Boom &amp; Crash</button>\r\n        <button class=\"ctab\">Step</button>\r\n      </div>\r\n\r\n      <div id=\"marketList\"><div class=\"sk sk-list\"></div></div>\r\n      <div style=\"height:20px\"></div>\r\n    </div>\r\n  ","script":""},"positions":{"attrs":{"data-page":"positions","data-chrome":"app"},"title":"Nexas — Positions","html":"\n    <div class=\"shell\" id=\"positions\">\n      <div class=\"page-head\">\n        <h1>Positions</h1>\n        <p>Everything open, settled and paid, on this account.</p>\n      </div>\n\n      <div class=\"ctabs\">\n        <button class=\"ctab active\" data-posview=\"open\">Open</button>\n        <button class=\"ctab\" data-posview=\"closed\">Closed</button>\n        <button class=\"ctab\" data-posview=\"transactions\">Ledger</button>\n      </div>\n\n      <div id=\"posSummary\"><div class=\"sk sk-summary\"></div></div>\n      <div id=\"posFilters\"></div>\n      <div id=\"posList\"><div class=\"sk sk-list\"></div></div>\n      <div style=\"height:22px\"></div>\n    </div>\n  ","script":""},"learn":{"attrs":{"data-page":"learn","data-chrome":"app"},"title":"Nexas — Learn","html":"\n    <div class=\"page\">\n      <span class=\"label page-kicker\">Learn</span>\n      <h1>Understand what you are trading.</h1>\n      <p class=\"lede\">Digit contracts are simple to place and easy to misread. This page covers what the instruments actually are, how a payout is priced, and where the edge really sits — so your decisions come from the numbers rather than a hunch.</p>\n\n      <div class=\"rule\"></div>\n\n      <h2>Start here</h2>\n      <div class=\"cards\">\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 8v5M12 16.4v.1\"></path></svg>\n          <div>\n            <b>What a synthetic index is</b>\n            <p>A price series generated by a published random process, not a real-world asset. Nothing external moves it — no news, no earnings, no market open. Volatility 10 means roughly 10% annualised volatility; Volatility 100 moves ten times as hard. The number in the name is the whole story.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\n          <div>\n            <b>What the last digit is</b>\n            <p>Every tick prints a price to two decimals. The final decimal is the digit your contract settles on. Even/Odd reads its parity, Over/Under compares it to a barrier, Matches/Differs asks whether it lands exactly on one number.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 6.2v11.6\"></path><path d=\"M14.7 9.4A2.7 2.7 0 0012 8.2c-1.5 0-2.7.9-2.7 2s1.2 1.9 2.7 1.9 2.7.8 2.7 1.9-1.2 2-2.7 2a2.7 2.7 0 01-2.6-1.3\"></path></svg>\n          <div>\n            <b>How a payout is priced</b>\n            <p>Payout is set so the house keeps a margin at the true probability. Even/Odd pays 1.953× on a 50% chance: a fair price would be 2.0×, so about 2.3% of every stake is the cost of trading. That gap is constant and it compounds across every contract you place.</p>\n          </div>\n        </div>\n      </div>\n\n      <h2>The five contracts, and the odds behind them</h2>\n      <p>Each digit 0–9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. This is what you are actually buying:</p>\n\n      <div class=\"stats\">\n        <div class=\"stat\"><b>50%</b><span>Even / Odd — five of ten digits. Pays 1.953×, so expected return is −2.35% per contract.</span></div>\n        <div class=\"stat\"><b>10%</b><span>Matches — one exact digit. Pays 10.35×, expected return −2.35% at a true 1 in 10.</span></div>\n        <div class=\"stat\"><b>90%</b><span>Differs — any digit but one. Pays 1.084×, wins nine times in ten and still runs a negative expectation.</span></div>\n        <div class=\"stat\"><b>40%</b><span>Over 5 — digits 6 to 9. A barrier changes the odds, and the payout moves with it.</span></div>\n      </div>\n\n      <p>Notice that Differs wins nine times out of ten and still loses money over a long enough run. A high win rate is not an edge. The only number that decides whether a strategy survives is expected return per contract, and on every one of these it starts negative.</p>\n\n      <div class=\"rule\"></div>\n\n      <h2>Reading the digit history</h2>\n      <div class=\"cards\">\n        <div class=\"card\">\n          <h3>What the percentages tell you</h3>\n          <p>The circles under the chart count how often each digit appeared in the recent window. Over a short sample these will always look uneven — that is what randomness looks like. A digit showing 14% over 120 ticks is ordinary noise, not a signal.</p>\n        </div>\n        <div class=\"card\">\n          <h3>The gambler's fallacy</h3>\n          <p>Six odd digits in a row does not make even more likely on the seventh. Each tick is drawn independently, so the odds reset every time. The streak you are looking at has no memory and no obligation to correct itself.</p>\n        </div>\n        <div class=\"card\">\n          <h3>Where a real edge would come from</h3>\n          <p>Only from a genuine, persistent deviation in the generator — measured over thousands of ticks, not dozens, and large enough to clear the payout margin. The AI scanner ranks by expected return for exactly this reason, and most of the time it will honestly report no edge worth taking.</p>\n        </div>\n      </div>\n\n      <h2>Managing the downside</h2>\n      <div class=\"cards\">\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path></svg>\n          <div>\n            <b>Position sizing</b>\n            <p>Stake a fixed, small share of your balance — one to two percent is a common ceiling. It will not turn a negative expectation positive, but it decides how long you last and how much a bad run costs you.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n          <div>\n            <b>Why the loss multiple is dangerous</b>\n            <p>Doubling after every loss feels like it guarantees a recovery. It does not. Six losses at ×2 means your seventh stake is 64 times the first, and a run of six is common. Martingale trades a high chance of a small win for a small chance of losing everything.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\n          <div>\n            <b>Set the targets before you start</b>\n            <p>Target profit, target loss and loss multiple sit on the trade panel for a reason. Decide all three while you are calm, and let the run stop itself. A limit you set mid-session is a limit you will move again.</p>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"rule\"></div>\n\n      <h2>Practise before you risk anything</h2>\n      <p>Switch to the demo account from the balance button at the top of the screen. It runs the same feed, the same pricing and the same contracts with virtual funds. Place a hundred contracts there and look at the total — it is the cheapest lesson available on this platform.</p>\n\n      <div style=\"margin-top:22px;display:flex;gap:10px;flex-wrap:wrap\">\n        <a class=\"btn btn-ghost\" href=\"responsible.html\">Responsible trading and limits</a>\n        <a class=\"btn btn-ghost\" href=\"chat.html\">Talk to support</a>\n      </div>\n    </div>\n\n    <footer>\n      <div class=\"fl\">\n        <a href=\"learn.html\">Learn</a>\n        <a href=\"responsible.html\">Responsible Trading</a>\n        <a href=\"#\">Risk Disclosure</a>\n        <a href=\"#\">Terms</a>\n        <a href=\"#\">Privacy</a>\n        <a href=\"#\">Complaints</a>\n      </div>\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Nothing on this page is financial advice.</p>\n    </footer>\n  ","script":""},"responsible":{"attrs":{"data-page":"responsible","data-chrome":"app"},"title":"Nexas — Responsible Trading","html":"\r\n    <div class=\"page\">\r\n      <span class=\"label page-kicker\">Responsible trading</span>\r\n      <h1>Trade with intent, not impulse.</h1>\r\n      <p class=\"lede\">Trading carries real risk. Nexas gives you the controls to decide, in advance, how much time and money you are willing to commit — and holds you to it.</p>\r\n\r\n      <div class=\"rule\"></div>\r\n\r\n      <h2>Set your limits before you trade</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\r\n          <div>\r\n            <b>Session duration</b>\r\n            <p>Cap how long a single session can run. The terminal closes out and locks when the clock ends.</p>\r\n            <span class=\"chip\">Currently 60 minutes</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\r\n          <div>\r\n            <b>Loss and stake ceilings</b>\r\n            <p>Daily, weekly and monthly ceilings on total stake and net loss. Any increase takes 24 hours to apply.</p>\r\n            <span class=\"chip\">Daily loss $250</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"></rect><path d=\"M4 10h16M8 3v4M16 3v4\"></path></svg>\r\n          <div>\r\n            <b>Cooling-off and self-exclusion</b>\r\n            <p>Pause new positions for 24 hours, or close access entirely for a period you choose. Withdrawals stay open.</p>\r\n            <span class=\"chip\">Not active</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <h2>What the numbers actually look like</h2>\r\n      <div class=\"stats\">\r\n        <div class=\"stat\"><b>70%</b><span>of retail accounts lose money over a twelve-month period</span></div>\r\n        <div class=\"stat\"><b>1 in 5</b><span>traders exceed the deposit they originally planned</span></div>\r\n        <div class=\"stat\"><b>24h</b><span>delay applied to any increase in your limits</span></div>\r\n        <div class=\"stat\"><b>$0</b><span>cost to set, lower or activate any control</span></div>\r\n      </div>\r\n\r\n      <h2>Signs worth taking seriously</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>Chasing losses</h3><p>Raising stake size to recover a previous loss rather than following a plan.</p></div>\r\n        <div class=\"card\"><h3>Borrowed funds</h3><p>Trading with money set aside for rent, bills, school fees or credit repayment.</p></div>\r\n        <div class=\"card\"><h3>Concealment</h3><p>Hiding the extent of your trading from people close to you.</p></div>\r\n      </div>\r\n\r\n      <h2>Get support</h2>\r\n      <p>If trading has stopped feeling like a decision and started feeling like a compulsion, speak to someone independent of us. Our team can also apply a self-exclusion on your behalf at any time, without questions.</p>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>GamCare</h3><p>Free, confidential support and live chat, available around the clock.</p></div>\r\n        <div class=\"card\"><h3>Gambling Therapy</h3><p>Multilingual online support for people affected worldwide.</p></div>\r\n        <div class=\"card\"><h3>Nexas support</h3><p>Reach us in-app at any hour to apply limits or close an account.</p></div>\r\n      </div>\r\n\r\n      <div style=\"margin-top:22px\"><a class=\"btn btn-ghost\" href=\"chat.html\">Talk to our team</a></div>\r\n    </div>\r\n\r\n    <footer>\r\n      <div class=\"fl\">\r\n        <a href=\"responsible.html\">Responsible Trading</a>\r\n        <a href=\"#\">Risk Disclosure</a>\r\n        <a href=\"#\">Terms</a>\r\n        <a href=\"#\">Privacy</a>\r\n        <a href=\"#\">Complaints</a>\r\n        <a href=\"#\">Security</a>\r\n      </div>\r\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Past results do not indicate future outcomes.</p>\r\n    </footer>\r\n  ","script":""},"account":{"attrs":{"data-page":"account","data-chrome":"app","data-back":"index.html","data-title":"Account"},"title":"Nexas — Account","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"summary\" style=\"display:flex;align-items:center;gap:14px\">\r\n        <div class=\"avatar\" style=\"width:52px;height:52px;font-size:22px\">A</div>\r\n        <div style=\"flex:1;min-width:0\">\r\n          <div style=\"font-weight:600;font-size:16px\">Amara Kimani</div>\r\n          <div style=\"color:var(--muted);font-size:12.5px\">am***a@mail.com</div>\r\n        </div>\r\n        <span class=\"badge warn\">Unverified</span>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <button class=\"row\" data-open=\"profile\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"></rect><path d=\"M7 10h3M7 14h6M15 9h3v4h-3z\"></path></svg></span>\r\n          <span class=\"t\"><b>Change name</b><span>Amara Kimani</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"password\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V7a4 4 0 118 0v4\"></path></svg></span>\r\n          <span class=\"t\"><b>Update password</b><span>Last changed 4 months ago</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"verify\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path><path d=\"M9 12l2 2 4-4\"></path></svg></span>\r\n          <span class=\"t\"><b>Verify identity</b><span>Required before your first withdrawal</span></span>\r\n          <span class=\"badge warn\">2 steps left</span>\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"row danger\" href=\"login.html\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4\"></path><path d=\"M16 17l5-5-5-5M21 12H9\"></path></svg></span>\r\n          <span class=\"t\"><b>Log out</b></span>\r\n        </a>\r\n      </div>\r\n      <div style=\"height:24px\"></div>\r\n    </div>\r\n  ","script":""},"chat":{"attrs":{"data-page":"chat","data-chrome":"app","data-back":"account.html","data-title":"Live chat"},"title":"Nexas — Live Chat","html":"\r\n    <div class=\"chat\">\r\n      <div class=\"chat-head\">\r\n        <div class=\"avatar\">J</div>\r\n        <div>\r\n          <b>Joseph · Nexas support</b>\r\n          <span>Online now</span>\r\n        </div>\r\n      </div>\r\n\r\n      <div class=\"chat-log\" id=\"chatLog\">\r\n        <div class=\"chat-day\">Today</div>\r\n        <div class=\"msg them\">Hello Amara, you are through to Nexas support. How can I help?<span class=\"time\">09:12</span></div>\r\n        <div class=\"msg me\">Hi — my M-Pesa deposit hasn't shown up yet.<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg them\">Let me check. Could you confirm the last four digits of the phone number you used?<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg me\">Ends 4471.<span class=\"time\">09:14</span></div>\r\n        <div class=\"msg them\">Thank you. I can see the transaction pending with the provider. It will credit automatically within ten minutes, and I'll stay on the chat until it does.<span class=\"time\">09:15</span></div>\r\n      </div>\r\n\r\n      <form class=\"chat-bar\" id=\"chatForm\">\r\n        <button class=\"iconbtn\" type=\"button\" aria-label=\"Attach file\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7\"></path></svg>\r\n        </button>\r\n        <input class=\"input\" id=\"chatInput\" placeholder=\"Write a message\" autocomplete=\"off\" aria-label=\"Message\">\r\n        <button class=\"chat-send\" type=\"submit\" aria-label=\"Send\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l16-8-6 16-2.5-6z\"></path></svg>\r\n        </button>\r\n      </form>\r\n    </div>\r\n  ","script":""},"login":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Sign In","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Welcome back.</h1>\r\n        <p>Sign in to pick up where you left off.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Signing you in\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"email\">Email address</label>\r\n            <input class=\"input\" id=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"password\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"password\" type=\"password\" autocomplete=\"current-password\" placeholder=\"••••••••\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div style=\"display:flex;justify-content:space-between;align-items:center\">\r\n              <label class=\"checkline\" style=\"font-size:12.5px\"><input type=\"checkbox\" id=\"remember\"> Keep me signed in</label>\r\n              <a class=\"link\" href=\"forgot-password.html\">Forgot password?</a>\r\n            </div>\r\n          </div>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Sign in</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Signing you in with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">New to Nexas? <a href=\"signup.html\">Create an account</a></div>\r\n    </div>\r\n  ","script":""},"signup":{"attrs":{"data-page":"signup","data-chrome":"auth"},"title":"Nexas — Create Account","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Open your account.</h1>\r\n        <p>Two minutes to set up. Deposit when you are ready.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Setting up your account\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">\r\n            <div class=\"field\">\r\n              <label for=\"sFirst\">First name</label>\r\n              <input class=\"input\" id=\"sFirst\" autocomplete=\"given-name\" placeholder=\"Amara\">\r\n            </div>\r\n            <div class=\"field\">\r\n              <label for=\"sLast\">Last name</label>\r\n              <input class=\"input\" id=\"sLast\" autocomplete=\"family-name\" placeholder=\"Kimani\">\r\n            </div>\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"sEmail\">Email address</label>\r\n            <input class=\"input\" id=\"sEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n          <label class=\"checkline\">\r\n            <input type=\"checkbox\" id=\"terms\">\r\n            <span>I am 18 or older and accept the <a class=\"link\" href=\"#\">Terms</a> and <a class=\"link\" href=\"responsible.html\">Risk Disclosure</a>.</span>\r\n          </label>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Create account</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Setting up your account with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Already registered? <a href=\"login.html\">Sign in</a></div>\r\n    </div>\r\n  ","script":""},"forgot-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Forgot Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"login.html\">Nexas</a>\r\n        <h1>Reset your password.</h1>\r\n        <p>Enter the email on your account and we will send a six-digit code.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-demo-form=\"Reset code sent\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"resetEmail\">Email address</label>\r\n            <input class=\"input\" id=\"resetEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <a class=\"btn btn-fill\" href=\"reset-password.html\">Send reset code</a>\r\n        </form>\r\n\r\n        <div class=\"divider\">still stuck?</div>\r\n\r\n        <a class=\"btn btn-ghost\" href=\"chat.html\">\r\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\r\n          Chat with support\r\n        </a>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Remembered it? <a href=\"login.html\">Back to sign in</a></div>\r\n    </div>\r\n  ","script":""},"reset-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — New Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"forgot-password.html\">Nexas</a>\r\n        <h1>Choose a new password.</h1>\r\n        <p>We sent a code to am***a@mail.com. It expires in 15 minutes.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Updating your password\" data-to=\"login.html\" style=\"display:flex;flex-direction:column;gap:18px\">\r\n          <div class=\"field\">\r\n            <label>Verification code</label>\r\n            <div class=\"otp\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 5\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 6\">\r\n            </div>\r\n            <span class=\"hint\">Didn't arrive? <a class=\"link\" href=\"#\">Send again in 0:42</a></span>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">New password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"confirmNew\">Confirm password</label>\r\n            <input class=\"input\" id=\"confirmNew\" type=\"password\" autocomplete=\"new-password\" placeholder=\"Repeat new password\">\r\n          </div>\r\n\r\n          <button class=\"btn btn-fill\" type=\"submit\">Set new password</button>\r\n        </form>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Back to <a href=\"login.html\">sign in</a></div>\r\n    </div>\r\n  ","script":""}};</script>
+<script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = {"landing":{"attrs":{"data-page":"landing","data-chrome":"plain"},"title":"Nexas &mdash; Trade synthetic indices","html":"\n\n    <!-- ---------------- nav ---------------- -->\n    <header class=\"lnav\">\n      <div class=\"lnav-in\">\n        <a class=\"wordmark\" href=\"landing.html\">Nexas</a>\n        <nav class=\"lnav-links\">\n          <a href=\"#market\">Live market</a>\n          <a href=\"#how\">How it works</a>\n          <a href=\"#contracts\">Contracts</a>\n          <a href=\"#faq\">FAQ</a>\n        </nav>\n        <div class=\"lnav-cta\">\n          <a class=\"btn-ghost-sm\" href=\"login.html\">Log in</a>\n          <a class=\"btn-solid-sm\" href=\"signup.html\">Create account</a>\n        </div>\n      </div>\n    </header>\n\n    <!-- ---------------- hero: white ---------------- -->\n    <section class=\"lsec lhero\">\n      <div class=\"lsec-in\">\n        <h1>The market never closes.<br>Neither does your terminal.</h1>\n        <p class=\"lhero-p\">Nexas is a trading terminal for digit contracts on synthetic indices &mdash; price series generated continuously by a published random process. No earnings calls, no market open, no waiting for Monday.</p>\n        <div class=\"lcta\">\n          <a class=\"btn btn-fill\" href=\"signup.html\">Create a free account</a>\n          <a class=\"btn btn-ghost\" href=\"login.html\">Try the demo balance</a>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- live market: blue ---------------- -->\n    <section class=\"lsec tint blue\" id=\"market\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">Live market</span>\n          <h2>This is the feed, running right now.</h2>\n          <p>Not a screenshot. The chart below is the same Volatility 10 series the terminal trades, ticking as you read this. The last digit of each price is what settles a contract.</p>\n        </div>\n\n        <div class=\"lshot\">\n          <div class=\"lshot-head\">\n            <span class=\"lshot-name\">Volatility 10 (1s) Index</span>\n            <span class=\"lshot-live\"><i></i>live</span>\n          </div>\n          <div class=\"lshot-chart\">\n            <svg class=\"chart-map\" viewBox=\"0 0 1000 500\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\">\n              <path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M527.8 147.2L555.6 159.7L569.4 161.1L586.1 162.5L597.2 172.2L602.8 188.9L608.3 208.3L619.4 218.1L633.3 219.4L641.7 216.7L633.3 236.1L625.0 244.4L613.9 255.6L611.1 269.4L612.5 294.4L597.2 316.7L588.9 330.6L575.0 344.4L561.1 344.4L551.4 345.8L541.7 325.0L533.3 311.1L533.3 294.4L536.1 275.0L525.0 252.8L526.4 238.9L513.9 238.9L500.0 234.7L486.1 236.1L475.0 236.1L463.9 225.0L451.4 209.2L455.6 191.7L463.9 175.0L472.2 166.7L483.3 150.6L500.0 150.0L508.3 147.8L527.8 147.2ZM473.6 142.5L475.0 130.6L495.8 122.2L487.5 115.3L500.0 112.5L505.6 108.3L511.1 102.8L522.2 97.2L522.2 91.7L513.9 87.5L530.6 72.2L538.9 63.9L550.0 56.9L569.4 52.8L591.7 58.3L611.1 61.1L638.9 58.3L666.7 55.6L688.9 47.2L708.3 50.0L736.1 44.4L777.8 36.1L813.9 44.4L855.6 47.2L888.9 47.2L922.2 55.6L944.4 55.6L972.2 66.7L994.4 69.4L977.8 77.8L952.8 83.3L944.4 94.4L933.3 108.3L897.2 100.0L888.9 122.2L869.4 130.6L861.1 130.6L852.8 141.7L838.9 141.7L836.1 163.9L825.0 183.3L805.6 191.7L800.0 205.6L791.7 222.2L788.9 244.4L777.8 233.3L772.2 222.2L769.4 205.6L761.1 200.0L750.0 188.9L741.7 191.7L722.2 208.3L713.9 227.8L702.8 208.3L700.0 191.7L688.9 186.1L680.6 180.6L669.4 180.6L658.3 180.6L647.2 175.0L638.9 169.4L633.3 166.7L655.6 177.8L661.1 188.9L652.8 200.0L644.4 202.8L633.3 211.1L625.0 215.3L619.4 208.3L608.3 191.7L600.0 180.6L594.4 172.2L597.2 161.1L600.0 150.0L591.7 150.0L583.3 138.9L572.2 138.9L561.1 138.9L555.6 138.9L547.2 133.3L538.9 133.3L533.3 127.8L522.2 127.8L508.3 130.6L500.0 138.9L494.4 147.2L486.1 150.0L480.6 147.2L473.6 142.5ZM41.7 83.3L69.4 80.6L83.3 80.6L111.1 83.3L130.6 91.7L138.9 100.0L150.0 111.1L155.6 116.7L158.3 127.8L161.1 147.2L169.4 155.6L175.0 161.1L183.3 172.2L194.4 186.1L208.3 194.4L225.0 205.6L238.9 205.6L244.4 208.3L255.6 205.6L258.3 213.9L269.4 225.0L280.6 225.0L272.2 208.3L258.3 191.7L250.0 191.7L247.2 197.2L236.1 197.2L230.6 188.9L238.9 177.8L252.8 169.4L266.7 166.7L275.0 180.6L277.8 175.0L275.0 163.9L280.6 158.3L291.7 152.8L294.4 138.9L305.6 130.6L316.7 125.0L322.2 122.2L333.3 119.4L344.4 108.3L341.7 100.0L322.2 88.9L305.6 86.1L283.3 94.4L277.8 105.6L269.4 97.2L280.6 77.8L263.9 66.7L236.1 61.1L208.3 61.1L180.6 58.3L152.8 55.6L125.0 58.3L97.2 55.6L66.7 52.8L47.2 66.7L33.3 69.4L41.7 83.3ZM280.6 225.0L291.7 219.4L302.8 216.7L316.7 219.4L327.8 222.2L333.3 227.8L347.2 233.3L358.3 238.9L361.1 250.0L377.8 255.6L394.4 263.9L402.8 272.2L397.2 283.3L391.7 294.4L386.1 311.1L366.7 319.4L366.7 327.8L352.8 344.4L341.7 355.6L327.8 361.1L319.4 375.0L311.1 388.9L311.1 394.4L300.0 400.0L291.7 388.9L291.7 380.6L297.2 366.7L297.2 352.8L302.8 333.3L305.6 313.9L305.6 300.0L288.9 288.9L280.6 272.2L275.0 266.7L277.8 255.6L283.3 247.2L286.1 233.3L280.6 225.0ZM813.9 311.1L816.7 322.2L819.4 344.4L830.6 344.4L844.4 341.7L858.3 338.9L872.2 341.7L880.6 347.2L888.9 355.6L905.6 358.3L916.7 352.8L925.0 338.9L925.0 327.8L925.0 319.4L913.9 311.1L905.6 302.8L897.2 291.7L894.4 280.6L886.1 297.2L877.8 283.3L869.4 280.6L861.1 283.3L852.8 288.9L847.2 288.9L838.9 297.2L827.8 305.6L813.9 311.1ZM375.0 83.3L361.1 72.2L355.6 61.1L347.2 50.0L347.2 38.9L361.1 27.8L388.9 19.4L422.2 22.2L438.9 33.3L438.9 50.0L427.8 61.1L408.3 66.7L383.3 80.6L375.0 83.3ZM636.1 283.3L638.9 291.7L638.9 302.8L631.9 319.4L625.0 319.4L622.2 305.6L620.8 297.2L627.8 286.1L636.1 283.3ZM891.7 125.0L902.8 127.8L897.2 133.3L891.7 138.9L888.9 150.0L880.6 147.2L875.0 155.6L866.7 155.6L861.1 163.9L863.9 158.3L875.0 150.0L883.3 144.4L891.7 125.0ZM486.1 88.9L491.7 87.5L494.4 91.7L497.2 100.0L502.8 104.2L502.8 108.3L494.4 109.7L486.1 111.1L486.1 102.8L483.3 97.2L486.1 88.9ZM802.8 244.4L813.9 238.9L825.0 238.9L830.6 247.2L825.0 258.3L808.3 258.3L802.8 252.8L802.8 244.4ZM763.9 236.1L775.0 241.7L788.9 255.6L794.4 266.7L788.9 266.7L777.8 250.0L763.9 244.4L763.9 236.1ZM863.9 252.8L877.8 255.6L891.7 258.3L908.3 266.7L916.7 275.0L900.0 272.2L883.3 272.2L869.4 261.1L863.9 252.8ZM980.6 347.2L994.4 355.6L991.7 361.1L983.3 363.9L975.0 372.2L966.7 380.6L963.9 375.0L975.0 366.7L980.6 347.2ZM833.3 200.0L838.9 202.8L844.4 213.9L850.0 222.2L850.0 230.6L838.9 233.3L833.3 222.2L833.3 211.1L833.3 200.0ZM433.3 69.4L447.2 66.7L461.1 68.1L461.1 72.2L447.2 73.9L436.1 72.2L433.3 69.4ZM722.2 223.6L727.8 230.6L722.2 233.3L720.8 227.8L722.2 223.6ZM263.9 188.9L280.6 186.1L291.7 194.4L283.3 194.4L266.7 190.3L263.9 188.9ZM830.6 247.2L847.2 247.2L847.2 255.6L836.1 263.9L830.6 258.3L830.6 247.2ZM791.7 266.7L816.7 269.4L816.7 273.6L794.4 269.4L791.7 266.7Z\"></path>\n            </svg>\n            <canvas id=\"landingChart\" aria-label=\"Live price chart\"></canvas>\n          </div>\n          <div class=\"lshot-digits\" id=\"landingDigits\"></div>\n          <div class=\"lshot-foot\">\n            <span>Last digit settles the contract</span>\n            <span class=\"num\" id=\"landingPrice\">&mdash;</span>\n          </div>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- how: white ---------------- -->\n    <section class=\"lsec\" id=\"how\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">How it works</span>\n          <h2>Three steps, and it is over in seconds.</h2>\n          <p>A contract asks one question about the last digit of the next few ticks. You pick the answer, set a stake, and it settles itself.</p>\n        </div>\n        <div class=\"lgrid\">\n          <article class=\"lcard\">\n            <span class=\"lnum\">01</span>\n            <h3>Fund the account</h3>\n            <p>M-Pesa, card or USDT. Mobile money lands in about two minutes and is quoted in your own currency, so you send the figure you expect to send.</p>\n          </article>\n          <article class=\"lcard\">\n            <span class=\"lnum\">02</span>\n            <h3>Pick a contract</h3>\n            <p>Even or odd, over or under a barrier, matches or differs from one digit. Every payout is on the button before you commit anything.</p>\n          </article>\n          <article class=\"lcard\">\n            <span class=\"lnum\">03</span>\n            <h3>Watch it settle</h3>\n            <p>One to ten ticks later it is done. Wins are credited immediately, and every contract stays on your ledger with its entry and exit price.</p>\n          </article>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- contracts: purple ---------------- -->\n    <section class=\"lsec tint purple\" id=\"contracts\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">Contracts</span>\n          <h2>Five ways to read one digit.</h2>\n          <p>Each digit 0&ndash;9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. We publish it rather than bury it.</p>\n        </div>\n        <div class=\"ltable\">\n          <div class=\"ltrow lthead\"><span>Contract</span><span>You win when</span><span class=\"num\">True odds</span></div>\n          <div class=\"ltrow\"><span>Even / Odd</span><span>The last digit is even, or odd</span><span class=\"num\">50%</span></div>\n          <div class=\"ltrow\"><span>Over</span><span>The digit lands above your barrier</span><span class=\"num\">10&ndash;90%</span></div>\n          <div class=\"ltrow\"><span>Under</span><span>The digit lands below your barrier</span><span class=\"num\">10&ndash;90%</span></div>\n          <div class=\"ltrow\"><span>Matches</span><span>The digit is exactly the one you chose</span><span class=\"num\">10%</span></div>\n          <div class=\"ltrow\"><span>Differs</span><span>The digit is anything but the one you chose</span><span class=\"num\">90%</span></div>\n        </div>\n        <p class=\"lsmall\">Payouts sit slightly below fair value &mdash; that margin is how the platform earns. Differs wins nine times in ten and still runs a negative expectation. <a href=\"learn.html\">Read the full breakdown</a>.</p>\n      </div>\n    </section>\n\n    <!-- ---------------- ai: white ---------------- -->\n    <section class=\"lsec\" id=\"ai\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">AI scanner</span>\n          <h2>It tells you when there is nothing worth trading.</h2>\n          <p>The scanner reads the last 180 ticks on all eight instruments, scores every contract it could write against them, and ranks by expected return rather than by win rate.</p>\n        </div>\n        <div class=\"lpanel\">\n          <div class=\"lsig\"><span class=\"lsig-b\">Over 3</span><span>Volatility 75 (1s)</span><b class=\"num pos\">+1.42% EV</b></div>\n          <div class=\"lsig\"><span class=\"lsig-b\">Even</span><span>Volatility 10 (1s)</span><b class=\"num pos\">+0.38% EV</b></div>\n          <div class=\"lsig\"><span class=\"lsig-b\">Differs 7</span><span>Step Index</span><b class=\"num neg\">&minus;0.91% EV</b></div>\n          <div class=\"lsig\"><span class=\"lsig-b\">Under 6</span><span>Crash 1000</span><b class=\"num neg\">&minus;1.20% EV</b></div>\n        </div>\n        <p class=\"lsmall centered\">Most of the time the honest answer is that no edge clears the payout margin, and it says so.</p>\n      </div>\n    </section>\n\n    <!-- ---------------- funding: blue ---------------- -->\n    <section class=\"lsec tint blue\" id=\"funding\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">Funding</span>\n          <h2>Pay the way you already pay.</h2>\n        </div>\n        <div class=\"lgrid\">\n          <article class=\"lcard\">\n            <h3>M-Pesa</h3>\n            <p>An STK push to your own number. Amounts are shown in your local currency with the exchange rate stated, so nothing is a surprise.</p>\n            <span class=\"chip\">About two minutes</span>\n          </article>\n          <article class=\"lcard\">\n            <h3>Card</h3>\n            <p>Visa, Mastercard and Verve through Paystack. Your card number is entered on Paystack&rsquo;s checkout and never touches our servers.</p>\n            <span class=\"chip\">Secured by Paystack</span>\n          </article>\n          <article class=\"lcard\">\n            <h3>USDT</h3>\n            <p>TRC-20, ERC-20 and BEP-20. Send to the address shown and the balance credits on confirmation.</p>\n            <span class=\"chip\">From $10</span>\n          </article>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- faq: white ---------------- -->\n    <section class=\"lsec\" id=\"faq\">\n      <div class=\"lsec-in\">\n        <div class=\"lsec-head\">\n          <span class=\"label lkicker\">FAQ</span>\n          <h2>The questions worth asking first.</h2>\n        </div>\n        <div class=\"lfaq\">\n          <details>\n            <summary>What is a synthetic index?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>A price series generated by a published random process rather than by a real-world market. Nothing external moves it &mdash; no news, no earnings, no opening bell. The number in the name is its volatility: Volatility 10 moves gently, Volatility 100 moves ten times as hard.</p>\n          </details>\n          <details>\n            <summary>Can I actually make money doing this?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Every contract is priced slightly below fair value, so the expected return on each one starts negative. Over enough contracts that margin is what you pay to trade. People do finish sessions ahead, but no strategy on this platform turns a negative expectation positive, and anyone telling you otherwise is selling something.</p>\n          </details>\n          <details>\n            <summary>Is there a free way to try it?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Yes. Every account opens with a demo balance running on the same feed, the same pricing and the same contracts, with virtual funds. Place a hundred contracts there and look at the total before you fund anything.</p>\n          </details>\n          <details>\n            <summary>How fast are withdrawals?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Payouts are reviewed and sent within the hour to the M-Pesa number or USDT address on your profile. Identity verification is a one-time check before your first payout leaves the account.</p>\n          </details>\n          <details>\n            <summary>What does the referral programme pay?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>Not cash. Each referral who funds an account raises your payout tier, which lifts what every winning contract pays you &mdash; up to a cap that deliberately stays below the house margin. It makes your own trading cheaper rather than paying you to recruit.</p>\n          </details>\n          <details>\n            <summary>What happens if I lose connection mid-contract?<span class=\"lplus\" aria-hidden=\"true\"></span></summary>\n            <p>The contract settles on the feed regardless of whether your screen is open. The result and the credit are on your ledger when you come back.</p>\n          </details>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- close: purple ---------------- -->\n    <section class=\"lsec tint purple lclose\">\n      <div class=\"lsec-in\">\n        <h2>Open an account and start on the demo balance.</h2>\n        <p>No deposit required to look around. Fund it when, and if, you decide to.</p>\n        <div class=\"lcta\">\n          <a class=\"btn btn-fill\" href=\"signup.html\">Create a free account</a>\n          <a class=\"btn btn-ghost\" href=\"learn.html\">Learn the contracts first</a>\n        </div>\n      </div>\n    </section>\n\n    <!-- ---------------- footer ---------------- -->\n    <footer class=\"lfoot\">\n      <div class=\"lsec-in\">\n        <div class=\"lfoot-top\">\n          <div class=\"lfoot-brand\">\n            <a class=\"wordmark\" href=\"landing.html\">Nexas</a>\n            <p>A trading terminal for digit contracts on synthetic indices. Open every hour of every day.</p>\n          </div>\n          <div class=\"lfoot-cols\">\n            <div>\n              <b>Platform</b>\n              <a href=\"login.html\">Terminal</a>\n              <a href=\"markets.html\">Markets</a>\n              <a href=\"positions.html\">Positions</a>\n              <a href=\"login.html\">AI scanner</a>\n            </div>\n            <div>\n              <b>Learn</b>\n              <a href=\"learn.html\">Trading guide</a>\n              <a href=\"#contracts\">Contract types</a>\n              <a href=\"#faq\">FAQ</a>\n              <a href=\"responsible.html\">Responsible trading</a>\n            </div>\n            <div>\n              <b>Company</b>\n              <a href=\"chat.html\">Support</a>\n              <a href=\"#\">Terms</a>\n              <a href=\"#\">Privacy</a>\n              <a href=\"#\">Complaints</a>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"lfoot-risk\">\n          <b>Risk warning</b>\n          <p>Trading synthetic indices carries a high level of risk and is not suitable for everyone. You can lose your full stake. Every contract on this platform is priced with a margin in the platform&rsquo;s favour, so the expected return on each one is negative. Never trade with money you cannot afford to lose, and set your limits before you start, not during a losing run.</p>\n        </div>\n\n        <div class=\"lfoot-bar\">\n          <span>&copy; 2026 Nexas. A demonstration interface.</span>\n          <span>Nothing on this site is financial advice.</span>\n        </div>\n      </div>\n    </footer>\n\n  ","script":"/* The market section shows the real feed rather than a picture of one:\n   the same chart module the terminal uses, on the same series. */\n(function () {\n  var canvas = document.getElementById('landingChart');\n  if (!canvas || !window.NexChart) return;\n  var API = window.NexAPI, F = window.NexFmt, SYM = 'R_10';\n\n  API.ready(function () {\n    var chart = window.NexChart.create(canvas, { symbol: SYM });\n    chart.resize();\n\n    function digits() {\n      var h = API.feed.history(SYM).slice(-10);\n      var out = '';\n      for (var i = 0; i < h.length; i++) {\n        var p = h[i];\n        var d = p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;\n        out += '<span class=\"lsd' + (i === h.length - 1 ? ' on' : '') + '\">' + d + '</span>';\n      }\n      document.getElementById('landingDigits').innerHTML = out;\n      var last = API.feed.last(SYM);\n      if (last) document.getElementById('landingPrice').textContent = F.price(last.price);\n    }\n\n    digits();\n    API.on('tick', function (t) {\n      if (t.symbol !== SYM) return;\n      if (chart) chart.dirty = true;\n      digits();\n    });\n  });\n})();\n\n/* FAQ: opening one answer closes the one before it, so the section\n   never grows into a wall of open text. Done here rather than with the\n   native [name] grouping, which older browsers ignore. */\n(function () {\n  var items = document.querySelectorAll('.lfaq details');\n  for (var i = 0; i < items.length; i++) {\n    items[i].addEventListener('toggle', function () {\n      if (!this.open) return;\n      for (var j = 0; j < items.length; j++) {\n        if (items[j] !== this) items[j].open = false;\n      }\n    });\n  }\n})();"},"index":{"attrs":{"data-page":"trade","data-chrome":"app"},"title":"Nexas — Terminal","html":"\n    <div class=\"terminal\" id=\"terminal\">\n\n      <div class=\"col-mid\">\n        <div class=\"ctabs\" id=\"contractTabs\"><div class=\"sk sk-tabs\"></div></div>\n        <div class=\"instrument\" id=\"instrument\"><div class=\"sk sk-inst\"></div></div>\n\n        <div class=\"chart-card\">\n          <svg class=\"chart-map\" viewBox=\"0 0 1000 500\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\">\n            <path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M527.8 147.2L555.6 159.7L569.4 161.1L586.1 162.5L597.2 172.2L602.8 188.9L608.3 208.3L619.4 218.1L633.3 219.4L641.7 216.7L633.3 236.1L625.0 244.4L613.9 255.6L611.1 269.4L612.5 294.4L597.2 316.7L588.9 330.6L575.0 344.4L561.1 344.4L551.4 345.8L541.7 325.0L533.3 311.1L533.3 294.4L536.1 275.0L525.0 252.8L526.4 238.9L513.9 238.9L500.0 234.7L486.1 236.1L475.0 236.1L463.9 225.0L451.4 209.2L455.6 191.7L463.9 175.0L472.2 166.7L483.3 150.6L500.0 150.0L508.3 147.8L527.8 147.2ZM473.6 142.5L475.0 130.6L495.8 122.2L487.5 115.3L500.0 112.5L505.6 108.3L511.1 102.8L522.2 97.2L522.2 91.7L513.9 87.5L530.6 72.2L538.9 63.9L550.0 56.9L569.4 52.8L591.7 58.3L611.1 61.1L638.9 58.3L666.7 55.6L688.9 47.2L708.3 50.0L736.1 44.4L777.8 36.1L813.9 44.4L855.6 47.2L888.9 47.2L922.2 55.6L944.4 55.6L972.2 66.7L994.4 69.4L977.8 77.8L952.8 83.3L944.4 94.4L933.3 108.3L897.2 100.0L888.9 122.2L869.4 130.6L861.1 130.6L852.8 141.7L838.9 141.7L836.1 163.9L825.0 183.3L805.6 191.7L800.0 205.6L791.7 222.2L788.9 244.4L777.8 233.3L772.2 222.2L769.4 205.6L761.1 200.0L750.0 188.9L741.7 191.7L722.2 208.3L713.9 227.8L702.8 208.3L700.0 191.7L688.9 186.1L680.6 180.6L669.4 180.6L658.3 180.6L647.2 175.0L638.9 169.4L633.3 166.7L655.6 177.8L661.1 188.9L652.8 200.0L644.4 202.8L633.3 211.1L625.0 215.3L619.4 208.3L608.3 191.7L600.0 180.6L594.4 172.2L597.2 161.1L600.0 150.0L591.7 150.0L583.3 138.9L572.2 138.9L561.1 138.9L555.6 138.9L547.2 133.3L538.9 133.3L533.3 127.8L522.2 127.8L508.3 130.6L500.0 138.9L494.4 147.2L486.1 150.0L480.6 147.2L473.6 142.5ZM41.7 83.3L69.4 80.6L83.3 80.6L111.1 83.3L130.6 91.7L138.9 100.0L150.0 111.1L155.6 116.7L158.3 127.8L161.1 147.2L169.4 155.6L175.0 161.1L183.3 172.2L194.4 186.1L208.3 194.4L225.0 205.6L238.9 205.6L244.4 208.3L255.6 205.6L258.3 213.9L269.4 225.0L280.6 225.0L272.2 208.3L258.3 191.7L250.0 191.7L247.2 197.2L236.1 197.2L230.6 188.9L238.9 177.8L252.8 169.4L266.7 166.7L275.0 180.6L277.8 175.0L275.0 163.9L280.6 158.3L291.7 152.8L294.4 138.9L305.6 130.6L316.7 125.0L322.2 122.2L333.3 119.4L344.4 108.3L341.7 100.0L322.2 88.9L305.6 86.1L283.3 94.4L277.8 105.6L269.4 97.2L280.6 77.8L263.9 66.7L236.1 61.1L208.3 61.1L180.6 58.3L152.8 55.6L125.0 58.3L97.2 55.6L66.7 52.8L47.2 66.7L33.3 69.4L41.7 83.3ZM280.6 225.0L291.7 219.4L302.8 216.7L316.7 219.4L327.8 222.2L333.3 227.8L347.2 233.3L358.3 238.9L361.1 250.0L377.8 255.6L394.4 263.9L402.8 272.2L397.2 283.3L391.7 294.4L386.1 311.1L366.7 319.4L366.7 327.8L352.8 344.4L341.7 355.6L327.8 361.1L319.4 375.0L311.1 388.9L311.1 394.4L300.0 400.0L291.7 388.9L291.7 380.6L297.2 366.7L297.2 352.8L302.8 333.3L305.6 313.9L305.6 300.0L288.9 288.9L280.6 272.2L275.0 266.7L277.8 255.6L283.3 247.2L286.1 233.3L280.6 225.0ZM813.9 311.1L816.7 322.2L819.4 344.4L830.6 344.4L844.4 341.7L858.3 338.9L872.2 341.7L880.6 347.2L888.9 355.6L905.6 358.3L916.7 352.8L925.0 338.9L925.0 327.8L925.0 319.4L913.9 311.1L905.6 302.8L897.2 291.7L894.4 280.6L886.1 297.2L877.8 283.3L869.4 280.6L861.1 283.3L852.8 288.9L847.2 288.9L838.9 297.2L827.8 305.6L813.9 311.1ZM375.0 83.3L361.1 72.2L355.6 61.1L347.2 50.0L347.2 38.9L361.1 27.8L388.9 19.4L422.2 22.2L438.9 33.3L438.9 50.0L427.8 61.1L408.3 66.7L383.3 80.6L375.0 83.3ZM636.1 283.3L638.9 291.7L638.9 302.8L631.9 319.4L625.0 319.4L622.2 305.6L620.8 297.2L627.8 286.1L636.1 283.3ZM891.7 125.0L902.8 127.8L897.2 133.3L891.7 138.9L888.9 150.0L880.6 147.2L875.0 155.6L866.7 155.6L861.1 163.9L863.9 158.3L875.0 150.0L883.3 144.4L891.7 125.0ZM486.1 88.9L491.7 87.5L494.4 91.7L497.2 100.0L502.8 104.2L502.8 108.3L494.4 109.7L486.1 111.1L486.1 102.8L483.3 97.2L486.1 88.9ZM802.8 244.4L813.9 238.9L825.0 238.9L830.6 247.2L825.0 258.3L808.3 258.3L802.8 252.8L802.8 244.4ZM763.9 236.1L775.0 241.7L788.9 255.6L794.4 266.7L788.9 266.7L777.8 250.0L763.9 244.4L763.9 236.1ZM863.9 252.8L877.8 255.6L891.7 258.3L908.3 266.7L916.7 275.0L900.0 272.2L883.3 272.2L869.4 261.1L863.9 252.8ZM980.6 347.2L994.4 355.6L991.7 361.1L983.3 363.9L975.0 372.2L966.7 380.6L963.9 375.0L975.0 366.7L980.6 347.2ZM833.3 200.0L838.9 202.8L844.4 213.9L850.0 222.2L850.0 230.6L838.9 233.3L833.3 222.2L833.3 211.1L833.3 200.0ZM433.3 69.4L447.2 66.7L461.1 68.1L461.1 72.2L447.2 73.9L436.1 72.2L433.3 69.4ZM722.2 223.6L727.8 230.6L722.2 233.3L720.8 227.8L722.2 223.6ZM263.9 188.9L280.6 186.1L291.7 194.4L283.3 194.4L266.7 190.3L263.9 188.9ZM830.6 247.2L847.2 247.2L847.2 255.6L836.1 263.9L830.6 258.3L830.6 247.2ZM791.7 266.7L816.7 269.4L816.7 273.6L794.4 269.4L791.7 266.7Z\"></path>\n          </svg>\n          <canvas id=\"chart\" aria-label=\"Price chart\"></canvas>\n          <div class=\"chart-tools\">\n            <button data-zoom=\"in\" aria-label=\"Zoom in\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n            </button>\n            <button data-zoom=\"reset\" aria-label=\"Reset zoom\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 109-9\"></path><path d=\"M3 4v5h5\"></path></svg>\n            </button>\n            <button data-zoom=\"out\" aria-label=\"Zoom out\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg>\n            </button>\n          </div>\n        </div>\n\n        <div class=\"digits\" id=\"digits\"></div>\n        <div id=\"activeList\"></div>\n      </div>\n\n      <div class=\"col-right\">\n        <div class=\"panel\" id=\"panel\"><div class=\"sk sk-panel\"></div></div>\n        <div class=\"trade-dock\" id=\"dock\"></div>\n      </div>\n\n    </div>\n  ","script":""},"ai":{"attrs":{"data-page":"ai","data-chrome":"app"},"title":"Nexas — AI Scanner","html":"\n    <div class=\"shell\">\n      <div id=\"aiPage\"><div class=\"sk sk-list\"></div></div>\n    </div>\n  ","script":""},"markets":{"attrs":{"data-page":"markets","data-chrome":"app"},"title":"Nexas — Markets","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"page-head\">\r\n        <h1>Markets</h1>\r\n        <p>Synthetic indices, generated continuously and open every hour of every day.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">All</button>\r\n        <button class=\"ctab\">Volatility</button>\r\n        <button class=\"ctab\">Boom &amp; Crash</button>\r\n        <button class=\"ctab\">Step</button>\r\n      </div>\r\n\r\n      <div id=\"marketList\"><div class=\"sk sk-list\"></div></div>\r\n      <div style=\"height:20px\"></div>\r\n    </div>\r\n  ","script":""},"positions":{"attrs":{"data-page":"positions","data-chrome":"app"},"title":"Nexas — Positions","html":"\n    <div class=\"shell\" id=\"positions\">\n      <div class=\"page-head\">\n        <h1>Positions</h1>\n        <p>Everything open, settled and paid, on this account.</p>\n      </div>\n\n      <div class=\"ctabs\">\n        <button class=\"ctab active\" data-posview=\"open\">Open</button>\n        <button class=\"ctab\" data-posview=\"closed\">Closed</button>\n        <button class=\"ctab\" data-posview=\"transactions\">Ledger</button>\n      </div>\n\n      <div id=\"posSummary\"><div class=\"sk sk-summary\"></div></div>\n      <div id=\"posFilters\"></div>\n      <div id=\"posList\"><div class=\"sk sk-list\"></div></div>\n      <div style=\"height:22px\"></div>\n    </div>\n  ","script":""},"learn":{"attrs":{"data-page":"learn","data-chrome":"app"},"title":"Nexas — Learn","html":"\n    <div class=\"page\">\n      <span class=\"label page-kicker\">Learn</span>\n      <h1>Understand what you are trading.</h1>\n      <p class=\"lede\">Digit contracts are simple to place and easy to misread. This page covers what the instruments actually are, how a payout is priced, and where the edge really sits — so your decisions come from the numbers rather than a hunch.</p>\n\n      <div class=\"rule\"></div>\n\n      <h2>Start here</h2>\n      <div class=\"cards\">\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 8v5M12 16.4v.1\"></path></svg>\n          <div>\n            <b>What a synthetic index is</b>\n            <p>A price series generated by a published random process, not a real-world asset. Nothing external moves it — no news, no earnings, no market open. Volatility 10 means roughly 10% annualised volatility; Volatility 100 moves ten times as hard. The number in the name is the whole story.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\n          <div>\n            <b>What the last digit is</b>\n            <p>Every tick prints a price to two decimals. The final decimal is the digit your contract settles on. Even/Odd reads its parity, Over/Under compares it to a barrier, Matches/Differs asks whether it lands exactly on one number.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 6.2v11.6\"></path><path d=\"M14.7 9.4A2.7 2.7 0 0012 8.2c-1.5 0-2.7.9-2.7 2s1.2 1.9 2.7 1.9 2.7.8 2.7 1.9-1.2 2-2.7 2a2.7 2.7 0 01-2.6-1.3\"></path></svg>\n          <div>\n            <b>How a payout is priced</b>\n            <p>Payout is set so the house keeps a margin at the true probability. Even/Odd pays 1.953× on a 50% chance: a fair price would be 2.0×, so about 2.3% of every stake is the cost of trading. That gap is constant and it compounds across every contract you place.</p>\n          </div>\n        </div>\n      </div>\n\n      <h2>The five contracts, and the odds behind them</h2>\n      <p>Each digit 0–9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. This is what you are actually buying:</p>\n\n      <div class=\"stats\">\n        <div class=\"stat\"><b>50%</b><span>Even / Odd — five of ten digits. Pays 1.953×, so expected return is −2.35% per contract.</span></div>\n        <div class=\"stat\"><b>10%</b><span>Matches — one exact digit. Pays 10.35×, expected return −2.35% at a true 1 in 10.</span></div>\n        <div class=\"stat\"><b>90%</b><span>Differs — any digit but one. Pays 1.084×, wins nine times in ten and still runs a negative expectation.</span></div>\n        <div class=\"stat\"><b>40%</b><span>Over 5 — digits 6 to 9. A barrier changes the odds, and the payout moves with it.</span></div>\n      </div>\n\n      <p>Notice that Differs wins nine times out of ten and still loses money over a long enough run. A high win rate is not an edge. The only number that decides whether a strategy survives is expected return per contract, and on every one of these it starts negative.</p>\n\n      <div class=\"rule\"></div>\n\n      <h2>Reading the digit history</h2>\n      <div class=\"cards\">\n        <div class=\"card\">\n          <h3>What the percentages tell you</h3>\n          <p>The circles under the chart count how often each digit appeared in the recent window. Over a short sample these will always look uneven — that is what randomness looks like. A digit showing 14% over 120 ticks is ordinary noise, not a signal.</p>\n        </div>\n        <div class=\"card\">\n          <h3>The gambler's fallacy</h3>\n          <p>Six odd digits in a row does not make even more likely on the seventh. Each tick is drawn independently, so the odds reset every time. The streak you are looking at has no memory and no obligation to correct itself.</p>\n        </div>\n        <div class=\"card\">\n          <h3>Where a real edge would come from</h3>\n          <p>Only from a genuine, persistent deviation in the generator — measured over thousands of ticks, not dozens, and large enough to clear the payout margin. The AI scanner ranks by expected return for exactly this reason, and most of the time it will honestly report no edge worth taking.</p>\n        </div>\n      </div>\n\n      <h2>Managing the downside</h2>\n      <div class=\"cards\">\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path></svg>\n          <div>\n            <b>Position sizing</b>\n            <p>Stake a fixed, small share of your balance — one to two percent is a common ceiling. It will not turn a negative expectation positive, but it decides how long you last and how much a bad run costs you.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n          <div>\n            <b>Why the loss multiple is dangerous</b>\n            <p>Doubling after every loss feels like it guarantees a recovery. It does not. Six losses at ×2 means your seventh stake is 64 times the first, and a run of six is common. Martingale trades a high chance of a small win for a small chance of losing everything.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\n          <div>\n            <b>Set the targets before you start</b>\n            <p>Target profit, target loss and loss multiple sit on the trade panel for a reason. Decide all three while you are calm, and let the run stop itself. A limit you set mid-session is a limit you will move again.</p>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"rule\"></div>\n\n      <h2>Practise before you risk anything</h2>\n      <p>Switch to the demo account from the balance button at the top of the screen. It runs the same feed, the same pricing and the same contracts with virtual funds. Place a hundred contracts there and look at the total — it is the cheapest lesson available on this platform.</p>\n\n      <div style=\"margin-top:22px;display:flex;gap:10px;flex-wrap:wrap\">\n        <a class=\"btn btn-ghost\" href=\"responsible.html\">Responsible trading and limits</a>\n        <a class=\"btn btn-ghost\" href=\"chat.html\">Talk to support</a>\n      </div>\n    </div>\n\n    <footer>\n      <div class=\"fl\">\n        <a href=\"learn.html\">Learn</a>\n        <a href=\"responsible.html\">Responsible Trading</a>\n        <a href=\"#\">Risk Disclosure</a>\n        <a href=\"#\">Terms</a>\n        <a href=\"#\">Privacy</a>\n        <a href=\"#\">Complaints</a>\n      </div>\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Nothing on this page is financial advice.</p>\n    </footer>\n  ","script":""},"responsible":{"attrs":{"data-page":"responsible","data-chrome":"app"},"title":"Nexas — Responsible Trading","html":"\r\n    <div class=\"page\">\r\n      <span class=\"label page-kicker\">Responsible trading</span>\r\n      <h1>Trade with intent, not impulse.</h1>\r\n      <p class=\"lede\">Trading carries real risk. Nexas gives you the controls to decide, in advance, how much time and money you are willing to commit — and holds you to it.</p>\r\n\r\n      <div class=\"rule\"></div>\r\n\r\n      <h2>Set your limits before you trade</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\r\n          <div>\r\n            <b>Session duration</b>\r\n            <p>Cap how long a single session can run. The terminal closes out and locks when the clock ends.</p>\r\n            <span class=\"chip\">Currently 60 minutes</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\r\n          <div>\r\n            <b>Loss and stake ceilings</b>\r\n            <p>Daily, weekly and monthly ceilings on total stake and net loss. Any increase takes 24 hours to apply.</p>\r\n            <span class=\"chip\">Daily loss $250</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"></rect><path d=\"M4 10h16M8 3v4M16 3v4\"></path></svg>\r\n          <div>\r\n            <b>Cooling-off and self-exclusion</b>\r\n            <p>Pause new positions for 24 hours, or close access entirely for a period you choose. Withdrawals stay open.</p>\r\n            <span class=\"chip\">Not active</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <h2>What the numbers actually look like</h2>\r\n      <div class=\"stats\">\r\n        <div class=\"stat\"><b>70%</b><span>of retail accounts lose money over a twelve-month period</span></div>\r\n        <div class=\"stat\"><b>1 in 5</b><span>traders exceed the deposit they originally planned</span></div>\r\n        <div class=\"stat\"><b>24h</b><span>delay applied to any increase in your limits</span></div>\r\n        <div class=\"stat\"><b>$0</b><span>cost to set, lower or activate any control</span></div>\r\n      </div>\r\n\r\n      <h2>Signs worth taking seriously</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>Chasing losses</h3><p>Raising stake size to recover a previous loss rather than following a plan.</p></div>\r\n        <div class=\"card\"><h3>Borrowed funds</h3><p>Trading with money set aside for rent, bills, school fees or credit repayment.</p></div>\r\n        <div class=\"card\"><h3>Concealment</h3><p>Hiding the extent of your trading from people close to you.</p></div>\r\n      </div>\r\n\r\n      <h2>Get support</h2>\r\n      <p>If trading has stopped feeling like a decision and started feeling like a compulsion, speak to someone independent of us. Our team can also apply a self-exclusion on your behalf at any time, without questions.</p>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>GamCare</h3><p>Free, confidential support and live chat, available around the clock.</p></div>\r\n        <div class=\"card\"><h3>Gambling Therapy</h3><p>Multilingual online support for people affected worldwide.</p></div>\r\n        <div class=\"card\"><h3>Nexas support</h3><p>Reach us in-app at any hour to apply limits or close an account.</p></div>\r\n      </div>\r\n\r\n      <div style=\"margin-top:22px\"><a class=\"btn btn-ghost\" href=\"chat.html\">Talk to our team</a></div>\r\n    </div>\r\n\r\n    <footer>\r\n      <div class=\"fl\">\r\n        <a href=\"responsible.html\">Responsible Trading</a>\r\n        <a href=\"#\">Risk Disclosure</a>\r\n        <a href=\"#\">Terms</a>\r\n        <a href=\"#\">Privacy</a>\r\n        <a href=\"#\">Complaints</a>\r\n        <a href=\"#\">Security</a>\r\n      </div>\r\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Past results do not indicate future outcomes.</p>\r\n    </footer>\r\n  ","script":""},"account":{"attrs":{"data-page":"account","data-chrome":"app","data-back":"index.html","data-title":"Account"},"title":"Nexas — Account","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"summary\" style=\"display:flex;align-items:center;gap:14px\">\r\n        <div class=\"avatar\" style=\"width:52px;height:52px;font-size:22px\">A</div>\r\n        <div style=\"flex:1;min-width:0\">\r\n          <div style=\"font-weight:600;font-size:16px\">Amara Kimani</div>\r\n          <div style=\"color:var(--muted);font-size:12.5px\">am***a@mail.com</div>\r\n        </div>\r\n        <span class=\"badge warn\">Unverified</span>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <button class=\"row\" data-open=\"profile\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"></rect><path d=\"M7 10h3M7 14h6M15 9h3v4h-3z\"></path></svg></span>\r\n          <span class=\"t\"><b>Change name</b><span>Amara Kimani</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"password\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V7a4 4 0 118 0v4\"></path></svg></span>\r\n          <span class=\"t\"><b>Update password</b><span>Last changed 4 months ago</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"verify\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path><path d=\"M9 12l2 2 4-4\"></path></svg></span>\r\n          <span class=\"t\"><b>Verify identity</b><span>Required before your first withdrawal</span></span>\r\n          <span class=\"badge warn\">2 steps left</span>\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"row danger\" href=\"login.html\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4\"></path><path d=\"M16 17l5-5-5-5M21 12H9\"></path></svg></span>\r\n          <span class=\"t\"><b>Log out</b></span>\r\n        </a>\r\n      </div>\r\n      <div style=\"height:24px\"></div>\r\n    </div>\r\n  ","script":""},"chat":{"attrs":{"data-page":"chat","data-chrome":"app","data-back":"account.html","data-title":"Live chat"},"title":"Nexas — Live Chat","html":"\n    <div class=\"chat\">\n      <div class=\"chat-head\">\n        <div class=\"avatar\">N</div>\n        <div>\n          <b>Nexas support</b>\n          <span>Typically replies in minutes</span>\n        </div>\n      </div>\n\n      <div class=\"chat-log\" id=\"chatLog\">\n        <div class=\"empty\" style=\"padding:48px 20px\">\n          <svg width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\n          <b>No messages yet</b>\n          <span>Send a message and someone will pick it up.</span>\n        </div>\n      </div>\n\n      <form class=\"chat-bar\" id=\"chatForm\">\n        <button class=\"iconbtn\" type=\"button\" aria-label=\"Attach file\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7\"></path></svg>\n        </button>\n        <input class=\"input\" id=\"chatInput\" placeholder=\"Write a message\" autocomplete=\"off\" aria-label=\"Message\">\n        <button class=\"chat-send\" type=\"submit\" aria-label=\"Send\">\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l16-8-6 16-2.5-6z\"></path></svg>\n        </button>\n      </form>\n    </div>\n  ","script":""},"login":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Sign In","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Welcome back.</h1>\r\n        <p>Sign in to pick up where you left off.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Signing you in\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"email\">Email address</label>\r\n            <input class=\"input\" id=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"password\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"password\" type=\"password\" autocomplete=\"current-password\" placeholder=\"••••••••\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div style=\"display:flex;justify-content:space-between;align-items:center\">\r\n              <label class=\"checkline\" style=\"font-size:12.5px\"><input type=\"checkbox\" id=\"remember\"> Keep me signed in</label>\r\n              <a class=\"link\" href=\"forgot-password.html\">Forgot password?</a>\r\n            </div>\r\n          </div>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Sign in</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Signing you in with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">New to Nexas? <a href=\"signup.html\">Create an account</a></div>\r\n    </div>\r\n  ","script":""},"signup":{"attrs":{"data-page":"signup","data-chrome":"auth"},"title":"Nexas — Create Account","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Open your account.</h1>\r\n        <p>Two minutes to set up. Deposit when you are ready.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Setting up your account\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">\r\n            <div class=\"field\">\r\n              <label for=\"sFirst\">First name</label>\r\n              <input class=\"input\" id=\"sFirst\" autocomplete=\"given-name\" placeholder=\"Amara\">\r\n            </div>\r\n            <div class=\"field\">\r\n              <label for=\"sLast\">Last name</label>\r\n              <input class=\"input\" id=\"sLast\" autocomplete=\"family-name\" placeholder=\"Kimani\">\r\n            </div>\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"sEmail\">Email address</label>\r\n            <input class=\"input\" id=\"sEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n          <label class=\"checkline\">\r\n            <input type=\"checkbox\" id=\"terms\">\r\n            <span>I am 18 or older and accept the <a class=\"link\" href=\"#\">Terms</a> and <a class=\"link\" href=\"responsible.html\">Risk Disclosure</a>.</span>\r\n          </label>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Create account</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Setting up your account with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Already registered? <a href=\"login.html\">Sign in</a></div>\r\n    </div>\r\n  ","script":""},"forgot-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Forgot Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"login.html\">Nexas</a>\r\n        <h1>Reset your password.</h1>\r\n        <p>Enter the email on your account and we will send a six-digit code.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-demo-form=\"Reset code sent\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"resetEmail\">Email address</label>\r\n            <input class=\"input\" id=\"resetEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <a class=\"btn btn-fill\" href=\"reset-password.html\">Send reset code</a>\r\n        </form>\r\n\r\n        <div class=\"divider\">still stuck?</div>\r\n\r\n        <a class=\"btn btn-ghost\" href=\"chat.html\">\r\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\r\n          Chat with support\r\n        </a>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Remembered it? <a href=\"login.html\">Back to sign in</a></div>\r\n    </div>\r\n  ","script":""},"reset-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — New Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"forgot-password.html\">Nexas</a>\r\n        <h1>Choose a new password.</h1>\r\n        <p>We sent a code to am***a@mail.com. It expires in 15 minutes.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Updating your password\" data-to=\"login.html\" style=\"display:flex;flex-direction:column;gap:18px\">\r\n          <div class=\"field\">\r\n            <label>Verification code</label>\r\n            <div class=\"otp\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 5\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 6\">\r\n            </div>\r\n            <span class=\"hint\">Didn't arrive? <a class=\"link\" href=\"#\">Send again in 0:42</a></span>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">New password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"confirmNew\">Confirm password</label>\r\n            <input class=\"input\" id=\"confirmNew\" type=\"password\" autocomplete=\"new-password\" placeholder=\"Repeat new password\">\r\n          </div>\r\n\r\n          <button class=\"btn btn-fill\" type=\"submit\">Set new password</button>\r\n        </form>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Back to <a href=\"login.html\">sign in</a></div>\r\n    </div>\r\n  ","script":""}};</script>
 <script>
 /* ============================================================
    Nexas — formatting
@@ -1696,6 +1940,40 @@ body.locked{overflow:hidden}
 
   var KEY = 'nexas.v1';
 
+  /* ============================================================
+     BACKEND SEAM
+     Every value the UI shows passes through this module, so wiring a
+     server means replacing the bodies below and nothing else. Set a
+     base URL to point at a real API:
+
+       <script>window.NEXAS_API = "https://api.example.com";</script>
+
+     Endpoints this module expects, in the shape it already uses:
+
+       GET   /session                 -> {id,email,name,displayName,verified}
+       POST  /session                 sign in     {email,password}
+       DELETE/session                 sign out
+       GET   /account                 -> {kind,currency,balances:{real,demo}}
+       POST  /account/use             {kind}
+       GET   /instruments             -> [{id,name,group,digits}]
+       WS    /feed?symbols=...        -> {symbol,price,digit,t}
+       GET   /contracts?status=       -> [contract]
+       POST  /contracts               buy  {symbol,type,side,barrier,stake,ticks}
+       POST  /contracts/:id/sell
+       GET   /transactions            -> [entry]
+       POST  /payments/deposit        {method,amount,currency,phone} -> {ref,status}
+       POST  /payments/withdraw       {method,amount,destination}    -> {ref,status}
+       GET   /payments/:ref           -> {status}   (poll while pending)
+       POST  /kyc/documents           multipart    -> {status}
+       GET   /referrals               -> {code,link,funded,list:[...]}
+       GET   /geo                     -> {country}  (server-side IP lookup)
+
+     Until NEXAS_API is set, the module runs the local simulation below
+     so the interface is fully usable without a server.
+     ============================================================ */
+  var BASE = (typeof window !== 'undefined' && window.NEXAS_API) || null;
+  var LIVE = !!BASE;
+
   /* ---------- instruments ---------- */
   var SYMBOLS = [
     { id: 'R_10',  name: 'Volatility 10 (1s) Index',  group: 'Volatility', start: 9601.01,  vol: 0.9,  digits: 2, rate: 1000 },
@@ -1728,19 +2006,19 @@ body.locked{overflow:hidden}
      local money, rounded to figures people actually send. */
   var COUNTRIES = {
     KE: { name: 'Kenya',        dial: '254', sample: '712 345 678',  len: 9,
-          cur: 'KES', rate: 129,   quick: [500, 1000, 2500, 5000, 10000] },
+          cur: 'KES', rate: 129,   min: 100,    quick: [100, 500, 1000, 2500, 5000] },
     UG: { name: 'Uganda',       dial: '256', sample: '712 345 678',  len: 9,
-          cur: 'UGX', rate: 3720,  quick: [20000, 50000, 100000, 200000, 500000] },
+          cur: 'UGX', rate: 3720,  min: 3000,   quick: [3000, 10000, 25000, 50000, 100000] },
     TZ: { name: 'Tanzania',     dial: '255', sample: '712 345 678',  len: 9,
-          cur: 'TZS', rate: 2640,  quick: [10000, 25000, 50000, 100000, 250000] },
+          cur: 'TZS', rate: 2640,  min: 2000,   quick: [2000, 5000, 10000, 25000, 50000] },
     RW: { name: 'Rwanda',       dial: '250', sample: '788 123 456',  len: 9,
-          cur: 'RWF', rate: 1330,  quick: [5000, 10000, 25000, 50000, 100000] },
+          cur: 'RWF', rate: 1330,  min: 1000,   quick: [1000, 5000, 10000, 25000, 50000] },
     NG: { name: 'Nigeria',      dial: '234', sample: '802 123 4567', len: 10,
-          cur: 'NGN', rate: 1550,  quick: [5000, 10000, 25000, 50000, 100000] },
+          cur: 'NGN', rate: 1550,  min: 1000,   quick: [1000, 5000, 10000, 25000, 50000] },
     GH: { name: 'Ghana',        dial: '233', sample: '24 123 4567',  len: 9,
-          cur: 'GHS', rate: 15.2,  quick: [50, 100, 250, 500, 1000] },
+          cur: 'GHS', rate: 15.2,  min: 10,     quick: [10, 50, 100, 250, 500] },
     ZA: { name: 'South Africa', dial: '27',  sample: '71 123 4567',  len: 9,
-          cur: 'ZAR', rate: 18.3,  quick: [100, 250, 500, 1000, 2500] }
+          cur: 'ZAR', rate: 18.3,  min: 20,     quick: [20, 100, 250, 500, 1000] }
   };
   var DEFAULT_COUNTRY = 'KE';
 
@@ -1807,7 +2085,9 @@ body.locked{overflow:hidden}
     referrals: saved.referrals || null,
     session: saved.session || null,
     account: saved.account || 'real',
-    balances: saved.balances || { real: 2480, demo: 10000 },
+    /* A real account starts empty. The demo balance is a product
+       feature, not seed data, so it opens with virtual funds. */
+    balances: saved.balances || { real: 0, demo: 10000 },
     currency: 'USD',
     verified: !!saved.verified,
     consent: !!saved.consent,
@@ -1919,19 +2199,9 @@ body.locked{overflow:hidden}
     { funded: 6,  boost: 0.010 },
     { funded: 12, boost: 0.015 }
   ];
-  var REF_NAMES = ['J. Mwangi', 'A. Otieno', 'S. Wanjiru', 'D. Kiptoo', 'P. Njeri', 'M. Achieng'];
   function seedReferrals() {
     if (S.referrals) return;
-    var now = Date.now(), out = [];
-    for (var i = 0; i < 4; i++) {
-      out.push({
-        id: 'RF' + (now - i * 86400000),
-        name: REF_NAMES[i],
-        joined: now - (i * 4 + 2) * 86400000,
-        funded: i < 3
-      });
-    }
-    S.referrals = out;
+    S.referrals = [];
     persist();
   }
   function fundedCount() {
@@ -2082,7 +2352,11 @@ body.locked{overflow:hidden}
     var c = S.contracts.filter(function (x) { return x.id === id; })[0];
     if (!c || c.status !== 'open') return { ok: false, error: 'Contract is no longer open' };
     c.status = 'sold';
-    c.exitSpot = c.lastSpot;
+    /* lastSpot is only set once a tick has advanced the contract, so a
+       contract sold before its first tick had no exit price at all. */
+    var hs = history[c.symbol] || [];
+    c.exitSpot = c.lastSpot != null ? c.lastSpot
+      : (hs.length ? hs[hs.length - 1].price : c.entrySpot);
     c.exitTime = Date.now();
     c.profit = round(c.value - c.stake, 2);
     adjust(c.value, { kind: 'Sold', ref: label(c) });
@@ -2219,36 +2493,6 @@ body.locked{overflow:hidden}
       setRiskAck: function (v) { S.riskAck = !!v; persist(); },
       auto: function () { return S.auto; },
       setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); }
-    },
-
-    /* demo-data helper: gives a first-time viewer something to look at */
-    seedDemoHistory: function () {
-      if (S.contracts.length) return;
-      var now = Date.now(), types = [
-        ['even_odd', 'even', null], ['even_odd', 'odd', null],
-        ['matches', null, 4], ['over', null, 5], ['under', null, 3], ['differs', null, 7]
-      ];
-      for (var i = 0; i < 9; i++) {
-        var t = types[i % types.length];
-        var stake = [5, 10, 10, 25, 50][i % 5];
-        var won = Math.random() > 0.45;
-        var payout = payoutFor(t[0], stake);
-        S.contracts.push({
-          id: 'C' + (now - i * 900000), symbol: 'R_10', symbolName: 'Volatility 10 (1s) Index',
-          type: t[0], side: t[1], barrier: t[2], stake: stake, payout: payout,
-          ticks: 5, elapsed: 5,
-          entrySpot: round(9600 + Math.random() * 4, 2), entryTime: now - i * 900000 - 5000,
-          exitSpot: round(9600 + Math.random() * 4, 2), exitTime: now - i * 900000,
-          status: won ? 'won' : 'lost', profit: round(won ? payout - stake : -stake, 2),
-          value: won ? payout : 0, account: 'real'
-        });
-        S.transactions.push({
-          id: 'T' + (now - i * 900000), t: now - i * 900000, kind: won ? 'Payout' : 'Trade',
-          ref: label({ type: t[0], side: t[1], barrier: t[2] }),
-          amount: won ? payout : -stake, balance: S.balances.real, account: 'real'
-        });
-      }
-      persist();
     }
   };
 })();
@@ -2598,6 +2842,31 @@ body.locked{overflow:hidden}
       (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
   }
 
+  /* Just enough logo to confirm what is accepted. It sits above the
+     form as a small chip rather than a banner — the white ground is
+     only there because these marks are drawn for light backgrounds. */
+  function brandMark(src, alt, inkSrc) {
+    /* Only a mark that needs a second version is theme-tagged. The
+       M-Pesa badge is a solid green plate and reads on either ground,
+       so it ships once and is never hidden. */
+    if (!inkSrc) {
+      return '<div class="paylogo"><img src="' + src + '" alt="' + alt + '" loading="lazy"></div>';
+    }
+    return '<div class="paylogo">' +
+      '<img class="on-dark" src="' + src + '" alt="' + alt + '" loading="lazy">' +
+      '<img class="on-light" src="' + inkSrc + '" alt="' + alt + '" loading="lazy">' +
+    '</div>';
+  }
+
+  /* A rail that is not live yet: shown, so people can see it is coming,
+     but inert. */
+  function methodOff(iconName, name, note) {
+    return '<div class="method off" aria-disabled="true">' +
+      '<span class="ico">' + I(iconName, 19) + '</span>' +
+      '<span class="t"><b>' + name + '</b><span>' + note + '</span></span>' +
+      '<span class="badge">Soon</span></div>';
+  }
+
   function method(value, iconName, name, note) {
     return '<button class="method" data-set="method:' + value + '" data-goto="form">' +
       '<span class="ico">' + I(iconName, 19) + '</span>' +
@@ -2613,33 +2882,62 @@ body.locked{overflow:hidden}
      follows the same country; USDT is a dollar rail, so it stays in USD. */
   function payCur(methodId) {
     var c = API().geo.country();
-    if (methodId === 'usdt' || !c.cur) return { cur: API().account.currency(), rate: 1, quick: [10, 25, 50, 100, 250] };
-    return { cur: c.cur, rate: c.rate, quick: c.quick };
-  }
-  function localAmount(v, cur) {
-    return window.NexFmt.count(Math.round(v)) + ' ' + cur;
+    if (methodId === 'usdt' || !c.cur) {
+      return { cur: API().account.currency(), rate: 1, min: 10, quick: [10, 25, 50, 100, 250] };
+    }
+    return { cur: c.cur, rate: c.rate, min: c.min, quick: c.quick };
   }
 
   /* The waiting and done screens are shared by deposit and withdraw, so
      both rails behave the same while we are still on mock money. */
   function waitingBody(headline, note) {
     return '<div class="await">' +
-      '<div class="await-orb"><i></i><i></i><i></i></div>' +
+      window.NexLoader() +
       '<b>' + headline + '</b>' +
       '<span>' + note + '</span>' +
       '<button class="btn btn-ghost" type="button" data-close>Cancel</button>' +
     '</div>';
   }
-  function doneBody(headline, note, rows) {
+  /* Every operation that changes something ends on one of these, so a
+     save, a payment and a document upload all confirm the same way
+     instead of some flashing a toast and others closing silently. */
+  function doneBody(headline, note, rows, cta) {
     return '<div class="done">' +
       '<span class="done-mark">' + I('check', 30) + '</span>' +
       '<b>' + headline + '</b>' +
       '<span>' + note + '</span>' +
       '</div>' +
       '<div class="modal-form">' +
-        '<div class="totals">' + rows + '</div>' +
+        (rows ? '<div class="totals">' + rows + '</div>' : '') +
+        (cta || '') +
         '<button class="btn btn-fill" type="button" data-close>Done</button>' +
       '</div>';
+  }
+  function okStep(title, sub, headline, note, rows, cta) {
+    return {
+      title: title,
+      sub: sub,
+      noBack: true,
+      body: function (s) {
+        return doneBody(
+          typeof headline === 'function' ? headline(s) : headline,
+          typeof note === 'function' ? note(s) : note,
+          typeof rows === 'function' ? rows(s) : rows,
+          typeof cta === 'function' ? cta(s) : cta
+        );
+      }
+    };
+  }
+
+  /* Shows enough of the address to recognise it, not enough to leak it
+     to whoever is looking over the person's shoulder. */
+  function maskEmail() {
+    var e = ((API().session.get() || {}).email || '').trim();
+    if (!e || e.indexOf('@') < 1) return 'Not set';
+    var parts = e.split('@');
+    var name = parts[0];
+    var shown = name.length <= 2 ? name.charAt(0) : name.charAt(0) + '***' + name.charAt(name.length - 1);
+    return shown + '@' + parts[1];
   }
 
   function kv(k, v, attrs) {
@@ -2667,7 +2965,20 @@ body.locked{overflow:hidden}
               row('demo', 'Demo', 'USD · practice funds') +
             '</div><p class="hint" style="margin:14px 2px 0">Open positions stay with the account they were taken on.</p>';
           }
-        }
+        },
+        done: okStep(
+          'Account switched',
+          'The terminal is now trading this balance.',
+          function () { return 'Trading the ' + API().account.kind() + ' account'; },
+          function () {
+            return API().account.kind() === 'demo'
+              ? 'Virtual funds, real prices. Nothing here touches your real balance.'
+              : 'Real funds. Every contract you place from here costs actual money.';
+          },
+          function () {
+            return kv('Account', API().account.kind()) +
+              kv('Balance', F().money(API().account.balance()));
+          })
       }
     },
 
@@ -2718,7 +3029,19 @@ body.locked{overflow:hidden}
               act('Save settings', 'saveAuto') +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Run settings saved',
+          'They apply to the next automated run you start.',
+          'Settings saved',
+          'The run will stop on its own when any one of these is reached.',
+          function () {
+            var a = API().prefs.auto();
+            return kv('Runs', a.runs) +
+              kv('Stake × on loss', a.multiplier) +
+              kv('Take profit', F().money(a.takeProfit)) +
+              kv('Stop loss', F().money(a.stopLoss));
+          })
       }
     },
 
@@ -2746,14 +3069,30 @@ body.locked{overflow:hidden}
           title: 'Profile and name',
           sub: 'Your name must match the ID you verify with.',
           body: function () {
+            var who = API().session.get() || {};
+            var parts = (who.name || '').trim().split(/\s+/);
+            var first = parts[0] || '';
+            var last = parts.slice(1).join(' ');
             return '<div class="modal-form">' +
-              field('firstName', 'First name', 'value="Amara" autocomplete="given-name"') +
-              field('lastName', 'Last name', 'value="Kimani" autocomplete="family-name"') +
-              field('displayName', 'Display name', 'value="Amara K."', 'Shown in live chat and copy trading.') +
-              submit('Save changes', 'Name updated') +
+              field('firstName', 'First name',
+                'value="' + first + '" autocomplete="given-name" placeholder="First name"') +
+              field('lastName', 'Last name',
+                'value="' + last + '" autocomplete="family-name" placeholder="Last name"') +
+              field('displayName', 'Display name',
+                'value="' + (who.displayName || '') + '" placeholder="How other traders see you"',
+                'Shown in support chat and copy trading.') +
+              act('Save changes', 'saveProfile') +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Profile saved',
+          'Your details are up to date.',
+          'Profile updated',
+          function (s) {
+            return 'You are now shown as ' + (s.savedName || 'your new name') +
+              ' across the platform.';
+          })
       }
     },
 
@@ -2777,7 +3116,12 @@ body.locked{overflow:hidden}
               act('Update password', 'savePassword') +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Password changed',
+          'You stay signed in on this device.',
+          'Password updated',
+          'Anywhere else you were signed in has been signed out. Use the new password next time you log in.')
       }
     },
 
@@ -2794,7 +3138,7 @@ body.locked{overflow:hidden}
             }
             return '<div class="modal-form"><div class="list" style="margin:0">' +
               '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
-                '<span class="t"><b>Email address</b><span>am***a@mail.com</span></span>' +
+                '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
                 '<span class="badge ok">Done</span></div>' +
               '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
                 '<span class="ico">' + I('idcard', 18) + '</span>' +
@@ -2838,7 +3182,17 @@ body.locked{overflow:hidden}
                 'Submit for review</button>' +
             '</div>';
           }
-        }
+        },
+        done: okStep(
+          'Documents received',
+          'Nothing more is needed from you right now.',
+          'Submitted for review',
+          'Most checks clear within the hour. We will let you know either way, and you can keep trading while it runs.',
+          function () {
+            return kv('Status', '<span class="badge warn">In review</span>') +
+              kv('Usually takes', 'Under an hour') +
+              kv('Unlocks', 'Withdrawals');
+          })
       }
     },
 
@@ -2851,12 +3205,12 @@ body.locked{overflow:hidden}
           body: function () {
             var c = API().geo.country();
             var money = c.cur || 'USD';
-            var lo = c.rate ? Math.round(1 * c.rate / 10) * 10 : 1;
+            var lo = c.min || 10;
             var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
             return method('mpesa', 'phone', 'M-Pesa',
                 'Instant · ' + money + ' ' + F().count(lo) + ' – ' + F().count(hi)) +
-              method('card', 'card', 'Card', 'Visa, Mastercard, Verve · secured by Paystack') +
-              method('usdt', 'coin', 'USDT', 'TRC-20 and ERC-20 · from $10');
+              method('card', 'card', 'Card', 'Visa and Mastercard · secured by Paystack') +
+              methodOff('coin', 'USDT', 'Crypto deposits are not open yet');
           }
         },
         form: {
@@ -2865,24 +3219,23 @@ body.locked{overflow:hidden}
           body: function (s) {
             var m = s.method || 'mpesa', inner;
 
+            var logo = '';
             if (m === 'mpesa') {
+              logo = brandMark('assets/mpesa.png', 'M-Pesa');
               inner = phoneField('mpesaPhone', 'M-Pesa number',
                 'You will receive an STK push on this number. Enter your PIN to confirm.');
             } else if (m === 'card') {
-              /* No card fields here by design. Taking a PAN on our own form
-                 would drag this page into PCI scope for no benefit, so the
-                 details are only ever typed on Paystack's checkout. */
+              /* No card fields here by design: taking a PAN on our own form
+                 would drag this page into PCI scope for no benefit. One
+                 short line is all this step needs — the rest is Paystack's
+                 job, and the whole sheet fits without scrolling. */
+              logo = brandMark('assets/cards.png', 'Visa and Mastercard', 'assets/cards-ink.png');
               inner = '<div class="handoff">' +
-                  '<span class="handoff-mark">' + I('lock', 19) + '</span>' +
+                  '<span class="handoff-mark">' + I('lock', 18) + '</span>' +
                   '<div class="handoff-t">' +
-                    '<b>You finish this payment on Paystack</b>' +
-                    '<p>Your card number is entered on Paystack\'s own secure checkout. ' +
-                    'Nexas never sees or stores it. You will be brought back here once ' +
-                    'the payment clears.</p>' +
+                    '<p>Card details are entered on Paystack\'s secure checkout. ' +
+                    'Nexas never sees your card number.</p>' +
                   '</div>' +
-                '</div>' +
-                '<div class="handoff-marks">' +
-                  '<span>Visa</span><span>Mastercard</span><span>Verve</span><span>3-D Secure</span>' +
                 '</div>';
             } else {
               inner = '<div class="field"><label for="network">Network</label>' +
@@ -2896,34 +3249,31 @@ body.locked{overflow:hidden}
 
             var pay = payCur(m);
             var start = pay.quick[1];
+            var floor = pay.min || pay.quick[0];
 
             return '<div class="modal-form">' +
+              logo +
               '<div class="field"><label for="amount">Amount</label>' +
                 '<div class="input-wrap"><input class="input num" id="amount" value="' + start +
                   '" inputmode="decimal">' +
                 '<span class="suffix">' + pay.cur + '</span></div>' +
                 '<div class="quick">' + pay.quick.map(function (n) {
                   return '<button type="button" data-amount="' + n + '">' + F().count(n) + '</button>';
-                }).join('') + '</div></div>' +
+                }).join('') + '</div>' +
+                '<span class="hint">Minimum ' + F().count(floor) + ' ' + pay.cur + '</span></div>' +
               inner +
-              '<div class="totals">' +
-                kv('Fee', localAmount(0, pay.cur)) +
-                (pay.rate === 1 ? '' :
-                  kv('Rate', '1 USD = ' + F().count(pay.rate) + ' ' + pay.cur)) +
-                kv('Credited to ' + API().account.kind(), F().money(start / pay.rate),
-                   'data-total="amount" data-fx="' + pay.rate + '"') +
-              '</div>' +
               (m === 'card'
-                ? '<a class="btn btn-fill" href="' + PAYSTACK + '" target="_blank" rel="noopener noreferrer">' +
+                ? '<a class="btn btn-pos" href="' + PAYSTACK + '" target="_blank" rel="noopener noreferrer">' +
                     I('lock', 16) + 'Continue to Paystack</a>' +
                   '<span class="hint" style="text-align:center">Opens Paystack in a new tab</span>'
-                : act('Confirm deposit', 'deposit')) +
+                : act('Confirm deposit', 'deposit', 'btn-pos')) +
             '</div>';
           }
         },
         pending: {
           title: 'Waiting for payment',
           sub: 'Leave this open until it clears.',
+          noBack: true,
           body: function (s) {
             return waitingBody(
               s.method === 'mpesa' ? 'Check your phone' : 'Authorising with your bank',
@@ -2936,6 +3286,7 @@ body.locked{overflow:hidden}
         success: {
           title: 'Deposit received',
           sub: 'The funds are in your trading balance.',
+          noBack: true,
           body: function (s) {
             return doneBody('Payment confirmed',
               s.payLabel + ' received and credited.',
@@ -2943,6 +3294,79 @@ body.locked{overflow:hidden}
               kv('Credited', F().money(s.credited)) +
               kv('New balance', F().money(API().account.balance())) +
               kv('Reference', '<span class="num">' + s.ref + '</span>'));
+          }
+        }
+      }
+    },
+
+    /* ---------------- contract result ----------------
+       What the old card under the chart used to say, shown once the
+       contract is actually settled and there is something to report. */
+    result: {
+      steps: {
+        main: {
+          title: function (s) {
+            var c = s.contract || {};
+            return c.status === 'won' ? 'Contract won'
+              : c.status === 'sold' ? 'Sold early' : 'Contract lost';
+          },
+          sub: function (s) { return (s.contract || {}).symbolName || ''; },
+          noBack: true,
+          body: function (s) {
+            var c = s.contract || {};
+            var won = c.status === 'won';
+            var sold = c.status === 'sold';
+            var cls = c.profit >= 0 ? 'pos' : 'neg';
+
+            return '<div class="outcome ' + cls + '">' +
+                '<span class="label">' + API().contracts.label(c) + '</span>' +
+                '<b class="num">' + F().signedMoney(c.profit) + '</b>' +
+                '<span class="outcome-sub">' +
+                  (won ? 'Paid ' + F().money(c.payout)
+                    : sold ? 'Closed at ' + F().money(c.value)
+                    : 'Stake not returned') +
+                '</span>' +
+              '</div>' +
+              '<div class="modal-form">' +
+                '<div class="totals">' +
+                  kv('Stake', F().money(c.stake)) +
+                  kv('Duration', F().ticks(c.ticks)) +
+                  kv('Entry', '<span class="num">' + F().price(c.entrySpot) + '</span>') +
+                  kv('Exit', '<span class="num">' + F().price(c.exitSpot) + '</span>') +
+                  kv('Balance', F().money(API().account.balance())) +
+                '</div>' +
+                '<button class="btn btn-fill" type="button" data-close>Done</button>' +
+              '</div>';
+          }
+        }
+      }
+    },
+
+    /* ---------------- automated run result ---------------- */
+    runResult: {
+      steps: {
+        main: {
+          title: 'Run finished',
+          sub: function (s) { return s.reason || ''; },
+          noBack: true,
+          body: function (s) {
+            var r = s.run || {};
+            var cls = r.pnl >= 0 ? 'pos' : 'neg';
+            return '<div class="outcome ' + cls + '">' +
+                '<span class="label">' + (r.done || 0) + ' of ' + (r.total || 0) + ' contracts</span>' +
+                '<b class="num">' + F().signedMoney(r.pnl || 0) + '</b>' +
+                '<span class="outcome-sub">Session result</span>' +
+              '</div>' +
+              '<div class="modal-form">' +
+                '<div class="totals">' +
+                  kv('Contracts placed', r.done || 0) +
+                  kv('Opening stake', F().money(r.base || 0)) +
+                  kv('Take profit', F().money(r.takeProfit || 0)) +
+                  kv('Stop loss', F().money(r.stopLoss || 0)) +
+                  kv('Balance', F().money(API().account.balance())) +
+                '</div>' +
+                '<button class="btn btn-fill" type="button" data-close>Done</button>' +
+              '</div>';
           }
         }
       }
@@ -3067,7 +3491,7 @@ body.locked{overflow:hidden}
             return '<div class="balance-strip"><span class="label">Available</span>' +
               '<b class="num">' + F().money(API().account.balance()) + '</b></div>' +
               method('mpesa', 'phone', 'M-Pesa', 'To the number on your profile') +
-              method('usdt', 'coin', 'USDT', 'TRC-20 · network fee applies');
+              methodOff('coin', 'USDT', 'Crypto payouts are not open yet');
           }
         },
         form: {
@@ -3091,13 +3515,14 @@ body.locked{overflow:hidden}
               (API().kyc.verified() ? '' :
                 '<div class="notice">' + I('shield', 17) +
                 '<span>Identity verification is required before your first payout.</span></div>') +
-              act('Request withdrawal', 'withdraw') +
+              act('Request withdrawal', 'withdraw', 'btn-pos') +
             '</div>';
           }
         },
         pending: {
           title: 'Sending your payout',
           sub: 'This usually clears in under a minute.',
+          noBack: true,
           body: function (s) {
             return waitingBody('Payout in progress',
               'We are sending ' + F().money(s.sent) + ' to your ' +
@@ -3107,6 +3532,7 @@ body.locked{overflow:hidden}
         success: {
           title: 'Payout sent',
           sub: 'Your provider will confirm by SMS.',
+          noBack: true,
           body: function (s) {
             return doneBody('Withdrawal complete',
               F().money(s.sent) + ' is on its way.',
@@ -3313,48 +3739,64 @@ body.locked{overflow:hidden}
         F.signedMoney(pnl) + '</span></div>');
   }
 
-  /* ---------- dock (the two CTAs) ---------- */
-  function renderDock() {
-    var sides = S.tab === 'even_odd' ? [['even', 'Even'], ['odd', 'Odd']]
+  /* ---------- dock (the two CTAs) ----------
+     Idle, each side shows its name and what it pays, nothing else. Once
+     a side is running it turns amber and becomes the stop control, with
+     its progress drawn along the bottom of the button itself — that is
+     the whole progress display, so nothing has to appear elsewhere on
+     the page and push the layout around. */
+  function sidesFor() {
+    return S.tab === 'even_odd' ? [['even', 'Even'], ['odd', 'Odd']]
       : S.tab === 'matches' ? [['matches', 'Matches ' + S.barrier], ['differs', 'Differs ' + S.barrier]]
       : [['over', 'Over ' + S.barrier], ['under', 'Under ' + S.barrier]];
+  }
 
+  /* the live contract for a side on this instrument, if any */
+  function runningOn(side) {
+    var open = API.contracts.open();
+    for (var i = 0; i < open.length; i++) {
+      if (open[i].symbol === S.symbol && open[i].side === side) return open[i];
+    }
+    return null;
+  }
+
+  function renderDock() {
     var blocked = API.connection.status() !== 'live';
+    var busy = false;
+    var sides = sidesFor();
+    for (var i = 0; i < sides.length; i++) if (runningOn(sides[i][0])) busy = true;
+    if (S.run) busy = true;
+
     html(el.dock,
-      '<div class="trade-actions">' + sides.map(function (s, i) {
-        return '<button class="tbtn ' + (i === 0 ? 'even' : 'odd') + '" data-side="' + s[0] + '"' +
-          (blocked ? ' disabled' : '') + '>' +
-          '<div class="t">' + s[1] + '</div>' +
-          '<div class="s">Payout ' + F.amount(payoutFor(s[0])) + ' · ' + pct(s[0]) + '</div>' +
+      '<div class="trade-actions">' + sides.map(function (sd, i) {
+        var live = runningOn(sd[0]);
+        var isRun = S.run && S.run.side === sd[0];
+        var tone = i === 0 ? 'even' : 'odd';
+
+        if (live || isRun) {
+          var pcTicks = live ? Math.min(100, Math.round(live.elapsed / live.ticks * 100)) : 0;
+          var sub = isRun
+            ? S.run.done + ' of ' + S.run.total + ' · ' + F.signed(S.run.pnl)
+            : (live.ticks - live.elapsed) + ' left · ' + F.signed(live.value - live.stake);
+          return '<button class="tbtn stop" data-stop="' + sd[0] + '">' +
+            '<div class="t">Stop</div>' +
+            '<div class="s">' + sub + '</div>' +
+            '<i class="tbtn-bar" style="width:' + (isRun
+              ? Math.round(S.run.done / S.run.total * 100) : pcTicks) + '%"></i>' +
+          '</button>';
+        }
+
+        return '<button class="tbtn ' + tone + '" data-side="' + sd[0] + '"' +
+          (blocked || busy ? ' disabled' : '') + '>' +
+          '<div class="t">' + sd[1] + '</div>' +
+          '<div class="s">' + F.amount(payoutFor(sd[0])) + '</div>' +
         '</button>';
       }).join('') + '</div>');
   }
 
-  /* ---------- open positions, under the chart ---------- */
-  function renderActive() {
-    var open = API.contracts.open();
-    if (!open.length) { html(el.active, ''); return; }
-
-    html(el.active, '<div class="active-wrap">' + open.map(function (c) {
-      var left = Math.max(0, c.ticks - c.elapsed);
-      var pl = c.value - c.stake;
-      return '<div class="open-card">' +
-        '<div class="active-top">' +
-          '<b>' + API.contracts.label(c) + '</b>' +
-          '<span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
-        '</div>' +
-        '<div class="active-meta">' +
-          '<span>' + F.money(c.stake) + ' · ' + F.ticks(c.ticks) + '</span>' +
-          '<span class="num">entry ' + F.price(c.entrySpot) + '</span>' +
-        '</div>' +
-        '<div class="bar"><i style="width:' + Math.round(c.elapsed / c.ticks * 100) + '%"></i></div>' +
-        '<div class="active-foot">' +
-          '<span>' + left + ' left</span>' +
-          '<button class="btn-mini" data-sell="' + c.id + '">Sell ' + F.amount(c.value) + '</button>' +
-        '</div>' +
-      '</div>';
-    }).join('') + '</div>');
-  }
+  /* The old card under the chart is gone: progress lives on the button
+     and the full detail comes up as a result dialog when it finishes. */
+  function renderActive() { html(el.active, ''); }
 
   function renderAll() {
     renderTabs(); renderInstrument(); renderDigits();
@@ -3408,7 +3850,7 @@ body.locked{overflow:hidden}
       return null;
     }
     S.error = null;
-    renderPanel(); renderActive();
+    renderPanel(); renderActive(); renderDock();
     return res.contract;
   }
 
@@ -3429,14 +3871,24 @@ body.locked{overflow:hidden}
     S.run = null;
     S.stake = r.base;
     renderPanel();
-    if (reason) window.NexToast(reason);
+    renderDock();
+    if (reason && window.NexModal) window.NexModal.open('runResult', null, { run: r, reason: reason });
+    else if (reason) window.NexToast(reason);
   }
+  function showResult(c) {
+    if (window.NexModal) window.NexModal.open('result', null, { contract: c });
+  }
+
   function onSettled(c) {
-    if (c.status !== 'open') {
+    /* A hand-placed contract gets the full result dialog. Contracts
+       inside an automated run would throw a dialog every few seconds,
+       so those stay as toasts and the run reports once at the end. */
+    if (c.status !== 'open' && !c.run) showResult(c);
+    else if (c.status !== 'open') {
       window.NexToast(c.status === 'won'
-        ? 'Won ' + F.money(c.payout) + ' on ' + API.contracts.label(c)
+        ? 'Won ' + F.money(c.payout)
         : c.status === 'sold' ? 'Sold at ' + F.money(c.value)
-        : 'Lost ' + F.money(c.stake) + ' on ' + API.contracts.label(c));
+        : 'Lost ' + F.money(c.stake));
     }
     if (!S.run || c.run !== S.run.id) { renderAll(); return; }
 
@@ -3506,6 +3958,19 @@ body.locked{overflow:hidden}
 
       if (t.closest('#runStop')) { stopRun('Run stopped'); return; }
 
+      var stop = t.closest('[data-stop]');
+      if (stop) {
+        var which2 = stop.getAttribute('data-stop');
+        if (S.run) { stopRun('Run stopped'); renderAll(); return; }
+        var live = runningOn(which2);
+        if (live) {
+          var sold = API.contracts.sell(live.id);
+          if (!sold.ok) window.NexToast(sold.error);
+        }
+        renderAll();
+        return;
+      }
+
       var side = t.closest('[data-side]');
       if (side) {
         if (!check()) { renderPanel(); window.NexToast(S.error); return; }
@@ -3574,7 +4039,6 @@ body.locked{overflow:hidden}
 
   function mounted() {
     API.ready(function () {
-      API.seedDemoHistory();
       chart = window.NexChart.create($('chart'), { symbol: S.symbol });
       chart.resize();
       document.body.classList.remove('loading');
@@ -3582,7 +4046,10 @@ body.locked{overflow:hidden}
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
-        renderInstrument(); renderDigits(); renderActive();
+        renderInstrument(); renderDigits();
+        /* only while something is live, so the idle dock is not rebuilt
+           under the finger once a second for no reason */
+        if (S.run || API.contracts.open().length) renderDock();
         if (chart) chart.dirty = true;
       }));
       unsub.push(API.on('settled', onSettled));
@@ -3838,7 +4305,6 @@ body.locked{overflow:hidden}
     window.__nexPosOff = [];
 
     API.ready(function () {
-      API.seedDemoHistory();
       document.body.classList.remove('loading');
       renderAll();
       window.__nexPosOff.push(API.on('contracts', renderAll));
@@ -4019,7 +4485,7 @@ body.locked{overflow:hidden}
     if (S.phase === 'scanning') {
       var sym = API.symbols[Math.min(S.step, API.symbols.length - 1)];
       return '<div class="ai-hero scanning">' +
-        '<div class="ai-orb"><i></i><i></i><i></i></div>' +
+        window.NexLoader() +
         '<b>Scanning the market</b>' +
         '<span class="ai-sub num">' + sym.name + '</span>' +
         '<div class="ai-progress"><i style="width:' +
@@ -4029,7 +4495,7 @@ body.locked{overflow:hidden}
 
     if (S.phase === 'idle') {
       return '<div class="ai-hero">' +
-        '<div class="ai-orb"><i></i><i></i><i></i></div>' +
+        window.NexLoader() +
         '<b>Signal engine</b>' +
         '<span class="ai-sub">Reads the last ' + WINDOW + ' ticks on all ' +
           API.symbols.length + ' instruments and ranks the digit contracts by expected return.</span>' +
@@ -4196,7 +4662,6 @@ body.locked{overflow:hidden}
     if (!root.__wired) { root.__wired = true; wire(root); }
 
     API.ready(function () {
-      API.seedDemoHistory();
       document.body.classList.remove('loading');
       render();
 
@@ -4356,16 +4821,17 @@ body.locked{overflow:hidden}
 
   /* ---------- theme ---------- */
   var THEME_KEY = 'nexas.theme';
-  function storedTheme() { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } }
+  /* Dark is the product's default. Light is opt-in and, once chosen,
+     remembered — so a new visitor always arrives in dark. */
+  function storedTheme() {
+    try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { return 'dark'; }
+  }
   function isDark() {
-    var t = document.documentElement.getAttribute('data-theme');
-    if (t) return t === 'dark';
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return document.documentElement.getAttribute('data-theme') !== 'light';
   }
   function applyTheme(t) {
-    if (t) document.documentElement.setAttribute('data-theme', t);
-    else document.documentElement.removeAttribute('data-theme');
-    try { t ? localStorage.setItem(THEME_KEY, t) : localStorage.removeItem(THEME_KEY); } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+    try { localStorage.setItem(THEME_KEY, t === 'light' ? 'light' : 'dark'); } catch (e) {}
     var sw = document.getElementById('themeSwitch');
     if (sw) sw.setAttribute('aria-checked', String(isDark()));
   }
@@ -4455,7 +4921,7 @@ body.locked{overflow:hidden}
           group('Funds', 'coin', [
             item('Deposit', { icon: 'down', modal: 'deposit' }),
             item('Withdraw', { icon: 'up', modal: 'withdraw' })
-          ], false) +
+          ], true) +
         '</div>' +
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
@@ -4491,13 +4957,53 @@ body.locked{overflow:hidden}
     if (!h) { h = document.createElement('div'); h.id = 'modalHost'; document.body.appendChild(h); }
     return h;
   }
+  /* ---------- overlays and the back button ----------
+     A dialog or the drawer is a place the person went, so Back should
+     bring them out of it rather than off the page entirely. Opening one
+     pushes a history entry; Back pops it and we close instead of
+     navigating. Closing from the UI rewinds that entry so the stack does
+     not fill up with dead states. */
+  /* One history entry covers "something is open", whatever that is.
+     Pushing and popping per call raced badly: choosing Deposit from the
+     drawer closed the drawer (queueing a history.back) and opened the
+     dialog in the same tick, so the late pop arrived and shut the dialog
+     again. Intent is tracked in flags and reconciled once per tick, so
+     handing over from one overlay to another touches history not at all. */
+  var overlayDepth = 0;
+  var modalOpen = false, drawerOpen = false;
+  var syncTimer = null;
+
+  function syncOverlay() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(function () {
+      var want = modalOpen || drawerOpen;
+      if (want && !overlayDepth) {
+        overlayDepth = 1;
+        try { history.pushState({ nexOverlay: true }, ''); } catch (e) { overlayDepth = 0; }
+      } else if (!want && overlayDepth) {
+        overlayDepth = 0;
+        try { history.back(); } catch (e) {}
+      }
+    }, 0);
+  }
+
+  window.addEventListener('popstate', function () {
+    if (!overlayDepth) return;                /* a real navigation */
+    overlayDepth = 0;
+    clearTimeout(syncTimer);                  /* no queued push may undo this */
+    if (modalOpen) closeModals(true);
+    if (drawerOpen) setDrawer(false, true);
+  });
+
   var closeToken = 0;
-  function openModal(key, stepId) {
+  function openModal(key, stepId, data) {
     var def = window.NexModals && window.NexModals[key];
     if (!def) return;
     closeToken++;
     lastFocus = document.activeElement;
-    state = { key: key, step: stepId || Object.keys(def.steps)[0], trail: [], data: {} };
+    modalOpen = true;
+    syncOverlay();
+    state = { key: key, step: stepId || Object.keys(def.steps)[0], trail: [], data: data || {} };
     renderModal(true);
   }
   function gotoStep(id) { state.trail.push(state.step); state.step = id; renderModal(false); }
@@ -4516,7 +5022,9 @@ body.locked{overflow:hidden}
         '<div class="modal-bg" data-close></div>' +
         '<div class="modal-box">' +
           '<div class="modal-head">' +
-            (state.trail.length ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>' : '') +
+            (state.trail.length && !step.noBack
+              ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>'
+              : '') +
             '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
             '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +
           '</div>' + step.body(state.data) +
@@ -4538,10 +5046,12 @@ body.locked{overflow:hidden}
     var pw = host().querySelector('#newPassword');
     if (pw) paintMeter(pw);
   }
-  function closeModals() {
+  function closeModals(fromPop) {
     payToken++;                               /* nothing pending may land now */
     var m = host().querySelector('.modal');
-    if (!m) return;
+    if (!m) { modalOpen = false; return; }
+    modalOpen = false;
+    if (!fromPop) syncOverlay();
     m.classList.remove('open');
     var token = ++closeToken;
     setTimeout(function () { if (token === closeToken) host().innerHTML = ''; }, 220);
@@ -4700,6 +5210,38 @@ body.locked{overflow:hidden}
     reader.readAsDataURL(file);
   }
 
+  /* ---------- loader ---------- */
+  function loader(cls) {
+    return '<span class="scaleloader ' + (cls || '') + '" role="status" aria-label="Loading">' +
+      '<i></i><i></i><i></i><i></i><i></i></span>';
+  }
+  window.NexLoader = loader;
+
+  /* A block for a panel or a page that has nothing to show yet. */
+  window.NexLoading = function (label) {
+    return '<div class="loading-block">' + loader() +
+      '<span>' + (label || 'Loading') + '</span></div>';
+  };
+
+  /* The app is useless until the price feed answers, so hold a veil over
+     it rather than showing a dead terminal with zeroes in it. */
+  function bootVeil() {
+    if (document.body.getAttribute('data-chrome') !== 'app') return;
+    if (document.getElementById('bootVeil')) return;
+    var v = document.createElement('div');
+    v.className = 'boot';
+    v.id = 'bootVeil';
+    v.innerHTML = '<div class="boot-word">Nexas</div>' + loader() +
+      '<span>Connecting to the feed</span>';
+    document.body.appendChild(v);
+  }
+  function dropVeil() {
+    var v = document.getElementById('bootVeil');
+    if (!v) return;
+    v.classList.add('gone');
+    setTimeout(function () { if (v.parentNode) v.parentNode.removeChild(v); }, 320);
+  }
+
   /* ---------- toast ---------- */
   var toastEl;
   window.NexToast = function (msg) {
@@ -4745,18 +5287,6 @@ body.locked{overflow:hidden}
       '</div>';
     document.body.appendChild(c);
   }
-  function riskStrip() {
-    if (document.body.getAttribute('data-chrome') !== 'app') return;
-    if (API.prefs.riskAck()) return;
-    var main = document.querySelector('main');
-    if (!main) return;
-    var r = document.createElement('div');
-    r.className = 'risk-strip';
-    r.id = 'riskStrip';
-    r.innerHTML = '<span>' + icon('shield', 15) + 'Trading synthetic indices carries risk. You can lose your full stake.</span>' +
-      '<button class="iconbtn" id="riskClose" aria-label="Dismiss">' + icon('close', 15) + '</button>';
-    main.insertBefore(r, main.firstChild);
-  }
 
   /* ---------- sign-in transition ---------- */
   function splash(message, to) {
@@ -4781,6 +5311,82 @@ body.locked{overflow:hidden}
     /* A signed-out visitor should meet the pitch, not a login form. */
     go('landing.html');
     return false;
+  }
+
+  /* ---------- form validation ----------
+     Everything the person types is checked before anything is submitted,
+     and the message lands under the field that is wrong rather than in a
+     toast that disappears. */
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function markField(input, msg) {
+    var wrap = input.closest('.field') || input.parentNode;
+    var err = wrap.querySelector('.field-error');
+    if (!msg) { if (err) err.remove(); wrap.classList.remove('bad'); return true; }
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'field-error';
+      err.setAttribute('role', 'alert');
+      wrap.appendChild(err);
+    }
+    err.textContent = msg;
+    wrap.classList.add('bad');
+    return false;
+  }
+
+  function validateForm(f) {
+    var firstBad = null;
+    function fail(input, msg) {
+      markField(input, msg);
+      if (!firstBad) firstBad = input;
+    }
+
+    var email = f.querySelector('input[type=email]');
+    if (email) {
+      var v = email.value.trim();
+      if (!v) fail(email, 'Enter your email address');
+      else if (!EMAIL_RE.test(v)) fail(email, 'That does not look like an email address');
+      else markField(email, null);
+    }
+
+    /* A new password is held to the full rules; an existing one only has
+       to be present, since the rules may have changed since they set it. */
+    var fresh = f.querySelector('#newPassword');
+    if (fresh) {
+      var bad = fresh.value ? pwFirstFailure(fresh.value) : 'Choose a password';
+      if (bad) fail(fresh, bad);
+      else markField(fresh, null);
+
+      var again = f.querySelector('#confirmNew');
+      if (again) {
+        if (!again.value) fail(again, 'Repeat the password');
+        else if (again.value !== fresh.value) fail(again, 'These do not match');
+        else markField(again, null);
+      }
+    } else {
+      var pw = f.querySelector('input[type=password]');
+      if (pw && !pw.value) fail(pw, 'Enter your password');
+      else if (pw) markField(pw, null);
+    }
+
+    var terms = f.querySelector('input[type=checkbox][required], .checkline input[type=checkbox]');
+    if (terms && !terms.checked) {
+      window.NexToast('Accept the terms to continue');
+      if (!firstBad) firstBad = terms;
+    }
+
+    var otp = f.querySelectorAll('.otp input');
+    if (otp.length) {
+      var code = '';
+      for (var i = 0; i < otp.length; i++) code += (otp[i].value || '').trim();
+      if (code.length < otp.length) {
+        window.NexToast('Enter the ' + otp.length + '-digit code');
+        if (!firstBad) firstBad = otp[0];
+      }
+    }
+
+    if (firstBad) { firstBad.focus(); return false; }
+    return true;
   }
 
   /* ---------- password rules ----------
@@ -4860,9 +5466,11 @@ body.locked{overflow:hidden}
     root.insertAdjacentHTML('beforeend', drawer() + (sub ? '' : tabbar(page)));
   }
 
-  function setDrawer(open) {
+  function setDrawer(open, fromPop) {
     var d = document.getElementById('drawer'), s = document.getElementById('scrim');
     if (!d) return;
+    drawerOpen = !!open;
+    if (!fromPop) syncOverlay();
     d.classList.toggle('open', open);
     s.classList.toggle('open', open);
     document.body.classList.toggle('locked', open);
@@ -4900,12 +5508,6 @@ body.locked{overflow:hidden}
         API.prefs.setConsent(true);
         var bar = consent.closest('.consent');
         if (bar) bar.remove();
-        return;
-      }
-      if (t.closest('#riskClose')) {
-        API.prefs.setRiskAck(true);
-        var strip = document.getElementById('riskStrip');
-        if (strip) strip.remove();
         return;
       }
 
@@ -4984,6 +5586,10 @@ body.locked{overflow:hidden}
     document.addEventListener('input', function (e) {
       var el = e.target;
       if (el.id === 'newPassword') paintMeter(el);
+      if (el.classList && el.classList.contains('input')) {
+        var holder = el.closest('.field');
+        if (holder && holder.classList.contains('bad')) markField(el, null);
+      }
       if (el.classList && el.classList.contains('phone-input')) {
         var atEnd = el.selectionStart === el.value.length;
         var c = API.geo.country();
@@ -5006,18 +5612,7 @@ body.locked{overflow:hidden}
       if (!f.hasAttribute) return;
       if (f.hasAttribute('data-splash')) {
         e.preventDefault();
-        /* The auth pages post the same password rules as the modal. */
-        var pw = f.querySelector('#newPassword');
-        if (pw) {
-          var bad = pwFirstFailure(pw.value);
-          if (bad) { window.NexToast(bad); pw.focus(); return; }
-          var again = f.querySelector('#confirmNew');
-          if (again && again.value !== pw.value) {
-            window.NexToast('Passwords do not match');
-            again.focus();
-            return;
-          }
-        }
+        if (!validateForm(f)) return;
         var email = f.querySelector('input[type=email]');
         API.session.signIn(email && email.value, 'password');
         splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
@@ -5068,10 +5663,11 @@ body.locked{overflow:hidden}
       var rate = isLocal ? pay.rate : 1;
       var money = isLocal ? pay.cur : API.account.currency();
 
+      var floor = isLocal ? (pay.min || 1) : 10;
       if (amount <= 0) return fieldError('amount', 'Enter an amount to deposit');
+      if (amount < floor) return fieldError('amount',
+        'Minimum deposit is ' + F.count(floor) + ' ' + money);
       var usd = amount / rate;
-      if (usd < 1) return fieldError('amount', 'Minimum deposit is ' +
-        F.count(Math.ceil(rate)) + ' ' + money);
 
       if (state.data.method === 'mpesa') {
         var ph = document.getElementById('mpesaPhone');
@@ -5114,33 +5710,50 @@ body.locked{overflow:hidden}
       if (!cf) return fieldError('confirmPassword', 'Repeat the new password');
       if (cf !== nw) return fieldError('confirmPassword', 'These do not match');
 
-      closeModals();
-      window.NexToast('Password updated');
+      gotoStep('done');
+      return;
+    }
+    if (name === 'saveProfile') {
+      clearErrors();
+      var first = ((document.getElementById('firstName') || {}).value || '').trim();
+      var last = ((document.getElementById('lastName') || {}).value || '').trim();
+      var shown = ((document.getElementById('displayName') || {}).value || '').trim();
+
+      if (!first) return fieldError('firstName', 'Enter your first name');
+      if (!last) return fieldError('lastName', 'Enter your last name');
+      if (/\d/.test(first + last)) return fieldError('firstName', 'Names cannot contain numbers');
+      if (!shown) return fieldError('displayName', 'Pick a name to show other traders');
+
+      state.data.savedName = shown;
+      gotoStep('done');
       return;
     }
     if (name === 'verify') {
       if (node && node.disabled) return;
       API.kyc.submit();
-      closeModals();
-      window.NexToast('Identity submitted — usually cleared within the hour');
+      gotoStep('done');
       return;
     }
     if (name === 'useAccount') {
       var kind = node.getAttribute('data-kind');
       API.account.use(kind);
-      closeModals();
-      window.NexToast('Switched to the ' + kind + ' account');
+      gotoStep('done');
       return;
     }
     if (name === 'saveAuto') {
-      API.prefs.setAuto({
-        runs: +document.getElementById('autoRuns').value || 10,
-        multiplier: +document.getElementById('autoMult').value || 2,
-        takeProfit: +document.getElementById('autoTP').value || 200,
-        stopLoss: +document.getElementById('autoSL').value || 100
-      });
-      closeModals();
-      window.NexToast('Run settings saved');
+      clearErrors();
+      var runs = +document.getElementById('autoRuns').value || 0;
+      var mult = +document.getElementById('autoMult').value || 0;
+      var tp = +document.getElementById('autoTP').value || 0;
+      var sl = +document.getElementById('autoSL').value || 0;
+
+      if (runs < 1 || runs > 500) return fieldError('autoRuns', 'Between 1 and 500 runs');
+      if (mult < 1 || mult > 5) return fieldError('autoMult', 'Between 1 and 5');
+      if (tp <= 0) return fieldError('autoTP', 'Set a take-profit above zero');
+      if (sl <= 0) return fieldError('autoSL', 'Set a stop-loss above zero');
+
+      API.prefs.setAuto({ runs: runs, multiplier: mult, takeProfit: tp, stopLoss: sl });
+      gotoStep('done');
       return;
     }
   }
@@ -5162,6 +5775,8 @@ body.locked{overflow:hidden}
     if (!log) return;
     var form = document.getElementById('chatForm'), input = document.getElementById('chatInput');
     function add(text, who) {
+      var blank = log.querySelector('.empty');
+      if (blank) blank.remove();
       var m = document.createElement('div');
       m.className = 'msg ' + who;
       m.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + F.clock(Date.now()) + '</span>';
@@ -5209,11 +5824,12 @@ body.locked{overflow:hidden}
     clearInterval(window.__nexMkt);
     if (!guard()) return;
     document.body.classList.add('loading');
+    bootVeil();
+    API.ready(dropVeil);
     mountChrome(document.querySelector('.app') || document.body);
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
     bindChrome();
     consentBar();
-    riskStrip();
     initChat();
     initMarkets();
     if (window.NexTrade) window.NexTrade.init();

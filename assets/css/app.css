@@ -5,16 +5,19 @@
    ============================================================ */
 
 :root{
-  /* neutrals — cool grey, biased slightly toward the blue accent */
-  --bg:#FFFFFF;
+  /* neutrals — cool grey, biased slightly toward the blue accent.
+     The page ground is off-white and panels are pure white, so cards,
+     bars and dialogs sit *on* the page instead of dissolving into it.
+     White-on-white was the whole problem with the old light mode. */
+  --bg:#F4F6F8;
   --surface:#FFFFFF;
-  --surface-2:#F5F6F8;
-  --surface-3:#EBEDF0;
-  --line:#DDE1E6;
-  --line-soft:#EAECEF;
-  --text:#15181B;
-  --text-2:#4C5258;
-  --muted:#767D84;
+  --surface-2:#EDEFF3;
+  --surface-3:#E1E5EB;
+  --line:#D3D9E0;
+  --line-soft:#E2E6EB;
+  --text:#101519;
+  --text-2:#434A52;
+  --muted:#6B737C;
 
   /* brand + semantic */
   --accent:#007FFA;
@@ -30,14 +33,14 @@
   --warn-soft:#FDF1E3;
 
   /* chart */
-  --chart-line:#15181B;
-  --chart-grid:#E6E8EA;
-  --chart-fill:rgba(21,24,27,.05);
-  --chart-axis:#8A9097;
+  --chart-line:#101519;
+  --chart-grid:#E7EAEE;
+  --chart-fill:rgba(16,21,25,.05);
+  --chart-axis:#828A93;
   --chart-bg:#FFFFFF;
 
-  --shadow:0 1px 2px rgba(16,20,24,.06), 0 8px 24px rgba(16,20,24,.05);
-  --shadow-lg:0 24px 64px rgba(12,16,20,.18);
+  --shadow:0 1px 2px rgba(16,24,34,.05), 0 10px 28px rgba(16,24,34,.07);
+  --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
   --r-xl:20px;
   --r-lg:16px;
@@ -1535,18 +1538,18 @@ body.locked{overflow:hidden}
    a heading and room to explain why there is no card field here. */
 .handoff{
   display:flex;gap:14px;align-items:flex-start;padding:16px;
-  border:1px solid var(--line-soft);border-radius:var(--r-lg);background:var(--surface-2);
+  border:1px solid var(--line-soft);border-radius:0;background:var(--surface-2);
 }
 .handoff-mark{
   width:38px;height:38px;flex:none;display:grid;place-items:center;
-  border-radius:var(--r);background:var(--pos-soft);color:var(--pos);
+  border-radius:0;background:var(--pos-soft);color:var(--pos);
 }
 .handoff-t{min-width:0}
 .handoff-t b{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
 .handoff-t p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.7}
 .handoff-marks{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
 .handoff-marks span{
-  padding:5px 10px;border:1px solid var(--line-soft);border-radius:999px;
+  padding:5px 10px;border:1px solid var(--line-soft);border-radius:0;
   font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
   background:var(--surface);
 }
@@ -1582,3 +1585,244 @@ body.locked{overflow:hidden}
 .lplus::after{width:1.7px;height:15px}
 .lfaq details[open] .lplus{color:var(--text)}
 .lfaq details[open] .lplus::after{transform:translate(-50%,-50%) scaleY(0);opacity:0}
+
+
+/* ---------------- payment buttons ----------------
+   Anything that moves money is green, so the action that costs
+   something never wears the same colour as an ordinary form submit. */
+.btn-pos{background:var(--pos);color:#fff}
+.btn-pos:hover{filter:brightness(1.07)}
+.btn-pos:disabled{filter:none}
+
+
+/* ---------------- light mode depth ----------------
+   With an off-white ground these need to be explicitly white, or they
+   read as a hole in the page rather than a surface on it. */
+.chart-card{background:var(--surface)}
+.digits,.panel,.trade-dock,.instrument,.ctabs{background:var(--surface)}
+.topbar{background:var(--surface)}
+.tabbar{background:var(--surface)}
+body[data-chrome="app"] main{background:var(--bg)}
+.list,.summary,.pnl-head,.ltable,.lpanel,.lfaq{box-shadow:var(--shadow)}
+.lsec:not(.tint):not(.lhero){background:var(--surface)}
+
+/* the terminal column reads as one continuous panel */
+@media (min-width:900px){
+  .terminal .col-mid{
+    background:var(--surface);border:1px solid var(--line-soft);
+    border-radius:var(--r-lg);overflow:hidden;
+  }
+}
+
+
+/* ---------------- a running side ----------------
+   Amber, and the progress is a bar along the foot of the button, so a
+   live contract needs no extra panel anywhere on the page. */
+.tbtn.stop{position:relative;background:var(--warn);color:#fff;overflow:hidden}
+.tbtn.stop .s{font-variant-numeric:tabular-nums}
+.tbtn-bar{
+  position:absolute;left:0;bottom:0;height:3px;background:rgba(255,255,255,.85);
+  transition:width .3s ease;
+}
+.tbtn[disabled]{opacity:.34}
+
+/* ---------------- outcome header ---------------- */
+.outcome{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:26px 22px 22px;text-align:center;
+}
+.outcome b{font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1}
+.outcome.pos b{color:var(--pos)}
+.outcome.neg b{color:var(--neg)}
+.outcome-sub{font-size:12.5px;color:var(--muted)}
+
+
+/* ---------------- the drawer is always dark ----------------
+   A dark rail against a light page is the point: it separates
+   navigation from the work surface instead of being another white
+   sheet next to a white sheet. These are fixed values, not tokens,
+   because the panel does not follow the theme. */
+.drawer{
+  --d-bg:#111A24;
+  --d-surface:#1A2632;
+  --d-line:rgba(255,255,255,.09);
+  --d-text:#E9EFF6;
+  --d-text-2:#B3C1D0;
+  --d-muted:#7F8FA1;
+  background:var(--d-bg);color:var(--d-text);
+  border-right:1px solid var(--d-line);
+}
+.drawer .drawer-user b{color:var(--d-text)}
+.drawer .drawer-user span{color:var(--d-muted)}
+.drawer .avatar{
+  background:rgba(61,155,255,.16);border-color:rgba(61,155,255,.32);color:#6FB6FF;
+}
+.drawer .drawer-sect{color:var(--d-muted)}
+.drawer .ditem{color:var(--d-text-2)}
+.drawer .ditem:hover{background:var(--d-surface);color:var(--d-text)}
+.drawer .ditem.active{background:var(--d-surface);color:var(--d-text)}
+.drawer .dgroup.open > .dgroup-head{color:var(--d-text)}
+.drawer .dgroup-body{border-left-color:var(--d-line)}
+.drawer .drawer-foot{border-top-color:var(--d-line)}
+.drawer .ditem.danger{color:#FF8478}
+.drawer .ditem.danger:hover{background:rgba(255,132,120,.12);color:#FF9B90}
+.drawer .switch{background:var(--d-surface);border-color:var(--d-line)}
+.drawer .switch::after{background:var(--d-muted)}
+.drawer .switch[aria-checked="true"]{background:rgba(61,155,255,.2);border-color:#3D9BFF}
+.drawer .switch[aria-checked="true"]::after{background:#6FB6FF}
+@media (hover:none){
+  .drawer .ditem:hover{background:none;color:var(--d-text-2)}
+}
+
+
+/* ---------------- loader ----------------
+   react-spinners' ScaleLoader, rebuilt in CSS because this app is plain
+   JS with no React runtime: five 4x35 bars, 2px apart, scaling on a
+   staggered delay, in the same indigo. Everything that waits uses this
+   one, so a spinner never means two different things. */
+:root{--loader:#6366F1}
+.scaleloader{display:inline-flex;align-items:center;gap:4px;height:35px}
+.scaleloader i{
+  display:block;width:4px;height:35px;border-radius:2px;
+  background:var(--loader);transform-origin:center;
+  animation:scaleload 1s ease-in-out infinite;
+}
+.scaleloader i:nth-child(1){animation-delay:-.08s}
+.scaleloader i:nth-child(2){animation-delay:-.16s}
+.scaleloader i:nth-child(3){animation-delay:-.24s}
+.scaleloader i:nth-child(4){animation-delay:-.32s}
+.scaleloader i:nth-child(5){animation-delay:-.40s}
+.scaleloader.sm{height:22px}
+.scaleloader.sm i{height:22px;width:3px}
+@keyframes scaleload{
+  0%,80%,100%{transform:scaleY(.38)}
+  40%{transform:scaleY(1)}
+}
+/* Without motion the bars would sit frozen at 38% and read as broken, so
+   they hold full height and the label carries the meaning instead. */
+@media (prefers-reduced-motion:reduce){
+  .scaleloader i{transform:scaleY(1)}
+}
+
+/* a centred block for a whole page or panel */
+.loading-block{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:64px 20px;text-align:center;
+}
+.loading-block span{font-size:12.5px;color:var(--muted);letter-spacing:.04em}
+
+/* the boot veil, over the app until the feed answers */
+.boot{
+  position:fixed;inset:0;z-index:95;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;
+  background:var(--bg);opacity:1;transition:opacity .28s ease;
+}
+.boot.gone{opacity:0;pointer-events:none}
+.boot-word{
+  font-family:var(--serif);font-size:26px;letter-spacing:.02em;color:var(--text);
+}
+.boot span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+
+
+/* ---------------- Learn: the landing page's rhythm ----------------
+   Same idea as the marketing page: air above a heading is what tells
+   you a new idea has started, and the body gets a readable measure
+   rather than filling the column. */
+.page{padding:36px 22px 64px;max-width:820px}
+.page h1{font-size:36px;line-height:1.14;margin:0 0 20px}
+.page .lede{font-size:17px;line-height:1.85;margin-bottom:8px!important}
+.page h2{
+  font-size:12px;letter-spacing:.13em;margin:64px 0 22px;
+  padding-top:0;border:none;
+}
+.page p{font-size:14.5px;line-height:1.85;margin:0 0 20px}
+.page .rule{margin:48px 0 0}
+.cards{gap:18px}
+.card{padding:26px}
+.card h3{font-size:15.5px;margin-bottom:12px}
+.card p{font-size:14px;line-height:1.85}
+.tool{gap:18px}
+.tool > svg{width:42px;height:42px;padding:10px}
+.tool b{font-size:15.5px;margin-bottom:9px}
+.tool p{font-size:14px;line-height:1.85}
+.stats{gap:18px;margin-top:4px}
+.stat{padding:24px 22px}
+.stat b{font-size:28px;margin-bottom:12px}
+.stat span{font-size:12.5px;line-height:1.7}
+.stats + p,.cards + p{margin-top:32px}
+
+@media (min-width:900px){
+  .page{padding:56px 32px 88px}
+  .page h1{font-size:42px}
+  .page h2{margin-top:80px}
+}
+
+
+/* ---------------- Learn: minimal ----------------
+   Square corners like the rest of the site, and far less furniture:
+   flat panels with one hairline instead of bordered, shadowed, rounded
+   boxes. The type does the work; the boxes just hold it apart. */
+.card,.stat{border-radius:0;box-shadow:none}
+.page .card{
+  background:var(--surface);border:1px solid var(--line-soft);
+  padding:24px 22px;
+}
+.page .cards{gap:0;border:1px solid var(--line-soft);background:var(--surface)}
+.page .cards > .card{border:none;border-top:1px solid var(--line-soft)}
+.page .cards > .card:first-child{border-top:none}
+
+.page .stats{
+  gap:0;border:1px solid var(--line-soft);background:var(--surface);
+  grid-template-columns:1fr 1fr;
+}
+.page .stat{
+  border:none;border-top:1px solid var(--line-soft);border-left:1px solid var(--line-soft);
+  padding:22px 20px;
+}
+.page .stat:nth-child(-n+2){border-top:none}
+.page .stat:nth-child(2n+1){border-left:none}
+
+/* the icon tile loses its fill — a rule and a colour is enough */
+.page .tool > svg{
+  width:auto;height:auto;padding:0;background:none;
+  min-width:20px;min-height:20px;max-width:20px;max-height:20px;margin-top:3px;
+}
+.page .tool{gap:16px}
+
+.page .rule{display:none}
+.page .lede{color:var(--text-2)}
+.page h2{margin-top:56px;padding-top:0}
+.page h2:first-of-type{margin-top:48px}
+
+@media (min-width:900px){
+  .page .stats{grid-template-columns:repeat(4,1fr)}
+  .page .stat:nth-child(-n+4){border-top:none}
+  .page .stat:nth-child(2n+1){border-left:1px solid var(--line-soft)}
+  .page .stat:nth-child(4n+1){border-left:none}
+  .page .cards{display:grid;grid-template-columns:repeat(3,1fr)}
+  .page .cards > .card{border-top:none;border-left:1px solid var(--line-soft)}
+  .page .cards > .card:first-child{border-left:none}
+}
+
+
+/* ---------------- payment brand mark ----------------
+   Always on white: these logos are drawn for a light ground and would
+   lose their edges against the dark theme. */
+/* No plate: the marks were rebuilt with transparent backgrounds and
+   light ink so they sit straight on the panel. The card lockup carries
+   a dark-ink twin for when the page is light, since a white VISA would
+   disappear there. */
+.paylogo{
+  display:flex;justify-content:center;align-items:center;
+  background:none;border:none;padding:2px 0 0;
+}
+.paylogo img{display:block;width:auto;height:22px;object-fit:contain}
+.paylogo .on-light{display:none}
+:root[data-theme="light"] .paylogo .on-dark{display:none}
+:root[data-theme="light"] .paylogo .on-light{display:block}
+
+/* a rail that is listed but not live */
+.method.off{opacity:.5;cursor:default;pointer-events:none}
+.method.off .badge{
+  background:var(--surface-3);color:var(--muted);
+}

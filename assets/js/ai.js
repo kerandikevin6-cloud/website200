@@ -168,7 +168,7 @@
     if (S.phase === 'scanning') {
       var sym = API.symbols[Math.min(S.step, API.symbols.length - 1)];
       return '<div class="ai-hero scanning">' +
-        '<div class="ai-orb"><i></i><i></i><i></i></div>' +
+        window.NexLoader() +
         '<b>Scanning the market</b>' +
         '<span class="ai-sub num">' + sym.name + '</span>' +
         '<div class="ai-progress"><i style="width:' +
@@ -178,7 +178,7 @@
 
     if (S.phase === 'idle') {
       return '<div class="ai-hero">' +
-        '<div class="ai-orb"><i></i><i></i><i></i></div>' +
+        window.NexLoader() +
         '<b>Signal engine</b>' +
         '<span class="ai-sub">Reads the last ' + WINDOW + ' ticks on all ' +
           API.symbols.length + ' instruments and ranks the digit contracts by expected return.</span>' +
@@ -345,7 +345,6 @@
     if (!root.__wired) { root.__wired = true; wire(root); }
 
     API.ready(function () {
-      API.seedDemoHistory();
       document.body.classList.remove('loading');
       render();
 
