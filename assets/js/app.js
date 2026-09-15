@@ -1611,7 +1611,19 @@
     /* Re-read the account from the server on every load, so a balance
        changed elsewhere — a deposit that cleared, a payout approved —
        is reflected rather than trusting what this browser last saw. */
-    if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) hydrateSession();
+    if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
+      hydrateSession();
+      /* Then chase anything that was paid while this browser was not
+         looking. A deposit that cleared after the tab closed has no
+         other way of reaching the balance on screen. */
+      window.NexNet.settlePending().then(function (n) {
+        if (!n) return;
+        hydrateSession();
+        window.NexToast(n === 1
+          ? 'A deposit cleared and has been added to your balance.'
+          : n + ' deposits cleared and have been added to your balance.');
+      });
+    }
     mountChrome(document.querySelector('.app') || document.body);
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
     bindChrome();

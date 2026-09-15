@@ -281,6 +281,35 @@
       return call('/deposits/' + encodeURIComponent(reference));
     },
 
+    deposits: async function () {
+      var out = await call('/deposits');
+      return out.payments || [];
+    },
+
+    /* Asking about a pending deposit makes the server re-check it with
+       the provider, so this settles anything that was paid while nobody
+       was watching — a callback that never arrived, a tab closed on the
+       waiting screen, a phone that died after the PIN. Run on load, so a
+       deposit cannot stay unpaid-looking just because the person who
+       made it walked away.
+
+       Quiet by design: it is a background tidy-up, not something to
+       report. The balance refresh that follows is what they see. */
+    settlePending: async function () {
+      var settled = 0;
+      try {
+        var list = await this.deposits();
+        var pending = list.filter(function (p) { return p.status === 'pending'; }).slice(0, 5);
+        for (var i = 0; i < pending.length; i++) {
+          try {
+            var out = await this.deposit(pending[i].reference);
+            if (out.payment && out.payment.status === 'success') settled++;
+          } catch (e) { /* next one */ }
+        }
+      } catch (e) { /* not signed in, or the API is down: nothing to do */ }
+      return settled;
+    },
+
     /* Sits on the waiting screen until the provider answers. Polling is
        what rescues a deposit whose callback was lost, so it keeps going
        for a couple of minutes rather than giving up at the first
