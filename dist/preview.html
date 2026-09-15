@@ -2005,12 +2005,35 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   }
 
   /* Hosts that sleep take a few seconds to come back, and the request
-     that wakes them often fails. Nudging /health when the app loads
-     means the instance is already awake by the time somebody presses
-     Deposit — and this call failing costs nothing. */
-  function warm() {
-    if (!BASE) return;
-    try { fetch(BASE + '/health', { cache: 'no-store' }).catch(function () {}); } catch (e) {}
+     that wakes them is the one that fails. Nudge /health when the app
+     loads so the instance is already awake by the time somebody presses
+     Deposit, and keep nudging while it is still waking — a cold start is
+     ten to thirty seconds, which is longer than the gap between loading
+     a page and using it. */
+  var awake = false;
+  function warm(tries) {
+    if (!BASE || awake) return Promise.resolve(false);
+    tries = tries == null ? 5 : tries;
+
+    return fetch(BASE + '/health', { cache: 'no-store' })
+      .then(function (res) {
+        if (res.ok) { awake = true; return true; }
+        throw new Error('not ready');
+      })
+      .catch(function () {
+        if (tries <= 0) return false;
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(warm(tries - 1)); }, 3000);
+        });
+      });
+  }
+
+  /* Before anything that must not fail on a cold start. Waits for the
+     instance if it is on its way up, and gives up quickly if it is not,
+     so this never becomes the reason a request is slow. */
+  function ensureAwake() {
+    if (awake) return Promise.resolve(true);
+    return warm(3);
   }
 
   async function call(path, options, retried) {
@@ -2060,6 +2083,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
 
       throw ApiError('Could not reach Nexas. Check your connection.', 'offline');
+    }
+
+    /* A 5xx on a read is usually an instance still waking. Retry once —
+       but only a GET. A POST that opens a payment is never retried
+       automatically: the row is written before the provider is called,
+       so a blind retry is how one deposit becomes two. */
+    if (res.status >= 500 && !retried && (options.method || 'GET') === 'GET') {
+      await new Promise(function (r) { setTimeout(r, 1200); });
+      return call(path, options, true);
     }
 
     var body = await res.json().catch(function () { return {}; });
@@ -2131,13 +2163,17 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     /* ---------- money ---------- */
     config: function () { return call('/config', { anon: true }); },
 
-    depositMpesa: function (amountMinor, phone) {
+    depositMpesa: async function (amountMinor, phone) {
+      /* Wait for a sleeping instance rather than reporting its cold
+         start as a failed deposit. */
+      await ensureAwake();
       return call('/deposits/mpesa', {
         method: 'POST', body: { amountMinor: amountMinor, phone: phone }
       });
     },
 
-    depositCard: function (amountMinor) {
+    depositCard: async function (amountMinor) {
+      await ensureAwake();
       return call('/deposits/card', { method: 'POST', body: { amountMinor: amountMinor } });
     },
 
