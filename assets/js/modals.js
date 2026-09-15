@@ -28,6 +28,24 @@
       '<button type="button" data-reveal aria-label="Show password">' + eye + '</button></div>' +
       (meter ? '<div class="meter"><i></i><i></i><i></i><i></i></div>' : '') + '</div>';
   }
+  /* Country comes from the IP lookup in api.js, with a timezone guess
+     standing in until it answers. The dialling code is a fixed prefix,
+     never part of the value, so the box itself starts empty and takes
+     nothing but the local number. */
+  function phoneField(id, label, hint) {
+    var c = API().geo.country();
+    return '<div class="field"><label for="' + id + '">' + label + '</label>' +
+      '<div class="phone">' +
+        '<span class="phone-cc" data-phone-cc>' +
+          '<i class="flag">' + window.NexFlag(API().geo.code()) + '</i>' +
+          '<b class="num">+' + c.dial + '</b>' +
+        '</span>' +
+        '<input class="input num phone-input" id="' + id + '" type="tel" inputmode="numeric" ' +
+          'autocomplete="tel-national" placeholder="' + c.sample + '">' +
+      '</div>' +
+      (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+  }
+
   function method(value, iconName, name, note) {
     return '<button class="method" data-set="method:' + value + '" data-goto="form">' +
       '<span class="ico">' + I(iconName, 19) + '</span>' +
@@ -39,6 +57,39 @@
   function submit(label, done) {
     return '<button class="btn btn-fill" type="button" data-done="' + done + '">' + label + '</button>';
   }
+  /* Mobile money is quoted in the money the person actually holds. Card
+     follows the same country; USDT is a dollar rail, so it stays in USD. */
+  function payCur(methodId) {
+    var c = API().geo.country();
+    if (methodId === 'usdt' || !c.cur) return { cur: API().account.currency(), rate: 1, quick: [10, 25, 50, 100, 250] };
+    return { cur: c.cur, rate: c.rate, quick: c.quick };
+  }
+  function localAmount(v, cur) {
+    return window.NexFmt.count(Math.round(v)) + ' ' + cur;
+  }
+
+  /* The waiting and done screens are shared by deposit and withdraw, so
+     both rails behave the same while we are still on mock money. */
+  function waitingBody(headline, note) {
+    return '<div class="await">' +
+      '<div class="await-orb"><i></i><i></i><i></i></div>' +
+      '<b>' + headline + '</b>' +
+      '<span>' + note + '</span>' +
+      '<button class="btn btn-ghost" type="button" data-close>Cancel</button>' +
+    '</div>';
+  }
+  function doneBody(headline, note, rows) {
+    return '<div class="done">' +
+      '<span class="done-mark">' + I('check', 30) + '</span>' +
+      '<b>' + headline + '</b>' +
+      '<span>' + note + '</span>' +
+      '</div>' +
+      '<div class="modal-form">' +
+        '<div class="totals">' + rows + '</div>' +
+        '<button class="btn btn-fill" type="button" data-close>Done</button>' +
+      '</div>';
+  }
+
   function kv(k, v, attrs) {
     return '<div class="kv"><span>' + k + '</span><b ' + (attrs || '') + '>' + v + '</b></div>';
   }
@@ -165,8 +216,13 @@
               secret('currentPassword', 'Current password', '••••••••') +
               secret('newPassword', 'New password', 'At least 8 characters', true) +
               secret('confirmPassword', 'Confirm new password', 'Repeat new password') +
-              '<span class="hint">Use eight characters or more, with a number and a symbol.</span>' +
-              submit('Update password', 'Password updated') +
+              '<ul class="rules" id="pwRules">' +
+                '<li data-rule="len">At least 8 characters</li>' +
+                '<li data-rule="case">An upper and a lower case letter</li>' +
+                '<li data-rule="digit">A number</li>' +
+                '<li data-rule="symbol">A symbol</li>' +
+              '</ul>' +
+              act('Update password', 'savePassword') +
             '</div>';
           }
         }
@@ -203,13 +259,31 @@
           title: 'Upload document',
           sub: 'JPG, PNG or PDF under 8 MB. All four corners visible.',
           body: function (state) {
+            var doc = state.doc || 'Document';
+            var two = doc === 'Government ID';
+            function picker(slot, label) {
+              var id = 'doc_' + slot;
+              return '<div class="picker" data-slot="' + slot + '">' +
+                '<label class="dropzone" for="' + id + '">' +
+                  I('up', 22) +
+                  '<b>' + label + '</b>' +
+                  '<span>Take a photo or choose a file from this device</span>' +
+                  '<span class="btn btn-ghost">Choose file</span>' +
+                '</label>' +
+                '<input type="file" id="' + id + '" class="filepick" hidden ' +
+                  'accept="image/png,image/jpeg,image/webp,application/pdf" capture="environment" ' +
+                  'data-slot="' + slot + '">' +
+                '<div class="pick-out"></div>' +
+              '</div>';
+            }
             return '<div class="modal-form">' +
-              '<div class="dropzone">' + I('up', 22) +
-                '<b>' + (state.doc || 'Document') + '</b>' +
-                '<span>Take a photo or choose a file from this device</span>' +
-                '<button class="btn btn-ghost" type="button" data-done="File picker is not wired up in this draft">Choose file</button>' +
-              '</div>' +
-              act('Submit for review', 'verify') +
+              (two
+                ? picker(doc + ' front', 'Front of your ID') + picker(doc + ' back', 'Back of your ID')
+                : picker(doc, doc)) +
+              '<div class="notice">' + I('shield', 17) +
+                '<span>Your documents are used only to verify identity and are never shown to other traders.</span></div>' +
+              '<button class="btn btn-fill" type="button" data-action="verify" id="verifySubmit" disabled>' +
+                'Submit for review</button>' +
             '</div>';
           }
         }
@@ -223,7 +297,12 @@
           title: 'Deposit funds',
           sub: 'Funds land in the account you are trading. No fee from Nexas.',
           body: function () {
-            return method('mpesa', 'phone', 'M-Pesa', 'Instant · KES 100 – 150,000') +
+            var c = API().geo.country();
+            var money = c.cur || 'USD';
+            var lo = c.rate ? Math.round(1 * c.rate / 10) * 10 : 1;
+            var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
+            return method('mpesa', 'phone', 'M-Pesa',
+                'Instant · ' + money + ' ' + F().count(lo) + ' – ' + F().count(hi)) +
               method('card', 'card', 'Card', 'Visa / Mastercard · 1–3 minutes') +
               method('usdt', 'coin', 'USDT', 'TRC-20 and ERC-20 · from $10');
           }
@@ -235,8 +314,8 @@
             var m = s.method || 'mpesa', inner;
 
             if (m === 'mpesa') {
-              inner = field('mpesaPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"',
-                'You will receive an STK push. Enter your PIN to confirm.');
+              inner = phoneField('mpesaPhone', 'M-Pesa number',
+                'You will receive an STK push on this number. Enter your PIN to confirm.');
             } else if (m === 'card') {
               inner = field('cardNumber', 'Card number', 'placeholder="4242 4242 4242 4242" inputmode="numeric"') +
                 '<div class="pair">' +
@@ -247,22 +326,166 @@
               inner = '<div class="field"><label for="network">Network</label>' +
                 '<select class="input" id="network"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
                 '<div class="field"><label>Deposit address</label>' +
-                '<div class="input num address">TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu<button type="button" data-copy>Copy</button></div>' +
+                '<div class="input num address"><span>TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu</span>' +
+                '<button type="button" data-copy-text="TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu" ' +
+                'data-copy-note="Deposit address copied">Copy</button></div>' +
                 '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
             }
 
+            var pay = payCur(m);
+            var start = pay.quick[1];
+
             return '<div class="modal-form">' +
               '<div class="field"><label for="amount">Amount</label>' +
-                '<div class="input-wrap"><input class="input num" id="amount" value="50" inputmode="decimal">' +
-                '<span class="suffix">' + API().account.currency() + '</span></div>' +
-                '<div class="quick">' + [10, 25, 50, 100, 250].map(function (n) {
-                  return '<button type="button" data-amount="' + n + '">' + n + '</button>';
+                '<div class="input-wrap"><input class="input num" id="amount" value="' + start +
+                  '" inputmode="decimal">' +
+                '<span class="suffix">' + pay.cur + '</span></div>' +
+                '<div class="quick">' + pay.quick.map(function (n) {
+                  return '<button type="button" data-amount="' + n + '">' + F().count(n) + '</button>';
                 }).join('') + '</div></div>' +
               inner +
-              '<div class="totals">' + kv('Fee', F().money(0)) +
-                kv('Credited to ' + API().account.kind(), F().money(50), 'data-total="amount"') + '</div>' +
+              '<div class="totals">' +
+                kv('Fee', localAmount(0, pay.cur)) +
+                (pay.rate === 1 ? '' :
+                  kv('Rate', '1 USD = ' + F().count(pay.rate) + ' ' + pay.cur)) +
+                kv('Credited to ' + API().account.kind(), F().money(start / pay.rate),
+                   'data-total="amount" data-fx="' + pay.rate + '"') +
+              '</div>' +
               act('Confirm deposit', 'deposit') +
             '</div>';
+          }
+        },
+        pending: {
+          title: 'Waiting for payment',
+          sub: 'Leave this open until it clears.',
+          body: function (s) {
+            return waitingBody(
+              s.method === 'mpesa' ? 'Check your phone' : 'Authorising with your bank',
+              s.method === 'mpesa'
+                ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to +' + s.payTo +
+                  '. Enter your PIN to approve it.'
+                : 'Confirming ' + s.payLabel + ' with the card issuer.');
+          }
+        },
+        success: {
+          title: 'Deposit received',
+          sub: 'The funds are in your trading balance.',
+          body: function (s) {
+            return doneBody('Payment confirmed',
+              s.payLabel + ' received and credited.',
+              kv('Paid', s.payLabel) +
+              kv('Credited', F().money(s.credited)) +
+              kv('New balance', F().money(API().account.balance())) +
+              kv('Reference', '<span class="num">' + s.ref + '</span>'));
+          }
+        }
+      }
+    },
+
+    /* ---------------- refer and earn ---------------- */
+    refer: {
+      steps: {
+        main: {
+          title: 'Refer and earn',
+          sub: 'Every referral who funds an account raises the payout on your own winning contracts. Nothing is paid out to you in cash.',
+          body: function () {
+            var R = API().referrals, link = R.link();
+            var tier = R.tier(), next = R.next(), funded = R.funded();
+            function stat(label, value, cls) {
+              return '<div class="ref-stat"><span class="label">' + label + '</span>' +
+                '<b class="num ' + (cls || '') + '">' + value + '</b></div>';
+            }
+            var progress = next
+              ? '<div class="tier-next">' +
+                  '<div class="tier-bar"><i style="width:' +
+                    Math.round(Math.min(1, funded / next.funded) * 100) + '%"></i></div>' +
+                  '<span>' + (next.funded - funded) + ' more funded ' +
+                  (next.funded - funded === 1 ? 'referral' : 'referrals') + ' takes you to +' +
+                  (next.boost * 100).toFixed(1) + '%</span>' +
+                '</div>'
+              : '<div class="tier-next"><span>You are on the top tier.</span></div>';
+
+            return '<div class="ref-hero">' +
+                stat('Payout boost', '+' + (tier.boost * 100).toFixed(1) + '%', 'pos') +
+                stat('Funded', funded) +
+                stat('Referrals', R.count()) +
+              '</div>' +
+              progress +
+              '<div class="modal-form">' +
+                '<div class="notice">' + I('spark', 17) +
+                  '<span>A boost lifts what every winning contract pays you. Even/Odd at +' +
+                  (tier.boost * 100).toFixed(1) + '% pays ' +
+                  F().amount(API().contracts.payoutFor('even_odd', 10)) +
+                  ' on a 10 stake instead of 19.53. It makes trading cheaper; it does not make it profitable.</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="modal-form" style="padding-top:0">' +
+                '<div class="field"><label>Your referral link</label>' +
+                  '<div class="reflink">' +
+                    '<i>' + I('link', 16) + '</i>' +
+                    '<span class="num">' + link + '</span>' +
+                    '<button type="button" data-copy-text="' + link + '" ' +
+                      'data-copy-note="Referral link copied" aria-label="Copy referral link">' +
+                      I('copy', 16) + '</button>' +
+                  '</div>' +
+                  '<span class="hint">Code ' + R.code() + ' is tied to your account.</span>' +
+                '</div>' +
+                '<button class="btn btn-fill" type="button" data-share="' + link + '">' +
+                  I('send', 17) + 'Share referral link</button>' +
+                '<button class="row ref-all" data-goto="list">' +
+                  '<span class="ico">' + I('user', 18) + '</span>' +
+                  '<span class="t"><b>All referrals</b><span>' + R.count() +
+                    ' people joined with your link</span></span>' + I('chev', 16) +
+                '</button>' +
+                '<button class="row ref-all" data-goto="tiers">' +
+                  '<span class="ico">' + I('sliders', 18) + '</span>' +
+                  '<span class="t"><b>How the tiers work</b><span>Every level and what it pays</span></span>' +
+                  I('chev', 16) +
+                '</button>' +
+              '</div>';
+          }
+        },
+        list: {
+          title: 'Your referrals',
+          sub: 'A referral counts once that person funds their account.',
+          body: function () {
+            var R = API().referrals, rows = R.list();
+            if (!rows.length) {
+              return '<div class="empty" style="padding:30px 10px">' + I('gift', 24) +
+                '<b>No referrals yet</b><span>Share your link to get started.</span></div>';
+            }
+            return '<div class="list" style="margin:0">' + rows.map(function (r) {
+              return '<div class="trow">' +
+                '<span class="ico ' + (r.funded ? 'pos' : '') + '">' +
+                  I(r.funded ? 'check' : 'clock', 16) + '</span>' +
+                '<span class="t"><b>' + r.name + '</b>' +
+                  '<span>Joined ' + F().ago(r.joined) + '</span></span>' +
+                '<span class="p"><span class="num ' + (r.funded ? 'pos' : '') + '">' +
+                  (r.funded ? 'counts' : '—') + '</span>' +
+                  '<span class="sub">' + (r.funded ? 'funded' : 'not funded yet') + '</span></span>' +
+              '</div>';
+            }).join('') + '</div>';
+          }
+        },
+        tiers: {
+          title: 'Boost tiers',
+          sub: 'Your tier is set by how many referrals have funded an account.',
+          body: function () {
+            var R = API().referrals, now = R.tier(), funded = R.funded();
+            return '<div class="list" style="margin:0">' + R.tiers.map(function (t) {
+              var on = t.funded === now.funded;
+              return '<div class="trow' + (on ? ' on' : '') + '">' +
+                '<span class="ico ' + (on ? 'live' : '') + '">' +
+                  (t.funded ? t.funded : I('check', 15)) + '</span>' +
+                '<span class="t"><b>+' + (t.boost * 100).toFixed(1) + '% payout</b>' +
+                  '<span>' + (t.funded === 0 ? 'No funded referrals yet'
+                    : t.funded + '+ funded referrals') + '</span></span>' +
+                '<span class="p"><span class="sub">' +
+                  (on ? 'you are here' : funded >= t.funded ? 'reached' : 'locked') +
+                '</span></span></div>';
+            }).join('') + '</div>' +
+            '<p class="hint" style="margin:14px 2px 0">The top tier stays under the house margin on ' +
+            'every contract, so a boost lowers the cost of trading rather than removing it.</p>';
           }
         }
       }
@@ -289,7 +512,7 @@
               ? '<div class="field"><label for="wNetwork">Network</label>' +
                 '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option></select></div>' +
                 field('wAddress', 'Wallet address', 'placeholder="T..."', 'Check carefully. Transfers cannot be reversed.')
-              : field('wPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"',
+              : phoneField('wPhone', 'M-Pesa number',
                   'Must match the number registered to your verified name.');
 
             return '<div class="modal-form">' +
@@ -304,6 +527,27 @@
                 '<span>Identity verification is required before your first payout.</span></div>') +
               act('Request withdrawal', 'withdraw') +
             '</div>';
+          }
+        },
+        pending: {
+          title: 'Sending your payout',
+          sub: 'This usually clears in under a minute.',
+          body: function (s) {
+            return waitingBody('Payout in progress',
+              'We are sending ' + F().money(s.sent) + ' to your ' +
+              (NAMES[s.method] || 'M-Pesa') + ' account.');
+          }
+        },
+        success: {
+          title: 'Payout sent',
+          sub: 'Your provider will confirm by SMS.',
+          body: function (s) {
+            return doneBody('Withdrawal complete',
+              F().money(s.sent) + ' is on its way.',
+              kv('Amount', F().money(s.sent)) +
+              kv('Network fee', F().money(1)) +
+              kv('New balance', F().money(API().account.balance())) +
+              kv('Reference', '<span class="num">' + s.ref + '</span>'));
           }
         },
         kyc: {

@@ -38,6 +38,71 @@
   };
   var LIMITS = { min: 1, max: 5000, maxTicks: 10, minTicks: 1 };
 
+  /* ---------- countries we take mobile money from ----------
+     flag is the emoji pair, so there is no image to ship. sample is the
+     local format shown as the placeholder, minus the dialling code. */
+  /* `rate` is local units per 1 USD. In a live build these come from the
+     payments provider on each quote; here they are fixed so the maths in
+     the deposit sheet is inspectable. `quick` are the chip amounts, in
+     local money, rounded to figures people actually send. */
+  var COUNTRIES = {
+    KE: { name: 'Kenya',        dial: '254', sample: '712 345 678',  len: 9,
+          cur: 'KES', rate: 129,   quick: [500, 1000, 2500, 5000, 10000] },
+    UG: { name: 'Uganda',       dial: '256', sample: '712 345 678',  len: 9,
+          cur: 'UGX', rate: 3720,  quick: [20000, 50000, 100000, 200000, 500000] },
+    TZ: { name: 'Tanzania',     dial: '255', sample: '712 345 678',  len: 9,
+          cur: 'TZS', rate: 2640,  quick: [10000, 25000, 50000, 100000, 250000] },
+    RW: { name: 'Rwanda',       dial: '250', sample: '788 123 456',  len: 9,
+          cur: 'RWF', rate: 1330,  quick: [5000, 10000, 25000, 50000, 100000] },
+    NG: { name: 'Nigeria',      dial: '234', sample: '802 123 4567', len: 10,
+          cur: 'NGN', rate: 1550,  quick: [5000, 10000, 25000, 50000, 100000] },
+    GH: { name: 'Ghana',        dial: '233', sample: '24 123 4567',  len: 9,
+          cur: 'GHS', rate: 15.2,  quick: [50, 100, 250, 500, 1000] },
+    ZA: { name: 'South Africa', dial: '27',  sample: '71 123 4567',  len: 9,
+          cur: 'ZAR', rate: 18.3,  quick: [100, 250, 500, 1000, 2500] }
+  };
+  var DEFAULT_COUNTRY = 'KE';
+
+  /* Timezone is a decent offline guess and costs no request, so it seeds
+     the value before the IP lookup comes back (and stands in for it if the
+     lookup is blocked or offline). */
+  var TZ_COUNTRY = {
+    'Africa/Nairobi': 'KE', 'Africa/Kampala': 'UG', 'Africa/Dar_es_Salaam': 'TZ',
+    'Africa/Kigali': 'RW', 'Africa/Lagos': 'NG', 'Africa/Accra': 'GH',
+    'Africa/Johannesburg': 'ZA'
+  };
+  function guessCountry() {
+    try {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (TZ_COUNTRY[tz]) return TZ_COUNTRY[tz];
+    } catch (e) {}
+    return DEFAULT_COUNTRY;
+  }
+  function countryCode() {
+    return (S.geo && COUNTRIES[S.geo]) ? S.geo : guessCountry();
+  }
+  /* One lookup per session at most; the answer is remembered so the field
+     is already right the next time the modal opens. */
+  var geoAsked = false;
+  function detectCountry() {
+    if (geoAsked || S.geo) return;
+    geoAsked = true;
+    if (!window.fetch || !window.AbortController) return;
+    var ac = new AbortController();
+    var t = setTimeout(function () { ac.abort(); }, 2500);
+    fetch('https://ipapi.co/json/', { signal: ac.signal })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        clearTimeout(t);
+        var cc = j && j.country_code;
+        if (!cc || !COUNTRIES[cc]) return;
+        S.geo = cc;
+        persist();
+        B.emit('geo', cc);
+      })
+      .catch(function () { clearTimeout(t); });
+  }
+
   /* ---------- tiny event bus ---------- */
   function bus() {
     var map = {};
@@ -57,6 +122,8 @@
   }
   var saved = load();
   var S = {
+    geo: saved.geo || null,
+    referrals: saved.referrals || null,
     session: saved.session || null,
     account: saved.account || 'real',
     balances: saved.balances || { real: 2480, demo: 10000 },
@@ -76,6 +143,7 @@
         localStorage.setItem(KEY, JSON.stringify({
           session: S.session, account: S.account, balances: S.balances,
           verified: S.verified, consent: S.consent, riskAck: S.riskAck,
+          geo: S.geo, referrals: S.referrals,
           contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
           auto: S.auto
         }));
@@ -157,6 +225,64 @@
     if (connection.status === 'live') connection.latency = Math.round(28 + Math.random() * 60);
   }, 4000);
 
+  /* ---------- referrals ----------
+     Referrals do not pay cash. Each one that funds an account lifts the
+     payout on every winning contract the referrer places, by the tier
+     below. The top tier stays under the house margin on every contract
+     (the thinnest is even/odd at 2.35%), so a boost makes trading
+     cheaper and never turns a negative expectation positive. */
+  var BOOST_TIERS = [
+    { funded: 0,  boost: 0 },
+    { funded: 1,  boost: 0.003 },
+    { funded: 3,  boost: 0.006 },
+    { funded: 6,  boost: 0.010 },
+    { funded: 12, boost: 0.015 }
+  ];
+  var REF_NAMES = ['J. Mwangi', 'A. Otieno', 'S. Wanjiru', 'D. Kiptoo', 'P. Njeri', 'M. Achieng'];
+  function seedReferrals() {
+    if (S.referrals) return;
+    var now = Date.now(), out = [];
+    for (var i = 0; i < 4; i++) {
+      out.push({
+        id: 'RF' + (now - i * 86400000),
+        name: REF_NAMES[i],
+        joined: now - (i * 4 + 2) * 86400000,
+        funded: i < 3
+      });
+    }
+    S.referrals = out;
+    persist();
+  }
+  function fundedCount() {
+    seedReferrals();
+    return S.referrals.filter(function (r) { return r.funded; }).length;
+  }
+  function boostTier() {
+    var n = fundedCount(), best = BOOST_TIERS[0];
+    for (var i = 0; i < BOOST_TIERS.length; i++) {
+      if (n >= BOOST_TIERS[i].funded) best = BOOST_TIERS[i];
+    }
+    return best;
+  }
+  function nextTier() {
+    var n = fundedCount();
+    for (var i = 0; i < BOOST_TIERS.length; i++) {
+      if (BOOST_TIERS[i].funded > n) return BOOST_TIERS[i];
+    }
+    return null;
+  }
+  function boost() { return boostTier().boost; }
+  function referralCode() {
+    var e = (S.session && S.session.email) || 'nexas';
+    var base = e.split('@')[0].replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 5) || 'NEXAS';
+    return base + '7K';
+  }
+
+  /* Documents hold image data, which is far too big for localStorage and
+     has no business being persisted in a browser anyway, so they live for
+     the session only. */
+  var docs = {};
+
   /* ---------- money ---------- */
   function balance() { return S.balances[S.account]; }
   function adjust(delta, entry) {
@@ -173,8 +299,11 @@
   }
 
   /* ---------- contracts ---------- */
+  function payoutRate(type) {
+    return (PAYOUT[type] || 1.95) * (1 + boost());
+  }
   function payoutFor(type, stake) {
-    return round(stake * (PAYOUT[type] || 1.95), 2);
+    return round(stake * payoutRate(type), 2);
   }
 
   function validate(spec) {
@@ -308,6 +437,7 @@
     start();
     readyFns.forEach(function (f) { f(); });
     readyFns = [];
+    detectCountry();
     B.emit('ready');
   }, 420);
 
@@ -345,7 +475,7 @@
 
     contracts: {
       buy: buy, sell: sell, validate: validate, label: label,
-      payoutFor: payoutFor,
+      payoutFor: payoutFor, payoutRate: payoutRate,
       open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
       closed: function () { return S.contracts.filter(function (c) { return c.status !== 'open'; }); },
       all: function () { return S.contracts.slice(); },
@@ -358,6 +488,25 @@
 
     transactions: { list: function () { return S.transactions.slice(); } },
 
+    geo: {
+      countries: COUNTRIES,
+      code: countryCode,
+      country: function () { return COUNTRIES[countryCode()]; },
+      detect: detectCountry
+    },
+
+    referrals: {
+      tiers: BOOST_TIERS,
+      code: referralCode,
+      link: function () { return 'https://nexas.trade/r/' + referralCode(); },
+      list: function () { seedReferrals(); return S.referrals.slice(); },
+      count: function () { seedReferrals(); return S.referrals.length; },
+      funded: fundedCount,
+      boost: boost,
+      tier: boostTier,
+      next: nextTier
+    },
+
     session: {
       get: function () { return S.session; },
       signIn: signIn,
@@ -366,6 +515,10 @@
 
     kyc: {
       verified: function () { return S.verified; },
+      docs: function () { return docs; },
+      hasDoc: function (name) { return !!docs[name]; },
+      setDoc: function (name, file) { docs[name] = file; B.emit('kyc', false); },
+      clearDoc: function (name) { delete docs[name]; B.emit('kyc', false); },
       submit: function () { S.verified = true; persist(); B.emit('kyc', true); }
     },
 

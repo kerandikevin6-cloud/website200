@@ -38,6 +38,10 @@
     clock: 'M12 7v5l3 2',
     sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4',
     candles: '',
+    headset: 'M4 13v-1a8 8 0 1116 0v1|M4 13h2.2a1 1 0 011 1v3.4a1 1 0 01-1 1H5.6A1.6 1.6 0 014 16.8z|M20 13h-2.2a1 1 0 00-1 1v3.4a1 1 0 001 1h.6a1.6 1.6 0 001.6-1.6z|M18.6 19.2a4 4 0 01-3.6 2.2h-1.6',
+    gift: 'M12 8.5V21|M3.6 12.4h16.8|M9.1 8.5a2.3 2.3 0 110-4.6C11 3.9 12 6 12 8.5c0-2.5 1-4.6 2.9-4.6a2.3 2.3 0 110 4.6',
+    copy: '',
+    link: 'M9.5 14.5l5-5|M11 6.6l1.3-1.3a3.8 3.8 0 015.4 5.4L16.4 12|M13 17.4l-1.3 1.3a3.8 3.8 0 01-5.4-5.4L7.6 12',
     spark: 'M12 3.1l1.86 4.93 4.93 1.86-4.93 1.86L12 16.68l-1.86-4.93L5.21 9.89l4.93-1.86z|M18.5 15.2l.66 1.74 1.74.66-1.74.66-.66 1.74-.66-1.74-1.74-.66 1.74-.66z',
     radar: 'M12 12l4.6-4.6|M4.6 16.9a8.5 8.5 0 1114.8 0',
     target: 'M12 2v3M12 19v3M2 12h3M19 12h3'
@@ -54,11 +58,60 @@
     if (name === 'target') body =
       '<circle cx="12" cy="12" r="7.6"></circle><circle cx="12" cy="12" r="3.1"></circle>' + body;
     if (name === 'radar') body = '<circle cx="12" cy="12" r="1.5"></circle>' + body;
+    if (name === 'gift') body = '<rect x="4.4" y="8.5" width="15.2" height="12.5" rx="1.8"></rect>' + body;
+    if (name === 'copy') body =
+      '<rect x="9" y="9" width="11" height="11" rx="2"></rect>' +
+      '<path d="M5.5 15H5a1 1 0 01-1-1V5a1 1 0 011-1h9a1 1 0 011 1v.5"></path>';
     for (var i = 0; i < parts.length; i++) if (parts[i]) body += '<path d="' + parts[i] + '"></path>';
     return '<svg width="' + (size || 17) + '" height="' + (size || 17) + '" viewBox="0 0 24 24" fill="none" ' +
       'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
   }
   window.NexIcon = icon;
+
+  /* ---------- flags ----------
+     Windows has no flag emoji font, so \uD83C\uDDF0\uD83C\uDDEA renders as the
+     letters "KE" there. These are drawn instead: simplified to a few
+     shapes each, which is all that survives at 18px anyway. */
+  var FLAGS = {
+    KE: '<rect width="24" height="16" fill="#fff"/>' +
+        '<rect width="24" height="5.1" fill="#000"/>' +
+        '<rect y="6" width="24" height="4" fill="#BB0000"/>' +
+        '<rect y="10.9" width="24" height="5.1" fill="#006600"/>' +
+        '<ellipse cx="12" cy="8" rx="2.7" ry="4.6" fill="#fff"/>' +
+        '<ellipse cx="12" cy="8" rx="1.5" ry="3.4" fill="#BB0000"/>',
+    UG: '<rect width="24" height="16" fill="#FCDC04"/>' +
+        '<rect width="24" height="2.67" fill="#000"/>' +
+        '<rect y="5.33" width="24" height="2.67" fill="#D90000"/>' +
+        '<rect y="8" width="24" height="2.67" fill="#000"/>' +
+        '<rect y="13.33" width="24" height="2.67" fill="#D90000"/>' +
+        '<circle cx="12" cy="8" r="2.6" fill="#fff"/>',
+    TZ: '<rect width="24" height="16" fill="#00A3DD"/>' +
+        '<path d="M0 0h15L0 16z" fill="#1EB53A"/>' +
+        '<path d="M17 0h7L7 16H0z" fill="#FCD116"/>' +
+        '<path d="M19 0h5L5 16H0z" fill="#000" opacity=".92"/>',
+    RW: '<rect width="24" height="16" fill="#20603D"/>' +
+        '<rect width="24" height="8" fill="#00A1DE"/>' +
+        '<rect y="8" width="24" height="4" fill="#FAD201"/>' +
+        '<circle cx="18" cy="4" r="2" fill="#FAD201"/>',
+    NG: '<rect width="24" height="16" fill="#fff"/>' +
+        '<rect width="8" height="16" fill="#008751"/>' +
+        '<rect x="16" width="8" height="16" fill="#008751"/>',
+    GH: '<rect width="24" height="16" fill="#FCD116"/>' +
+        '<rect width="24" height="5.33" fill="#CE1126"/>' +
+        '<rect y="10.67" width="24" height="5.33" fill="#006B3F"/>' +
+        '<path d="M12 5.6l1.1 3.3 3.2-1.9-2 3.2 3.3 1.1h-6.9z" fill="#000"/>',
+    ZA: '<rect width="24" height="16" fill="#002395"/>' +
+        '<rect width="24" height="8" fill="#DE3831"/>' +
+        '<path d="M0 0l10 8-10 8z" fill="#000"/>' +
+        '<path d="M0 6.2h24v3.6H0z" fill="#007A4D"/>'
+  };
+  function flag(cc) {
+    var body = FLAGS[cc];
+    if (!body) return '';
+    return '<svg class="flagsvg" viewBox="0 0 24 16" width="19" height="13" ' +
+      'role="img" aria-label="' + cc + '">' + body + '</svg>';
+  }
+  window.NexFlag = flag;
 
   var API = window.NexAPI, F = window.NexFmt;
 
@@ -98,12 +151,17 @@
     { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'globe' }
   ];
   /* the desktop bar carries one extra link the bottom bar has no room for */
-  var DESK = TABS.concat([{ id: 'responsible', label: 'Responsible Trading', file: 'responsible.html' }]);
+  var DESK = TABS.concat([{ id: 'learn', label: 'Learn', file: 'learn.html' }]);
 
+  /* Stacked: the account kind sits over the amount, which roughly halves
+     how much of the top bar this button takes. */
   function balanceMarkup() {
     var kind = API.account.kind();
-    return '<i class="acct-dot ' + kind + '"></i><span class="acct-kind">' + kind + '</span>' +
-      '<span class="bal num">' + F.amount(API.account.balance()) + '</span>' + icon('chevD', 12);
+    return '<i class="acct-dot ' + kind + '"></i>' +
+      '<span class="acct-txt">' +
+        '<span class="acct-kind">' + kind + '</span>' +
+        '<span class="bal num">' + F.amount(API.account.balance()) + '</span>' +
+      '</span>' + icon('chevD', 12);
   }
 
   function topbar(page) {
@@ -173,8 +231,9 @@
         '</div>' +
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
-          item('Live chat', { icon: 'chat', href: 'chat.html' }) +
-          item('Responsible trading', { icon: 'shield', href: 'responsible.html' }) +
+          item('Support', { icon: 'headset', href: 'chat.html' }) +
+          item('Learn', { icon: 'book', href: 'learn.html' }) +
+          item('Refer and earn', { icon: 'gift', modal: 'refer' }) +
           item('Light / dark theme', {
             icon: isDark() ? 'moon' : 'sun',
             tail: '<i class="switch" id="themeSwitch" role="switch" aria-checked="' + isDark() + '"></i>',
@@ -239,12 +298,20 @@
       var m = host().querySelector('.modal');
       if (m) m.classList.add('open');
     });
-    var first = host().querySelector('input, select, button:not([data-close])');
+    /* Focus a real field if the step has one. Landing on the back or
+       first action button just paints a focus ring on it, which reads
+       as a stray box on an otherwise clean dialog. */
+    var first = host().querySelector('.modal-box input, .modal-box select, .modal-box textarea');
     if (first) first.focus();
+    else {
+      var box = host().querySelector('.modal-box');
+      if (box) { box.setAttribute('tabindex', '-1'); box.focus(); }
+    }
     var pw = host().querySelector('#newPassword');
     if (pw) paintMeter(pw);
   }
   function closeModals() {
+    payToken++;                               /* nothing pending may land now */
     var m = host().querySelector('.modal');
     if (!m) return;
     m.classList.remove('open');
@@ -266,6 +333,138 @@
     var first = f[0], last = f[f.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  /* ---------- clipboard and sharing ---------- */
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  function copyText(text, note) {
+    var msg = note || 'Copied';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { window.NexToast(msg); },
+        function () { fallbackCopy(text); window.NexToast(msg); }
+      );
+      return;
+    }
+    fallbackCopy(text);
+    window.NexToast(msg);
+  }
+  /* The share sheet where the device has one, the clipboard everywhere
+     else — either way the person ends up holding the link. */
+  function shareLink(url) {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Nexas',
+        text: 'I trade synthetic indices on Nexas. Join with my link.',
+        url: url
+      }).catch(function () {});
+      return;
+    }
+    copyText(url, 'Referral link copied — paste it anywhere');
+  }
+
+  /* ---------- phone number formatting ---------- */
+  /* The sample for the country doubles as the grouping mask, so a new
+     country needs no extra code: "712 345 678" groups 3-3-3. */
+  function formatPhone(raw, sample, dial) {
+    var digits = raw.replace(/\D/g, '');
+    var want = sample.replace(/\D/g, '').length;
+    /* People type the number the way they say it. Both the pasted dial
+       code and the trunk "0" are already covered by the prefix cell, so
+       drop them rather than making the person delete them. */
+    if (dial && digits.indexOf(dial) === 0 && digits.length > want) digits = digits.slice(dial.length);
+    if (digits.charAt(0) === '0') digits = digits.slice(1);
+    digits = digits.slice(0, want);
+    var out = '', di = 0;
+    for (var i = 0; i < sample.length && di < digits.length; i++) {
+      if (sample.charAt(i) === ' ') out += ' ';
+      else out += digits.charAt(di++);
+    }
+    return out;
+  }
+  function paintCountry() {
+    var c = API.geo.country();
+    var ccs = document.querySelectorAll('[data-phone-cc]');
+    for (var i = 0; i < ccs.length; i++) {
+      ccs[i].innerHTML = '<i class="flag">' + flag(API.geo.code()) + '</i>' +
+        '<b class="num">+' + c.dial + '</b>';
+    }
+    var boxes = document.querySelectorAll('.phone-input');
+    for (var j = 0; j < boxes.length; j++) boxes[j].placeholder = c.sample;
+  }
+
+  /* ---------- document pickers ---------- */
+  var DOC_MAX = 8 * 1024 * 1024;
+  var DOC_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
+
+  function fileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+  function refreshVerifyButton() {
+    var btn = document.getElementById('verifySubmit');
+    if (!btn) return;
+    var pickers = document.querySelectorAll('.picker');
+    var ready = pickers.length > 0;
+    for (var i = 0; i < pickers.length; i++) {
+      if (!API.kyc.hasDoc(pickers[i].getAttribute('data-slot'))) ready = false;
+    }
+    btn.disabled = !ready;
+  }
+  function renderPicked(picker, slot, file, preview) {
+    var out = picker.querySelector('.pick-out');
+    var zone = picker.querySelector('.dropzone');
+    if (!file) {
+      out.innerHTML = '';
+      if (zone) zone.hidden = false;
+      refreshVerifyButton();
+      return;
+    }
+    if (zone) zone.hidden = true;
+    out.innerHTML = '<div class="picked">' +
+      (preview
+        ? '<img class="picked-thumb" alt="" src="' + preview + '">'
+        : '<span class="picked-thumb doc">' + icon('idcard', 20) + '</span>') +
+      '<span class="picked-t"><b>' + file.name.replace(/</g, '&lt;') + '</b>' +
+        '<span>' + fileSize(file.size) + ' \u00b7 ready to submit</span></span>' +
+      '<button type="button" class="iconbtn" data-unpick="' + slot + '" aria-label="Remove">' +
+        icon('close', 17) + '</button>' +
+    '</div>';
+    refreshVerifyButton();
+  }
+  function takeFile(input) {
+    var slot = input.getAttribute('data-slot');
+    var picker = input.closest('.picker');
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!file || !picker) return;
+
+    if (DOC_TYPES.indexOf(file.type) === -1) {
+      fieldError(input.id, 'Use a JPG, PNG, WebP or PDF');
+      window.NexToast('That file type is not accepted');
+      return;
+    }
+    if (file.size > DOC_MAX) {
+      window.NexToast('That file is ' + fileSize(file.size) + ' \u2014 the limit is 8 MB');
+      return;
+    }
+    API.kyc.setDoc(slot, file);
+
+    if (file.type === 'application/pdf') { renderPicked(picker, slot, file, null); return; }
+    var reader = new FileReader();
+    reader.onload = function () { renderPicked(picker, slot, file, reader.result); };
+    reader.onerror = function () { renderPicked(picker, slot, file, null); };
+    reader.readAsDataURL(file);
   }
 
   /* ---------- toast ---------- */
@@ -350,15 +549,69 @@
     return false;
   }
 
+  /* ---------- password rules ----------
+     One source of truth: the meter, the live checklist and the submit
+     check all read these, so they can never disagree. */
+  var PW_RULES = [
+    { id: 'len',    test: function (v) { return v.length >= 8; },
+      msg: 'Use at least 8 characters' },
+    { id: 'case',   test: function (v) { return /[a-z]/.test(v) && /[A-Z]/.test(v); },
+      msg: 'Include an upper and a lower case letter' },
+    { id: 'digit',  test: function (v) { return /\d/.test(v); },
+      msg: 'Include a number' },
+    { id: 'symbol', test: function (v) { return /[^A-Za-z0-9]/.test(v); },
+      msg: 'Include a symbol' }
+  ];
+  function pwScore(v) {
+    var n = 0;
+    for (var i = 0; i < PW_RULES.length; i++) if (PW_RULES[i].test(v)) n++;
+    return n;
+  }
+  function pwFirstFailure(v) {
+    for (var i = 0; i < PW_RULES.length; i++) if (!PW_RULES[i].test(v)) return PW_RULES[i].msg;
+    return null;
+  }
+  function paintRules(v) {
+    var list = document.getElementById('pwRules');
+    if (!list) return;
+    for (var i = 0; i < PW_RULES.length; i++) {
+      var li = list.querySelector('[data-rule="' + PW_RULES[i].id + '"]');
+      if (li) li.classList.toggle('ok', PW_RULES[i].test(v));
+    }
+  }
+  /* Errors are written next to the field rather than re-rendering the
+     step, so nothing the person has already typed is thrown away. */
+  function fieldError(id, msg) {
+    var input = document.getElementById(id);
+    if (!input) return;
+    var wrap = input.closest('.field') || input.parentNode;
+    var err = wrap.querySelector('.field-error');
+    if (!msg) { if (err) err.remove(); wrap.classList.remove('bad'); return; }
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'field-error';
+      err.setAttribute('role', 'alert');
+      wrap.appendChild(err);
+    }
+    err.textContent = msg;
+    wrap.classList.add('bad');
+    input.focus();
+  }
+  function clearErrors() {
+    var box = host().querySelector('.modal-box');
+    if (!box) return;
+    var errs = box.querySelectorAll('.field-error');
+    for (var i = 0; i < errs.length; i++) errs[i].remove();
+    var bad = box.querySelectorAll('.field.bad');
+    for (var j = 0; j < bad.length; j++) bad[j].classList.remove('bad');
+  }
+
   /* ---------- password meter ---------- */
   function paintMeter(input) {
-    var v = input.value, score = 0;
-    if (v.length >= 8) score++;
-    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
-    if (/\d/.test(v)) score++;
-    if (/[^A-Za-z0-9]/.test(v)) score++;
+    var v = input.value, score = pwScore(v);
     var wrap = input.closest('.field') || document;
     wrap.querySelectorAll('.meter i').forEach(function (bar, i) { bar.classList.toggle('on', i < score); });
+    paintRules(v);
   }
 
   /* ---------- chrome mount ---------- */
@@ -450,13 +703,28 @@
       var done = t.closest('[data-done]');
       if (done) { closeModals(); window.NexToast(done.getAttribute('data-done')); return; }
 
-      if (t.closest('[data-copy]')) { window.NexToast('Address copied'); return; }
+      var copier = t.closest('[data-copy-text]');
+      if (copier) {
+        copyText(copier.getAttribute('data-copy-text'), copier.getAttribute('data-copy-note'));
+        return;
+      }
+      var sharer = t.closest('[data-share]');
+      if (sharer) { shareLink(sharer.getAttribute('data-share')); return; }
 
       var amt = t.closest('[data-amount]');
       if (amt) {
         var box = amt.closest('.field').querySelector('input');
         box.value = amt.getAttribute('data-amount');
         box.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+
+      var unpick = t.closest('[data-unpick]');
+      if (unpick) {
+        var slotName = unpick.getAttribute('data-unpick');
+        API.kyc.clearDoc(slotName);
+        var pk = unpick.closest('.picker');
+        if (pk) renderPicked(pk, slotName, null, null);
         return;
       }
 
@@ -475,13 +743,27 @@
       }
     });
 
+    document.addEventListener('change', function (e) {
+      if (e.target.classList && e.target.classList.contains('filepick')) takeFile(e.target);
+    });
+
     document.addEventListener('input', function (e) {
       var el = e.target;
       if (el.id === 'newPassword') paintMeter(el);
+      if (el.classList && el.classList.contains('phone-input')) {
+        var atEnd = el.selectionStart === el.value.length;
+        var c = API.geo.country();
+        var next = formatPhone(el.value, c.sample, c.dial);
+        if (next !== el.value) {
+          el.value = next;
+          if (!atEnd) { try { el.setSelectionRange(next.length, next.length); } catch (x) {} }
+        }
+      }
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
         var fee = +(total.getAttribute('data-fee') || 0);
-        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee));
+        var fx = +(total.getAttribute('data-fx') || 1) || 1;
+        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee) / fx);
       }
     });
 
@@ -490,6 +772,18 @@
       if (!f.hasAttribute) return;
       if (f.hasAttribute('data-splash')) {
         e.preventDefault();
+        /* The auth pages post the same password rules as the modal. */
+        var pw = f.querySelector('#newPassword');
+        if (pw) {
+          var bad = pwFirstFailure(pw.value);
+          if (bad) { window.NexToast(bad); pw.focus(); return; }
+          var again = f.querySelector('#confirmNew');
+          if (again && again.value !== pw.value) {
+            window.NexToast('Passwords do not match');
+            again.focus();
+            return;
+          }
+        }
         var email = f.querySelector('input[type=email]');
         API.session.signIn(email && email.value, 'password');
         splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
@@ -510,27 +804,88 @@
     });
   }
 
+  /* A settlement that is still pending must not survive the dialog that
+     started it, so every timer is tagged and checked before it fires. */
+  var payToken = 0;
+  function reference() {
+    var a = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789', out = '';
+    for (var i = 0; i < 10; i++) out += a.charAt(Math.floor(Math.random() * a.length));
+    return out;
+  }
+  function settle(after) {
+    var token = ++payToken;
+    gotoStep('pending');
+    setTimeout(function () {
+      if (token !== payToken) return;         /* cancelled or closed */
+      if (!host().querySelector('.modal')) return;
+      after();
+      gotoStep('success');
+    }, 2600);
+  }
+
   /* actions that touch money or verification */
   function runAction(name, node) {
     if (name === 'deposit') {
-      var amount = +((document.getElementById('amount') || {}).value) || 0;
-      if (amount <= 0) return window.NexToast('Enter an amount to deposit');
-      API.account.credit(amount, 'Deposit');
-      closeModals();
-      window.NexToast('Deposited ' + F.money(amount));
+      clearErrors();
+      var box = document.getElementById('amount');
+      var amount = +((box || {}).value) || 0;
+      var pay = API.geo.country();
+      var isLocal = state.data.method !== 'usdt' && !!pay.cur;
+      var rate = isLocal ? pay.rate : 1;
+      var money = isLocal ? pay.cur : API.account.currency();
+
+      if (amount <= 0) return fieldError('amount', 'Enter an amount to deposit');
+      var usd = amount / rate;
+      if (usd < 1) return fieldError('amount', 'Minimum deposit is ' +
+        F.count(Math.ceil(rate)) + ' ' + money);
+
+      if (state.data.method === 'mpesa') {
+        var ph = document.getElementById('mpesaPhone');
+        var digits = ph ? ph.value.replace(/\D/g, '') : '';
+        if (digits.length < pay.len) return fieldError('mpesaPhone', 'Enter your ' + pay.len + '-digit number');
+        state.data.payTo = pay.dial + digits;
+      }
+
+      state.data.payLabel = F.count(amount) + ' ' + money;
+      state.data.credited = Math.round(usd * 100) / 100;
+      state.data.ref = reference();
+      settle(function () {
+        API.account.credit(state.data.credited, 'Deposit');
+      });
       return;
     }
     if (name === 'withdraw') {
       if (!API.kyc.verified()) { gotoStep('kyc'); return; }
+      clearErrors();
       var w = +((document.getElementById('wAmount') || {}).value) || 0;
-      if (w <= 0) return window.NexToast('Enter an amount to withdraw');
-      if (w > API.account.balance()) return window.NexToast('Not enough funds');
-      API.account.debit(w, 'Withdrawal');
+      if (w <= 0) return fieldError('wAmount', 'Enter an amount to withdraw');
+      if (w < 10) return fieldError('wAmount', 'Minimum withdrawal is ' + F.money(10));
+      if (w > API.account.balance()) return fieldError('wAmount',
+        'Not enough funds. Available ' + F.money(API.account.balance()));
+      state.data.sent = w;
+      state.data.ref = reference();
+      settle(function () { API.account.debit(w, 'Withdrawal'); });
+      return;
+    }
+    if (name === 'savePassword') {
+      clearErrors();
+      var cur = (document.getElementById('currentPassword') || {}).value || '';
+      var nw = (document.getElementById('newPassword') || {}).value || '';
+      var cf = (document.getElementById('confirmPassword') || {}).value || '';
+
+      if (!cur) return fieldError('currentPassword', 'Enter your current password');
+      var fail = pwFirstFailure(nw);
+      if (fail) return fieldError('newPassword', fail);
+      if (nw === cur) return fieldError('newPassword', 'Choose a password you have not used here before');
+      if (!cf) return fieldError('confirmPassword', 'Repeat the new password');
+      if (cf !== nw) return fieldError('confirmPassword', 'These do not match');
+
       closeModals();
-      window.NexToast('Withdrawal of ' + F.money(w) + ' submitted');
+      window.NexToast('Password updated');
       return;
     }
     if (name === 'verify') {
+      if (node && node.disabled) return;
       API.kyc.submit();
       closeModals();
       window.NexToast('Identity submitted — usually cleared within the hour');
@@ -563,6 +918,7 @@
       if (b) b.innerHTML = balanceMarkup();
     });
     API.on('connection', connectionBanner);
+    API.on('geo', paintCountry);
     connectionBanner();
   }
 

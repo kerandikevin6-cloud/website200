@@ -30,6 +30,8 @@
   /* deep, saturated CTA colours - the buy / sell buttons only */
   --pos-deep:#046340;
   --neg-deep:#8C1710;
+  --warn:#B4690E;
+  --warn-soft:#FDF1E3;
 
   /* chart */
   --chart-line:#15181B;
@@ -75,6 +77,8 @@
     --neg-soft:#2E1A1C;
     --pos-deep:#05663F;
     --neg-deep:#93180F;
+    --warn:#E0912F;
+    --warn-soft:#2E2113;
 
     --chart-line:#E6EDF5;
     --chart-grid:#17293C;
@@ -107,6 +111,8 @@
   --neg-soft:#2E1A1C;
   --pos-deep:#05663F;
   --neg-deep:#93180F;
+  --warn:#E0912F;
+  --warn-soft:#2E2113;
 
   --chart-line:#E6EDF5;
   --chart-grid:#17293C;
@@ -168,14 +174,18 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   font-family:var(--serif);font-size:16px;line-height:1;padding-bottom:2px;
 }
 .brand-name{font-size:13px;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
+/* Two short lines instead of one long one: the kind sits over the
+   amount, which keeps this well clear of the Deposit button. */
 .acct{
-  display:flex;align-items:center;gap:8px;padding:7px 10px;color:var(--text-2);
+  display:flex;align-items:center;gap:7px;padding:5px 8px;color:var(--text-2);
   background:var(--surface-2);border:1px solid var(--line);border-radius:0;
 }
 .acct:hover{color:var(--text);background:var(--surface-3)}
-.acct-dot{width:7px;height:7px;border-radius:50%;background:var(--pos);flex:none}
-.acct-kind{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.acct .bal{font-size:13.5px;color:var(--text)}
+.acct-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex:none}
+.acct-dot.demo{background:var(--accent)}
+.acct-txt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0}
+.acct-kind{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:1}
+.acct .bal{font-size:12.5px;color:var(--text);line-height:1.1}
 .btn-primary{
   padding:9px 16px;background:var(--pos);color:#fff;border-radius:0;
   font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap;
@@ -301,7 +311,20 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   border-bottom:1px solid var(--line-soft);border-radius:0;
   background:var(--chart-bg);overflow:hidden;position:relative;
 }
-#chart{display:block;width:100%;height:210px}
+#chart{display:block;width:100%;height:288px;position:relative;z-index:1}
+
+/* A world map sits behind the trace, filled in the text colour at a very
+   low alpha so it reads as a watermark in either theme and never competes
+   with the price line. currentColor means one asset, both themes. */
+.chart-map{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:96%;height:auto;z-index:0;pointer-events:none;
+  color:var(--text);opacity:.025;
+}
+:root[data-theme="dark"] .chart-map{opacity:.04}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .chart-map{opacity:.04}
+}
 .chart-tools{
   position:absolute;left:10px;bottom:10px;display:flex;flex-direction:column;
   border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);
@@ -1003,11 +1026,189 @@ body.locked{overflow:hidden}
 .ctab:focus-visible::after,
 .seg button:focus-visible::after{background:var(--accent)}
 
+
+/* ---------------- run targets ----------------
+   Three equal cells under Auto / Manual: profit green, loss red, the
+   loss multiplier orange. Equal thirds by the same width:0 trick used
+   on the tabs, so a long number never steals a neighbour's space. */
+.targets{
+  display:flex;border:1px solid var(--line-soft);background:var(--surface);
+}
+.tgt{
+  flex:1 1 0;width:0;min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 9px;
+}
+.tgt + .tgt{border-left:1px solid var(--line-soft)}
+.tgt-l{
+  font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}
+.tgt-v{display:flex;align-items:baseline;gap:4px;max-width:100%}
+.tgt-v i{font-style:normal;font-size:11px;font-weight:600;flex:none}
+.tgt-v input{
+  width:100%;min-width:0;background:none;border:none;outline:none;padding:0;
+  color:var(--text);text-align:center;font-size:14.5px;font-weight:600;
+}
+.tgt.pos .tgt-l,.tgt.pos .tgt-v i{color:var(--pos)}
+.tgt.neg .tgt-l,.tgt.neg .tgt-v i{color:var(--neg)}
+.tgt.warn .tgt-l,.tgt.warn .tgt-v i{color:var(--warn)}
+
+
+/* ---------------- phone number field ----------------
+   The dialling code is furniture, not content: it sits in its own cell
+   with the flag, and the input beside it starts empty and holds only
+   the local number. */
+.phone{
+  display:flex;align-items:stretch;border:1px solid var(--line);
+  background:var(--surface);overflow:hidden;
+}
+.phone:focus-within{border-color:var(--accent)}
+.phone-cc{
+  display:flex;align-items:center;gap:7px;flex:none;padding:0 12px;
+  background:var(--surface-2);border-right:1px solid var(--line-soft);
+}
+.phone-cc .flag{display:flex;flex:none}
+.flagsvg{display:block;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.14) inset}
+.phone-cc b{font-size:13.5px;font-weight:500;color:var(--text-2)}
+.phone .input{
+  flex:1;min-width:0;border:none;background:none;border-radius:0;
+  letter-spacing:.06em;font-size:15px;
+}
+.phone .input:focus{border:none;box-shadow:none}
+.phone .input::placeholder{letter-spacing:.06em;color:var(--muted);opacity:.7}
+
+/* the USDT address row, now that the text and the button are separate */
+.input.address{display:flex;align-items:center;gap:10px}
+.input.address span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.input.address button{
+  flex:none;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent);font-weight:500;
+}
+
+/* ---------------- refer and earn ---------------- */
+.ref-hero{
+  display:flex;border:1px solid var(--line-soft);background:var(--surface-2);
+  margin-bottom:4px;
+}
+.ref-stat{
+  flex:1 1 0;width:0;min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 6px;
+}
+.ref-stat + .ref-stat{border-left:1px solid var(--line-soft)}
+.ref-stat b{font-size:19px;font-weight:500}
+.reflink{
+  display:flex;align-items:center;gap:10px;padding:0 4px 0 12px;
+  border:1px solid var(--line);background:var(--surface);
+}
+.reflink > i{display:flex;color:var(--muted);flex:none}
+.reflink span{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:12.5px;padding:13px 0;
+}
+.reflink button{
+  flex:none;width:42px;height:42px;display:grid;place-items:center;
+  color:var(--accent);border-left:1px solid var(--line-soft);
+}
+.ref-all{border:1px solid var(--line-soft);background:var(--surface)}
+
+
+/* ---------------- password rules ---------------- */
+.rules{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.rules li{
+  position:relative;padding-left:20px;font-size:12px;color:var(--muted);line-height:1.5;
+}
+.rules li::before{
+  content:"";position:absolute;left:3px;top:6px;width:6px;height:6px;border-radius:50%;
+  border:1px solid var(--line);
+}
+.rules li.ok{color:var(--text-2)}
+.rules li.ok::before{background:var(--pos);border-color:var(--pos)}
+.field.bad .input,.field.bad .phone,.field.bad .input-wrap .input{border-color:var(--neg)}
+
+/* ---------------- document pickers ---------------- */
+.picker{display:flex;flex-direction:column;gap:10px}
+.dropzone{cursor:pointer}
+.dropzone .btn{pointer-events:none}
+.picked{
+  display:flex;align-items:center;gap:12px;padding:10px 8px 10px 10px;
+  border:1px solid var(--line);background:var(--surface);
+}
+.picked-thumb{
+  width:52px;height:38px;flex:none;border-radius:var(--r-sm);object-fit:cover;
+  background:var(--surface-2);border:1px solid var(--line-soft);display:block;
+}
+.picked-thumb.doc{display:grid;place-items:center;color:var(--muted)}
+.picked-t{flex:1;min-width:0}
+.picked-t b{display:block;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picked-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* ---------------- awaiting payment ---------------- */
+.await{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;
+  padding:30px 22px 26px;
+}
+.await b{font-size:16px;font-weight:600}
+.await span{font-size:13px;color:var(--muted);line-height:1.6;max-width:36ch}
+.await .btn{width:auto;padding:10px 20px;margin-top:10px}
+.await-orb{display:flex;gap:7px;height:26px;align-items:center;margin-bottom:2px}
+.await-orb i{
+  width:9px;height:9px;border-radius:50%;background:var(--accent);
+  animation:awaitpulse 1.1s infinite;
+}
+.await-orb i:nth-child(2){animation-delay:.16s}
+.await-orb i:nth-child(3){animation-delay:.32s}
+@keyframes awaitpulse{
+  0%,100%{opacity:.22;transform:translateY(0) scale(.85)}
+  50%{opacity:1;transform:translateY(-6px) scale(1)}
+}
+
+/* ---------------- payment confirmed ---------------- */
+.done{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
+  padding:26px 22px 6px;
+}
+.done b{font-size:17px;font-weight:600}
+/* :not() keeps this off the mark, which is also a direct child span and
+   was losing its green to this rule. */
+.done > span:not(.done-mark){font-size:13px;color:var(--muted);line-height:1.6;max-width:36ch}
+.done-mark{
+  width:62px;height:62px;border-radius:50%;display:grid;place-items:center;
+  background:var(--pos-soft);color:var(--pos);margin-bottom:4px;
+  animation:donepop .42s cubic-bezier(.22,1.2,.36,1) both;
+}
+
+@keyframes donepop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ---------------- boost tiers ---------------- */
+.tier-next{
+  display:flex;flex-direction:column;gap:7px;padding:12px 14px;
+  border:1px solid var(--line-soft);border-top:none;background:var(--surface);
+}
+.tier-next span{font-size:12px;color:var(--muted)}
+.tier-bar{height:4px;background:var(--surface-3)}
+.tier-bar i{display:block;height:100%;background:var(--pos)}
+.trow.on{background:var(--accent-soft)}
+.trow .ico{font-family:var(--mono);font-size:12.5px;font-weight:500}
+
+
+/* The dialog box is focused programmatically when a step has no field,
+   so a screen reader lands inside it. That is not keyboard navigation,
+   so it must not paint the 2px ring around the whole dialog. */
+.modal-box:focus,.modal-box:focus-visible{outline:none}
+
+/* A disabled action has to look disabled, or people press it and
+   wonder why nothing happened. */
+.btn:disabled{opacity:.42;cursor:not-allowed;filter:none}
+.btn:disabled:hover{filter:none}
+
+/* check() draws at 1.5 like every other icon; at 30px it needs weight */
+.done-mark svg{stroke-width:2.4}
+
 </style>
 
 <div class="app" id="app"></div>
 
-<script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = {"index":{"attrs":{"data-page":"trade","data-chrome":"app"},"title":"Nexas — Terminal","html":"\n    <div class=\"terminal\" id=\"terminal\">\n\n      <div class=\"col-mid\">\n        <div class=\"ctabs\" id=\"contractTabs\"><div class=\"sk sk-tabs\"></div></div>\n        <div class=\"instrument\" id=\"instrument\"><div class=\"sk sk-inst\"></div></div>\n\n        <div class=\"chart-card\">\n          <canvas id=\"chart\" aria-label=\"Price chart\"></canvas>\n          <div class=\"chart-tools\">\n            <button data-zoom=\"in\" aria-label=\"Zoom in\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n            </button>\n            <button data-zoom=\"reset\" aria-label=\"Reset zoom\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 109-9\"></path><path d=\"M3 4v5h5\"></path></svg>\n            </button>\n            <button data-zoom=\"out\" aria-label=\"Zoom out\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg>\n            </button>\n          </div>\n        </div>\n\n        <div class=\"digits\" id=\"digits\"></div>\n        <div id=\"activeList\"></div>\n      </div>\n\n      <div class=\"col-right\">\n        <div class=\"panel\" id=\"panel\"><div class=\"sk sk-panel\"></div></div>\n        <div class=\"trade-dock\" id=\"dock\"></div>\n      </div>\n\n    </div>\n  ","script":""},"ai":{"attrs":{"data-page":"ai","data-chrome":"app"},"title":"Nexas — AI Scanner","html":"\n    <div class=\"shell\">\n      <div id=\"aiPage\"><div class=\"sk sk-list\"></div></div>\n    </div>\n  ","script":""},"markets":{"attrs":{"data-page":"markets","data-chrome":"app"},"title":"Nexas — Markets","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"page-head\">\r\n        <h1>Markets</h1>\r\n        <p>Synthetic indices, generated continuously and open every hour of every day.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">All</button>\r\n        <button class=\"ctab\">Volatility</button>\r\n        <button class=\"ctab\">Boom &amp; Crash</button>\r\n        <button class=\"ctab\">Step</button>\r\n      </div>\r\n\r\n      <div id=\"marketList\"><div class=\"sk sk-list\"></div></div>\r\n      <div style=\"height:20px\"></div>\r\n    </div>\r\n  ","script":""},"positions":{"attrs":{"data-page":"positions","data-chrome":"app"},"title":"Nexas — Positions","html":"\n    <div class=\"shell\" id=\"positions\">\n      <div class=\"page-head\">\n        <h1>Positions</h1>\n        <p>Everything open, settled and paid, on this account.</p>\n      </div>\n\n      <div class=\"ctabs\">\n        <button class=\"ctab active\" data-posview=\"open\">Open</button>\n        <button class=\"ctab\" data-posview=\"closed\">Closed</button>\n        <button class=\"ctab\" data-posview=\"transactions\">Ledger</button>\n      </div>\n\n      <div id=\"posSummary\"><div class=\"sk sk-summary\"></div></div>\n      <div id=\"posFilters\"></div>\n      <div id=\"posList\"><div class=\"sk sk-list\"></div></div>\n      <div style=\"height:22px\"></div>\n    </div>\n  ","script":""},"responsible":{"attrs":{"data-page":"responsible","data-chrome":"app"},"title":"Nexas — Responsible Trading","html":"\r\n    <div class=\"page\">\r\n      <span class=\"label page-kicker\">Responsible trading</span>\r\n      <h1>Trade with intent, not impulse.</h1>\r\n      <p class=\"lede\">Trading carries real risk. Nexas gives you the controls to decide, in advance, how much time and money you are willing to commit — and holds you to it.</p>\r\n\r\n      <div class=\"rule\"></div>\r\n\r\n      <h2>Set your limits before you trade</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\r\n          <div>\r\n            <b>Session duration</b>\r\n            <p>Cap how long a single session can run. The terminal closes out and locks when the clock ends.</p>\r\n            <span class=\"chip\">Currently 60 minutes</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\r\n          <div>\r\n            <b>Loss and stake ceilings</b>\r\n            <p>Daily, weekly and monthly ceilings on total stake and net loss. Any increase takes 24 hours to apply.</p>\r\n            <span class=\"chip\">Daily loss $250</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"></rect><path d=\"M4 10h16M8 3v4M16 3v4\"></path></svg>\r\n          <div>\r\n            <b>Cooling-off and self-exclusion</b>\r\n            <p>Pause new positions for 24 hours, or close access entirely for a period you choose. Withdrawals stay open.</p>\r\n            <span class=\"chip\">Not active</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <h2>What the numbers actually look like</h2>\r\n      <div class=\"stats\">\r\n        <div class=\"stat\"><b>70%</b><span>of retail accounts lose money over a twelve-month period</span></div>\r\n        <div class=\"stat\"><b>1 in 5</b><span>traders exceed the deposit they originally planned</span></div>\r\n        <div class=\"stat\"><b>24h</b><span>delay applied to any increase in your limits</span></div>\r\n        <div class=\"stat\"><b>$0</b><span>cost to set, lower or activate any control</span></div>\r\n      </div>\r\n\r\n      <h2>Signs worth taking seriously</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>Chasing losses</h3><p>Raising stake size to recover a previous loss rather than following a plan.</p></div>\r\n        <div class=\"card\"><h3>Borrowed funds</h3><p>Trading with money set aside for rent, bills, school fees or credit repayment.</p></div>\r\n        <div class=\"card\"><h3>Concealment</h3><p>Hiding the extent of your trading from people close to you.</p></div>\r\n      </div>\r\n\r\n      <h2>Get support</h2>\r\n      <p>If trading has stopped feeling like a decision and started feeling like a compulsion, speak to someone independent of us. Our team can also apply a self-exclusion on your behalf at any time, without questions.</p>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>GamCare</h3><p>Free, confidential support and live chat, available around the clock.</p></div>\r\n        <div class=\"card\"><h3>Gambling Therapy</h3><p>Multilingual online support for people affected worldwide.</p></div>\r\n        <div class=\"card\"><h3>Nexas support</h3><p>Reach us in-app at any hour to apply limits or close an account.</p></div>\r\n      </div>\r\n\r\n      <div style=\"margin-top:22px\"><a class=\"btn btn-ghost\" href=\"chat.html\">Talk to our team</a></div>\r\n    </div>\r\n\r\n    <footer>\r\n      <div class=\"fl\">\r\n        <a href=\"responsible.html\">Responsible Trading</a>\r\n        <a href=\"#\">Risk Disclosure</a>\r\n        <a href=\"#\">Terms</a>\r\n        <a href=\"#\">Privacy</a>\r\n        <a href=\"#\">Complaints</a>\r\n        <a href=\"#\">Security</a>\r\n      </div>\r\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Past results do not indicate future outcomes.</p>\r\n    </footer>\r\n  ","script":""},"account":{"attrs":{"data-page":"account","data-chrome":"app","data-back":"index.html","data-title":"Account"},"title":"Nexas — Account","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"summary\" style=\"display:flex;align-items:center;gap:14px\">\r\n        <div class=\"avatar\" style=\"width:52px;height:52px;font-size:22px\">A</div>\r\n        <div style=\"flex:1;min-width:0\">\r\n          <div style=\"font-weight:600;font-size:16px\">Amara Kimani</div>\r\n          <div style=\"color:var(--muted);font-size:12.5px\">am***a@mail.com</div>\r\n        </div>\r\n        <span class=\"badge warn\">Unverified</span>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <button class=\"row\" data-open=\"profile\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"></rect><path d=\"M7 10h3M7 14h6M15 9h3v4h-3z\"></path></svg></span>\r\n          <span class=\"t\"><b>Change name</b><span>Amara Kimani</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"password\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V7a4 4 0 118 0v4\"></path></svg></span>\r\n          <span class=\"t\"><b>Update password</b><span>Last changed 4 months ago</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"verify\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path><path d=\"M9 12l2 2 4-4\"></path></svg></span>\r\n          <span class=\"t\"><b>Verify identity</b><span>Required before your first withdrawal</span></span>\r\n          <span class=\"badge warn\">2 steps left</span>\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"row danger\" href=\"login.html\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4\"></path><path d=\"M16 17l5-5-5-5M21 12H9\"></path></svg></span>\r\n          <span class=\"t\"><b>Log out</b></span>\r\n        </a>\r\n      </div>\r\n      <div style=\"height:24px\"></div>\r\n    </div>\r\n  ","script":""},"chat":{"attrs":{"data-page":"chat","data-chrome":"app","data-back":"account.html","data-title":"Live chat"},"title":"Nexas — Live Chat","html":"\r\n    <div class=\"chat\">\r\n      <div class=\"chat-head\">\r\n        <div class=\"avatar\">J</div>\r\n        <div>\r\n          <b>Joseph · Nexas support</b>\r\n          <span>Online now</span>\r\n        </div>\r\n      </div>\r\n\r\n      <div class=\"chat-log\" id=\"chatLog\">\r\n        <div class=\"chat-day\">Today</div>\r\n        <div class=\"msg them\">Hello Amara, you are through to Nexas support. How can I help?<span class=\"time\">09:12</span></div>\r\n        <div class=\"msg me\">Hi — my M-Pesa deposit hasn't shown up yet.<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg them\">Let me check. Could you confirm the last four digits of the phone number you used?<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg me\">Ends 4471.<span class=\"time\">09:14</span></div>\r\n        <div class=\"msg them\">Thank you. I can see the transaction pending with the provider. It will credit automatically within ten minutes, and I'll stay on the chat until it does.<span class=\"time\">09:15</span></div>\r\n      </div>\r\n\r\n      <form class=\"chat-bar\" id=\"chatForm\">\r\n        <button class=\"iconbtn\" type=\"button\" aria-label=\"Attach file\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7\"></path></svg>\r\n        </button>\r\n        <input class=\"input\" id=\"chatInput\" placeholder=\"Write a message\" autocomplete=\"off\" aria-label=\"Message\">\r\n        <button class=\"chat-send\" type=\"submit\" aria-label=\"Send\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l16-8-6 16-2.5-6z\"></path></svg>\r\n        </button>\r\n      </form>\r\n    </div>\r\n  ","script":""},"login":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Sign In","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Welcome back.</h1>\r\n        <p>Sign in to pick up where you left off.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Signing you in\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"email\">Email address</label>\r\n            <input class=\"input\" id=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"password\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"password\" type=\"password\" autocomplete=\"current-password\" placeholder=\"••••••••\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div style=\"display:flex;justify-content:space-between;align-items:center\">\r\n              <label class=\"checkline\" style=\"font-size:12.5px\"><input type=\"checkbox\" id=\"remember\"> Keep me signed in</label>\r\n              <a class=\"link\" href=\"forgot-password.html\">Forgot password?</a>\r\n            </div>\r\n          </div>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Sign in</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Signing you in with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">New to Nexas? <a href=\"signup.html\">Create an account</a></div>\r\n    </div>\r\n  ","script":""},"signup":{"attrs":{"data-page":"signup","data-chrome":"auth"},"title":"Nexas — Create Account","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Open your account.</h1>\r\n        <p>Two minutes to set up. Deposit when you are ready.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Setting up your account\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">\r\n            <div class=\"field\">\r\n              <label for=\"sFirst\">First name</label>\r\n              <input class=\"input\" id=\"sFirst\" autocomplete=\"given-name\" placeholder=\"Amara\">\r\n            </div>\r\n            <div class=\"field\">\r\n              <label for=\"sLast\">Last name</label>\r\n              <input class=\"input\" id=\"sLast\" autocomplete=\"family-name\" placeholder=\"Kimani\">\r\n            </div>\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"sEmail\">Email address</label>\r\n            <input class=\"input\" id=\"sEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n          <label class=\"checkline\">\r\n            <input type=\"checkbox\" id=\"terms\">\r\n            <span>I am 18 or older and accept the <a class=\"link\" href=\"#\">Terms</a> and <a class=\"link\" href=\"responsible.html\">Risk Disclosure</a>.</span>\r\n          </label>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Create account</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Setting up your account with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Already registered? <a href=\"login.html\">Sign in</a></div>\r\n    </div>\r\n  ","script":""},"forgot-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Forgot Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"login.html\">Nexas</a>\r\n        <h1>Reset your password.</h1>\r\n        <p>Enter the email on your account and we will send a six-digit code.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-demo-form=\"Reset code sent\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"resetEmail\">Email address</label>\r\n            <input class=\"input\" id=\"resetEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <a class=\"btn btn-fill\" href=\"reset-password.html\">Send reset code</a>\r\n        </form>\r\n\r\n        <div class=\"divider\">still stuck?</div>\r\n\r\n        <a class=\"btn btn-ghost\" href=\"chat.html\">\r\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\r\n          Chat with support\r\n        </a>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Remembered it? <a href=\"login.html\">Back to sign in</a></div>\r\n    </div>\r\n  ","script":""},"reset-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — New Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"forgot-password.html\">Nexas</a>\r\n        <h1>Choose a new password.</h1>\r\n        <p>We sent a code to am***a@mail.com. It expires in 15 minutes.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Updating your password\" data-to=\"login.html\" style=\"display:flex;flex-direction:column;gap:18px\">\r\n          <div class=\"field\">\r\n            <label>Verification code</label>\r\n            <div class=\"otp\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 5\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 6\">\r\n            </div>\r\n            <span class=\"hint\">Didn't arrive? <a class=\"link\" href=\"#\">Send again in 0:42</a></span>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">New password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"confirmNew\">Confirm password</label>\r\n            <input class=\"input\" id=\"confirmNew\" type=\"password\" autocomplete=\"new-password\" placeholder=\"Repeat new password\">\r\n          </div>\r\n\r\n          <button class=\"btn btn-fill\" type=\"submit\">Set new password</button>\r\n        </form>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Back to <a href=\"login.html\">sign in</a></div>\r\n    </div>\r\n  ","script":""}};</script>
+<script>window.NEXAS_BUNDLE = true; window.NEXAS_PAGES = {"index":{"attrs":{"data-page":"trade","data-chrome":"app"},"title":"Nexas — Terminal","html":"\n    <div class=\"terminal\" id=\"terminal\">\n\n      <div class=\"col-mid\">\n        <div class=\"ctabs\" id=\"contractTabs\"><div class=\"sk sk-tabs\"></div></div>\n        <div class=\"instrument\" id=\"instrument\"><div class=\"sk sk-inst\"></div></div>\n\n        <div class=\"chart-card\">\n          <svg class=\"chart-map\" viewBox=\"0 0 1000 500\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\">\n            <path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M527.8 147.2L555.6 159.7L569.4 161.1L586.1 162.5L597.2 172.2L602.8 188.9L608.3 208.3L619.4 218.1L633.3 219.4L641.7 216.7L633.3 236.1L625.0 244.4L613.9 255.6L611.1 269.4L612.5 294.4L597.2 316.7L588.9 330.6L575.0 344.4L561.1 344.4L551.4 345.8L541.7 325.0L533.3 311.1L533.3 294.4L536.1 275.0L525.0 252.8L526.4 238.9L513.9 238.9L500.0 234.7L486.1 236.1L475.0 236.1L463.9 225.0L451.4 209.2L455.6 191.7L463.9 175.0L472.2 166.7L483.3 150.6L500.0 150.0L508.3 147.8L527.8 147.2ZM473.6 142.5L475.0 130.6L495.8 122.2L487.5 115.3L500.0 112.5L505.6 108.3L511.1 102.8L522.2 97.2L522.2 91.7L513.9 87.5L530.6 72.2L538.9 63.9L550.0 56.9L569.4 52.8L591.7 58.3L611.1 61.1L638.9 58.3L666.7 55.6L688.9 47.2L708.3 50.0L736.1 44.4L777.8 36.1L813.9 44.4L855.6 47.2L888.9 47.2L922.2 55.6L944.4 55.6L972.2 66.7L994.4 69.4L977.8 77.8L952.8 83.3L944.4 94.4L933.3 108.3L897.2 100.0L888.9 122.2L869.4 130.6L861.1 130.6L852.8 141.7L838.9 141.7L836.1 163.9L825.0 183.3L805.6 191.7L800.0 205.6L791.7 222.2L788.9 244.4L777.8 233.3L772.2 222.2L769.4 205.6L761.1 200.0L750.0 188.9L741.7 191.7L722.2 208.3L713.9 227.8L702.8 208.3L700.0 191.7L688.9 186.1L680.6 180.6L669.4 180.6L658.3 180.6L647.2 175.0L638.9 169.4L633.3 166.7L655.6 177.8L661.1 188.9L652.8 200.0L644.4 202.8L633.3 211.1L625.0 215.3L619.4 208.3L608.3 191.7L600.0 180.6L594.4 172.2L597.2 161.1L600.0 150.0L591.7 150.0L583.3 138.9L572.2 138.9L561.1 138.9L555.6 138.9L547.2 133.3L538.9 133.3L533.3 127.8L522.2 127.8L508.3 130.6L500.0 138.9L494.4 147.2L486.1 150.0L480.6 147.2L473.6 142.5ZM41.7 83.3L69.4 80.6L83.3 80.6L111.1 83.3L130.6 91.7L138.9 100.0L150.0 111.1L155.6 116.7L158.3 127.8L161.1 147.2L169.4 155.6L175.0 161.1L183.3 172.2L194.4 186.1L208.3 194.4L225.0 205.6L238.9 205.6L244.4 208.3L255.6 205.6L258.3 213.9L269.4 225.0L280.6 225.0L272.2 208.3L258.3 191.7L250.0 191.7L247.2 197.2L236.1 197.2L230.6 188.9L238.9 177.8L252.8 169.4L266.7 166.7L275.0 180.6L277.8 175.0L275.0 163.9L280.6 158.3L291.7 152.8L294.4 138.9L305.6 130.6L316.7 125.0L322.2 122.2L333.3 119.4L344.4 108.3L341.7 100.0L322.2 88.9L305.6 86.1L283.3 94.4L277.8 105.6L269.4 97.2L280.6 77.8L263.9 66.7L236.1 61.1L208.3 61.1L180.6 58.3L152.8 55.6L125.0 58.3L97.2 55.6L66.7 52.8L47.2 66.7L33.3 69.4L41.7 83.3ZM280.6 225.0L291.7 219.4L302.8 216.7L316.7 219.4L327.8 222.2L333.3 227.8L347.2 233.3L358.3 238.9L361.1 250.0L377.8 255.6L394.4 263.9L402.8 272.2L397.2 283.3L391.7 294.4L386.1 311.1L366.7 319.4L366.7 327.8L352.8 344.4L341.7 355.6L327.8 361.1L319.4 375.0L311.1 388.9L311.1 394.4L300.0 400.0L291.7 388.9L291.7 380.6L297.2 366.7L297.2 352.8L302.8 333.3L305.6 313.9L305.6 300.0L288.9 288.9L280.6 272.2L275.0 266.7L277.8 255.6L283.3 247.2L286.1 233.3L280.6 225.0ZM813.9 311.1L816.7 322.2L819.4 344.4L830.6 344.4L844.4 341.7L858.3 338.9L872.2 341.7L880.6 347.2L888.9 355.6L905.6 358.3L916.7 352.8L925.0 338.9L925.0 327.8L925.0 319.4L913.9 311.1L905.6 302.8L897.2 291.7L894.4 280.6L886.1 297.2L877.8 283.3L869.4 280.6L861.1 283.3L852.8 288.9L847.2 288.9L838.9 297.2L827.8 305.6L813.9 311.1ZM375.0 83.3L361.1 72.2L355.6 61.1L347.2 50.0L347.2 38.9L361.1 27.8L388.9 19.4L422.2 22.2L438.9 33.3L438.9 50.0L427.8 61.1L408.3 66.7L383.3 80.6L375.0 83.3ZM636.1 283.3L638.9 291.7L638.9 302.8L631.9 319.4L625.0 319.4L622.2 305.6L620.8 297.2L627.8 286.1L636.1 283.3ZM891.7 125.0L902.8 127.8L897.2 133.3L891.7 138.9L888.9 150.0L880.6 147.2L875.0 155.6L866.7 155.6L861.1 163.9L863.9 158.3L875.0 150.0L883.3 144.4L891.7 125.0ZM486.1 88.9L491.7 87.5L494.4 91.7L497.2 100.0L502.8 104.2L502.8 108.3L494.4 109.7L486.1 111.1L486.1 102.8L483.3 97.2L486.1 88.9ZM802.8 244.4L813.9 238.9L825.0 238.9L830.6 247.2L825.0 258.3L808.3 258.3L802.8 252.8L802.8 244.4ZM763.9 236.1L775.0 241.7L788.9 255.6L794.4 266.7L788.9 266.7L777.8 250.0L763.9 244.4L763.9 236.1ZM863.9 252.8L877.8 255.6L891.7 258.3L908.3 266.7L916.7 275.0L900.0 272.2L883.3 272.2L869.4 261.1L863.9 252.8ZM980.6 347.2L994.4 355.6L991.7 361.1L983.3 363.9L975.0 372.2L966.7 380.6L963.9 375.0L975.0 366.7L980.6 347.2ZM833.3 200.0L838.9 202.8L844.4 213.9L850.0 222.2L850.0 230.6L838.9 233.3L833.3 222.2L833.3 211.1L833.3 200.0ZM433.3 69.4L447.2 66.7L461.1 68.1L461.1 72.2L447.2 73.9L436.1 72.2L433.3 69.4ZM722.2 223.6L727.8 230.6L722.2 233.3L720.8 227.8L722.2 223.6ZM263.9 188.9L280.6 186.1L291.7 194.4L283.3 194.4L266.7 190.3L263.9 188.9ZM830.6 247.2L847.2 247.2L847.2 255.6L836.1 263.9L830.6 258.3L830.6 247.2ZM791.7 266.7L816.7 269.4L816.7 273.6L794.4 269.4L791.7 266.7Z\"></path>\n          </svg>\n          <canvas id=\"chart\" aria-label=\"Price chart\"></canvas>\n          <div class=\"chart-tools\">\n            <button data-zoom=\"in\" aria-label=\"Zoom in\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n            </button>\n            <button data-zoom=\"reset\" aria-label=\"Reset zoom\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 109-9\"></path><path d=\"M3 4v5h5\"></path></svg>\n            </button>\n            <button data-zoom=\"out\" aria-label=\"Zoom out\">\n              <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M5 12h14\"></path></svg>\n            </button>\n          </div>\n        </div>\n\n        <div class=\"digits\" id=\"digits\"></div>\n        <div id=\"activeList\"></div>\n      </div>\n\n      <div class=\"col-right\">\n        <div class=\"panel\" id=\"panel\"><div class=\"sk sk-panel\"></div></div>\n        <div class=\"trade-dock\" id=\"dock\"></div>\n      </div>\n\n    </div>\n  ","script":""},"ai":{"attrs":{"data-page":"ai","data-chrome":"app"},"title":"Nexas — AI Scanner","html":"\n    <div class=\"shell\">\n      <div id=\"aiPage\"><div class=\"sk sk-list\"></div></div>\n    </div>\n  ","script":""},"markets":{"attrs":{"data-page":"markets","data-chrome":"app"},"title":"Nexas — Markets","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"page-head\">\r\n        <h1>Markets</h1>\r\n        <p>Synthetic indices, generated continuously and open every hour of every day.</p>\r\n      </div>\r\n\r\n      <div class=\"ctabs\">\r\n        <button class=\"ctab active\">All</button>\r\n        <button class=\"ctab\">Volatility</button>\r\n        <button class=\"ctab\">Boom &amp; Crash</button>\r\n        <button class=\"ctab\">Step</button>\r\n      </div>\r\n\r\n      <div id=\"marketList\"><div class=\"sk sk-list\"></div></div>\r\n      <div style=\"height:20px\"></div>\r\n    </div>\r\n  ","script":""},"positions":{"attrs":{"data-page":"positions","data-chrome":"app"},"title":"Nexas — Positions","html":"\n    <div class=\"shell\" id=\"positions\">\n      <div class=\"page-head\">\n        <h1>Positions</h1>\n        <p>Everything open, settled and paid, on this account.</p>\n      </div>\n\n      <div class=\"ctabs\">\n        <button class=\"ctab active\" data-posview=\"open\">Open</button>\n        <button class=\"ctab\" data-posview=\"closed\">Closed</button>\n        <button class=\"ctab\" data-posview=\"transactions\">Ledger</button>\n      </div>\n\n      <div id=\"posSummary\"><div class=\"sk sk-summary\"></div></div>\n      <div id=\"posFilters\"></div>\n      <div id=\"posList\"><div class=\"sk sk-list\"></div></div>\n      <div style=\"height:22px\"></div>\n    </div>\n  ","script":""},"learn":{"attrs":{"data-page":"learn","data-chrome":"app"},"title":"Nexas — Learn","html":"\n    <div class=\"page\">\n      <span class=\"label page-kicker\">Learn</span>\n      <h1>Understand what you are trading.</h1>\n      <p class=\"lede\">Digit contracts are simple to place and easy to misread. This page covers what the instruments actually are, how a payout is priced, and where the edge really sits — so your decisions come from the numbers rather than a hunch.</p>\n\n      <div class=\"rule\"></div>\n\n      <h2>Start here</h2>\n      <div class=\"cards\">\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 8v5M12 16.4v.1\"></path></svg>\n          <div>\n            <b>What a synthetic index is</b>\n            <p>A price series generated by a published random process, not a real-world asset. Nothing external moves it — no news, no earnings, no market open. Volatility 10 means roughly 10% annualised volatility; Volatility 100 moves ten times as hard. The number in the name is the whole story.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\n          <div>\n            <b>What the last digit is</b>\n            <p>Every tick prints a price to two decimals. The final decimal is the digit your contract settles on. Even/Odd reads its parity, Over/Under compares it to a barrier, Matches/Differs asks whether it lands exactly on one number.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 6.2v11.6\"></path><path d=\"M14.7 9.4A2.7 2.7 0 0012 8.2c-1.5 0-2.7.9-2.7 2s1.2 1.9 2.7 1.9 2.7.8 2.7 1.9-1.2 2-2.7 2a2.7 2.7 0 01-2.6-1.3\"></path></svg>\n          <div>\n            <b>How a payout is priced</b>\n            <p>Payout is set so the house keeps a margin at the true probability. Even/Odd pays 1.953× on a 50% chance: a fair price would be 2.0×, so about 2.3% of every stake is the cost of trading. That gap is constant and it compounds across every contract you place.</p>\n          </div>\n        </div>\n      </div>\n\n      <h2>The five contracts, and the odds behind them</h2>\n      <p>Each digit 0–9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. This is what you are actually buying:</p>\n\n      <div class=\"stats\">\n        <div class=\"stat\"><b>50%</b><span>Even / Odd — five of ten digits. Pays 1.953×, so expected return is −2.35% per contract.</span></div>\n        <div class=\"stat\"><b>10%</b><span>Matches — one exact digit. Pays 10.35×, expected return −2.35% at a true 1 in 10.</span></div>\n        <div class=\"stat\"><b>90%</b><span>Differs — any digit but one. Pays 1.084×, wins nine times in ten and still runs a negative expectation.</span></div>\n        <div class=\"stat\"><b>40%</b><span>Over 5 — digits 6 to 9. A barrier changes the odds, and the payout moves with it.</span></div>\n      </div>\n\n      <p>Notice that Differs wins nine times out of ten and still loses money over a long enough run. A high win rate is not an edge. The only number that decides whether a strategy survives is expected return per contract, and on every one of these it starts negative.</p>\n\n      <div class=\"rule\"></div>\n\n      <h2>Reading the digit history</h2>\n      <div class=\"cards\">\n        <div class=\"card\">\n          <h3>What the percentages tell you</h3>\n          <p>The circles under the chart count how often each digit appeared in the recent window. Over a short sample these will always look uneven — that is what randomness looks like. A digit showing 14% over 120 ticks is ordinary noise, not a signal.</p>\n        </div>\n        <div class=\"card\">\n          <h3>The gambler's fallacy</h3>\n          <p>Six odd digits in a row does not make even more likely on the seventh. Each tick is drawn independently, so the odds reset every time. The streak you are looking at has no memory and no obligation to correct itself.</p>\n        </div>\n        <div class=\"card\">\n          <h3>Where a real edge would come from</h3>\n          <p>Only from a genuine, persistent deviation in the generator — measured over thousands of ticks, not dozens, and large enough to clear the payout margin. The AI scanner ranks by expected return for exactly this reason, and most of the time it will honestly report no edge worth taking.</p>\n        </div>\n      </div>\n\n      <h2>Managing the downside</h2>\n      <div class=\"cards\">\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path></svg>\n          <div>\n            <b>Position sizing</b>\n            <p>Stake a fixed, small share of your balance — one to two percent is a common ceiling. It will not turn a negative expectation positive, but it decides how long you last and how much a bad run costs you.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"></path></svg>\n          <div>\n            <b>Why the loss multiple is dangerous</b>\n            <p>Doubling after every loss feels like it guarantees a recovery. It does not. Six losses at ×2 means your seventh stake is 64 times the first, and a run of six is common. Martingale trades a high chance of a small win for a small chance of losing everything.</p>\n          </div>\n        </div>\n        <div class=\"card tool\">\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\n          <div>\n            <b>Set the targets before you start</b>\n            <p>Target profit, target loss and loss multiple sit on the trade panel for a reason. Decide all three while you are calm, and let the run stop itself. A limit you set mid-session is a limit you will move again.</p>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"rule\"></div>\n\n      <h2>Practise before you risk anything</h2>\n      <p>Switch to the demo account from the balance button at the top of the screen. It runs the same feed, the same pricing and the same contracts with virtual funds. Place a hundred contracts there and look at the total — it is the cheapest lesson available on this platform.</p>\n\n      <div style=\"margin-top:22px;display:flex;gap:10px;flex-wrap:wrap\">\n        <a class=\"btn btn-ghost\" href=\"responsible.html\">Responsible trading and limits</a>\n        <a class=\"btn btn-ghost\" href=\"chat.html\">Talk to support</a>\n      </div>\n    </div>\n\n    <footer>\n      <div class=\"fl\">\n        <a href=\"learn.html\">Learn</a>\n        <a href=\"responsible.html\">Responsible Trading</a>\n        <a href=\"#\">Risk Disclosure</a>\n        <a href=\"#\">Terms</a>\n        <a href=\"#\">Privacy</a>\n        <a href=\"#\">Complaints</a>\n      </div>\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Nothing on this page is financial advice.</p>\n    </footer>\n  ","script":""},"responsible":{"attrs":{"data-page":"responsible","data-chrome":"app"},"title":"Nexas — Responsible Trading","html":"\r\n    <div class=\"page\">\r\n      <span class=\"label page-kicker\">Responsible trading</span>\r\n      <h1>Trade with intent, not impulse.</h1>\r\n      <p class=\"lede\">Trading carries real risk. Nexas gives you the controls to decide, in advance, how much time and money you are willing to commit — and holds you to it.</p>\r\n\r\n      <div class=\"rule\"></div>\r\n\r\n      <h2>Set your limits before you trade</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 7v5l3 2\"></path></svg>\r\n          <div>\r\n            <b>Session duration</b>\r\n            <p>Cap how long a single session can run. The terminal closes out and locks when the clock ends.</p>\r\n            <span class=\"chip\">Currently 60 minutes</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 18V9M10 18V5M16 18v-6M22 18H2\"></path></svg>\r\n          <div>\r\n            <b>Loss and stake ceilings</b>\r\n            <p>Daily, weekly and monthly ceilings on total stake and net loss. Any increase takes 24 hours to apply.</p>\r\n            <span class=\"chip\">Daily loss $250</span>\r\n          </div>\r\n        </div>\r\n        <div class=\"card tool\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"></rect><path d=\"M4 10h16M8 3v4M16 3v4\"></path></svg>\r\n          <div>\r\n            <b>Cooling-off and self-exclusion</b>\r\n            <p>Pause new positions for 24 hours, or close access entirely for a period you choose. Withdrawals stay open.</p>\r\n            <span class=\"chip\">Not active</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <h2>What the numbers actually look like</h2>\r\n      <div class=\"stats\">\r\n        <div class=\"stat\"><b>70%</b><span>of retail accounts lose money over a twelve-month period</span></div>\r\n        <div class=\"stat\"><b>1 in 5</b><span>traders exceed the deposit they originally planned</span></div>\r\n        <div class=\"stat\"><b>24h</b><span>delay applied to any increase in your limits</span></div>\r\n        <div class=\"stat\"><b>$0</b><span>cost to set, lower or activate any control</span></div>\r\n      </div>\r\n\r\n      <h2>Signs worth taking seriously</h2>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>Chasing losses</h3><p>Raising stake size to recover a previous loss rather than following a plan.</p></div>\r\n        <div class=\"card\"><h3>Borrowed funds</h3><p>Trading with money set aside for rent, bills, school fees or credit repayment.</p></div>\r\n        <div class=\"card\"><h3>Concealment</h3><p>Hiding the extent of your trading from people close to you.</p></div>\r\n      </div>\r\n\r\n      <h2>Get support</h2>\r\n      <p>If trading has stopped feeling like a decision and started feeling like a compulsion, speak to someone independent of us. Our team can also apply a self-exclusion on your behalf at any time, without questions.</p>\r\n      <div class=\"cards\">\r\n        <div class=\"card\"><h3>GamCare</h3><p>Free, confidential support and live chat, available around the clock.</p></div>\r\n        <div class=\"card\"><h3>Gambling Therapy</h3><p>Multilingual online support for people affected worldwide.</p></div>\r\n        <div class=\"card\"><h3>Nexas support</h3><p>Reach us in-app at any hour to apply limits or close an account.</p></div>\r\n      </div>\r\n\r\n      <div style=\"margin-top:22px\"><a class=\"btn btn-ghost\" href=\"chat.html\">Talk to our team</a></div>\r\n    </div>\r\n\r\n    <footer>\r\n      <div class=\"fl\">\r\n        <a href=\"responsible.html\">Responsible Trading</a>\r\n        <a href=\"#\">Risk Disclosure</a>\r\n        <a href=\"#\">Terms</a>\r\n        <a href=\"#\">Privacy</a>\r\n        <a href=\"#\">Complaints</a>\r\n        <a href=\"#\">Security</a>\r\n      </div>\r\n      <p style=\"margin:0;line-height:1.7;max-width:62ch\">Nexas is a demonstration interface. Trading synthetic indices involves a high level of risk and may not be suitable for every investor. You can lose more than you intend to. Past results do not indicate future outcomes.</p>\r\n    </footer>\r\n  ","script":""},"account":{"attrs":{"data-page":"account","data-chrome":"app","data-back":"index.html","data-title":"Account"},"title":"Nexas — Account","html":"\r\n    <div class=\"shell\">\r\n      <div class=\"summary\" style=\"display:flex;align-items:center;gap:14px\">\r\n        <div class=\"avatar\" style=\"width:52px;height:52px;font-size:22px\">A</div>\r\n        <div style=\"flex:1;min-width:0\">\r\n          <div style=\"font-weight:600;font-size:16px\">Amara Kimani</div>\r\n          <div style=\"color:var(--muted);font-size:12.5px\">am***a@mail.com</div>\r\n        </div>\r\n        <span class=\"badge warn\">Unverified</span>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <button class=\"row\" data-open=\"profile\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"></rect><path d=\"M7 10h3M7 14h6M15 9h3v4h-3z\"></path></svg></span>\r\n          <span class=\"t\"><b>Change name</b><span>Amara Kimani</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"password\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"></rect><path d=\"M8 11V7a4 4 0 118 0v4\"></path></svg></span>\r\n          <span class=\"t\"><b>Update password</b><span>Last changed 4 months ago</span></span>\r\n          <svg class=\"chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 18l6-6-6-6\"></path></svg>\r\n        </button>\r\n        <button class=\"row\" data-open=\"verify\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"></path><path d=\"M9 12l2 2 4-4\"></path></svg></span>\r\n          <span class=\"t\"><b>Verify identity</b><span>Required before your first withdrawal</span></span>\r\n          <span class=\"badge warn\">2 steps left</span>\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"list\">\r\n        <a class=\"row danger\" href=\"login.html\">\r\n          <span class=\"ico\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4\"></path><path d=\"M16 17l5-5-5-5M21 12H9\"></path></svg></span>\r\n          <span class=\"t\"><b>Log out</b></span>\r\n        </a>\r\n      </div>\r\n      <div style=\"height:24px\"></div>\r\n    </div>\r\n  ","script":""},"chat":{"attrs":{"data-page":"chat","data-chrome":"app","data-back":"account.html","data-title":"Live chat"},"title":"Nexas — Live Chat","html":"\r\n    <div class=\"chat\">\r\n      <div class=\"chat-head\">\r\n        <div class=\"avatar\">J</div>\r\n        <div>\r\n          <b>Joseph · Nexas support</b>\r\n          <span>Online now</span>\r\n        </div>\r\n      </div>\r\n\r\n      <div class=\"chat-log\" id=\"chatLog\">\r\n        <div class=\"chat-day\">Today</div>\r\n        <div class=\"msg them\">Hello Amara, you are through to Nexas support. How can I help?<span class=\"time\">09:12</span></div>\r\n        <div class=\"msg me\">Hi — my M-Pesa deposit hasn't shown up yet.<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg them\">Let me check. Could you confirm the last four digits of the phone number you used?<span class=\"time\">09:13</span></div>\r\n        <div class=\"msg me\">Ends 4471.<span class=\"time\">09:14</span></div>\r\n        <div class=\"msg them\">Thank you. I can see the transaction pending with the provider. It will credit automatically within ten minutes, and I'll stay on the chat until it does.<span class=\"time\">09:15</span></div>\r\n      </div>\r\n\r\n      <form class=\"chat-bar\" id=\"chatForm\">\r\n        <button class=\"iconbtn\" type=\"button\" aria-label=\"Attach file\">\r\n          <svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 7\"></path></svg>\r\n        </button>\r\n        <input class=\"input\" id=\"chatInput\" placeholder=\"Write a message\" autocomplete=\"off\" aria-label=\"Message\">\r\n        <button class=\"chat-send\" type=\"submit\" aria-label=\"Send\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l16-8-6 16-2.5-6z\"></path></svg>\r\n        </button>\r\n      </form>\r\n    </div>\r\n  ","script":""},"login":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Sign In","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Welcome back.</h1>\r\n        <p>Sign in to pick up where you left off.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Signing you in\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"email\">Email address</label>\r\n            <input class=\"input\" id=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"password\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"password\" type=\"password\" autocomplete=\"current-password\" placeholder=\"••••••••\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div style=\"display:flex;justify-content:space-between;align-items:center\">\r\n              <label class=\"checkline\" style=\"font-size:12.5px\"><input type=\"checkbox\" id=\"remember\"> Keep me signed in</label>\r\n              <a class=\"link\" href=\"forgot-password.html\">Forgot password?</a>\r\n            </div>\r\n          </div>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Sign in</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Signing you in with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">New to Nexas? <a href=\"signup.html\">Create an account</a></div>\r\n    </div>\r\n  ","script":""},"signup":{"attrs":{"data-page":"signup","data-chrome":"auth"},"title":"Nexas — Create Account","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"index.html\">Nexas</a>\r\n        <h1>Open your account.</h1>\r\n        <p>Two minutes to set up. Deposit when you are ready.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Setting up your account\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">\r\n            <div class=\"field\">\r\n              <label for=\"sFirst\">First name</label>\r\n              <input class=\"input\" id=\"sFirst\" autocomplete=\"given-name\" placeholder=\"Amara\">\r\n            </div>\r\n            <div class=\"field\">\r\n              <label for=\"sLast\">Last name</label>\r\n              <input class=\"input\" id=\"sLast\" autocomplete=\"family-name\" placeholder=\"Kimani\">\r\n            </div>\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"sEmail\">Email address</label>\r\n            <input class=\"input\" id=\"sEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">Password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n          <label class=\"checkline\">\r\n            <input type=\"checkbox\" id=\"terms\">\r\n            <span>I am 18 or older and accept the <a class=\"link\" href=\"#\">Terms</a> and <a class=\"link\" href=\"responsible.html\">Risk Disclosure</a>.</span>\r\n          </label>\r\n          <button class=\"btn btn-fill\" type=\"submit\">Create account</button>\r\n        </form>\r\n\r\n        <div class=\"divider\">or</div>\r\n\r\n        <button class=\"btn btn-ghost\" type=\"button\" data-splash=\"Setting up your account with Google\">\r\n          <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\r\n            <path fill=\"#4285F4\" d=\"M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 01-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z\"/>\r\n            <path fill=\"#34A853\" d=\"M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0012 24z\"/>\r\n            <path fill=\"#FBBC05\" d=\"M5.4 14.4a7.2 7.2 0 010-4.6V6.7H1.4a12 12 0 000 10.8l4-3.1z\"/>\r\n            <path fill=\"#EA4335\" d=\"M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 001.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z\"/>\r\n          </svg>\r\n          Continue with Google\r\n        </button>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Already registered? <a href=\"login.html\">Sign in</a></div>\r\n    </div>\r\n  ","script":""},"forgot-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — Forgot Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"login.html\">Nexas</a>\r\n        <h1>Reset your password.</h1>\r\n        <p>Enter the email on your account and we will send a six-digit code.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-demo-form=\"Reset code sent\" style=\"display:flex;flex-direction:column;gap:16px\">\r\n          <div class=\"field\">\r\n            <label for=\"resetEmail\">Email address</label>\r\n            <input class=\"input\" id=\"resetEmail\" type=\"email\" autocomplete=\"email\" placeholder=\"you@mail.com\">\r\n          </div>\r\n          <a class=\"btn btn-fill\" href=\"reset-password.html\">Send reset code</a>\r\n        </form>\r\n\r\n        <div class=\"divider\">still stuck?</div>\r\n\r\n        <a class=\"btn btn-ghost\" href=\"chat.html\">\r\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z\"></path></svg>\r\n          Chat with support\r\n        </a>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Remembered it? <a href=\"login.html\">Back to sign in</a></div>\r\n    </div>\r\n  ","script":""},"reset-password":{"attrs":{"data-page":"login","data-chrome":"auth"},"title":"Nexas — New Password","html":"\r\n    <div class=\"auth\">\r\n      <div class=\"auth-head\">\r\n        <a class=\"wordmark\" href=\"forgot-password.html\">Nexas</a>\r\n        <h1>Choose a new password.</h1>\r\n        <p>We sent a code to am***a@mail.com. It expires in 15 minutes.</p>\r\n      </div>\r\n\r\n      <div class=\"auth-card\">\r\n        <form data-splash=\"Updating your password\" data-to=\"login.html\" style=\"display:flex;flex-direction:column;gap:18px\">\r\n          <div class=\"field\">\r\n            <label>Verification code</label>\r\n            <div class=\"otp\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 5\">\r\n              <input inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 6\">\r\n            </div>\r\n            <span class=\"hint\">Didn't arrive? <a class=\"link\" href=\"#\">Send again in 0:42</a></span>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"newPassword\">New password</label>\r\n            <div class=\"input-wrap\">\r\n              <input class=\"input\" id=\"newPassword\" type=\"password\" autocomplete=\"new-password\" placeholder=\"At least 8 characters\">\r\n              <button type=\"button\" data-reveal aria-label=\"Show password\">\r\n                <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z\"></path><circle cx=\"12\" cy=\"12\" r=\"2.6\"></circle></svg>\r\n              </button>\r\n            </div>\r\n            <div class=\"meter\"><i></i><i></i><i></i><i></i></div>\r\n          </div>\r\n\r\n          <div class=\"field\">\r\n            <label for=\"confirmNew\">Confirm password</label>\r\n            <input class=\"input\" id=\"confirmNew\" type=\"password\" autocomplete=\"new-password\" placeholder=\"Repeat new password\">\r\n          </div>\r\n\r\n          <button class=\"btn btn-fill\" type=\"submit\">Set new password</button>\r\n        </form>\r\n      </div>\r\n\r\n      <div class=\"auth-foot\">Back to <a href=\"login.html\">sign in</a></div>\r\n    </div>\r\n  ","script":""}};</script>
 <script>
 /* ============================================================
    Nexas — formatting
@@ -1135,6 +1336,71 @@ body.locked{overflow:hidden}
   };
   var LIMITS = { min: 1, max: 5000, maxTicks: 10, minTicks: 1 };
 
+  /* ---------- countries we take mobile money from ----------
+     flag is the emoji pair, so there is no image to ship. sample is the
+     local format shown as the placeholder, minus the dialling code. */
+  /* `rate` is local units per 1 USD. In a live build these come from the
+     payments provider on each quote; here they are fixed so the maths in
+     the deposit sheet is inspectable. `quick` are the chip amounts, in
+     local money, rounded to figures people actually send. */
+  var COUNTRIES = {
+    KE: { name: 'Kenya',        dial: '254', sample: '712 345 678',  len: 9,
+          cur: 'KES', rate: 129,   quick: [500, 1000, 2500, 5000, 10000] },
+    UG: { name: 'Uganda',       dial: '256', sample: '712 345 678',  len: 9,
+          cur: 'UGX', rate: 3720,  quick: [20000, 50000, 100000, 200000, 500000] },
+    TZ: { name: 'Tanzania',     dial: '255', sample: '712 345 678',  len: 9,
+          cur: 'TZS', rate: 2640,  quick: [10000, 25000, 50000, 100000, 250000] },
+    RW: { name: 'Rwanda',       dial: '250', sample: '788 123 456',  len: 9,
+          cur: 'RWF', rate: 1330,  quick: [5000, 10000, 25000, 50000, 100000] },
+    NG: { name: 'Nigeria',      dial: '234', sample: '802 123 4567', len: 10,
+          cur: 'NGN', rate: 1550,  quick: [5000, 10000, 25000, 50000, 100000] },
+    GH: { name: 'Ghana',        dial: '233', sample: '24 123 4567',  len: 9,
+          cur: 'GHS', rate: 15.2,  quick: [50, 100, 250, 500, 1000] },
+    ZA: { name: 'South Africa', dial: '27',  sample: '71 123 4567',  len: 9,
+          cur: 'ZAR', rate: 18.3,  quick: [100, 250, 500, 1000, 2500] }
+  };
+  var DEFAULT_COUNTRY = 'KE';
+
+  /* Timezone is a decent offline guess and costs no request, so it seeds
+     the value before the IP lookup comes back (and stands in for it if the
+     lookup is blocked or offline). */
+  var TZ_COUNTRY = {
+    'Africa/Nairobi': 'KE', 'Africa/Kampala': 'UG', 'Africa/Dar_es_Salaam': 'TZ',
+    'Africa/Kigali': 'RW', 'Africa/Lagos': 'NG', 'Africa/Accra': 'GH',
+    'Africa/Johannesburg': 'ZA'
+  };
+  function guessCountry() {
+    try {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (TZ_COUNTRY[tz]) return TZ_COUNTRY[tz];
+    } catch (e) {}
+    return DEFAULT_COUNTRY;
+  }
+  function countryCode() {
+    return (S.geo && COUNTRIES[S.geo]) ? S.geo : guessCountry();
+  }
+  /* One lookup per session at most; the answer is remembered so the field
+     is already right the next time the modal opens. */
+  var geoAsked = false;
+  function detectCountry() {
+    if (geoAsked || S.geo) return;
+    geoAsked = true;
+    if (!window.fetch || !window.AbortController) return;
+    var ac = new AbortController();
+    var t = setTimeout(function () { ac.abort(); }, 2500);
+    fetch('https://ipapi.co/json/', { signal: ac.signal })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        clearTimeout(t);
+        var cc = j && j.country_code;
+        if (!cc || !COUNTRIES[cc]) return;
+        S.geo = cc;
+        persist();
+        B.emit('geo', cc);
+      })
+      .catch(function () { clearTimeout(t); });
+  }
+
   /* ---------- tiny event bus ---------- */
   function bus() {
     var map = {};
@@ -1154,6 +1420,8 @@ body.locked{overflow:hidden}
   }
   var saved = load();
   var S = {
+    geo: saved.geo || null,
+    referrals: saved.referrals || null,
     session: saved.session || null,
     account: saved.account || 'real',
     balances: saved.balances || { real: 2480, demo: 10000 },
@@ -1173,6 +1441,7 @@ body.locked{overflow:hidden}
         localStorage.setItem(KEY, JSON.stringify({
           session: S.session, account: S.account, balances: S.balances,
           verified: S.verified, consent: S.consent, riskAck: S.riskAck,
+          geo: S.geo, referrals: S.referrals,
           contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
           auto: S.auto
         }));
@@ -1254,6 +1523,64 @@ body.locked{overflow:hidden}
     if (connection.status === 'live') connection.latency = Math.round(28 + Math.random() * 60);
   }, 4000);
 
+  /* ---------- referrals ----------
+     Referrals do not pay cash. Each one that funds an account lifts the
+     payout on every winning contract the referrer places, by the tier
+     below. The top tier stays under the house margin on every contract
+     (the thinnest is even/odd at 2.35%), so a boost makes trading
+     cheaper and never turns a negative expectation positive. */
+  var BOOST_TIERS = [
+    { funded: 0,  boost: 0 },
+    { funded: 1,  boost: 0.003 },
+    { funded: 3,  boost: 0.006 },
+    { funded: 6,  boost: 0.010 },
+    { funded: 12, boost: 0.015 }
+  ];
+  var REF_NAMES = ['J. Mwangi', 'A. Otieno', 'S. Wanjiru', 'D. Kiptoo', 'P. Njeri', 'M. Achieng'];
+  function seedReferrals() {
+    if (S.referrals) return;
+    var now = Date.now(), out = [];
+    for (var i = 0; i < 4; i++) {
+      out.push({
+        id: 'RF' + (now - i * 86400000),
+        name: REF_NAMES[i],
+        joined: now - (i * 4 + 2) * 86400000,
+        funded: i < 3
+      });
+    }
+    S.referrals = out;
+    persist();
+  }
+  function fundedCount() {
+    seedReferrals();
+    return S.referrals.filter(function (r) { return r.funded; }).length;
+  }
+  function boostTier() {
+    var n = fundedCount(), best = BOOST_TIERS[0];
+    for (var i = 0; i < BOOST_TIERS.length; i++) {
+      if (n >= BOOST_TIERS[i].funded) best = BOOST_TIERS[i];
+    }
+    return best;
+  }
+  function nextTier() {
+    var n = fundedCount();
+    for (var i = 0; i < BOOST_TIERS.length; i++) {
+      if (BOOST_TIERS[i].funded > n) return BOOST_TIERS[i];
+    }
+    return null;
+  }
+  function boost() { return boostTier().boost; }
+  function referralCode() {
+    var e = (S.session && S.session.email) || 'nexas';
+    var base = e.split('@')[0].replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 5) || 'NEXAS';
+    return base + '7K';
+  }
+
+  /* Documents hold image data, which is far too big for localStorage and
+     has no business being persisted in a browser anyway, so they live for
+     the session only. */
+  var docs = {};
+
   /* ---------- money ---------- */
   function balance() { return S.balances[S.account]; }
   function adjust(delta, entry) {
@@ -1270,8 +1597,11 @@ body.locked{overflow:hidden}
   }
 
   /* ---------- contracts ---------- */
+  function payoutRate(type) {
+    return (PAYOUT[type] || 1.95) * (1 + boost());
+  }
   function payoutFor(type, stake) {
-    return round(stake * (PAYOUT[type] || 1.95), 2);
+    return round(stake * payoutRate(type), 2);
   }
 
   function validate(spec) {
@@ -1405,6 +1735,7 @@ body.locked{overflow:hidden}
     start();
     readyFns.forEach(function (f) { f(); });
     readyFns = [];
+    detectCountry();
     B.emit('ready');
   }, 420);
 
@@ -1442,7 +1773,7 @@ body.locked{overflow:hidden}
 
     contracts: {
       buy: buy, sell: sell, validate: validate, label: label,
-      payoutFor: payoutFor,
+      payoutFor: payoutFor, payoutRate: payoutRate,
       open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
       closed: function () { return S.contracts.filter(function (c) { return c.status !== 'open'; }); },
       all: function () { return S.contracts.slice(); },
@@ -1455,6 +1786,25 @@ body.locked{overflow:hidden}
 
     transactions: { list: function () { return S.transactions.slice(); } },
 
+    geo: {
+      countries: COUNTRIES,
+      code: countryCode,
+      country: function () { return COUNTRIES[countryCode()]; },
+      detect: detectCountry
+    },
+
+    referrals: {
+      tiers: BOOST_TIERS,
+      code: referralCode,
+      link: function () { return 'https://nexas.trade/r/' + referralCode(); },
+      list: function () { seedReferrals(); return S.referrals.slice(); },
+      count: function () { seedReferrals(); return S.referrals.length; },
+      funded: fundedCount,
+      boost: boost,
+      tier: boostTier,
+      next: nextTier
+    },
+
     session: {
       get: function () { return S.session; },
       signIn: signIn,
@@ -1463,6 +1813,10 @@ body.locked{overflow:hidden}
 
     kyc: {
       verified: function () { return S.verified; },
+      docs: function () { return docs; },
+      hasDoc: function (name) { return !!docs[name]; },
+      setDoc: function (name, file) { docs[name] = file; B.emit('kyc', false); },
+      clearDoc: function (name) { delete docs[name]; B.emit('kyc', false); },
       submit: function () { S.verified = true; persist(); B.emit('kyc', true); }
     },
 
@@ -1663,9 +2017,9 @@ body.locked{overflow:hidden}
     function X(i) { return (i / (points.length - 1)) * w; }
     function Y(v) { return self.padT + (max - v) / span * h; }
 
+    /* left transparent on purpose: the card behind paints the ground
+       and the globe watermark, which would otherwise be covered */
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = css('--chart-bg');
-    ctx.fillRect(0, 0, W, H);
     ctx.font = '11px "IBM Plex Mono", monospace';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
@@ -1842,6 +2196,24 @@ body.locked{overflow:hidden}
       '<button type="button" data-reveal aria-label="Show password">' + eye + '</button></div>' +
       (meter ? '<div class="meter"><i></i><i></i><i></i><i></i></div>' : '') + '</div>';
   }
+  /* Country comes from the IP lookup in api.js, with a timezone guess
+     standing in until it answers. The dialling code is a fixed prefix,
+     never part of the value, so the box itself starts empty and takes
+     nothing but the local number. */
+  function phoneField(id, label, hint) {
+    var c = API().geo.country();
+    return '<div class="field"><label for="' + id + '">' + label + '</label>' +
+      '<div class="phone">' +
+        '<span class="phone-cc" data-phone-cc>' +
+          '<i class="flag">' + window.NexFlag(API().geo.code()) + '</i>' +
+          '<b class="num">+' + c.dial + '</b>' +
+        '</span>' +
+        '<input class="input num phone-input" id="' + id + '" type="tel" inputmode="numeric" ' +
+          'autocomplete="tel-national" placeholder="' + c.sample + '">' +
+      '</div>' +
+      (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+  }
+
   function method(value, iconName, name, note) {
     return '<button class="method" data-set="method:' + value + '" data-goto="form">' +
       '<span class="ico">' + I(iconName, 19) + '</span>' +
@@ -1853,6 +2225,39 @@ body.locked{overflow:hidden}
   function submit(label, done) {
     return '<button class="btn btn-fill" type="button" data-done="' + done + '">' + label + '</button>';
   }
+  /* Mobile money is quoted in the money the person actually holds. Card
+     follows the same country; USDT is a dollar rail, so it stays in USD. */
+  function payCur(methodId) {
+    var c = API().geo.country();
+    if (methodId === 'usdt' || !c.cur) return { cur: API().account.currency(), rate: 1, quick: [10, 25, 50, 100, 250] };
+    return { cur: c.cur, rate: c.rate, quick: c.quick };
+  }
+  function localAmount(v, cur) {
+    return window.NexFmt.count(Math.round(v)) + ' ' + cur;
+  }
+
+  /* The waiting and done screens are shared by deposit and withdraw, so
+     both rails behave the same while we are still on mock money. */
+  function waitingBody(headline, note) {
+    return '<div class="await">' +
+      '<div class="await-orb"><i></i><i></i><i></i></div>' +
+      '<b>' + headline + '</b>' +
+      '<span>' + note + '</span>' +
+      '<button class="btn btn-ghost" type="button" data-close>Cancel</button>' +
+    '</div>';
+  }
+  function doneBody(headline, note, rows) {
+    return '<div class="done">' +
+      '<span class="done-mark">' + I('check', 30) + '</span>' +
+      '<b>' + headline + '</b>' +
+      '<span>' + note + '</span>' +
+      '</div>' +
+      '<div class="modal-form">' +
+        '<div class="totals">' + rows + '</div>' +
+        '<button class="btn btn-fill" type="button" data-close>Done</button>' +
+      '</div>';
+  }
+
   function kv(k, v, attrs) {
     return '<div class="kv"><span>' + k + '</span><b ' + (attrs || '') + '>' + v + '</b></div>';
   }
@@ -1979,8 +2384,13 @@ body.locked{overflow:hidden}
               secret('currentPassword', 'Current password', '••••••••') +
               secret('newPassword', 'New password', 'At least 8 characters', true) +
               secret('confirmPassword', 'Confirm new password', 'Repeat new password') +
-              '<span class="hint">Use eight characters or more, with a number and a symbol.</span>' +
-              submit('Update password', 'Password updated') +
+              '<ul class="rules" id="pwRules">' +
+                '<li data-rule="len">At least 8 characters</li>' +
+                '<li data-rule="case">An upper and a lower case letter</li>' +
+                '<li data-rule="digit">A number</li>' +
+                '<li data-rule="symbol">A symbol</li>' +
+              '</ul>' +
+              act('Update password', 'savePassword') +
             '</div>';
           }
         }
@@ -2017,13 +2427,31 @@ body.locked{overflow:hidden}
           title: 'Upload document',
           sub: 'JPG, PNG or PDF under 8 MB. All four corners visible.',
           body: function (state) {
+            var doc = state.doc || 'Document';
+            var two = doc === 'Government ID';
+            function picker(slot, label) {
+              var id = 'doc_' + slot;
+              return '<div class="picker" data-slot="' + slot + '">' +
+                '<label class="dropzone" for="' + id + '">' +
+                  I('up', 22) +
+                  '<b>' + label + '</b>' +
+                  '<span>Take a photo or choose a file from this device</span>' +
+                  '<span class="btn btn-ghost">Choose file</span>' +
+                '</label>' +
+                '<input type="file" id="' + id + '" class="filepick" hidden ' +
+                  'accept="image/png,image/jpeg,image/webp,application/pdf" capture="environment" ' +
+                  'data-slot="' + slot + '">' +
+                '<div class="pick-out"></div>' +
+              '</div>';
+            }
             return '<div class="modal-form">' +
-              '<div class="dropzone">' + I('up', 22) +
-                '<b>' + (state.doc || 'Document') + '</b>' +
-                '<span>Take a photo or choose a file from this device</span>' +
-                '<button class="btn btn-ghost" type="button" data-done="File picker is not wired up in this draft">Choose file</button>' +
-              '</div>' +
-              act('Submit for review', 'verify') +
+              (two
+                ? picker(doc + ' front', 'Front of your ID') + picker(doc + ' back', 'Back of your ID')
+                : picker(doc, doc)) +
+              '<div class="notice">' + I('shield', 17) +
+                '<span>Your documents are used only to verify identity and are never shown to other traders.</span></div>' +
+              '<button class="btn btn-fill" type="button" data-action="verify" id="verifySubmit" disabled>' +
+                'Submit for review</button>' +
             '</div>';
           }
         }
@@ -2037,7 +2465,12 @@ body.locked{overflow:hidden}
           title: 'Deposit funds',
           sub: 'Funds land in the account you are trading. No fee from Nexas.',
           body: function () {
-            return method('mpesa', 'phone', 'M-Pesa', 'Instant · KES 100 – 150,000') +
+            var c = API().geo.country();
+            var money = c.cur || 'USD';
+            var lo = c.rate ? Math.round(1 * c.rate / 10) * 10 : 1;
+            var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
+            return method('mpesa', 'phone', 'M-Pesa',
+                'Instant · ' + money + ' ' + F().count(lo) + ' – ' + F().count(hi)) +
               method('card', 'card', 'Card', 'Visa / Mastercard · 1–3 minutes') +
               method('usdt', 'coin', 'USDT', 'TRC-20 and ERC-20 · from $10');
           }
@@ -2049,8 +2482,8 @@ body.locked{overflow:hidden}
             var m = s.method || 'mpesa', inner;
 
             if (m === 'mpesa') {
-              inner = field('mpesaPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"',
-                'You will receive an STK push. Enter your PIN to confirm.');
+              inner = phoneField('mpesaPhone', 'M-Pesa number',
+                'You will receive an STK push on this number. Enter your PIN to confirm.');
             } else if (m === 'card') {
               inner = field('cardNumber', 'Card number', 'placeholder="4242 4242 4242 4242" inputmode="numeric"') +
                 '<div class="pair">' +
@@ -2061,22 +2494,166 @@ body.locked{overflow:hidden}
               inner = '<div class="field"><label for="network">Network</label>' +
                 '<select class="input" id="network"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
                 '<div class="field"><label>Deposit address</label>' +
-                '<div class="input num address">TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu<button type="button" data-copy>Copy</button></div>' +
+                '<div class="input num address"><span>TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu</span>' +
+                '<button type="button" data-copy-text="TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu" ' +
+                'data-copy-note="Deposit address copied">Copy</button></div>' +
                 '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
             }
 
+            var pay = payCur(m);
+            var start = pay.quick[1];
+
             return '<div class="modal-form">' +
               '<div class="field"><label for="amount">Amount</label>' +
-                '<div class="input-wrap"><input class="input num" id="amount" value="50" inputmode="decimal">' +
-                '<span class="suffix">' + API().account.currency() + '</span></div>' +
-                '<div class="quick">' + [10, 25, 50, 100, 250].map(function (n) {
-                  return '<button type="button" data-amount="' + n + '">' + n + '</button>';
+                '<div class="input-wrap"><input class="input num" id="amount" value="' + start +
+                  '" inputmode="decimal">' +
+                '<span class="suffix">' + pay.cur + '</span></div>' +
+                '<div class="quick">' + pay.quick.map(function (n) {
+                  return '<button type="button" data-amount="' + n + '">' + F().count(n) + '</button>';
                 }).join('') + '</div></div>' +
               inner +
-              '<div class="totals">' + kv('Fee', F().money(0)) +
-                kv('Credited to ' + API().account.kind(), F().money(50), 'data-total="amount"') + '</div>' +
+              '<div class="totals">' +
+                kv('Fee', localAmount(0, pay.cur)) +
+                (pay.rate === 1 ? '' :
+                  kv('Rate', '1 USD = ' + F().count(pay.rate) + ' ' + pay.cur)) +
+                kv('Credited to ' + API().account.kind(), F().money(start / pay.rate),
+                   'data-total="amount" data-fx="' + pay.rate + '"') +
+              '</div>' +
               act('Confirm deposit', 'deposit') +
             '</div>';
+          }
+        },
+        pending: {
+          title: 'Waiting for payment',
+          sub: 'Leave this open until it clears.',
+          body: function (s) {
+            return waitingBody(
+              s.method === 'mpesa' ? 'Check your phone' : 'Authorising with your bank',
+              s.method === 'mpesa'
+                ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to +' + s.payTo +
+                  '. Enter your PIN to approve it.'
+                : 'Confirming ' + s.payLabel + ' with the card issuer.');
+          }
+        },
+        success: {
+          title: 'Deposit received',
+          sub: 'The funds are in your trading balance.',
+          body: function (s) {
+            return doneBody('Payment confirmed',
+              s.payLabel + ' received and credited.',
+              kv('Paid', s.payLabel) +
+              kv('Credited', F().money(s.credited)) +
+              kv('New balance', F().money(API().account.balance())) +
+              kv('Reference', '<span class="num">' + s.ref + '</span>'));
+          }
+        }
+      }
+    },
+
+    /* ---------------- refer and earn ---------------- */
+    refer: {
+      steps: {
+        main: {
+          title: 'Refer and earn',
+          sub: 'Every referral who funds an account raises the payout on your own winning contracts. Nothing is paid out to you in cash.',
+          body: function () {
+            var R = API().referrals, link = R.link();
+            var tier = R.tier(), next = R.next(), funded = R.funded();
+            function stat(label, value, cls) {
+              return '<div class="ref-stat"><span class="label">' + label + '</span>' +
+                '<b class="num ' + (cls || '') + '">' + value + '</b></div>';
+            }
+            var progress = next
+              ? '<div class="tier-next">' +
+                  '<div class="tier-bar"><i style="width:' +
+                    Math.round(Math.min(1, funded / next.funded) * 100) + '%"></i></div>' +
+                  '<span>' + (next.funded - funded) + ' more funded ' +
+                  (next.funded - funded === 1 ? 'referral' : 'referrals') + ' takes you to +' +
+                  (next.boost * 100).toFixed(1) + '%</span>' +
+                '</div>'
+              : '<div class="tier-next"><span>You are on the top tier.</span></div>';
+
+            return '<div class="ref-hero">' +
+                stat('Payout boost', '+' + (tier.boost * 100).toFixed(1) + '%', 'pos') +
+                stat('Funded', funded) +
+                stat('Referrals', R.count()) +
+              '</div>' +
+              progress +
+              '<div class="modal-form">' +
+                '<div class="notice">' + I('spark', 17) +
+                  '<span>A boost lifts what every winning contract pays you. Even/Odd at +' +
+                  (tier.boost * 100).toFixed(1) + '% pays ' +
+                  F().amount(API().contracts.payoutFor('even_odd', 10)) +
+                  ' on a 10 stake instead of 19.53. It makes trading cheaper; it does not make it profitable.</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="modal-form" style="padding-top:0">' +
+                '<div class="field"><label>Your referral link</label>' +
+                  '<div class="reflink">' +
+                    '<i>' + I('link', 16) + '</i>' +
+                    '<span class="num">' + link + '</span>' +
+                    '<button type="button" data-copy-text="' + link + '" ' +
+                      'data-copy-note="Referral link copied" aria-label="Copy referral link">' +
+                      I('copy', 16) + '</button>' +
+                  '</div>' +
+                  '<span class="hint">Code ' + R.code() + ' is tied to your account.</span>' +
+                '</div>' +
+                '<button class="btn btn-fill" type="button" data-share="' + link + '">' +
+                  I('send', 17) + 'Share referral link</button>' +
+                '<button class="row ref-all" data-goto="list">' +
+                  '<span class="ico">' + I('user', 18) + '</span>' +
+                  '<span class="t"><b>All referrals</b><span>' + R.count() +
+                    ' people joined with your link</span></span>' + I('chev', 16) +
+                '</button>' +
+                '<button class="row ref-all" data-goto="tiers">' +
+                  '<span class="ico">' + I('sliders', 18) + '</span>' +
+                  '<span class="t"><b>How the tiers work</b><span>Every level and what it pays</span></span>' +
+                  I('chev', 16) +
+                '</button>' +
+              '</div>';
+          }
+        },
+        list: {
+          title: 'Your referrals',
+          sub: 'A referral counts once that person funds their account.',
+          body: function () {
+            var R = API().referrals, rows = R.list();
+            if (!rows.length) {
+              return '<div class="empty" style="padding:30px 10px">' + I('gift', 24) +
+                '<b>No referrals yet</b><span>Share your link to get started.</span></div>';
+            }
+            return '<div class="list" style="margin:0">' + rows.map(function (r) {
+              return '<div class="trow">' +
+                '<span class="ico ' + (r.funded ? 'pos' : '') + '">' +
+                  I(r.funded ? 'check' : 'clock', 16) + '</span>' +
+                '<span class="t"><b>' + r.name + '</b>' +
+                  '<span>Joined ' + F().ago(r.joined) + '</span></span>' +
+                '<span class="p"><span class="num ' + (r.funded ? 'pos' : '') + '">' +
+                  (r.funded ? 'counts' : '—') + '</span>' +
+                  '<span class="sub">' + (r.funded ? 'funded' : 'not funded yet') + '</span></span>' +
+              '</div>';
+            }).join('') + '</div>';
+          }
+        },
+        tiers: {
+          title: 'Boost tiers',
+          sub: 'Your tier is set by how many referrals have funded an account.',
+          body: function () {
+            var R = API().referrals, now = R.tier(), funded = R.funded();
+            return '<div class="list" style="margin:0">' + R.tiers.map(function (t) {
+              var on = t.funded === now.funded;
+              return '<div class="trow' + (on ? ' on' : '') + '">' +
+                '<span class="ico ' + (on ? 'live' : '') + '">' +
+                  (t.funded ? t.funded : I('check', 15)) + '</span>' +
+                '<span class="t"><b>+' + (t.boost * 100).toFixed(1) + '% payout</b>' +
+                  '<span>' + (t.funded === 0 ? 'No funded referrals yet'
+                    : t.funded + '+ funded referrals') + '</span></span>' +
+                '<span class="p"><span class="sub">' +
+                  (on ? 'you are here' : funded >= t.funded ? 'reached' : 'locked') +
+                '</span></span></div>';
+            }).join('') + '</div>' +
+            '<p class="hint" style="margin:14px 2px 0">The top tier stays under the house margin on ' +
+            'every contract, so a boost lowers the cost of trading rather than removing it.</p>';
           }
         }
       }
@@ -2103,7 +2680,7 @@ body.locked{overflow:hidden}
               ? '<div class="field"><label for="wNetwork">Network</label>' +
                 '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option></select></div>' +
                 field('wAddress', 'Wallet address', 'placeholder="T..."', 'Check carefully. Transfers cannot be reversed.')
-              : field('wPhone', 'M-Pesa number', 'value="+254 7.. ... ..." inputmode="tel"',
+              : phoneField('wPhone', 'M-Pesa number',
                   'Must match the number registered to your verified name.');
 
             return '<div class="modal-form">' +
@@ -2118,6 +2695,27 @@ body.locked{overflow:hidden}
                 '<span>Identity verification is required before your first payout.</span></div>') +
               act('Request withdrawal', 'withdraw') +
             '</div>';
+          }
+        },
+        pending: {
+          title: 'Sending your payout',
+          sub: 'This usually clears in under a minute.',
+          body: function (s) {
+            return waitingBody('Payout in progress',
+              'We are sending ' + F().money(s.sent) + ' to your ' +
+              (NAMES[s.method] || 'M-Pesa') + ' account.');
+          }
+        },
+        success: {
+          title: 'Payout sent',
+          sub: 'Your provider will confirm by SMS.',
+          body: function (s) {
+            return doneBody('Withdrawal complete',
+              F().money(s.sent) + ' is on its way.',
+              kv('Amount', F().money(s.sent)) +
+              kv('Network fee', F().money(1)) +
+              kv('New balance', F().money(API().account.balance())) +
+              kv('Reference', '<span class="num">' + s.ref + '</span>'));
           }
         },
         kyc: {
@@ -2158,7 +2756,7 @@ body.locked{overflow:hidden}
     side: 'even',
     barrier: 5,
     stake: 10,
-    ticks: 5,
+    ticks: 5,             /* fixed: the duration picker was removed */
     mode: 'manual',         /* manual | auto */
     error: null,
     run: null
@@ -2176,9 +2774,10 @@ body.locked{overflow:hidden}
   function payoutFor(side) {
     return API.contracts.payoutFor(typeFor(side), S.stake);
   }
+  /* payoutRate carries the referral boost, so the figure on the button
+     always matches what the contract actually pays. */
   function pct(side) {
-    var t = typeFor(side);
-    return ((API.payouts[t] - 1) * 100).toFixed(2) + '%';
+    return ((API.contracts.payoutRate(typeFor(side)) - 1) * 100).toFixed(2) + '%';
   }
 
   /* ---------- instrument header ---------- */
@@ -2239,6 +2838,26 @@ body.locked{overflow:hidden}
     }).join(''));
   }
 
+  /* ---------- run targets ----------
+     Profit in green, loss in red, the loss multiplier in orange. These
+     are the same three numbers the automated run stops on, so editing
+     one here writes straight through to the saved run settings. */
+  function targetCell(id, label, prefix, value, tone) {
+    return '<div class="tgt ' + tone + '">' +
+      '<span class="tgt-l">' + label + '</span>' +
+      '<span class="tgt-v"><i>' + prefix + '</i>' +
+        '<input id="' + id + '" class="num" value="' + value + '" inputmode="decimal" ' +
+        'autocomplete="off" aria-label="' + label + '"></span>' +
+    '</div>';
+  }
+  function targetsRow(auto) {
+    return '<div class="targets">' +
+      targetCell('tgtTP', 'Target profit', '$', auto.takeProfit, 'pos') +
+      targetCell('tgtSL', 'Target loss', '$', auto.stopLoss, 'neg') +
+      targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier, 'warn') +
+    '</div>';
+  }
+
   /* ---------- panel ---------- */
   function renderPanel() {
     var today = API.contracts.today();
@@ -2275,18 +2894,10 @@ body.locked{overflow:hidden}
         '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '">Auto</button>' +
         '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '">Manual</button>' +
       '</div>' +
+      targetsRow(auto) +
       runRow +
       barrierRow +
-      '<div class="stack-row">' +
-        '<span class="label">Duration</span>' +
-        '<div class="pickline">' +
-          '<button class="stepbtn" data-ticks="-1" aria-label="Fewer ticks">' + I('minus', 14) + '</button>' +
-          '<b class="num">' + S.ticks + '</b><span class="unit">ticks</span>' +
-          '<button class="stepbtn" data-ticks="1" aria-label="More ticks">' + I('plus', 14) + '</button>' +
-        '</div>' +
-      '</div>' +
       '<div>' +
-        '<div class="seg" id="stakeSeg"><button class="active">Stake</button><button>Payout</button></div>' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
           '<div class="f"><input id="stake" value="' + S.stake + '" inputmode="decimal" aria-label="Stake">' +
@@ -2375,7 +2986,8 @@ body.locked{overflow:hidden}
 
   function typing() {
     var a = document.activeElement;
-    return a && a.id === 'stake';
+    if (!a) return false;
+    return a.id === 'stake' || !!(a.closest && a.closest('.targets'));
   }
 
   /* ---------- validation ---------- */
@@ -2480,13 +3092,6 @@ body.locked{overflow:hidden}
         return;
       }
 
-      var tStep = t.closest('[data-ticks]');
-      if (tStep) {
-        S.ticks = Math.max(1, Math.min(10, S.ticks + (+tStep.getAttribute('data-ticks'))));
-        check(); renderPanel();
-        return;
-      }
-
       if (t.closest('#plus')) { setStake(S.stake + 1); return; }
       if (t.closest('#minus')) { setStake(S.stake - 1); return; }
 
@@ -2522,13 +3127,20 @@ body.locked{overflow:hidden}
     });
 
     root.addEventListener('input', function (e) {
-      if (e.target.id !== 'stake') return;
-      S.stake = Math.max(0, +e.target.value || 0);
-      check();
-      refreshValidity();
+      var id = e.target.id;
+      if (id === 'stake') {
+        S.stake = Math.max(0, +e.target.value || 0);
+        check();
+        refreshValidity();
+        return;
+      }
+      if (id === 'tgtTP') API.prefs.setAuto({ takeProfit: Math.max(0, +e.target.value || 0) });
+      else if (id === 'tgtSL') API.prefs.setAuto({ stopLoss: Math.max(0, +e.target.value || 0) });
+      else if (id === 'tgtMult') API.prefs.setAuto({ multiplier: Math.max(1, +e.target.value || 1) });
     });
     root.addEventListener('blur', function (e) {
-      if (e.target.id === 'stake') renderPanel();
+      var id = e.target.id;
+      if (id === 'stake' || id === 'tgtTP' || id === 'tgtSL' || id === 'tgtMult') renderPanel();
     }, true);
   }
 
@@ -3256,6 +3868,10 @@ body.locked{overflow:hidden}
     clock: 'M12 7v5l3 2',
     sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4',
     candles: '',
+    headset: 'M4 13v-1a8 8 0 1116 0v1|M4 13h2.2a1 1 0 011 1v3.4a1 1 0 01-1 1H5.6A1.6 1.6 0 014 16.8z|M20 13h-2.2a1 1 0 00-1 1v3.4a1 1 0 001 1h.6a1.6 1.6 0 001.6-1.6z|M18.6 19.2a4 4 0 01-3.6 2.2h-1.6',
+    gift: 'M12 8.5V21|M3.6 12.4h16.8|M9.1 8.5a2.3 2.3 0 110-4.6C11 3.9 12 6 12 8.5c0-2.5 1-4.6 2.9-4.6a2.3 2.3 0 110 4.6',
+    copy: '',
+    link: 'M9.5 14.5l5-5|M11 6.6l1.3-1.3a3.8 3.8 0 015.4 5.4L16.4 12|M13 17.4l-1.3 1.3a3.8 3.8 0 01-5.4-5.4L7.6 12',
     spark: 'M12 3.1l1.86 4.93 4.93 1.86-4.93 1.86L12 16.68l-1.86-4.93L5.21 9.89l4.93-1.86z|M18.5 15.2l.66 1.74 1.74.66-1.74.66-.66 1.74-.66-1.74-1.74-.66 1.74-.66z',
     radar: 'M12 12l4.6-4.6|M4.6 16.9a8.5 8.5 0 1114.8 0',
     target: 'M12 2v3M12 19v3M2 12h3M19 12h3'
@@ -3272,11 +3888,60 @@ body.locked{overflow:hidden}
     if (name === 'target') body =
       '<circle cx="12" cy="12" r="7.6"></circle><circle cx="12" cy="12" r="3.1"></circle>' + body;
     if (name === 'radar') body = '<circle cx="12" cy="12" r="1.5"></circle>' + body;
+    if (name === 'gift') body = '<rect x="4.4" y="8.5" width="15.2" height="12.5" rx="1.8"></rect>' + body;
+    if (name === 'copy') body =
+      '<rect x="9" y="9" width="11" height="11" rx="2"></rect>' +
+      '<path d="M5.5 15H5a1 1 0 01-1-1V5a1 1 0 011-1h9a1 1 0 011 1v.5"></path>';
     for (var i = 0; i < parts.length; i++) if (parts[i]) body += '<path d="' + parts[i] + '"></path>';
     return '<svg width="' + (size || 17) + '" height="' + (size || 17) + '" viewBox="0 0 24 24" fill="none" ' +
       'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
   }
   window.NexIcon = icon;
+
+  /* ---------- flags ----------
+     Windows has no flag emoji font, so \uD83C\uDDF0\uD83C\uDDEA renders as the
+     letters "KE" there. These are drawn instead: simplified to a few
+     shapes each, which is all that survives at 18px anyway. */
+  var FLAGS = {
+    KE: '<rect width="24" height="16" fill="#fff"/>' +
+        '<rect width="24" height="5.1" fill="#000"/>' +
+        '<rect y="6" width="24" height="4" fill="#BB0000"/>' +
+        '<rect y="10.9" width="24" height="5.1" fill="#006600"/>' +
+        '<ellipse cx="12" cy="8" rx="2.7" ry="4.6" fill="#fff"/>' +
+        '<ellipse cx="12" cy="8" rx="1.5" ry="3.4" fill="#BB0000"/>',
+    UG: '<rect width="24" height="16" fill="#FCDC04"/>' +
+        '<rect width="24" height="2.67" fill="#000"/>' +
+        '<rect y="5.33" width="24" height="2.67" fill="#D90000"/>' +
+        '<rect y="8" width="24" height="2.67" fill="#000"/>' +
+        '<rect y="13.33" width="24" height="2.67" fill="#D90000"/>' +
+        '<circle cx="12" cy="8" r="2.6" fill="#fff"/>',
+    TZ: '<rect width="24" height="16" fill="#00A3DD"/>' +
+        '<path d="M0 0h15L0 16z" fill="#1EB53A"/>' +
+        '<path d="M17 0h7L7 16H0z" fill="#FCD116"/>' +
+        '<path d="M19 0h5L5 16H0z" fill="#000" opacity=".92"/>',
+    RW: '<rect width="24" height="16" fill="#20603D"/>' +
+        '<rect width="24" height="8" fill="#00A1DE"/>' +
+        '<rect y="8" width="24" height="4" fill="#FAD201"/>' +
+        '<circle cx="18" cy="4" r="2" fill="#FAD201"/>',
+    NG: '<rect width="24" height="16" fill="#fff"/>' +
+        '<rect width="8" height="16" fill="#008751"/>' +
+        '<rect x="16" width="8" height="16" fill="#008751"/>',
+    GH: '<rect width="24" height="16" fill="#FCD116"/>' +
+        '<rect width="24" height="5.33" fill="#CE1126"/>' +
+        '<rect y="10.67" width="24" height="5.33" fill="#006B3F"/>' +
+        '<path d="M12 5.6l1.1 3.3 3.2-1.9-2 3.2 3.3 1.1h-6.9z" fill="#000"/>',
+    ZA: '<rect width="24" height="16" fill="#002395"/>' +
+        '<rect width="24" height="8" fill="#DE3831"/>' +
+        '<path d="M0 0l10 8-10 8z" fill="#000"/>' +
+        '<path d="M0 6.2h24v3.6H0z" fill="#007A4D"/>'
+  };
+  function flag(cc) {
+    var body = FLAGS[cc];
+    if (!body) return '';
+    return '<svg class="flagsvg" viewBox="0 0 24 16" width="19" height="13" ' +
+      'role="img" aria-label="' + cc + '">' + body + '</svg>';
+  }
+  window.NexFlag = flag;
 
   var API = window.NexAPI, F = window.NexFmt;
 
@@ -3316,12 +3981,17 @@ body.locked{overflow:hidden}
     { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'globe' }
   ];
   /* the desktop bar carries one extra link the bottom bar has no room for */
-  var DESK = TABS.concat([{ id: 'responsible', label: 'Responsible Trading', file: 'responsible.html' }]);
+  var DESK = TABS.concat([{ id: 'learn', label: 'Learn', file: 'learn.html' }]);
 
+  /* Stacked: the account kind sits over the amount, which roughly halves
+     how much of the top bar this button takes. */
   function balanceMarkup() {
     var kind = API.account.kind();
-    return '<i class="acct-dot ' + kind + '"></i><span class="acct-kind">' + kind + '</span>' +
-      '<span class="bal num">' + F.amount(API.account.balance()) + '</span>' + icon('chevD', 12);
+    return '<i class="acct-dot ' + kind + '"></i>' +
+      '<span class="acct-txt">' +
+        '<span class="acct-kind">' + kind + '</span>' +
+        '<span class="bal num">' + F.amount(API.account.balance()) + '</span>' +
+      '</span>' + icon('chevD', 12);
   }
 
   function topbar(page) {
@@ -3391,8 +4061,9 @@ body.locked{overflow:hidden}
         '</div>' +
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
-          item('Live chat', { icon: 'chat', href: 'chat.html' }) +
-          item('Responsible trading', { icon: 'shield', href: 'responsible.html' }) +
+          item('Support', { icon: 'headset', href: 'chat.html' }) +
+          item('Learn', { icon: 'book', href: 'learn.html' }) +
+          item('Refer and earn', { icon: 'gift', modal: 'refer' }) +
           item('Light / dark theme', {
             icon: isDark() ? 'moon' : 'sun',
             tail: '<i class="switch" id="themeSwitch" role="switch" aria-checked="' + isDark() + '"></i>',
@@ -3457,12 +4128,20 @@ body.locked{overflow:hidden}
       var m = host().querySelector('.modal');
       if (m) m.classList.add('open');
     });
-    var first = host().querySelector('input, select, button:not([data-close])');
+    /* Focus a real field if the step has one. Landing on the back or
+       first action button just paints a focus ring on it, which reads
+       as a stray box on an otherwise clean dialog. */
+    var first = host().querySelector('.modal-box input, .modal-box select, .modal-box textarea');
     if (first) first.focus();
+    else {
+      var box = host().querySelector('.modal-box');
+      if (box) { box.setAttribute('tabindex', '-1'); box.focus(); }
+    }
     var pw = host().querySelector('#newPassword');
     if (pw) paintMeter(pw);
   }
   function closeModals() {
+    payToken++;                               /* nothing pending may land now */
     var m = host().querySelector('.modal');
     if (!m) return;
     m.classList.remove('open');
@@ -3484,6 +4163,138 @@ body.locked{overflow:hidden}
     var first = f[0], last = f[f.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  /* ---------- clipboard and sharing ---------- */
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  function copyText(text, note) {
+    var msg = note || 'Copied';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { window.NexToast(msg); },
+        function () { fallbackCopy(text); window.NexToast(msg); }
+      );
+      return;
+    }
+    fallbackCopy(text);
+    window.NexToast(msg);
+  }
+  /* The share sheet where the device has one, the clipboard everywhere
+     else — either way the person ends up holding the link. */
+  function shareLink(url) {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Nexas',
+        text: 'I trade synthetic indices on Nexas. Join with my link.',
+        url: url
+      }).catch(function () {});
+      return;
+    }
+    copyText(url, 'Referral link copied — paste it anywhere');
+  }
+
+  /* ---------- phone number formatting ---------- */
+  /* The sample for the country doubles as the grouping mask, so a new
+     country needs no extra code: "712 345 678" groups 3-3-3. */
+  function formatPhone(raw, sample, dial) {
+    var digits = raw.replace(/\D/g, '');
+    var want = sample.replace(/\D/g, '').length;
+    /* People type the number the way they say it. Both the pasted dial
+       code and the trunk "0" are already covered by the prefix cell, so
+       drop them rather than making the person delete them. */
+    if (dial && digits.indexOf(dial) === 0 && digits.length > want) digits = digits.slice(dial.length);
+    if (digits.charAt(0) === '0') digits = digits.slice(1);
+    digits = digits.slice(0, want);
+    var out = '', di = 0;
+    for (var i = 0; i < sample.length && di < digits.length; i++) {
+      if (sample.charAt(i) === ' ') out += ' ';
+      else out += digits.charAt(di++);
+    }
+    return out;
+  }
+  function paintCountry() {
+    var c = API.geo.country();
+    var ccs = document.querySelectorAll('[data-phone-cc]');
+    for (var i = 0; i < ccs.length; i++) {
+      ccs[i].innerHTML = '<i class="flag">' + flag(API.geo.code()) + '</i>' +
+        '<b class="num">+' + c.dial + '</b>';
+    }
+    var boxes = document.querySelectorAll('.phone-input');
+    for (var j = 0; j < boxes.length; j++) boxes[j].placeholder = c.sample;
+  }
+
+  /* ---------- document pickers ---------- */
+  var DOC_MAX = 8 * 1024 * 1024;
+  var DOC_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
+
+  function fileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+  function refreshVerifyButton() {
+    var btn = document.getElementById('verifySubmit');
+    if (!btn) return;
+    var pickers = document.querySelectorAll('.picker');
+    var ready = pickers.length > 0;
+    for (var i = 0; i < pickers.length; i++) {
+      if (!API.kyc.hasDoc(pickers[i].getAttribute('data-slot'))) ready = false;
+    }
+    btn.disabled = !ready;
+  }
+  function renderPicked(picker, slot, file, preview) {
+    var out = picker.querySelector('.pick-out');
+    var zone = picker.querySelector('.dropzone');
+    if (!file) {
+      out.innerHTML = '';
+      if (zone) zone.hidden = false;
+      refreshVerifyButton();
+      return;
+    }
+    if (zone) zone.hidden = true;
+    out.innerHTML = '<div class="picked">' +
+      (preview
+        ? '<img class="picked-thumb" alt="" src="' + preview + '">'
+        : '<span class="picked-thumb doc">' + icon('idcard', 20) + '</span>') +
+      '<span class="picked-t"><b>' + file.name.replace(/</g, '&lt;') + '</b>' +
+        '<span>' + fileSize(file.size) + ' \u00b7 ready to submit</span></span>' +
+      '<button type="button" class="iconbtn" data-unpick="' + slot + '" aria-label="Remove">' +
+        icon('close', 17) + '</button>' +
+    '</div>';
+    refreshVerifyButton();
+  }
+  function takeFile(input) {
+    var slot = input.getAttribute('data-slot');
+    var picker = input.closest('.picker');
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!file || !picker) return;
+
+    if (DOC_TYPES.indexOf(file.type) === -1) {
+      fieldError(input.id, 'Use a JPG, PNG, WebP or PDF');
+      window.NexToast('That file type is not accepted');
+      return;
+    }
+    if (file.size > DOC_MAX) {
+      window.NexToast('That file is ' + fileSize(file.size) + ' \u2014 the limit is 8 MB');
+      return;
+    }
+    API.kyc.setDoc(slot, file);
+
+    if (file.type === 'application/pdf') { renderPicked(picker, slot, file, null); return; }
+    var reader = new FileReader();
+    reader.onload = function () { renderPicked(picker, slot, file, reader.result); };
+    reader.onerror = function () { renderPicked(picker, slot, file, null); };
+    reader.readAsDataURL(file);
   }
 
   /* ---------- toast ---------- */
@@ -3568,15 +4379,69 @@ body.locked{overflow:hidden}
     return false;
   }
 
+  /* ---------- password rules ----------
+     One source of truth: the meter, the live checklist and the submit
+     check all read these, so they can never disagree. */
+  var PW_RULES = [
+    { id: 'len',    test: function (v) { return v.length >= 8; },
+      msg: 'Use at least 8 characters' },
+    { id: 'case',   test: function (v) { return /[a-z]/.test(v) && /[A-Z]/.test(v); },
+      msg: 'Include an upper and a lower case letter' },
+    { id: 'digit',  test: function (v) { return /\d/.test(v); },
+      msg: 'Include a number' },
+    { id: 'symbol', test: function (v) { return /[^A-Za-z0-9]/.test(v); },
+      msg: 'Include a symbol' }
+  ];
+  function pwScore(v) {
+    var n = 0;
+    for (var i = 0; i < PW_RULES.length; i++) if (PW_RULES[i].test(v)) n++;
+    return n;
+  }
+  function pwFirstFailure(v) {
+    for (var i = 0; i < PW_RULES.length; i++) if (!PW_RULES[i].test(v)) return PW_RULES[i].msg;
+    return null;
+  }
+  function paintRules(v) {
+    var list = document.getElementById('pwRules');
+    if (!list) return;
+    for (var i = 0; i < PW_RULES.length; i++) {
+      var li = list.querySelector('[data-rule="' + PW_RULES[i].id + '"]');
+      if (li) li.classList.toggle('ok', PW_RULES[i].test(v));
+    }
+  }
+  /* Errors are written next to the field rather than re-rendering the
+     step, so nothing the person has already typed is thrown away. */
+  function fieldError(id, msg) {
+    var input = document.getElementById(id);
+    if (!input) return;
+    var wrap = input.closest('.field') || input.parentNode;
+    var err = wrap.querySelector('.field-error');
+    if (!msg) { if (err) err.remove(); wrap.classList.remove('bad'); return; }
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'field-error';
+      err.setAttribute('role', 'alert');
+      wrap.appendChild(err);
+    }
+    err.textContent = msg;
+    wrap.classList.add('bad');
+    input.focus();
+  }
+  function clearErrors() {
+    var box = host().querySelector('.modal-box');
+    if (!box) return;
+    var errs = box.querySelectorAll('.field-error');
+    for (var i = 0; i < errs.length; i++) errs[i].remove();
+    var bad = box.querySelectorAll('.field.bad');
+    for (var j = 0; j < bad.length; j++) bad[j].classList.remove('bad');
+  }
+
   /* ---------- password meter ---------- */
   function paintMeter(input) {
-    var v = input.value, score = 0;
-    if (v.length >= 8) score++;
-    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
-    if (/\d/.test(v)) score++;
-    if (/[^A-Za-z0-9]/.test(v)) score++;
+    var v = input.value, score = pwScore(v);
     var wrap = input.closest('.field') || document;
     wrap.querySelectorAll('.meter i').forEach(function (bar, i) { bar.classList.toggle('on', i < score); });
+    paintRules(v);
   }
 
   /* ---------- chrome mount ---------- */
@@ -3668,13 +4533,28 @@ body.locked{overflow:hidden}
       var done = t.closest('[data-done]');
       if (done) { closeModals(); window.NexToast(done.getAttribute('data-done')); return; }
 
-      if (t.closest('[data-copy]')) { window.NexToast('Address copied'); return; }
+      var copier = t.closest('[data-copy-text]');
+      if (copier) {
+        copyText(copier.getAttribute('data-copy-text'), copier.getAttribute('data-copy-note'));
+        return;
+      }
+      var sharer = t.closest('[data-share]');
+      if (sharer) { shareLink(sharer.getAttribute('data-share')); return; }
 
       var amt = t.closest('[data-amount]');
       if (amt) {
         var box = amt.closest('.field').querySelector('input');
         box.value = amt.getAttribute('data-amount');
         box.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+
+      var unpick = t.closest('[data-unpick]');
+      if (unpick) {
+        var slotName = unpick.getAttribute('data-unpick');
+        API.kyc.clearDoc(slotName);
+        var pk = unpick.closest('.picker');
+        if (pk) renderPicked(pk, slotName, null, null);
         return;
       }
 
@@ -3693,13 +4573,27 @@ body.locked{overflow:hidden}
       }
     });
 
+    document.addEventListener('change', function (e) {
+      if (e.target.classList && e.target.classList.contains('filepick')) takeFile(e.target);
+    });
+
     document.addEventListener('input', function (e) {
       var el = e.target;
       if (el.id === 'newPassword') paintMeter(el);
+      if (el.classList && el.classList.contains('phone-input')) {
+        var atEnd = el.selectionStart === el.value.length;
+        var c = API.geo.country();
+        var next = formatPhone(el.value, c.sample, c.dial);
+        if (next !== el.value) {
+          el.value = next;
+          if (!atEnd) { try { el.setSelectionRange(next.length, next.length); } catch (x) {} }
+        }
+      }
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
         var fee = +(total.getAttribute('data-fee') || 0);
-        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee));
+        var fx = +(total.getAttribute('data-fx') || 1) || 1;
+        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee) / fx);
       }
     });
 
@@ -3708,6 +4602,18 @@ body.locked{overflow:hidden}
       if (!f.hasAttribute) return;
       if (f.hasAttribute('data-splash')) {
         e.preventDefault();
+        /* The auth pages post the same password rules as the modal. */
+        var pw = f.querySelector('#newPassword');
+        if (pw) {
+          var bad = pwFirstFailure(pw.value);
+          if (bad) { window.NexToast(bad); pw.focus(); return; }
+          var again = f.querySelector('#confirmNew');
+          if (again && again.value !== pw.value) {
+            window.NexToast('Passwords do not match');
+            again.focus();
+            return;
+          }
+        }
         var email = f.querySelector('input[type=email]');
         API.session.signIn(email && email.value, 'password');
         splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
@@ -3728,27 +4634,88 @@ body.locked{overflow:hidden}
     });
   }
 
+  /* A settlement that is still pending must not survive the dialog that
+     started it, so every timer is tagged and checked before it fires. */
+  var payToken = 0;
+  function reference() {
+    var a = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789', out = '';
+    for (var i = 0; i < 10; i++) out += a.charAt(Math.floor(Math.random() * a.length));
+    return out;
+  }
+  function settle(after) {
+    var token = ++payToken;
+    gotoStep('pending');
+    setTimeout(function () {
+      if (token !== payToken) return;         /* cancelled or closed */
+      if (!host().querySelector('.modal')) return;
+      after();
+      gotoStep('success');
+    }, 2600);
+  }
+
   /* actions that touch money or verification */
   function runAction(name, node) {
     if (name === 'deposit') {
-      var amount = +((document.getElementById('amount') || {}).value) || 0;
-      if (amount <= 0) return window.NexToast('Enter an amount to deposit');
-      API.account.credit(amount, 'Deposit');
-      closeModals();
-      window.NexToast('Deposited ' + F.money(amount));
+      clearErrors();
+      var box = document.getElementById('amount');
+      var amount = +((box || {}).value) || 0;
+      var pay = API.geo.country();
+      var isLocal = state.data.method !== 'usdt' && !!pay.cur;
+      var rate = isLocal ? pay.rate : 1;
+      var money = isLocal ? pay.cur : API.account.currency();
+
+      if (amount <= 0) return fieldError('amount', 'Enter an amount to deposit');
+      var usd = amount / rate;
+      if (usd < 1) return fieldError('amount', 'Minimum deposit is ' +
+        F.count(Math.ceil(rate)) + ' ' + money);
+
+      if (state.data.method === 'mpesa') {
+        var ph = document.getElementById('mpesaPhone');
+        var digits = ph ? ph.value.replace(/\D/g, '') : '';
+        if (digits.length < pay.len) return fieldError('mpesaPhone', 'Enter your ' + pay.len + '-digit number');
+        state.data.payTo = pay.dial + digits;
+      }
+
+      state.data.payLabel = F.count(amount) + ' ' + money;
+      state.data.credited = Math.round(usd * 100) / 100;
+      state.data.ref = reference();
+      settle(function () {
+        API.account.credit(state.data.credited, 'Deposit');
+      });
       return;
     }
     if (name === 'withdraw') {
       if (!API.kyc.verified()) { gotoStep('kyc'); return; }
+      clearErrors();
       var w = +((document.getElementById('wAmount') || {}).value) || 0;
-      if (w <= 0) return window.NexToast('Enter an amount to withdraw');
-      if (w > API.account.balance()) return window.NexToast('Not enough funds');
-      API.account.debit(w, 'Withdrawal');
+      if (w <= 0) return fieldError('wAmount', 'Enter an amount to withdraw');
+      if (w < 10) return fieldError('wAmount', 'Minimum withdrawal is ' + F.money(10));
+      if (w > API.account.balance()) return fieldError('wAmount',
+        'Not enough funds. Available ' + F.money(API.account.balance()));
+      state.data.sent = w;
+      state.data.ref = reference();
+      settle(function () { API.account.debit(w, 'Withdrawal'); });
+      return;
+    }
+    if (name === 'savePassword') {
+      clearErrors();
+      var cur = (document.getElementById('currentPassword') || {}).value || '';
+      var nw = (document.getElementById('newPassword') || {}).value || '';
+      var cf = (document.getElementById('confirmPassword') || {}).value || '';
+
+      if (!cur) return fieldError('currentPassword', 'Enter your current password');
+      var fail = pwFirstFailure(nw);
+      if (fail) return fieldError('newPassword', fail);
+      if (nw === cur) return fieldError('newPassword', 'Choose a password you have not used here before');
+      if (!cf) return fieldError('confirmPassword', 'Repeat the new password');
+      if (cf !== nw) return fieldError('confirmPassword', 'These do not match');
+
       closeModals();
-      window.NexToast('Withdrawal of ' + F.money(w) + ' submitted');
+      window.NexToast('Password updated');
       return;
     }
     if (name === 'verify') {
+      if (node && node.disabled) return;
       API.kyc.submit();
       closeModals();
       window.NexToast('Identity submitted — usually cleared within the hour');
@@ -3781,6 +4748,7 @@ body.locked{overflow:hidden}
       if (b) b.innerHTML = balanceMarkup();
     });
     API.on('connection', connectionBanner);
+    API.on('geo', paintCountry);
     connectionBanner();
   }
 

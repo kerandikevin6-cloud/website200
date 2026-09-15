@@ -145,9 +145,9 @@
     function X(i) { return (i / (points.length - 1)) * w; }
     function Y(v) { return self.padT + (max - v) / span * h; }
 
+    /* left transparent on purpose: the card behind paints the ground
+       and the globe watermark, which would otherwise be covered */
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = css('--chart-bg');
-    ctx.fillRect(0, 0, W, H);
     ctx.font = '11px "IBM Plex Mono", monospace';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';

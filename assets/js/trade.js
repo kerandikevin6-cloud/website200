@@ -19,7 +19,7 @@
     side: 'even',
     barrier: 5,
     stake: 10,
-    ticks: 5,
+    ticks: 5,             /* fixed: the duration picker was removed */
     mode: 'manual',         /* manual | auto */
     error: null,
     run: null
@@ -37,9 +37,10 @@
   function payoutFor(side) {
     return API.contracts.payoutFor(typeFor(side), S.stake);
   }
+  /* payoutRate carries the referral boost, so the figure on the button
+     always matches what the contract actually pays. */
   function pct(side) {
-    var t = typeFor(side);
-    return ((API.payouts[t] - 1) * 100).toFixed(2) + '%';
+    return ((API.contracts.payoutRate(typeFor(side)) - 1) * 100).toFixed(2) + '%';
   }
 
   /* ---------- instrument header ---------- */
@@ -100,6 +101,26 @@
     }).join(''));
   }
 
+  /* ---------- run targets ----------
+     Profit in green, loss in red, the loss multiplier in orange. These
+     are the same three numbers the automated run stops on, so editing
+     one here writes straight through to the saved run settings. */
+  function targetCell(id, label, prefix, value, tone) {
+    return '<div class="tgt ' + tone + '">' +
+      '<span class="tgt-l">' + label + '</span>' +
+      '<span class="tgt-v"><i>' + prefix + '</i>' +
+        '<input id="' + id + '" class="num" value="' + value + '" inputmode="decimal" ' +
+        'autocomplete="off" aria-label="' + label + '"></span>' +
+    '</div>';
+  }
+  function targetsRow(auto) {
+    return '<div class="targets">' +
+      targetCell('tgtTP', 'Target profit', '$', auto.takeProfit, 'pos') +
+      targetCell('tgtSL', 'Target loss', '$', auto.stopLoss, 'neg') +
+      targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier, 'warn') +
+    '</div>';
+  }
+
   /* ---------- panel ---------- */
   function renderPanel() {
     var today = API.contracts.today();
@@ -136,18 +157,10 @@
         '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '">Auto</button>' +
         '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '">Manual</button>' +
       '</div>' +
+      targetsRow(auto) +
       runRow +
       barrierRow +
-      '<div class="stack-row">' +
-        '<span class="label">Duration</span>' +
-        '<div class="pickline">' +
-          '<button class="stepbtn" data-ticks="-1" aria-label="Fewer ticks">' + I('minus', 14) + '</button>' +
-          '<b class="num">' + S.ticks + '</b><span class="unit">ticks</span>' +
-          '<button class="stepbtn" data-ticks="1" aria-label="More ticks">' + I('plus', 14) + '</button>' +
-        '</div>' +
-      '</div>' +
       '<div>' +
-        '<div class="seg" id="stakeSeg"><button class="active">Stake</button><button>Payout</button></div>' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
           '<div class="f"><input id="stake" value="' + S.stake + '" inputmode="decimal" aria-label="Stake">' +
@@ -236,7 +249,8 @@
 
   function typing() {
     var a = document.activeElement;
-    return a && a.id === 'stake';
+    if (!a) return false;
+    return a.id === 'stake' || !!(a.closest && a.closest('.targets'));
   }
 
   /* ---------- validation ---------- */
@@ -341,13 +355,6 @@
         return;
       }
 
-      var tStep = t.closest('[data-ticks]');
-      if (tStep) {
-        S.ticks = Math.max(1, Math.min(10, S.ticks + (+tStep.getAttribute('data-ticks'))));
-        check(); renderPanel();
-        return;
-      }
-
       if (t.closest('#plus')) { setStake(S.stake + 1); return; }
       if (t.closest('#minus')) { setStake(S.stake - 1); return; }
 
@@ -383,13 +390,20 @@
     });
 
     root.addEventListener('input', function (e) {
-      if (e.target.id !== 'stake') return;
-      S.stake = Math.max(0, +e.target.value || 0);
-      check();
-      refreshValidity();
+      var id = e.target.id;
+      if (id === 'stake') {
+        S.stake = Math.max(0, +e.target.value || 0);
+        check();
+        refreshValidity();
+        return;
+      }
+      if (id === 'tgtTP') API.prefs.setAuto({ takeProfit: Math.max(0, +e.target.value || 0) });
+      else if (id === 'tgtSL') API.prefs.setAuto({ stopLoss: Math.max(0, +e.target.value || 0) });
+      else if (id === 'tgtMult') API.prefs.setAuto({ multiplier: Math.max(1, +e.target.value || 1) });
     });
     root.addEventListener('blur', function (e) {
-      if (e.target.id === 'stake') renderPanel();
+      var id = e.target.id;
+      if (id === 'stake' || id === 'tgtTP' || id === 'tgtSL' || id === 'tgtMult') renderPanel();
     }, true);
   }
 

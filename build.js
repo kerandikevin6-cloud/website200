@@ -6,7 +6,7 @@ const path = require('path');
 
 const ROOT = __dirname;
 const PAGES = [
-  'index', 'ai', 'markets', 'positions', 'responsible',
+  'index', 'ai', 'markets', 'positions', 'learn', 'responsible',
   'account', 'chat',
   'login', 'signup', 'forgot-password', 'reset-password'
 ];

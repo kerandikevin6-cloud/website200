@@ -26,6 +26,8 @@
   /* deep, saturated CTA colours - the buy / sell buttons only */
   --pos-deep:#046340;
   --neg-deep:#8C1710;
+  --warn:#B4690E;
+  --warn-soft:#FDF1E3;
 
   /* chart */
   --chart-line:#15181B;
@@ -71,6 +73,8 @@
     --neg-soft:#2E1A1C;
     --pos-deep:#05663F;
     --neg-deep:#93180F;
+    --warn:#E0912F;
+    --warn-soft:#2E2113;
 
     --chart-line:#E6EDF5;
     --chart-grid:#17293C;
@@ -103,6 +107,8 @@
   --neg-soft:#2E1A1C;
   --pos-deep:#05663F;
   --neg-deep:#93180F;
+  --warn:#E0912F;
+  --warn-soft:#2E2113;
 
   --chart-line:#E6EDF5;
   --chart-grid:#17293C;
@@ -164,14 +170,18 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   font-family:var(--serif);font-size:16px;line-height:1;padding-bottom:2px;
 }
 .brand-name{font-size:13px;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
+/* Two short lines instead of one long one: the kind sits over the
+   amount, which keeps this well clear of the Deposit button. */
 .acct{
-  display:flex;align-items:center;gap:8px;padding:7px 10px;color:var(--text-2);
+  display:flex;align-items:center;gap:7px;padding:5px 8px;color:var(--text-2);
   background:var(--surface-2);border:1px solid var(--line);border-radius:0;
 }
 .acct:hover{color:var(--text);background:var(--surface-3)}
-.acct-dot{width:7px;height:7px;border-radius:50%;background:var(--pos);flex:none}
-.acct-kind{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.acct .bal{font-size:13.5px;color:var(--text)}
+.acct-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex:none}
+.acct-dot.demo{background:var(--accent)}
+.acct-txt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0}
+.acct-kind{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:1}
+.acct .bal{font-size:12.5px;color:var(--text);line-height:1.1}
 .btn-primary{
   padding:9px 16px;background:var(--pos);color:#fff;border-radius:0;
   font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap;
@@ -297,7 +307,20 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   border-bottom:1px solid var(--line-soft);border-radius:0;
   background:var(--chart-bg);overflow:hidden;position:relative;
 }
-#chart{display:block;width:100%;height:210px}
+#chart{display:block;width:100%;height:288px;position:relative;z-index:1}
+
+/* A world map sits behind the trace, filled in the text colour at a very
+   low alpha so it reads as a watermark in either theme and never competes
+   with the price line. currentColor means one asset, both themes. */
+.chart-map{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:96%;height:auto;z-index:0;pointer-events:none;
+  color:var(--text);opacity:.025;
+}
+:root[data-theme="dark"] .chart-map{opacity:.04}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .chart-map{opacity:.04}
+}
 .chart-tools{
   position:absolute;left:10px;bottom:10px;display:flex;flex-direction:column;
   border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);
@@ -998,3 +1021,181 @@ body.locked{overflow:hidden}
 .tabbar a:focus-visible::after,
 .ctab:focus-visible::after,
 .seg button:focus-visible::after{background:var(--accent)}
+
+
+/* ---------------- run targets ----------------
+   Three equal cells under Auto / Manual: profit green, loss red, the
+   loss multiplier orange. Equal thirds by the same width:0 trick used
+   on the tabs, so a long number never steals a neighbour's space. */
+.targets{
+  display:flex;border:1px solid var(--line-soft);background:var(--surface);
+}
+.tgt{
+  flex:1 1 0;width:0;min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 9px;
+}
+.tgt + .tgt{border-left:1px solid var(--line-soft)}
+.tgt-l{
+  font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}
+.tgt-v{display:flex;align-items:baseline;gap:4px;max-width:100%}
+.tgt-v i{font-style:normal;font-size:11px;font-weight:600;flex:none}
+.tgt-v input{
+  width:100%;min-width:0;background:none;border:none;outline:none;padding:0;
+  color:var(--text);text-align:center;font-size:14.5px;font-weight:600;
+}
+.tgt.pos .tgt-l,.tgt.pos .tgt-v i{color:var(--pos)}
+.tgt.neg .tgt-l,.tgt.neg .tgt-v i{color:var(--neg)}
+.tgt.warn .tgt-l,.tgt.warn .tgt-v i{color:var(--warn)}
+
+
+/* ---------------- phone number field ----------------
+   The dialling code is furniture, not content: it sits in its own cell
+   with the flag, and the input beside it starts empty and holds only
+   the local number. */
+.phone{
+  display:flex;align-items:stretch;border:1px solid var(--line);
+  background:var(--surface);overflow:hidden;
+}
+.phone:focus-within{border-color:var(--accent)}
+.phone-cc{
+  display:flex;align-items:center;gap:7px;flex:none;padding:0 12px;
+  background:var(--surface-2);border-right:1px solid var(--line-soft);
+}
+.phone-cc .flag{display:flex;flex:none}
+.flagsvg{display:block;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.14) inset}
+.phone-cc b{font-size:13.5px;font-weight:500;color:var(--text-2)}
+.phone .input{
+  flex:1;min-width:0;border:none;background:none;border-radius:0;
+  letter-spacing:.06em;font-size:15px;
+}
+.phone .input:focus{border:none;box-shadow:none}
+.phone .input::placeholder{letter-spacing:.06em;color:var(--muted);opacity:.7}
+
+/* the USDT address row, now that the text and the button are separate */
+.input.address{display:flex;align-items:center;gap:10px}
+.input.address span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.input.address button{
+  flex:none;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent);font-weight:500;
+}
+
+/* ---------------- refer and earn ---------------- */
+.ref-hero{
+  display:flex;border:1px solid var(--line-soft);background:var(--surface-2);
+  margin-bottom:4px;
+}
+.ref-stat{
+  flex:1 1 0;width:0;min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 6px;
+}
+.ref-stat + .ref-stat{border-left:1px solid var(--line-soft)}
+.ref-stat b{font-size:19px;font-weight:500}
+.reflink{
+  display:flex;align-items:center;gap:10px;padding:0 4px 0 12px;
+  border:1px solid var(--line);background:var(--surface);
+}
+.reflink > i{display:flex;color:var(--muted);flex:none}
+.reflink span{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:12.5px;padding:13px 0;
+}
+.reflink button{
+  flex:none;width:42px;height:42px;display:grid;place-items:center;
+  color:var(--accent);border-left:1px solid var(--line-soft);
+}
+.ref-all{border:1px solid var(--line-soft);background:var(--surface)}
+
+
+/* ---------------- password rules ---------------- */
+.rules{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.rules li{
+  position:relative;padding-left:20px;font-size:12px;color:var(--muted);line-height:1.5;
+}
+.rules li::before{
+  content:"";position:absolute;left:3px;top:6px;width:6px;height:6px;border-radius:50%;
+  border:1px solid var(--line);
+}
+.rules li.ok{color:var(--text-2)}
+.rules li.ok::before{background:var(--pos);border-color:var(--pos)}
+.field.bad .input,.field.bad .phone,.field.bad .input-wrap .input{border-color:var(--neg)}
+
+/* ---------------- document pickers ---------------- */
+.picker{display:flex;flex-direction:column;gap:10px}
+.dropzone{cursor:pointer}
+.dropzone .btn{pointer-events:none}
+.picked{
+  display:flex;align-items:center;gap:12px;padding:10px 8px 10px 10px;
+  border:1px solid var(--line);background:var(--surface);
+}
+.picked-thumb{
+  width:52px;height:38px;flex:none;border-radius:var(--r-sm);object-fit:cover;
+  background:var(--surface-2);border:1px solid var(--line-soft);display:block;
+}
+.picked-thumb.doc{display:grid;place-items:center;color:var(--muted)}
+.picked-t{flex:1;min-width:0}
+.picked-t b{display:block;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picked-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* ---------------- awaiting payment ---------------- */
+.await{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;
+  padding:30px 22px 26px;
+}
+.await b{font-size:16px;font-weight:600}
+.await span{font-size:13px;color:var(--muted);line-height:1.6;max-width:36ch}
+.await .btn{width:auto;padding:10px 20px;margin-top:10px}
+.await-orb{display:flex;gap:7px;height:26px;align-items:center;margin-bottom:2px}
+.await-orb i{
+  width:9px;height:9px;border-radius:50%;background:var(--accent);
+  animation:awaitpulse 1.1s infinite;
+}
+.await-orb i:nth-child(2){animation-delay:.16s}
+.await-orb i:nth-child(3){animation-delay:.32s}
+@keyframes awaitpulse{
+  0%,100%{opacity:.22;transform:translateY(0) scale(.85)}
+  50%{opacity:1;transform:translateY(-6px) scale(1)}
+}
+
+/* ---------------- payment confirmed ---------------- */
+.done{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
+  padding:26px 22px 6px;
+}
+.done b{font-size:17px;font-weight:600}
+/* :not() keeps this off the mark, which is also a direct child span and
+   was losing its green to this rule. */
+.done > span:not(.done-mark){font-size:13px;color:var(--muted);line-height:1.6;max-width:36ch}
+.done-mark{
+  width:62px;height:62px;border-radius:50%;display:grid;place-items:center;
+  background:var(--pos-soft);color:var(--pos);margin-bottom:4px;
+  animation:donepop .42s cubic-bezier(.22,1.2,.36,1) both;
+}
+
+@keyframes donepop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ---------------- boost tiers ---------------- */
+.tier-next{
+  display:flex;flex-direction:column;gap:7px;padding:12px 14px;
+  border:1px solid var(--line-soft);border-top:none;background:var(--surface);
+}
+.tier-next span{font-size:12px;color:var(--muted)}
+.tier-bar{height:4px;background:var(--surface-3)}
+.tier-bar i{display:block;height:100%;background:var(--pos)}
+.trow.on{background:var(--accent-soft)}
+.trow .ico{font-family:var(--mono);font-size:12.5px;font-weight:500}
+
+
+/* The dialog box is focused programmatically when a step has no field,
+   so a screen reader lands inside it. That is not keyboard navigation,
+   so it must not paint the 2px ring around the whole dialog. */
+.modal-box:focus,.modal-box:focus-visible{outline:none}
+
+/* A disabled action has to look disabled, or people press it and
+   wonder why nothing happened. */
+.btn:disabled{opacity:.42;cursor:not-allowed;filter:none}
+.btn:disabled:hover{filter:none}
+
+/* check() draws at 1.5 like every other icon; at 30px it needs weight */
+.done-mark svg{stroke-width:2.4}
