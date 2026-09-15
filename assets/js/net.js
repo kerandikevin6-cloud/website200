@@ -67,16 +67,50 @@
     return refreshing;
   }
 
-  /* Is the server there at all? An opaque response counts as yes: we
-     cannot read it, and do not need to — only whether it arrived. */
-  async function probe() {
-    if (!BASE) return false;
+  /* ---------- what kind of failure was that? ----------
+     fetch() throws identically for a dead network, a blocked origin and
+     a server that returned an error page without CORS headers on it —
+     the reason never reaches JavaScript. So ask /health and read the
+     shape of the answer:
+
+       'ok'      the service answered normally, so both the network and
+                 the allow-list are fine and the original call failed for
+                 its own reasons
+       'error'   it answered, but badly — a 5xx, which on a host that
+                 sleeps is usually an instance still waking up
+       'blocked' a plain request threw while an opaque one succeeded:
+                 something is answering, but the browser would not let us
+                 read it
+       'down'    nothing answered at all
+
+     'blocked' is deliberately vague, because from in here it genuinely
+     is. A host's own 502 page carries no CORS headers either, so a
+     sleeping instance and an origin that is not on the allow-list look
+     exactly alike from JavaScript. The message says what is true of
+     both — it did not get through, nothing was charged — and the console
+     line names both causes for whoever is actually debugging it. */
+  async function diagnose() {
+    if (!BASE) return 'down';
+    try {
+      var res = await fetch(BASE + '/health', { cache: 'no-store' });
+      return res.ok ? 'ok' : 'error';
+    } catch (e) {}
+
     try {
       await fetch(BASE + '/health', { mode: 'no-cors', cache: 'no-store' });
-      return true;
-    } catch (e) {
-      return false;
+      return 'blocked';
+    } catch (e2) {
+      return 'down';
     }
+  }
+
+  /* Hosts that sleep take a few seconds to come back, and the request
+     that wakes them often fails. Nudging /health when the app loads
+     means the instance is already awake by the time somebody presses
+     Deposit — and this call failing costs nothing. */
+  function warm() {
+    if (!BASE) return;
+    try { fetch(BASE + '/health', { cache: 'no-store' }).catch(function () {}); } catch (e) {}
   }
 
   async function call(path, options, retried) {
@@ -96,21 +130,35 @@
         body: options.body ? JSON.stringify(options.body) : undefined
       });
     } catch (e) {
-      /* fetch() throws the same way for a dead network and for a request
-         the browser refused to send because this origin is not on the
-         API's allow-list — the CORS reason never reaches JavaScript. So
-         ask again with mode:'no-cors': that request is not origin-checked,
-         so if it resolves the server is up and the problem is the
-         allow-list, which is a different thing to tell somebody. */
-      var reachable = await probe();
-      if (reachable) {
+      var why = await diagnose();
+
+      if (why === 'error') {
         try {
-          console.error('[nexas] the API is up but refused this origin: ' +
-            location.origin + ' — add it to CORS_ORIGINS on the API.');
+          console.error('[nexas] the API answered with an error. If it is hosted ' +
+            'on an instance that sleeps, it may still be waking up.');
         } catch (e2) {}
-        throw ApiError('This site is not cleared to reach the Nexas API. ' +
-          'If you are testing a preview link, use the main address.', 'origin');
+        throw ApiError('Nexas is having trouble right now. Nothing was charged — ' +
+          'give it a moment and try again.', 'server');
       }
+
+      if (why === 'blocked') {
+        try {
+          console.error('[nexas] the API answered but the browser would not let us ' +
+            'read it. Two causes look identical here: (1) ' + location.origin +
+            ' is not in CORS_ORIGINS on the API, or (2) the API returned an error ' +
+            'page — a 5xx carries no CORS headers, so a sleeping or crashed ' +
+            'instance looks exactly like a blocked origin. Check the service is ' +
+            'up first, then the allow-list.');
+        } catch (e3) {}
+        throw ApiError('Nexas could not be reached just now. Nothing was charged — ' +
+          'give it a moment and try again.', 'unreachable');
+      }
+
+      if (why === 'ok') {
+        /* /health is fine, so this one request failed on its own. */
+        throw ApiError('That request did not get through. Please try again.', 'flaky');
+      }
+
       throw ApiError('Could not reach Nexas. Check your connection.', 'offline');
     }
 
@@ -133,6 +181,8 @@
     base: BASE,
     tokens: tokens,
     setTokens: setTokens,
+    warm: warm,
+    diagnose: diagnose,
     signedIn: function () { return !!(tokens() || {}).accessToken; },
 
     /* ---------- auth ---------- */

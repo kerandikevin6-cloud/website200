@@ -1561,6 +1561,10 @@
     /* Before anything is painted: a stored 'real' with no account behind
        it collapses to demo, so no screen ever renders the word. */
     API.account.enforce();
+    /* Wake the API early. An instance that has gone to sleep takes a few
+       seconds to come back, and the request that wakes it is the one that
+       fails — better that is this one than somebody's deposit. */
+    if (window.NexNet && window.NexNet.live) window.NexNet.warm();
     clearInterval(window.__nexMkt);
     if (!guard()) return;
     document.body.classList.add('loading');
