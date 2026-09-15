@@ -1302,6 +1302,10 @@ body.locked{overflow:hidden}
 .topbar .btn-primary{height:38px;display:flex;align-items:center;padding:0 16px}
 /* the invisible spacer opposite a back button must stay invisible */
 .topbar .iconbtn[aria-hidden="true"]{background:none;border:none}
+/* Back keeps its circle inside the top bar too — this block sets a
+   square on every icon button in here, and would otherwise win on
+   specificity. */
+.topbar .back-btn{width:36px;height:36px;border-radius:50%}
 
 
 /* ============================================================
