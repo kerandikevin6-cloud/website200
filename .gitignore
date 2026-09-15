@@ -1,0 +1,48 @@
+# ============================================================
+# Nexas — front end
+# ============================================================
+
+# The API lives here but is deployed from its own repository, so it is
+# kept out of this push. Remove this line if you ever want Render to
+# build the backend straight from this repo — it can only deploy what
+# GitHub can see.
+backend/
+
+# The operator console. Kept out of the public site on purpose: it is
+# for staff, and anything deployed alongside the trading app is one
+# guessed URL away from being found. Run it locally, or host it
+# separately behind your own access control.
+admin/
+
+# ---- dependencies ----
+node_modules/
+.pnp/
+.pnp.js
+
+# ---- local env and secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- editor and OS noise ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
+
+# ---- logs and scratch ----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.cache/
+tmp/
+temp/
+probe*.html          # throwaway harness pages used while testing
+
+# NOTE: dist/ is deliberately NOT ignored. dist/preview.html is the
+# single-file build produced by `node build.js` and is tracked on
+# purpose, so the whole interface can be shared as one link.

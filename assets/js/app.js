@@ -615,10 +615,129 @@
   function guard() {
     if (document.body.getAttribute('data-chrome') !== 'app') return true;
     if (API.session.get()) return true;
+    if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) return true;
     /* A signed-out visitor should meet the pitch, not a login form. */
     go('landing.html');
     return false;
   }
+
+  /* ---------- auth submission ----------
+     One handler for sign-in, sign-up and reset, because all three end
+     the same way: a session, or a message under the right field. When
+     no API is configured it falls through to the local simulation so
+     the interface stays walkable. */
+  function busy(form, on, label) {
+    var btn = form.querySelector('[type=submit], .btn-fill');
+    if (!btn) return;
+    if (on) {
+      btn.dataset.idle = btn.dataset.idle || btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = loader('sm') + (label || 'Please wait');
+    } else {
+      btn.disabled = false;
+      if (btn.dataset.idle) btn.innerHTML = btn.dataset.idle;
+    }
+  }
+
+  /* The server answers with per-field complaints; put each one under the
+     field it belongs to instead of flattening them into a toast. */
+  function showServerErrors(form, err) {
+    if (err.fields) {
+      var placed = false;
+      Object.keys(err.fields).forEach(function (name) {
+        var input = form.querySelector('#' + name) ||
+                    form.querySelector('[name="' + name + '"]') ||
+                    (name === 'email' ? form.querySelector('input[type=email]') : null) ||
+                    (name === 'password' ? form.querySelector('input[type=password]') : null);
+        if (input) { markField(input, err.fields[name]); placed = true; }
+      });
+      if (placed) return;
+    }
+    window.NexToast(err.message);
+  }
+
+  async function submitAuthForm(f) {
+    var kind = f.getAttribute('data-auth') || 'login';
+    var to = f.getAttribute('data-to') || 'index.html';
+    var splashText = f.getAttribute('data-splash');
+    var emailInput = f.querySelector('input[type=email]');
+    var email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+
+    if (!window.NexNet || !window.NexNet.live) {
+      /* No backend configured: keep the original local behaviour. */
+      API.session.signIn(email, 'password');
+      splash(splashText, to);
+      return;
+    }
+
+    busy(f, true, kind === 'signup' ? 'Creating' : 'Signing in');
+    try {
+      if (kind === 'signup') {
+        var first = (f.querySelector('#sFirst') || {}).value || '';
+        var last = (f.querySelector('#sLast') || {}).value || '';
+        var whole = (first + ' ' + last).trim();
+        var out = await window.NexNet.signup({
+          email: email,
+          password: (f.querySelector('#newPassword') || {}).value || '',
+          name: whole || email.split('@')[0],
+          phone: (f.querySelector('#sPhone') || {}).value || undefined
+        });
+        if (out.needsConfirmation) {
+          busy(f, false);
+          window.NexToast('Check your email to confirm the address, then sign in.');
+          return;
+        }
+      } else if (kind === 'reset') {
+        /* Supabase sends the recovery token back in the URL fragment. */
+        var frag = new URLSearchParams(location.hash.replace(/^#/, ''));
+        var token = frag.get('access_token');
+        if (!token) {
+          busy(f, false);
+          window.NexToast('Open this page from the link in your email.');
+          return;
+        }
+        await window.NexNet.resetPassword(token, (f.querySelector('#newPassword') || {}).value);
+        busy(f, false);
+        window.NexToast('Password updated. Sign in with the new one.');
+        setTimeout(function () { go('login.html'); }, 900);
+        return;
+      } else if (kind === 'forgot') {
+        await window.NexNet.forgotPassword(email);
+        busy(f, false);
+        window.NexToast('If that address has an account, a reset link is on its way.');
+        return;
+      } else {
+        await window.NexNet.login(email, (f.querySelector('input[type=password]') || {}).value);
+      }
+
+      await hydrateSession();
+      splash(splashText, to);
+    } catch (err) {
+      busy(f, false);
+      showServerErrors(f, err);
+    }
+  }
+
+  /* Pull the server's idea of who this is and what they hold, and let
+     the local API mirror it so every existing screen keeps working. */
+  async function hydrateSession() {
+    if (!window.NexNet || !window.NexNet.live || !window.NexNet.signedIn()) return null;
+    try {
+      var out = await window.NexNet.session();
+      API.session.adopt({
+        id: out.user.id,
+        email: out.user.email,
+        name: out.profile && out.profile.display_name,
+        kyc: out.profile && out.profile.kyc_status,
+        phone: out.profile && out.profile.phone,
+        country: out.profile && out.profile.country
+      }, out.accounts || []);
+      return out;
+    } catch (err) {
+      return null;
+    }
+  }
+  window.NexHydrate = hydrateSession;
 
   /* ---------- form validation ----------
      Everything the person types is checked before anything is submitted,
@@ -808,7 +927,12 @@
         return;
       }
 
-      if (t.closest('#signOut')) { API.session.signOut(); splash('Signing you out', 'login.html'); return; }
+      if (t.closest('#signOut')) {
+        if (window.NexNet && window.NexNet.live) window.NexNet.logout();
+        API.session.signOut();
+        splash('Signing you out', 'landing.html');
+        return;
+      }
 
       var consent = t.closest('[data-consent]');
       if (consent) {
@@ -821,6 +945,18 @@
       var sp = t.closest('[data-splash]');
       if (sp && sp.tagName !== 'FORM') {
         e.preventDefault();
+        if (window.NexNet && window.NexNet.live) {
+          /* Hand off to Supabase's consent screen. Nothing Google-shaped
+             is ever posted to our own origin. */
+          sp.disabled = true;
+          window.NexNet.googleUrl().then(function (url) {
+            location.href = url;
+          }).catch(function (err) {
+            sp.disabled = false;
+            window.NexToast(err.message);
+          });
+          return;
+        }
         API.session.signIn(null, 'google');
         splash(sp.getAttribute('data-splash'), sp.getAttribute('data-to') || 'index.html');
         return;
@@ -920,9 +1056,7 @@
       if (f.hasAttribute('data-splash')) {
         e.preventDefault();
         if (!validateForm(f)) return;
-        var email = f.querySelector('input[type=email]');
-        API.session.signIn(email && email.value, 'password');
-        splash(f.getAttribute('data-splash'), f.getAttribute('data-to') || 'index.html');
+        submitAuthForm(f);
         return;
       }
       if (f.hasAttribute('data-demo-form')) {
@@ -959,6 +1093,73 @@
     }, 2600);
   }
 
+  /* ---------- money, for real ----------
+     The balance is never touched here. The server credits it when the
+     provider confirms, and the screen picks that up from the session
+     it re-reads afterwards. A client that adds to its own balance is a
+     client that disagrees with the ledger the moment anything fails. */
+  async function liveDeposit(amount, money) {
+    var method = state.data.method;
+    var token = ++payToken;
+    gotoStep('pending');
+
+    try {
+      var started;
+      if (method === 'card') {
+        started = await window.NexNet.depositCard(Math.round(amount * 100));
+        /* Paystack collects the card on its own page. */
+        if (started.checkoutUrl) window.open(started.checkoutUrl, '_blank', 'noopener');
+      } else {
+        started = await window.NexNet.depositMpesa(
+          Math.round(amount * 100),
+          (document.getElementById('mpesaPhone') || {}).value || ''
+        );
+      }
+
+      state.data.ref = started.reference;
+
+      var payment = await window.NexNet.waitForDeposit(started.reference);
+      if (token !== payToken) return;            /* closed while waiting */
+
+      if (payment.status === 'success') {
+        state.data.credited = (payment.creditedMinor || 0) / 100;
+        await hydrateSession();
+        gotoStep('success');
+      } else if (payment.status === 'pending') {
+        closeModals();
+        window.NexToast('Still waiting on the payment. It will credit on its own once it clears.');
+      } else {
+        closeModals();
+        window.NexToast(payment.failureReason || 'That payment did not go through.');
+      }
+    } catch (err) {
+      if (token !== payToken) return;
+      closeModals();
+      window.NexToast(err.message);
+    }
+  }
+
+  async function liveWithdraw(amountUsd) {
+    var token = ++payToken;
+    gotoStep('pending');
+    try {
+      await window.NexNet.withdraw({
+        amountMinor: Math.round(amountUsd * 100),
+        method: 'mpesa',
+        phone: (document.getElementById('wPhone') || {}).value || undefined
+      });
+      if (token !== payToken) return;
+
+      state.data.ref = reference();
+      await hydrateSession();
+      gotoStep('success');
+    } catch (err) {
+      if (token !== payToken) return;
+      closeModals();
+      showServerErrors(document, err);
+    }
+  }
+
   /* actions that touch money or verification */
   function runAction(name, node) {
     if (name === 'deposit') {
@@ -985,6 +1186,9 @@
 
       state.data.payLabel = F.count(amount) + ' ' + money;
       state.data.credited = Math.round(usd * 100) / 100;
+
+      if (window.NexNet && window.NexNet.live) return liveDeposit(amount, money);
+
       state.data.ref = reference();
       settle(function () {
         API.account.credit(state.data.credited, 'Deposit');
@@ -1000,6 +1204,9 @@
       if (w > API.account.balance()) return fieldError('wAmount',
         'Not enough funds. Available ' + F.money(API.account.balance()));
       state.data.sent = w;
+
+      if (window.NexNet && window.NexNet.live) return liveWithdraw(w);
+
       state.data.ref = reference();
       settle(function () { API.account.debit(w, 'Withdrawal'); });
       return;
@@ -1016,6 +1223,22 @@
       if (nw === cur) return fieldError('newPassword', 'Choose a password you have not used here before');
       if (!cf) return fieldError('confirmPassword', 'Repeat the new password');
       if (cf !== nw) return fieldError('confirmPassword', 'These do not match');
+
+      if (window.NexNet && window.NexNet.live) {
+        var btn = node;
+        if (btn) { btn.disabled = true; btn.innerHTML = loader('sm') + 'Saving'; }
+        window.NexNet.changePassword(cur, nw).then(function () {
+          gotoStep('done');
+        }).catch(function (err) {
+          if (btn) { btn.disabled = false; btn.textContent = 'Update password'; }
+          if (err.fields && err.fields.currentPassword) {
+            fieldError('currentPassword', err.fields.currentPassword);
+          } else {
+            window.NexToast(err.message);
+          }
+        });
+        return;
+      }
 
       gotoStep('done');
       return;
@@ -1133,6 +1356,10 @@
     document.body.classList.add('loading');
     bootVeil();
     API.ready(dropVeil);
+    /* Re-read the account from the server on every load, so a balance
+       changed elsewhere — a deposit that cleared, a payout approved —
+       is reflected rather than trusting what this browser last saw. */
+    if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) hydrateSession();
     mountChrome(document.querySelector('.app') || document.body);
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
     bindChrome();

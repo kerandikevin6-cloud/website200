@@ -14,7 +14,7 @@ const PAGES = [
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const css = read('assets/css/app.css');
-const MODULES = ['format', 'api', 'chart', 'modals', 'trade', 'positions', 'ai', 'app'];
+const MODULES = ['config', 'net', 'format', 'api', 'chart', 'modals', 'trade', 'positions', 'ai', 'app'];
 const js = MODULES.map(m => read(`assets/js/${m}.js`)).join(String.fromCharCode(10));
 
 const pages = {};

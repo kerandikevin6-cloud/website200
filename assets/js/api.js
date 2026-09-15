@@ -540,7 +540,33 @@
     session: {
       get: function () { return S.session; },
       signIn: signIn,
-      signOut: signOut
+      signOut: signOut,
+
+      /* Take the server's answer as the truth. Called after every sign
+         in and on every boot while a token is held, so the balance on
+         screen is the balance in the database rather than whatever this
+         browser last wrote to localStorage. */
+      adopt: function (user, accounts) {
+        S.session = {
+          id: user.id,
+          email: user.email,
+          name: user.name || (user.email || '').split('@')[0],
+          method: 'server',
+          at: Date.now()
+        };
+        S.verified = user.kyc === 'verified';
+
+        (accounts || []).forEach(function (a) {
+          if (a.kind === 'real' || a.kind === 'demo') {
+            S.balances[a.kind] = Number(a.balance_minor || 0) / 100;
+          }
+        });
+
+        persist();
+        B.emit('session', S.session);
+        B.emit('balance', { balance: balance(), account: S.account });
+        B.emit('kyc', S.verified);
+      }
     },
 
     kyc: {
