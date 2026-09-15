@@ -134,10 +134,18 @@
      currency rather than converted from a dollar figure. */
   function stakeChips() {
     var r = display().rate;
-    if (r === 1) return { step: 1, chips: [1, 5, 10, 25, 50], start: 10 };
-    if (r >= 1000) return { step: 500, chips: [500, 1000, 5000, 10000, 25000], start: 5000 };
-    if (r >= 100)  return { step: 50,  chips: [50, 100, 500, 1000, 2500], start: 500 };
-    return { step: 10, chips: [10, 25, 50, 100, 250], start: 50 };
+    /* min is the smallest stake, in this currency — a round local figure
+       rather than a converted dollar, so the message reads "100.00 KES"
+       and not "129.00". LIMITS.max is still the ceiling, in USD. */
+    if (r === 1) return { step: 1, chips: [1, 5, 10, 25, 50], start: 10, min: 1 };
+    if (r >= 1000) return { step: 500, chips: [500, 1000, 5000, 10000, 25000], start: 5000, min: 1000 };
+    if (r >= 100)  return { step: 50,  chips: [100, 500, 1000, 2500, 5000], start: 500, min: 100 };
+    return { step: 10, chips: [10, 25, 50, 100, 250], start: 50, min: 10 };
+  }
+
+  /* The floor in USD, which is the unit everything is checked in. */
+  function minStakeUsd() {
+    return fromDisplay(stakeChips().min);
   }
 
   /* Timezone is a decent offline guess and costs no request, so it seeds
@@ -213,6 +221,10 @@
     geo: saved.geo || null,
     referrals: saved.referrals || null,
     session: saved.session || null,
+    /* Which instrument the terminal is on. Markets sets it, Trade reads
+       it — the two pages are separate documents, so it has to live
+       somewhere they both see. */
+    symbol: (saved.symbol && BY_ID[saved.symbol]) ? saved.symbol : 'R_10',
     /* Demo until an account exists. A visitor who has never signed up
        must never be looking at a screen that says "real" — not even at
        zero, because the number is not the point: the word is. */
@@ -229,19 +241,40 @@
     auto: saved.auto || { runs: 10, multiplier: 2, takeProfit: 200, stopLoss: 100 }
   };
   var saveTimer;
+  function writeNow() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
+        verified: S.verified, consent: S.consent, riskAck: S.riskAck,
+        geo: S.geo, referrals: S.referrals,
+        contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
+        auto: S.auto
+      }));
+    } catch (e) {}
+  }
+
+  /* Debounced, because ticks change state several times a second and
+     localStorage is synchronous. */
   function persist() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () {
-      try {
-        localStorage.setItem(KEY, JSON.stringify({
-          session: S.session, account: S.account, balances: S.balances,
-          verified: S.verified, consent: S.consent, riskAck: S.riskAck,
-          geo: S.geo, referrals: S.referrals,
-          contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
-          auto: S.auto
-        }));
-      } catch (e) {}
-    }, 120);
+    saveTimer = setTimeout(writeNow, 120);
+  }
+
+  /* Write immediately. For a change that is followed straight away by a
+     navigation: the debounced write never happens, because the document
+     is gone before the timer fires, and the change is silently lost. */
+  function persistNow() {
+    clearTimeout(saveTimer);
+    writeNow();
+  }
+
+  /* A page being closed or hidden is the other way a pending write is
+     lost — a phone switching apps, a tab closed mid-trade. */
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') persistNow();
+    });
+    window.addEventListener('pagehide', persistNow);
   }
 
   /* ---------- price feed ---------- */
@@ -394,7 +427,10 @@
     if (connection.status !== 'live') return 'Waiting for the price feed';
     var stake = +spec.stake;
     var F = window.NexFmt;
-    if (!stake || stake < LIMITS.min) return 'Minimum stake is ' + F.money(LIMITS.min);
+    /* A hair under, to forgive the float that a KES -> USD -> KES round
+       trip leaves behind: 100 shillings must never fail its own minimum. */
+    var floor = minStakeUsd() - 0.0001;
+    if (!stake || stake < floor) return 'Minimum stake is ' + F.money(minStakeUsd());
     if (stake > LIMITS.max) return 'Maximum stake is ' + F.money(LIMITS.max);
     if (stake > balance()) return 'Not enough funds. Available ' + F.money(balance());
     if (spec.ticks < LIMITS.minTicks || spec.ticks > LIMITS.maxTicks) return 'Duration must be 1–10 ticks';
@@ -633,7 +669,8 @@
       apply: applyDisplay,
       toDisplay: toDisplay,
       fromDisplay: fromDisplay,
-      stakeChips: stakeChips
+      stakeChips: stakeChips,
+      minStakeUsd: minStakeUsd
     },
 
     referrals: {
@@ -704,7 +741,17 @@
       riskAck: function () { return S.riskAck; },
       setRiskAck: function (v) { S.riskAck = !!v; persist(); },
       auto: function () { return S.auto; },
-      setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); }
+      setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); },
+      symbol: function () { return BY_ID[S.symbol] ? S.symbol : 'R_10'; },
+      setSymbol: function (id) {
+        if (!BY_ID[id]) return false;
+        S.symbol = id;
+        /* Written now, not in 120ms: the caller navigates immediately
+           after this, and a debounced write would never land. */
+        persistNow();
+        B.emit('symbol', id);
+        return true;
+      }
     }
   };
 })();

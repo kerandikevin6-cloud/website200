@@ -267,6 +267,7 @@
         '</div>' +
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
+          item('Trading history', { icon: 'clock', href: 'history.html' }) +
           item('Support', { icon: 'headset', href: 'chat.html' }) +
           item('Learn', { icon: 'book', href: 'learn.html' }) +
           item('Refer and earn', { icon: 'gift', modal: 'refer' }) +
@@ -578,8 +579,20 @@
 
   /* The app is useless until the price feed answers, so hold a veil over
      it rather than showing a dead terminal with zeroes in it. */
+  /* Once per session, not once per page. The feed connects in a second
+     or two and then stays connected; showing "Connecting to the feed"
+     again on every tab change is the app blinking at its own user. */
+  var FEED_SEEN = 'nexas.feedSeen';
+  function feedSeen() {
+    try { return sessionStorage.getItem(FEED_SEEN) === '1'; } catch (e) { return false; }
+  }
+  function markFeedSeen() {
+    try { sessionStorage.setItem(FEED_SEEN, '1'); } catch (e) {}
+  }
+
   function bootVeil() {
     if (document.body.getAttribute('data-chrome') !== 'app') return;
+    if (feedSeen()) return;
     if (document.getElementById('bootVeil')) return;
     var v = document.createElement('div');
     v.className = 'boot';
@@ -589,6 +602,7 @@
     document.body.appendChild(v);
   }
   function dropVeil() {
+    markFeedSeen();
     var v = document.getElementById('bootVeil');
     if (!v) return;
     v.classList.add('gone');
@@ -1176,25 +1190,21 @@
      customer on a guess is the worse of the two mistakes. */
   var MPESA_THEIRS = [
     { re: /cancel/i,
-      headline: 'The prompt was cancelled',
-      detail: 'Cancelled on the handset',
-      note: 'The M-Pesa request was declined on your phone, so nothing was taken. ' +
-            'Start again when you are ready.' },
+      headline: 'Prompt cancelled',
+      detail: 'Cancelled on your phone',
+      note: 'Nothing was taken. Send it again when you are ready.' },
     { re: /insufficient|balance/i,
-      headline: 'Not enough in your M-Pesa',
+      headline: 'Not enough in M-Pesa',
       detail: 'Insufficient funds',
-      note: 'Your M-Pesa balance did not cover this amount. Nothing was taken. ' +
-            'Top up, or try a smaller deposit.' },
+      note: 'Nothing was taken. Top up or try a smaller amount.' },
     { re: /pin|incorrect|wrong/i,
-      headline: 'The PIN was not accepted',
-      detail: 'PIN not accepted',
-      note: 'M-Pesa did not accept the PIN, so nothing was taken. ' +
-            'You can try again.' },
+      headline: 'PIN not accepted',
+      detail: 'PIN rejected',
+      note: 'Nothing was taken. You can try again.' },
     { re: /timeout|timed out|expired|no response|not answered/i,
-      headline: 'The prompt expired',
-      detail: 'No response in time',
-      note: 'The request timed out before it was approved, so nothing was taken. ' +
-            'Send it again and approve the prompt when it appears.' }
+      headline: 'Prompt expired',
+      detail: 'Not approved in time',
+      note: 'Nothing was taken. Send it again and approve the prompt.' }
   ];
 
   function explainFailure(reason, method) {
@@ -1216,13 +1226,9 @@
 
     /* Ours, or unattributable — which we treat as ours. */
     return {
-      headline: mpesa ? 'M-Pesa could not be reached' : 'The payment could not be completed',
-      note: 'This one is on us, not you. No money has left your account and nothing ' +
-            'was charged.',
-      detail: text ? text.slice(0, 120) : 'The provider did not respond',
-      reassure: 'The fault has been logged and is being looked at. It is usually ' +
-                'short-lived — try again in a few minutes, and your balance is ' +
-                'untouched either way.',
+      headline: mpesa ? 'M-Pesa is not responding' : 'Payment could not be completed',
+      note: 'This is on us, not you. Nothing was charged. We are on it — try again shortly.',
+      detail: text ? text.slice(0, 90) : 'No response from the provider',
       ref: state.data.ref || null
     };
   }
@@ -1272,15 +1278,11 @@
            spinner forever either, so it gets an honest screen with a way
            to look again. */
         state.data.fail = {
-          headline: method === 'mpesa' ? 'No answer from M-Pesa yet' : 'Still waiting on the bank',
-          note: method === 'mpesa'
-            ? 'If a prompt reached your phone and you approved it, the money will ' +
-              'credit on its own — this screen does not need to stay open. If no ' +
-              'prompt arrived, nothing was taken and you can send it again.'
-            : 'The payment has not been confirmed yet. Nothing credits until it is.',
-          detail: 'Waiting for confirmation',
+          headline: 'No confirmation yet',
+          note: 'If you approved it, it will credit on its own. If no prompt came, ' +
+                'nothing was taken.',
+          detail: 'Waiting on the provider',
           ref: state.data.ref || null,
-          reassure: 'Deposits that clear late still land in your balance. Nothing is lost.',
           recheck: true
         };
         gotoStep('failed');
@@ -1323,12 +1325,9 @@
         return;
       }
       state.data.fail = {
-        headline: 'The payout was not sent',
-        note: 'This one is on us, not you. Your balance is unchanged and nothing ' +
-              'has been deducted.',
-        detail: serverErrorText(err),
-        reassure: 'The fault has been logged and is being looked at. Nothing is ' +
-                  'lost — request it again in a few minutes.'
+        headline: 'Payout not sent',
+        note: 'This is on us, not you. Your balance is unchanged. Try again shortly.',
+        detail: serverErrorText(err)
       };
       gotoStep('failed');
     }
@@ -1532,26 +1531,57 @@
   }
 
   /* ---------- markets ---------- */
+  /* Markets is the instrument picker, not a data screen. Prices belong on
+     the chart, where they mean something next to a contract; a wall of
+     numbers here is something to read rather than something to use, and
+     the only decision this page exists to support is "trade that one
+     instead". So: grouped names, the current one marked, no card around
+     them — the rows sit on the page.
+
+     Choosing writes the preference and goes to the terminal, which reads
+     it on mount. */
   function initMarkets() {
     var listHost = document.getElementById('marketList');
     if (!listHost) return;
+
     function render() {
-      listHost.innerHTML = '<div class="list">' + API.symbols.map(function (s) {
-        var h = API.feed.history(s.id);
-        var last = h[h.length - 1], first = h[Math.max(0, h.length - 60)];
-        var chg = (last.price - first.price) / first.price * 100;
-        return '<a class="mkt" href="' + href('index.html') + '">' +
-          '<span class="inst-mark">' + icon('chart', 14) + '</span>' +
-          '<span class="n"><b>' + s.name + '</b><span>' + s.group + '</span></span>' +
-          '<span class="p"><span class="num">' + F.price(last.price, s.digits) + '</span>' +
-          '<span class="num ' + (chg >= 0 ? 'pos' : 'neg') + '">' + F.signedPct(chg) + '</span></span></a>';
-      }).join('') + '</div>';
+      var current = API.prefs.symbol();
+      var groups = [];
+      var byGroup = {};
+      API.symbols.forEach(function (sym) {
+        if (!byGroup[sym.group]) { byGroup[sym.group] = []; groups.push(sym.group); }
+        byGroup[sym.group].push(sym);
+      });
+
+      listHost.innerHTML = groups.map(function (g) {
+        return '<div class="mkt-group">' +
+          '<div class="mkt-group-label">' + g + '</div>' +
+          byGroup[g].map(function (sym) {
+            var on = sym.id === current;
+            return '<button class="mkt-pick' + (on ? ' on' : '') + '" data-symbol="' + sym.id + '">' +
+              '<span class="n">' + sym.name + '</span>' +
+              (on ? '<span class="mkt-on">Trading</span>' : '') +
+            '</button>';
+          }).join('') +
+        '</div>';
+      }).join('');
     }
+
+    listHost.addEventListener('click', function (e) {
+      var pick = e.target.closest('[data-symbol]');
+      if (!pick) return;
+      var id = pick.getAttribute('data-symbol');
+      if (!API.prefs.setSymbol(id)) return;
+      render();
+      go('index.html');
+    });
+
     API.ready(function () {
       document.body.classList.remove('loading');
       render();
+      /* Nothing on this page ticks any more, so nothing has to be
+         repainted on a timer. */
       clearInterval(window.__nexMkt);
-      window.__nexMkt = setInterval(render, 2000);
     });
   }
 

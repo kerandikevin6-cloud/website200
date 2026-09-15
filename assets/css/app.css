@@ -4,6 +4,26 @@
    No gradients anywhere. Curved edges. Trading green / red CTAs.
    ============================================================ */
 
+/* ---------------- page transitions ----------------
+   Same-origin navigations cross-fade instead of blanking. Browsers that
+   do not know this rule ignore it and navigate as before, so it is worth
+   the four lines and costs nothing when unsupported.
+
+   Kept short: a page change should feel immediate, not animated. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 140ms;
+  animation-timing-function: ease;
+}
+
+/* Someone who has asked for less motion gets none. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
+
 :root{
   /* neutrals — cool grey, biased slightly toward the blue accent.
      The page ground is off-white and panels are pure white, so cards,
@@ -43,9 +63,13 @@
   --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
   --r-xl:20px;
-  --r-lg:16px;
-  --r:12px;
-  --r-sm:10px;
+  /* Square. The system is sharp-edged, and a rounded card in the middle
+     of it reads as a different product. Kept as tokens rather than
+     deleted so a corner can be reintroduced in one place if it is ever
+     wanted — and so nothing has to be chased through the file again. */
+  --r-lg:0px;
+  --r:0px;
+  --r-sm:0px;
 
   --sans:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
@@ -171,7 +195,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .iconbtn:hover{color:var(--text);background:var(--surface-3)}
 .brand{display:flex;align-items:center;gap:9px;margin-right:auto}
 .brand-mark{
-  width:28px;height:28px;border:1px solid var(--accent);border-radius:9px;
+  width:28px;height:28px;border:1px solid var(--accent);border-radius:0;
   display:grid;place-items:center;color:var(--accent);
   font-family:var(--serif);font-size:16px;line-height:1;padding-bottom:2px;
 }
@@ -833,7 +857,7 @@ footer a:hover{color:var(--text-2)}
 .inst-name svg{color:var(--muted)}
 .feed{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-family:var(--mono)}
 .feed i{width:6px;height:6px;border-radius:50%;background:var(--pos)}
-.feed.reconnecting i,.feed.booting i{background:var(--neg);animation:blink 1s infinite}
+.feed.reconnecting i,.feed.booting i{background:var(--warn);animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.25}}
 
 #chart{touch-action:none;cursor:crosshair}
@@ -921,10 +945,13 @@ button.trow:hover{background:var(--surface-2)}
 kbd{font-family:var(--mono);font-size:11px;padding:3px 7px;border:1px solid var(--line);background:var(--surface-2)}
 
 /* ---------------- connection, consent, risk ---------------- */
+/* Amber, not red. A feed that is reconnecting is a wait, not a loss —
+   red here says "your money is in trouble" for something that resolves
+   itself in two seconds. */
 .conn-banner{
   position:fixed;left:50%;top:-60px;transform:translateX(-50%);z-index:80;
   display:flex;align-items:center;gap:9px;padding:9px 16px;font-size:12.5px;
-  background:var(--neg);color:#fff;transition:top .25s ease;white-space:nowrap;
+  background:var(--warn);color:#fff;transition:top .25s ease;white-space:nowrap;
 }
 .conn-banner.show{top:calc(var(--topbar-h) + 8px)}
 .spin{
@@ -1857,4 +1884,139 @@ body[data-chrome="app"] main{background:var(--bg)}
 
 @media (min-width:900px){
   #chart{height:min(50vh,420px)}
+}
+
+/* ---------------- markets: the instrument picker ----------------
+   No card. The rows sit directly on the page ground, separated by a
+   hairline, so the page reads as a list of choices rather than a panel
+   of data to study. */
+.mkt-group{margin:0 14px 22px}
+.mkt-group-label{
+  font-size:10.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);padding:0 2px 8px;
+}
+.mkt-pick{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:15px 2px;text-align:left;color:var(--text-2);
+  border-bottom:1px solid var(--line-soft);border-radius:0;background:none;
+}
+.mkt-pick .n{flex:1;min-width:0;font-size:14px;font-weight:500}
+.mkt-pick.on{color:var(--text)}
+/* The one in play is named, not just tinted: colour alone is not a label. */
+.mkt-on{
+  font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--accent);flex:none;
+}
+.mkt-pick:active{opacity:.7}
+
+/* ---------------- history ----------------
+   Grouped by day, on the page ground like the markets list. A settled
+   trade is a fact, not a control, so none of it is a card or a button. */
+.hist-head{
+  display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;
+  margin:0 14px 24px;padding-bottom:18px;border-bottom:1px solid var(--line-soft);
+}
+.hist-head .label{
+  display:block;font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:6px;
+}
+.hist-head .big{font-family:var(--mono);font-size:26px;line-height:1}
+.hist-side{display:flex;gap:26px;margin-left:auto}
+.hist-side b{font-size:16px}
+.hist-day{margin:0 14px 20px}
+.hist-day-label{
+  font-size:10.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);padding:0 2px 8px;
+}
+.hist-row{
+  display:flex;align-items:center;gap:14px;padding:13px 2px;
+  border-bottom:1px solid var(--line-soft);
+}
+.hist-what{flex:1;min-width:0}
+.hist-what b{display:block;font-size:13.5px;font-weight:500}
+.hist-what span{
+  display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.hist-num{font-size:14px;flex:none}
+
+/* The instrument, over the chart rather than above it — the terminal is
+   short on height and this is a label, not a panel. */
+.chart-inst{
+  position:absolute;top:8px;left:12px;z-index:2;pointer-events:none;
+  font-size:11px;letter-spacing:.04em;color:var(--muted);
+  max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ---------------- learn: one idea per screen ----------------
+   The page was a single long column that asked to be read all at once.
+   Split into sections that fill the screen and snap, so a phone shows
+   one idea at a time and a swipe moves to the next.
+
+   Snapping lives on the scroller, and the scroller here is the page
+   itself. Sections stay at least a screen tall but are allowed to grow:
+   a section that overflows still scrolls normally, it just does not snap
+   in the middle. */
+body[data-page="learn"] main.lrn-flow{background:var(--bg)}
+
+.lrn{
+  padding:var(--lsec-y) var(--lpad);
+  display:flex;flex-direction:column;justify-content:center;
+}
+.lrn-in{width:100%;max-width:860px;margin:0 auto}
+.lrn + .lrn{border-top:1px solid var(--line-soft)}
+
+/* Tinted sections carry their own foreground so body text, headings and
+   muted copy all stay legible against the colour rather than inheriting
+   a palette built for the dark ground. */
+.lrn-tint{color:var(--tint-fg);background:var(--tint);border-top:none}
+.lrn-blue{--tint:var(--tint-blue);--tint-fg:var(--tint-blue-fg)}
+.lrn-purple{--tint:var(--tint-purple);--tint-fg:var(--tint-purple-fg)}
+.lrn-tint h1,.lrn-tint h2,.lrn-tint h3,.lrn-tint b{color:inherit}
+.lrn-tint p,.lrn-tint span,.lrn-tint .lede{color:inherit;opacity:.82}
+.lrn-tint .card,.lrn-tint .stat{
+  background:rgba(255,255,255,.55);border-color:rgba(0,0,0,.08);color:var(--tint-fg);
+}
+.lrn-tint .card p,.lrn-tint .tool p{color:inherit;opacity:.76}
+.lrn-tint .card svg,.lrn-tint .tool svg{color:inherit;opacity:.7}
+
+/* The centred sections: the hero and the two that are a single thought. */
+.lrn-center{text-align:center}
+.lrn-center .lrn-in{max-width:34ch}
+.lrn-center .lede,.lrn-center p{margin-left:auto;margin-right:auto}
+.lrn-center .page-kicker{display:block;margin-bottom:16px}
+.lrn-center h1{
+  font-family:var(--serif);font-weight:400;font-size:clamp(30px,8vw,44px);
+  line-height:1.12;letter-spacing:-.015em;margin:0 0 18px;text-wrap:balance;
+}
+.lrn-center h2{margin-top:0}
+.lrn-cta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+.lrn-more{
+  display:block;margin-top:34px;font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);
+}
+
+/* The odds cards, stacked. Side by side they read as a comparison
+   table and invite scanning for the biggest number; one per row, each
+   is read as its own statement. */
+.stats{grid-template-columns:1fr}
+
+@media (max-width:899px){
+  html{scroll-snap-type:y proximity}
+  .lrn{
+    min-height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;
+    padding-top:calc(var(--topbar-h) + 28px);
+    padding-bottom:calc(var(--tabbar-h) + 28px);
+  }
+  .lrn-flow footer{scroll-snap-align:start}
+}
+
+/* Wide enough for more than one idea at once: no snapping, and the odds
+   can sit two across again. */
+@media (min-width:900px){
+  .stats{grid-template-columns:1fr 1fr}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-snap-type:none}
 }

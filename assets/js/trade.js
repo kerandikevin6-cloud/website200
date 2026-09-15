@@ -46,6 +46,11 @@
   /* ---------- digits ---------- */
   function renderDigits() {
     var meta = API.symbol(S.symbol);
+    /* Markets is where this is chosen, so the terminal has to say which
+       one it landed on — otherwise the choice is invisible the moment
+       the page changes. Drawn over the chart so it costs no height. */
+    var instEl = $('chartInst');
+    if (instEl) instEl.textContent = meta.name;
     var h = API.feed.history(S.symbol).slice(-120);
     var counts = [0,0,0,0,0,0,0,0,0,0];
     h.forEach(function (p) {
@@ -473,6 +478,11 @@
       root.__stakeSet = true;
       S.stake = API.money.fromDisplay(API.money.stakeChips().start);
     }
+
+    /* Markets is where an instrument is chosen; this is where that choice
+       arrives. Read every mount, not just the first — coming back from
+       Markets is a fresh document. */
+    S.symbol = API.prefs.symbol();
 
     unsub.forEach(function (f) { f(); });
     unsub = [];

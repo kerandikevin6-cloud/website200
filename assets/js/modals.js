@@ -543,7 +543,7 @@
                 : 'Confirming ' + s.payLabel + ' with the card issuer.');
           }
         },
-        failed: failStep('Deposit not completed', 'Nothing has been taken.'),
+        failed: failStep('Deposit'),
         success: {
           title: 'Deposit received',
           sub: 'The funds are in your trading balance.',
@@ -800,7 +800,7 @@
               (NAMES[s.method] || 'M-Pesa') + ' account.');
           }
         },
-        failed: failStep('Withdrawal not sent', 'Your balance is unchanged.'),
+        failed: failStep('Withdrawal'),
         success: {
           title: 'Payout sent',
           sub: 'Your provider will confirm by SMS.',

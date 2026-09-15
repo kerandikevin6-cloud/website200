@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>/* Before the first paint: app.js runs at the end of the body, and until
+   it does every page renders in the default light palette and then flips.
+   On a multi-page app that flip happens on every single navigation, which
+   is the flicker. Four lines here, ahead of the stylesheet, cost nothing
+   and remove it. */
+try{document.documentElement.setAttribute('data-theme',localStorage.getItem('nexas.theme')||'dark')}
+catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<title>Nexas — History</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0A1420">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="history" data-chrome="app" data-title="History" data-back="index.html">
+<div class="app">
+  <main>
+    <div class="shell" id="history">
+      <div id="histSummary"><div class="sk sk-summary"></div></div>
+      <div id="histList"><div class="sk sk-list"></div></div>
+      <div style="height:22px"></div>
+    </div>
+  </main>
+</div>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/net.js"></script>
+<script src="assets/js/format.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/modals.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  "use strict";
+  /* Every settled trade, newest first, grouped by day.
+     Positions answers "what is happening now"; this answers "what have I
+     done", which is a different question and deserves its own page
+     rather than a third tab nobody finds. */
+  function init() {
+    var API = window.NexAPI, F = window.NexFmt;
+    var summary = document.getElementById('histSummary');
+    var list = document.getElementById('histList');
+    if (!summary || !list) return;
+
+    function dayKey(ts) {
+      var d = new Date(ts);
+      return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
+    function dayLabel(ts) {
+      var today = dayKey(Date.now());
+      var yest = dayKey(Date.now() - 86400000);
+      var k = dayKey(ts);
+      if (k === today) return 'Today';
+      if (k === yest) return 'Yesterday';
+      return F.date(ts);
+    }
+
+    function render() {
+      var closed = API.contracts.closed().slice().sort(function (a, b) {
+        return (b.exitTime || b.entryTime) - (a.exitTime || a.entryTime);
+      });
+
+      if (!closed.length) {
+        summary.innerHTML = '';
+        list.innerHTML = '<div class="empty" style="padding:56px 20px">' +
+          window.NexIcon('book', 24) +
+          '<b>No trades yet</b>' +
+          '<span>Settled trades show up here, newest first.</span></div>';
+        return;
+      }
+
+      var pnl = closed.reduce(function (a, c) { return a + c.profit; }, 0);
+      var wins = closed.filter(function (c) { return c.profit > 0; }).length;
+      var rate = Math.round(wins / closed.length * 100);
+
+      summary.innerHTML =
+        '<div class="hist-head">' +
+          '<div><span class="label">Net profit / loss</span>' +
+            '<div class="big num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' +
+              F.signedMoney(pnl) + '</div></div>' +
+          '<div class="hist-side">' +
+            '<div><span class="label">Trades</span><b class="num">' +
+              F.count(closed.length) + '</b></div>' +
+            '<div><span class="label">Won</span><b class="num">' + rate + '%</b></div>' +
+          '</div>' +
+        '</div>';
+
+      var out = '', lastDay = null;
+      closed.forEach(function (c) {
+        var ts = c.exitTime || c.entryTime;
+        var k = dayKey(ts);
+        if (k !== lastDay) {
+          if (lastDay !== null) out += '</div>';
+          out += '<div class="hist-day"><div class="hist-day-label">' + dayLabel(ts) + '</div>';
+          lastDay = k;
+        }
+        var sym = API.symbol(c.symbol);
+        out += '<div class="hist-row">' +
+          '<span class="hist-what"><b>' + API.contracts.label(c) + '</b>' +
+            '<span>' + (sym ? sym.name : c.symbol) + ' · ' + F.clock(ts) + '</span></span>' +
+          '<span class="hist-num num ' + (c.profit >= 0 ? 'pos' : 'neg') + '">' +
+            F.signedMoney(c.profit) + '</span>' +
+        '</div>';
+      });
+      if (lastDay !== null) out += '</div>';
+      list.innerHTML = out;
+    }
+
+    API.ready(function () {
+      document.body.classList.remove('loading');
+      render();
+      /* 'contracts', not 'contract' — the bus emits one event for every
+         change to the set, buys and settlements alike. */
+      API.on('contracts', render);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
