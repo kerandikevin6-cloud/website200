@@ -1267,8 +1267,23 @@
         await hydrateSession();
         gotoStep('success');
       } else if (payment.status === 'pending') {
-        closeModals();
-        window.NexToast('Still waiting on the payment. It will credit on its own once it clears.');
+        /* Still pending after the wait. That is not a failure — mobile
+           money is slow and callbacks get lost — but it cannot sit on a
+           spinner forever either, so it gets an honest screen with a way
+           to look again. */
+        state.data.fail = {
+          headline: method === 'mpesa' ? 'No answer from M-Pesa yet' : 'Still waiting on the bank',
+          note: method === 'mpesa'
+            ? 'If a prompt reached your phone and you approved it, the money will ' +
+              'credit on its own — this screen does not need to stay open. If no ' +
+              'prompt arrived, nothing was taken and you can send it again.'
+            : 'The payment has not been confirmed yet. Nothing credits until it is.',
+          detail: 'Waiting for confirmation',
+          ref: state.data.ref || null,
+          reassure: 'Deposits that clear late still land in your balance. Nothing is lost.',
+          recheck: true
+        };
+        gotoStep('failed');
       } else {
         failDeposit(payment.failureReason, method);
       }
@@ -1424,6 +1439,29 @@
       if (node && node.disabled) return;
       API.kyc.submit();
       gotoStep('done');
+      return;
+    }
+    if (name === 'recheckDeposit') {
+      var ref = state.data.ref;
+      if (!ref || !(window.NexNet && window.NexNet.live)) return closeModals();
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
+
+      window.NexNet.deposit(ref).then(async function (out) {
+        var p = out.payment || {};
+        if (p.status === 'success') {
+          state.data.credited = (p.creditedMinor || 0) / 100;
+          await hydrateSession();
+          gotoStep('success');
+        } else if (p.status === 'pending') {
+          if (node) { node.disabled = false; node.textContent = 'Check again'; }
+          window.NexToast('Still pending. It will credit on its own once it clears.');
+        } else {
+          failDeposit(p.failureReason, state.data.method);
+        }
+      }).catch(function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Check again'; }
+        window.NexToast(serverErrorText(err));
+      });
       return;
     }
     if (name === 'useAccount') {

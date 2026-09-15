@@ -137,9 +137,12 @@
           : (f.ref ? '<div class="totals">' + kv('Reference', f.ref) + '</div>' : '')) +
         (f.reassure ? '<div class="notice">' + I('shield', 17) +
           '<span>' + f.reassure + '</span></div>' : '') +
-        (f.retry === false ? '' :
-          '<button class="btn btn-fill" type="button" data-goto="form">Try again</button>') +
-        '<button class="btn btn-ghost" type="button" data-close>Close</button>' +
+        (f.recheck
+          ? '<button class="btn btn-fill" type="button" data-action="recheckDeposit">Check again</button>'
+          : (f.retry === false ? '' :
+             '<button class="btn btn-fill" type="button" data-goto="form">Try again</button>')) +
+        '<button class="btn btn-ghost" type="button" data-close>' +
+          (f.recheck ? 'Close and wait' : 'Close') + '</button>' +
       '</div>';
   }
 
