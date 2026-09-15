@@ -1348,6 +1348,44 @@
     });
   }
 
+  /* ---------- returning from Paystack ----------
+     The card flow opens Paystack in its own tab and the original tab
+     polls, but that tab can be gone — closed, reloaded, or the payment
+     finished on a phone. Paystack sends the customer back to
+     ?deposit=<reference>, so treat that as a second, independent way of
+     finding out what happened. The server is still the one that decides:
+     this only asks.
+
+     The parameter is stripped either way, so a reload or a shared link
+     cannot replay it. */
+  async function resumeDeposit() {
+    var ref;
+    try { ref = new URLSearchParams(location.search).get('deposit'); } catch (e) { return; }
+    if (!ref) return;
+
+    try {
+      var url = new URL(location.href);
+      url.searchParams.delete('deposit');
+      history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+    } catch (e) {}
+
+    if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
+
+    try {
+      var payment = await window.NexNet.waitForDeposit(ref);
+      if (payment.status === 'success') {
+        await hydrateSession();
+        window.NexToast('Deposit credited.');
+      } else if (payment.status === 'pending') {
+        window.NexToast('Still waiting on the payment. It will credit on its own once it clears.');
+      } else {
+        window.NexToast(payment.failureReason || 'That payment did not go through.');
+      }
+    } catch (err) {
+      window.NexToast(err.message);
+    }
+  }
+
   /* ---------- boot ---------- */
   function boot() {
     API = window.NexAPI; F = window.NexFmt;
@@ -1369,6 +1407,7 @@
     if (window.NexTrade) window.NexTrade.init();
     if (window.NexPositions) window.NexPositions.init();
     if (window.NexAI) window.NexAI.init();
+    resumeDeposit();
     if (document.body.getAttribute('data-chrome') !== 'app') document.body.classList.remove('loading');
     if (document.querySelector('.trade-dock')) document.body.classList.add('has-sticky');
   }
