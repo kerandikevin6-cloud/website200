@@ -190,7 +190,7 @@
     html(el.active, '<div class="active-wrap">' + open.map(function (c) {
       var left = Math.max(0, c.ticks - c.elapsed);
       var pl = c.value - c.stake;
-      return '<div class="active">' +
+      return '<div class="open-card">' +
         '<div class="active-top">' +
           '<b>' + API.contracts.label(c) + '</b>' +
           '<span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
@@ -380,15 +380,6 @@
         z === 'in' ? chart.zoom(0.8) : z === 'out' ? chart.zoom(1.25) : chart.reset();
         return;
       }
-      var view = t.closest('[data-view]');
-      if (view && chart) {
-        var v = view.getAttribute('data-view');
-        el.opts.querySelectorAll('[data-view]').forEach(function (b) { b.classList.remove('active'); });
-        view.classList.add('active');
-        if (v === 'line') { chart.setType('line'); chart.setAgg(1); }
-        else { chart.setType('candle'); chart.setAgg(+v); }
-        return;
-      }
     });
 
     root.addEventListener('input', function (e) {
@@ -421,7 +412,6 @@
     el.panel = $('panel');
     el.dock = $('dock');
     el.active = $('activeList');
-    el.opts = $('chartOpts');
 
     unsub.forEach(function (f) { f(); });
     unsub = [];

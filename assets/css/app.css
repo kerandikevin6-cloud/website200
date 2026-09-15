@@ -23,6 +23,9 @@
   --pos-soft:#E7F4ED;
   --neg:#C3352C;
   --neg-soft:#FBEBEA;
+  /* deep, saturated CTA colours - the buy / sell buttons only */
+  --pos-deep:#046340;
+  --neg-deep:#8C1710;
 
   /* chart */
   --chart-line:#15181B;
@@ -66,6 +69,8 @@
     --pos-soft:#0E2B26;
     --neg:#D9483F;
     --neg-soft:#2E1A1C;
+    --pos-deep:#05663F;
+    --neg-deep:#93180F;
 
     --chart-line:#E6EDF5;
     --chart-grid:#17293C;
@@ -96,6 +101,8 @@
   --pos-soft:#0E2B26;
   --neg:#D9483F;
   --neg-soft:#2E1A1C;
+  --pos-deep:#05663F;
+  --neg-deep:#93180F;
 
   --chart-line:#E6EDF5;
   --chart-grid:#17293C;
@@ -109,8 +116,10 @@
 }
 
 /* ---------------- base ---------------- */
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
+/* keep the gutter reserved so fixed bars never resize between pages */
+html{scrollbar-gutter:stable}
 body{
   margin:0;background:var(--bg);color:var(--text);
   font-family:var(--sans);font-size:14px;line-height:1.5;
@@ -134,7 +143,7 @@ svg{display:block}
 main{flex:1;display:flex;flex-direction:column;width:100%}
 body[data-chrome="app"] main{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom))}
 body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
-body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 86px + env(safe-area-inset-bottom))}
+body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74px + env(safe-area-inset-bottom))}
 
 /* ---------------- top bar ---------------- */
 .topbar{
@@ -221,30 +230,56 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 86
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:45;
   display:grid;grid-template-columns:repeat(4,1fr);
+  height:calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   background:var(--bg);border-top:1px solid var(--line-soft);
   padding-bottom:env(safe-area-inset-bottom);
 }
+/* every slot is an identical box: the active state only repaints,
+   it never changes a size, so the bar cannot shift between pages */
 .tabbar a{
-  display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 0 12px;
-  color:var(--muted);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  height:var(--tabbar-h);min-width:0;padding:0 0 6px;
+  color:var(--muted);font-weight:500;
+}
+.tabbar .tb-ico{display:block;width:20px;height:20px;flex:none}
+.tabbar .tb-lab{
+  display:block;font-style:normal;font-size:9.5px;line-height:1;letter-spacing:.07em;
+  text-transform:uppercase;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+/* the active marker is an absolutely positioned dot, so it is painted
+   over the cell and can never add to its size */
+.tabbar a::after{
+  content:"";position:absolute;left:50%;bottom:7px;
+  width:4px;height:4px;margin-left:-2px;border-radius:50%;background:transparent;
 }
 .tabbar a.active{color:var(--text)}
-.tabbar a.active svg{color:var(--accent)}
+.tabbar a.active .tb-ico{color:var(--accent)}
+.tabbar a.active::after{background:var(--accent)}
 
 /* ---------------- terminal ---------------- */
-.ctabs{display:flex;border-bottom:1px solid var(--line-soft)}
+.ctabs{display:flex;border-bottom:1px solid var(--line-soft);overflow:hidden}
 .ctabs::-webkit-scrollbar{display:none}
+/* width:0 + flex-basis:0 + min-width:0 forces mathematically equal
+   slices whatever the label length, and selecting one only changes
+   colour, so the three never resize or shuffle */
 .ctab{
-  flex:1 1 0;text-align:center;padding:13px 6px 12px;font-size:13px;color:var(--muted);
-  border-bottom:2px solid transparent;margin-bottom:-1px;background:none;
+  position:relative;
+  flex:1 1 0;width:0;min-width:0;text-align:center;padding:11px 6px 16px;
+  font-size:11.5px;line-height:1.3;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;
 }
-.ctab + .ctab{border-left:1px solid var(--line-soft)}
+.ctab::after{
+  content:"";position:absolute;left:50%;bottom:7px;
+  width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:transparent;
+}
 .ctab:hover{color:var(--text-2)}
-.ctab.active{color:var(--text);border-bottom-color:var(--pos)}
+.ctab.active{color:var(--text)}
+.ctab.active::after{background:var(--pos)}
 
-.instrument{display:flex;align-items:center;gap:12px;padding:4px 16px 14px}
+.instrument{display:flex;align-items:center;gap:10px;padding:8px 14px 10px}
 .inst-mark{
-  width:36px;height:36px;border-radius:var(--r);background:var(--surface-2);
+  width:32px;height:32px;border-radius:var(--r);background:var(--surface-2);
   border:1px solid var(--line-soft);display:grid;place-items:center;color:var(--text-2);flex:none;
 }
 .inst-name{font-size:13.5px;font-weight:500}
@@ -262,7 +297,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 86
   border-bottom:1px solid var(--line-soft);border-radius:0;
   background:var(--chart-bg);overflow:hidden;position:relative;
 }
-#chart{display:block;width:100%;height:252px}
+#chart{display:block;width:100%;height:210px}
 .chart-tools{
   position:absolute;left:10px;bottom:10px;display:flex;flex-direction:column;
   border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);
@@ -271,28 +306,33 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 86
 .chart-tools button+button{border-top:1px solid var(--line-soft)}
 .chart-tools button:hover{color:var(--text);background:var(--surface-2)}
 
-.digits{display:flex;gap:8px;padding:16px 12px;overflow-x:auto;scrollbar-width:none;justify-content:space-between}
-.digits::-webkit-scrollbar{display:none}
+/* all ten digits share one row - never a horizontal scroll */
+.digits{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:10px 10px 12px}
 .digit{
-  flex:0 0 auto;width:56px;height:56px;border-radius:50%;
+  width:100%;max-width:38px;aspect-ratio:1;margin:0 auto;border-radius:50%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   border:1px solid var(--line-soft);background:var(--surface);
 }
-.digit b{font-family:var(--mono);font-size:15px;font-weight:500;line-height:1}
-.digit i{font-style:normal;font-size:9.5px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.digit b{font-family:var(--mono);font-size:12px;font-weight:500;line-height:1}
+.digit i{font-style:normal;font-size:7.5px;color:var(--muted);margin-top:2px;font-family:var(--mono);line-height:1}
 .digit.hot{border-color:var(--accent)}
 .digit.hot i{color:var(--accent)}
 .digit.cur{background:var(--surface-3)}
 
-.panel{padding:4px 14px 16px;display:flex;flex-direction:column;gap:14px}
+.panel{padding:2px 14px 12px;display:flex;flex-direction:column;gap:10px}
 .seg{display:flex;border-bottom:1px solid var(--line-soft)}
 .seg button{
-  flex:1 1 0;text-align:center;padding:11px 0 12px;font-size:13px;color:var(--muted);
-  border-bottom:2px solid transparent;margin-bottom:-1px;
+  position:relative;
+  flex:1 1 0;width:0;min-width:0;text-align:center;padding:9px 0 16px;
+  font-size:12.5px;color:var(--muted);
 }
-.seg button + button{border-left:1px solid var(--line-soft)}
+.seg button::after{
+  content:"";position:absolute;left:50%;bottom:7px;
+  width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:transparent;
+}
 .seg button:hover{color:var(--text-2)}
-.seg button.active{color:var(--text);border-bottom-color:var(--pos)}
+.seg button.active{color:var(--text)}
+.seg button.active::after{background:var(--pos)}
 .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .cell{
   background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r);
@@ -306,33 +346,33 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 86
   display:flex;align-items:center;border:1px solid var(--line);
   border-radius:0;background:var(--surface);overflow:hidden;
 }
-.stake button{width:48px;height:50px;display:grid;place-items:center;color:var(--text-2)}
+.stake button{width:44px;height:44px;display:grid;place-items:center;color:var(--text-2)}
 .stake button:hover{background:var(--surface-2);color:var(--text)}
 .stake .f{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px}
 .stake input{
   width:88px;background:none;border:none;outline:none;color:var(--text);
-  text-align:right;font-family:var(--mono);font-size:18px;
+  text-align:right;font-family:var(--mono);font-size:17px;
 }
 .stake .cur{color:var(--muted);font-size:11px;letter-spacing:.1em}
-.quick{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.quick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .quick button{
-  padding:10px 0;border:1px solid var(--line-soft);border-radius:0;
+  padding:8px 0;border:1px solid var(--line-soft);border-radius:0;
   background:var(--surface);color:var(--text-2);font-family:var(--mono);font-size:12px;
 }
 .quick button:hover{border-color:var(--line);color:var(--text)}
-.session{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:2px}
+.session{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding:0 2px}
 .session .num{color:var(--text-2)}
 
 /* sticky trade CTAs, above the tab bar */
 .trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:0}
 .tbtn{
-  padding:16px 12px;border-radius:0;text-align:center;color:#fff;
+  padding:13px 10px;border-radius:0;text-align:center;color:#fff;
 }
-.tbtn .t{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-.tbtn .s{font-size:10.5px;margin-top:3px;font-family:var(--mono);opacity:.85}
-.tbtn.even{background:var(--pos)}
-.tbtn.odd{background:var(--neg)}
-.tbtn:active{filter:brightness(.94)}
+.tbtn .t{font-size:14.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.tbtn .s{font-size:10px;margin-top:2px;font-family:var(--mono);opacity:.88}
+.tbtn.even{background:var(--pos-deep)}
+.tbtn.odd{background:var(--neg-deep)}
+.tbtn:active{filter:brightness(1.08)}
 .trade-dock{
   position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   z-index:44;padding:0;background:var(--bg);
@@ -570,7 +610,10 @@ footer a:hover{color:var(--text-2)}
   .brand{margin-right:0}
   .terminal{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:16px;flex:1;align-items:start}
   .terminal .col-mid{min-width:0}
-  #chart{height:min(52vh,430px)}
+  #chart{height:min(50vh,420px)}
+  .digits{gap:8px;padding:14px 0}
+  .digit{max-width:48px}
+  .ctab{font-size:13px;padding:13px 8px 18px}
   .panel{
     background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);
     padding:16px;position:sticky;top:calc(64px + 16px);
@@ -739,14 +782,6 @@ footer a:hover{color:var(--text-2)}
 .feed.reconnecting i,.feed.booting i{background:var(--neg);animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.25}}
 
-/* ---------------- chart options ---------------- */
-.chart-opts{
-  position:absolute;top:10px;right:72px;display:flex;
-  border:1px solid var(--line);background:var(--surface);
-}
-.chart-opts button{padding:5px 10px;font-size:11px;color:var(--muted);font-family:var(--mono)}
-.chart-opts button + button{border-left:1px solid var(--line-soft)}
-.chart-opts button.active{background:var(--surface-3);color:var(--text)}
 #chart{touch-action:none;cursor:crosshair}
 
 /* ---------------- digits ---------------- */
@@ -782,7 +817,10 @@ footer a:hover{color:var(--text-2)}
 /* ---------------- open positions ---------------- */
 .active-wrap{display:flex;gap:10px;padding:0 12px 14px;overflow-x:auto;scrollbar-width:none}
 .active-wrap::-webkit-scrollbar{display:none}
-.active{flex:0 0 auto;width:min(82vw,260px);padding:12px;border:1px solid var(--line);background:var(--surface)}
+/* the open-position card. NOTE: this class must never be a bare .active -
+   every selected tab in the app also carries class="active", and a bare
+   rule here silently resizes them. */
+.open-card{flex:0 0 auto;width:min(82vw,260px);padding:12px;border:1px solid var(--line);background:var(--surface)}
 .active-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .active-top b{font-size:13.5px}
 .active-meta{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--muted);margin-top:3px}
@@ -865,8 +903,98 @@ body.locked{overflow:hidden}
 /* ---------------- desktop refinements ---------------- */
 @media (min-width:900px){
   .active-wrap{padding:0 0 14px}
-  .active{width:260px}
+  .open-card{width:260px}
   .pnl-head{margin:16px 0}
   .filters{padding:0 0 12px}
   .consent{left:auto;right:20px;bottom:20px;max-width:420px;border:1px solid var(--line)}
 }
+
+
+/* ---------------- clean press ----------------
+   Touch devices have no real hover, so a :hover rule fires on tap and
+   stays painted until you touch elsewhere. Here every hover repaint is
+   folded back to its resting value, leaving the press itself clean. */
+@media (hover:none){
+  .ctab:hover{color:var(--muted)}
+  .ctab.active:hover{color:var(--text)}
+  .seg button:hover{color:var(--muted)}
+  .seg button.active:hover{color:var(--text)}
+  .row:hover,button.trow:hover,.mkt:hover,.ditem:hover{background:none;color:inherit}
+  .stake button:hover{background:none;color:var(--text-2)}
+  .stepbtn:hover{background:var(--surface-2);color:var(--text-2)}
+  .quick button:hover{border-color:var(--line-soft);color:var(--text-2)}
+  .chart-tools button:hover{background:none;color:var(--muted)}
+  .btn-mini:hover{color:var(--text-2);border-color:var(--line)}
+  .tabbar a:hover{color:var(--muted)}
+  .tabbar a.active:hover{color:var(--text)}
+  footer a:hover{color:var(--muted)}
+}
+
+
+/* ---------------- AI scanner ---------------- */
+.ai-sect{margin:18px 14px 8px}
+.ai-hero{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
+  margin:14px;padding:22px 18px;border:1px solid var(--line-soft);background:var(--surface);
+}
+.ai-hero b{font-size:17px;font-weight:600}
+.ai-hero .ai-headline{font-size:26px;font-family:var(--mono);letter-spacing:-.02em}
+.ai-hero .ai-sub{font-size:12.5px;color:var(--muted);line-height:1.5;max-width:44ch}
+.ai-orb{display:flex;align-items:center;gap:5px;height:22px}
+.ai-orb i{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.35}
+.ai-hero.scanning .ai-orb i{animation:aipulse 1s infinite}
+.ai-hero.scanning .ai-orb i:nth-child(2){animation-delay:.15s}
+.ai-hero.scanning .ai-orb i:nth-child(3){animation-delay:.3s}
+@keyframes aipulse{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+.ai-progress{width:100%;max-width:260px;height:2px;background:var(--surface-3);margin-top:6px}
+.ai-progress i{display:block;height:100%;background:var(--accent);transition:width .25s ease}
+.ai-go{
+  display:inline-flex;align-items:center;gap:8px;margin-top:6px;
+  padding:11px 18px;background:var(--text);color:var(--bg);font-size:13px;font-weight:500;
+}
+.ai-go.ghost{background:none;color:var(--text-2);border:1px solid var(--line);padding:9px 15px}
+
+.ai-row{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;text-align:left;color:inherit}
+.ai-row + .ai-row{border-top:1px solid var(--line-soft)}
+.ai-row.on{background:var(--accent-soft)}
+.ai-badge{
+  width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:50%;
+  background:var(--surface-2);color:var(--muted);
+}
+.ai-badge.pos{background:var(--pos-soft);color:var(--pos)}
+.ai-badge.neg{background:var(--neg-soft);color:var(--muted)}
+.ai-t{flex:1;min-width:0}
+.ai-t b{display:block;font-size:13.5px;font-weight:500}
+.ai-t > span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.ai-meter{display:block;height:3px;background:var(--surface-3);margin-top:7px}
+.ai-meter i{display:block;height:100%;background:var(--accent)}
+.ai-p{text-align:right;flex:none}
+.ai-p b{display:block;font-size:13.5px;font-weight:500}
+.ai-p span{display:block;font-size:10.5px;margin-top:2px}
+
+.ai-ticket{
+  margin:0 14px;padding:14px;display:flex;flex-direction:column;gap:12px;
+  border:1px solid var(--line-soft);background:var(--surface);
+}
+.ai-tline{display:flex;flex-direction:column;gap:4px}
+.ai-tline b{font-size:14px;font-weight:500}
+.ai-auto{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer}
+.ai-auto b{display:block;font-size:13px;font-weight:500}
+.ai-auto span span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.ai-dock{margin:12px 14px 0}
+.ai-dock .tbtn{width:100%;padding:15px 12px}
+
+@media (min-width:900px){
+  .ai-hero,.ai-ticket,.ai-dock{margin-left:0;margin-right:0}
+  .ai-sect{margin-left:0;margin-right:0}
+}
+
+
+/* ---------------- tab focus ----------------
+   A 2px offset outline around a tab reads as a box drawn round one
+   cell. These controls drop it and light their dot instead, which
+   keeps a visible keyboard cue without any rectangle. */
+.tabbar a:focus-visible,.ctab:focus-visible,.seg button:focus-visible{outline:none}
+.tabbar a:focus-visible::after,
+.ctab:focus-visible::after,
+.seg button:focus-visible::after{background:var(--accent)}

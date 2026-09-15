@@ -36,13 +36,24 @@
     minus: 'M5 12h14',
     plus: 'M12 5v14M5 12h14',
     clock: 'M12 7v5l3 2',
-    sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4'
+    sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4',
+    candles: '',
+    spark: 'M12 3.1l1.86 4.93 4.93 1.86-4.93 1.86L12 16.68l-1.86-4.93L5.21 9.89l4.93-1.86z|M18.5 15.2l.66 1.74 1.74.66-1.74.66-.66 1.74-.66-1.74-1.74-.66 1.74-.66z',
+    radar: 'M12 12l4.6-4.6|M4.6 16.9a8.5 8.5 0 1114.8 0',
+    target: 'M12 2v3M12 19v3M2 12h3M19 12h3'
   };
   function icon(name, size) {
     var d = I[name] || '', parts = d.split('|'), body = '';
     if (name === 'globe' || name === 'coin' || name === 'clock') body += '<circle cx="12" cy="12" r="9"></circle>';
     if (name === 'user') body = '<circle cx="12" cy="8" r="3.4"></circle>';
     if (name === 'book') body = '<rect x="3" y="4" width="18" height="16" rx="2"></rect>';
+    if (name === 'candles') body =
+      '<path d="M7.6 3.4v3.3M7.6 17.4v3.2M16.4 6.6v3.6M16.4 18.4v2.2"></path>' +
+      '<rect x="4.8" y="6.7" width="5.6" height="10.7" rx="1.5"></rect>' +
+      '<rect x="13.6" y="10.2" width="5.6" height="8.2" rx="1.5"></rect>';
+    if (name === 'target') body =
+      '<circle cx="12" cy="12" r="7.6"></circle><circle cx="12" cy="12" r="3.1"></circle>' + body;
+    if (name === 'radar') body = '<circle cx="12" cy="12" r="1.5"></circle>' + body;
     for (var i = 0; i < parts.length; i++) if (parts[i]) body += '<path d="' + parts[i] + '"></path>';
     return '<svg width="' + (size || 17) + '" height="' + (size || 17) + '" viewBox="0 0 24 24" fill="none" ' +
       'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
@@ -81,11 +92,13 @@
 
   /* ---------- chrome ---------- */
   var TABS = [
-    { id: 'trade', label: 'Trade', file: 'index.html', icon: 'chart' },
-    { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'globe' },
+    { id: 'trade', label: 'Trade', file: 'index.html', icon: 'candles' },
+    { id: 'ai', label: 'AI', file: 'ai.html', icon: 'spark' },
     { id: 'positions', label: 'Positions', file: 'positions.html', icon: 'book' },
-    { id: 'responsible', label: 'Limits', file: 'responsible.html', icon: 'shield' }
+    { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'globe' }
   ];
+  /* the desktop bar carries one extra link the bottom bar has no room for */
+  var DESK = TABS.concat([{ id: 'responsible', label: 'Responsible Trading', file: 'responsible.html' }]);
 
   function balanceMarkup() {
     var kind = API.account.kind();
@@ -105,9 +118,9 @@
       '</header>';
     }
 
-    var menu = '<nav class="deskmenu only-desk">' + TABS.map(function (t) {
+    var menu = '<nav class="deskmenu only-desk">' + DESK.map(function (t) {
       return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
-        (t.id === 'responsible' ? 'Responsible Trading' : t.label) + '</a>';
+        t.label + '</a>';
     }).join('') + '</nav>';
 
     return '<header class="topbar">' +
@@ -177,7 +190,8 @@
   function tabbar(page) {
     return '<nav class="tabbar only-mob">' + TABS.map(function (t) {
       return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
-        icon(t.icon, 18) + t.label + '</a>';
+        '<i class="tb-ico">' + icon(t.icon, 20) + '</i>' +
+        '<i class="tb-lab">' + t.label + '</i></a>';
     }).join('') + '</nav>';
   }
 
@@ -614,6 +628,7 @@
     initMarkets();
     if (window.NexTrade) window.NexTrade.init();
     if (window.NexPositions) window.NexPositions.init();
+    if (window.NexAI) window.NexAI.init();
     if (document.body.getAttribute('data-chrome') !== 'app') document.body.classList.remove('loading');
     if (document.querySelector('.trade-dock')) document.body.classList.add('has-sticky');
   }
