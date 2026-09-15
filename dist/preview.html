@@ -2123,7 +2123,19 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   "use strict";
 
   var locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+
+  /* ---------- display currency ----------
+     Balances, stakes and contracts are held in USD everywhere inside the
+     app: one unit, so the arithmetic has no seams in it. What a person
+     reads is their own money, and that conversion happens here and only
+     here — a rate applied twice is a bug you find in a support ticket.
+
+     rate is display units per 1 USD, so 1 means "already USD" and the
+     conversion is a no-op for anyone outside the countries we quote. */
   var currency = 'USD';
+  var rate = 1;
+
+  function local(v) { return (+v || 0) * rate; }
 
   function nf(min, max) {
     return new Intl.NumberFormat(locale, { minimumFractionDigits: min, maximumFractionDigits: max });
@@ -2133,20 +2145,41 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   var F = {
     setLocale: function (l) { locale = l; n2 = nf(2, 2); n0 = nf(0, 0); },
     setCurrency: function (c) { currency = c; },
+
+    /* Set both at once: the currency shown and the rate to get there.
+       Called when the country is known, and again if it changes. */
+    setDisplay: function (cur, r) {
+      currency = cur || 'USD';
+      rate = (+r > 0) ? +r : 1;
+    },
     currency: function () { return currency; },
+    rate: function () { return rate; },
+
+    /* USD in, display units out — and back. Every amount crossing
+       between the two goes through these, so there is one place to look
+       when a figure is wrong by exactly the exchange rate. */
+    toDisplay: local,
+    fromDisplay: function (v) { return (+v || 0) / rate; },
+
+    /* All four take USD and render the viewer's currency. */
 
     /* 2,480.00 */
-    amount: function (v) { return n2.format(+v || 0); },
+    amount: function (v) { return n2.format(local(v)); },
 
-    /* 2,480.00 USD — currency after the figure, the way traders read it */
-    money: function (v, cur) { return n2.format(+v || 0) + ' ' + (cur || currency); },
+    /* 2,480.00 KES — currency after the figure, the way traders read it */
+    money: function (v, cur) { return n2.format(local(v)) + ' ' + (cur || currency); },
 
     /* +12.40 / −3.05, always signed */
     signed: function (v) {
-      var x = +v || 0;
+      var x = local(v);
       return (x > 0 ? '+' : x < 0 ? '−' : '') + n2.format(Math.abs(x));
     },
     signedMoney: function (v, cur) { return F.signed(v) + ' ' + (cur || currency); },
+
+    /* Already in display units — formatted, never converted. Deposit and
+       withdrawal sheets work in local money from the start. */
+    localAmount: function (v) { return n2.format(+v || 0); },
+    localMoney: function (v, cur) { return n2.format(+v || 0) + ' ' + (cur || currency); },
 
     /* 0.42% */
     pct: function (v, digits) {
@@ -2299,6 +2332,49 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   };
   var DEFAULT_COUNTRY = 'KE';
 
+  /* What this viewer's money is called, and what one USD is worth in it.
+     A country we quote gets its own currency; everyone else gets USD and
+     a rate of 1, which makes the conversion a no-op rather than a branch
+     at every call site. */
+  function display() {
+    /* Deliberately not countryCode(): that falls back to Kenya so the
+       deposit sheet has a phone format to show, which is the right
+       default for a form and the wrong one for a currency. Somebody in
+       Berlin should read dollars, not shillings.
+
+       So: a country we have actually established, and quote in, gets its
+       own money. Anyone else — established as elsewhere, or not yet
+       established at all — gets USD, which every balance is already held
+       in. A Kenyan visitor whose timezone is unusual reads dollars for
+       the second or two before the IP lookup answers, then flips. */
+    var cc = (S.geo && COUNTRIES[S.geo]) ? S.geo
+           : (!S.geo ? tzCountry() : null);
+    var c = cc && COUNTRIES[cc];
+    return (c && c.cur) ? { cur: c.cur, rate: c.rate } : { cur: 'USD', rate: 1 };
+  }
+
+  /* Push it into the formatter, which is what actually renders money.
+     Called on boot and again whenever the country is settled. */
+  function applyDisplay() {
+    var d = display();
+    if (window.NexFmt) window.NexFmt.setDisplay(d.cur, d.rate);
+    return d;
+  }
+
+  function toDisplay(usd) { return (+usd || 0) * display().rate; }
+  function fromDisplay(v) { return (+v || 0) / display().rate; }
+
+  /* Stake controls, in the viewer's own money. A +1 button is sensible
+     in dollars and absurd in shillings, so the steps are chosen per
+     currency rather than converted from a dollar figure. */
+  function stakeChips() {
+    var r = display().rate;
+    if (r === 1) return { step: 1, chips: [1, 5, 10, 25, 50], start: 10 };
+    if (r >= 1000) return { step: 500, chips: [500, 1000, 5000, 10000, 25000], start: 5000 };
+    if (r >= 100)  return { step: 50,  chips: [50, 100, 500, 1000, 2500], start: 500 };
+    return { step: 10, chips: [10, 25, 50, 100, 250], start: 50 };
+  }
+
   /* Timezone is a decent offline guess and costs no request, so it seeds
      the value before the IP lookup comes back (and stands in for it if the
      lookup is blocked or offline). */
@@ -2307,12 +2383,18 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     'Africa/Kigali': 'RW', 'Africa/Lagos': 'NG', 'Africa/Accra': 'GH',
     'Africa/Johannesburg': 'ZA'
   };
-  function guessCountry() {
+  /* The timezone, only when it names a country we quote. Returns null
+     rather than a default, so a caller that must not guess can tell the
+     difference between "Kenya" and "no idea". */
+  function tzCountry() {
     try {
       var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (TZ_COUNTRY[tz]) return TZ_COUNTRY[tz];
     } catch (e) {}
-    return DEFAULT_COUNTRY;
+    return null;
+  }
+  function guessCountry() {
+    return tzCountry() || DEFAULT_COUNTRY;
   }
   function countryCode() {
     return (S.geo && COUNTRIES[S.geo]) ? S.geo : guessCountry();
@@ -2334,7 +2416,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (!cc || !COUNTRIES[cc]) return;
         S.geo = cc;
         persist();
+        /* The currency on screen follows the country, so it has to move
+           the moment the country does — otherwise a Kenyan visitor reads
+           dollars until the next reload. */
+        applyDisplay();
         B.emit('geo', cc);
+        B.emit('balance', { balance: balance(), account: S.account });
       })
       .catch(function () { clearTimeout(t); });
   }
@@ -2541,9 +2628,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (!S.session) return 'Sign in to place a trade';
     if (connection.status !== 'live') return 'Waiting for the price feed';
     var stake = +spec.stake;
-    if (!stake || stake < LIMITS.min) return 'Minimum stake is ' + LIMITS.min + ' ' + S.currency;
-    if (stake > LIMITS.max) return 'Maximum stake is ' + window.NexFmt.count(LIMITS.max) + ' ' + S.currency;
-    if (stake > balance()) return 'Not enough funds. Available ' + window.NexFmt.money(balance(), S.currency);
+    var F = window.NexFmt;
+    if (!stake || stake < LIMITS.min) return 'Minimum stake is ' + F.money(LIMITS.min);
+    if (stake > LIMITS.max) return 'Maximum stake is ' + F.money(LIMITS.max);
+    if (stake > balance()) return 'Not enough funds. Available ' + F.money(balance());
     if (spec.ticks < LIMITS.minTicks || spec.ticks > LIMITS.maxTicks) return 'Duration must be 1–10 ticks';
     return null;
   }
@@ -2701,6 +2789,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   var readyFns = [];
   setTimeout(function () {
     booted = true;
+    applyDisplay();
     enforceAccount();
     setConnection('live');
     start();
@@ -2730,7 +2819,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     account: {
       kind: function () { return S.account; },
       balance: balance,
-      currency: function () { return S.currency; },
+      /* What to print beside a figure. The stored currency is USD and
+         stays USD; this is the label the viewer reads. */
+      currency: function () { return display().cur; },
+      baseCurrency: function () { return S.currency; },
       balances: function () { return S.balances; },
       /* Returns false when the switch was refused, so the caller can
          send the visitor to sign up instead of reporting success. */
@@ -2768,6 +2860,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       code: countryCode,
       country: function () { return COUNTRIES[countryCode()]; },
       detect: detectCountry
+    },
+
+    /* The unit the screen speaks. Internals stay in USD. */
+    money: {
+      display: display,
+      apply: applyDisplay,
+      toDisplay: toDisplay,
+      fromDisplay: fromDisplay,
+      stakeChips: stakeChips
     },
 
     referrals: {
@@ -3300,6 +3401,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           body: function () {
             var kind = API().account.kind(), b = API().account.balances();
             var canReal = API().account.realAvailable();
+            var cur = API().account.currency();
 
             function row(id, name, note, value) {
               return '<button class="choice' + (kind === id ? ' selected' : '') + '" data-action="useAccount" data-kind="' + id + '">' +
@@ -3313,9 +3415,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                number about money this visitor does not have. */
             return '<div class="choices">' +
               (canReal
-                ? row('real', 'Real', 'USD · live funds', F().amount(b.real))
+                ? row('real', 'Real', cur + ' · live funds', F().amount(b.real))
                 : row('real', 'Real', 'Create an account to trade real funds', 'Sign up')) +
-              row('demo', 'Demo', 'USD · practice funds', F().amount(b.demo)) +
+              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo)) +
             '</div><p class="hint" style="margin:14px 2px 0">' +
               (canReal
                 ? 'Open positions stay with the account they were taken on.'
@@ -3867,13 +3969,23 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
               : phoneField('wPhone', 'M-Pesa number',
                   'Must match the number registered to your verified name.');
 
+            /* The sheet works in the viewer's own money from the first
+               figure: the field, the fee and the total are all display
+               units, so nothing here is converted twice. The USD figures
+               behind them (10 minimum, 1 fee) are converted once, here. */
+            var feeLocal = Math.round(API().money.toDisplay(1) * 100) / 100;
+            var startLocal = Math.round(API().money.toDisplay(100));
+
             return '<div class="modal-form">' +
               '<div class="field"><label for="wAmount">Amount</label>' +
-                '<div class="input-wrap"><input class="input num" id="wAmount" value="100" inputmode="decimal">' +
-                '<span class="suffix">' + API().account.currency() + '</span></div></div>' +
+                '<div class="input-wrap"><input class="input num" id="wAmount" value="' + startLocal +
+                  '" inputmode="decimal">' +
+                '<span class="suffix">' + API().account.currency() + '</span></div>' +
+                '<span class="hint">Minimum ' + F().money(10) + '</span></div>' +
               inner +
-              '<div class="totals">' + kv('Network fee', F().money(1)) +
-                kv('You receive', F().money(99), 'data-total="wAmount" data-fee="1"') + '</div>' +
+              '<div class="totals">' + kv('Network fee', F().localMoney(feeLocal)) +
+                kv('You receive', F().localMoney(Math.max(0, startLocal - feeLocal)),
+                   'data-total="wAmount" data-fee="' + feeLocal + '"') + '</div>' +
               (API().kyc.verified() ? '' :
                 '<div class="notice">' + I('shield', 17) +
                 '<span>Identity verification is required before your first payout.</span></div>') +
@@ -3941,7 +4053,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     tab: 'even_odd',        /* even_odd | matches | over_under */
     side: 'even',
     barrier: 5,
-    stake: 10,
+    stake: 10,               /* USD; replaced at init with a round local figure */
     ticks: 5,             /* fixed: the duration picker was removed */
     mode: 'manual',         /* manual | auto */
     error: null,
@@ -4062,13 +4174,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       '<div>' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
-          '<div class="f"><input id="stake" value="' + S.stake + '" inputmode="decimal" aria-label="Stake">' +
+          '<div class="f"><input id="stake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
             '<span class="cur">' + API.account.currency() + '</span></div>' +
           '<button id="plus" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
         '</div>' +
         (S.error ? '<div class="field-error" role="alert">' + S.error + '</div>' : '') +
         '<div class="quick" id="quick">' +
-          [1, 5, 10, 25, 50].map(function (n) { return '<button data-add="' + n + '">+' + n + '</button>'; }).join('') +
+          API.money.stakeChips().chips.map(function (n) {
+            return '<button data-add="' + n + '">+' + F.count(n) + '</button>';
+          }).join('') +
         '</div>' +
       '</div>' +
       /* one line, not two: the trade screen is short on height and this
@@ -4282,11 +4396,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         return;
       }
 
-      if (t.closest('#plus')) { setStake(S.stake + 1); return; }
-      if (t.closest('#minus')) { setStake(S.stake - 1); return; }
+      var step = API.money.stakeChips().step;
+      if (t.closest('#plus')) { setStake(stakeShown() + step); return; }
+      if (t.closest('#minus')) { setStake(stakeShown() - step); return; }
 
       var add = t.closest('[data-add]');
-      if (add) { setStake(S.stake + (+add.getAttribute('data-add'))); return; }
+      if (add) { setStake(stakeShown() + (+add.getAttribute('data-add'))); return; }
 
       var sell = t.closest('[data-sell]');
       if (sell) {
@@ -4332,7 +4447,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     root.addEventListener('input', function (e) {
       var id = e.target.id;
       if (id === 'stake') {
-        S.stake = Math.max(0, +e.target.value || 0);
+        setStakeShown(e.target.value);
         check();
         refreshValidity();
         return;
@@ -4347,11 +4462,31 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }, true);
   }
 
+  /* S.stake is USD, like every other amount inside the app. These two
+     are the only places it turns into the figure on screen and back, so
+     a stake typed in shillings is stored in dollars and nothing else in
+     this file has to know that happened.
+
+     Round in display units, not USD: rounding the dollars first leaves
+     the shillings showing 4,999.87 after somebody typed 5,000. */
+  function stakeShown() {
+    var v = API.money.toDisplay(S.stake);
+    return Math.round(v * 100) / 100;
+  }
+  function setStakeShown(shown) {
+    var v = Math.max(0, Math.round((+shown || 0) * 100) / 100);
+    S.stake = API.money.fromDisplay(v);
+  }
+
+  /* v is in display units — what the buttons add and what the field holds. */
   function setStake(v) {
-    S.stake = Math.max(0, Math.round(v * 100) / 100);
+    setStakeShown(v);
     check();
-    if (typing()) { var f = el.panel.querySelector('#stake'); if (f) f.value = S.stake; refreshValidity(); }
-    else { renderPanel(); renderDock(); }
+    if (typing()) {
+      var f = el.panel.querySelector('#stake');
+      if (f) f.value = stakeShown();
+      refreshValidity();
+    } else { renderPanel(); renderDock(); }
   }
 
   /* ---------- mount ---------- */
@@ -4365,6 +4500,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     el.panel = $('panel');
     el.dock = $('dock');
     el.active = $('activeList');
+
+    /* Open on a round figure in the viewer's own money — 500 KES, not
+       the 1,290 that a $10 default converts to. Only on a first mount,
+       so a stake the trader chose is never overwritten. */
+    if (!root.__stakeSet) {
+      root.__stakeSet = true;
+      S.stake = API.money.fromDisplay(API.money.stakeChips().start);
+    }
 
     unsub.forEach(function (f) { f(); });
     unsub = [];
@@ -4681,7 +4824,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     step: 0,                 /* instrument index while scanning */
     signals: [],
     pick: null,              /* symbol id of the selected signal */
-    stake: 10,
+    stake: 10,              /* USD; set to a round local figure on mount */
     ticks: 5,
     auto: false,
     error: null,
@@ -4813,8 +4956,19 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     render();
   }
 
+  /* Same split as the terminal: S.stake is USD, the field is the
+     viewer's own money. Rounding happens in display units so a typed
+     5,000 stays 5,000. */
+  function stakeShown() {
+    return Math.round(API.money.toDisplay(S.stake) * 100) / 100;
+  }
+  function setStakeShown(shown) {
+    S.stake = API.money.fromDisplay(Math.max(0, Math.round((+shown || 0) * 100) / 100));
+  }
+
+  /* v is in display units. */
   function setStake(v) {
-    S.stake = Math.max(0, Math.round(v * 100) / 100);
+    setStakeShown(v);
     S.error = null;
     render();
   }
@@ -4895,7 +5049,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         '</div>' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button data-aistake="-1" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
-          '<div class="f"><input id="aiStake" value="' + S.stake + '" inputmode="decimal" aria-label="Stake">' +
+          '<div class="f"><input id="aiStake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
             '<span class="cur">' + API.account.currency() + '</span></div>' +
           '<button data-aistake="1" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
         '</div>' +
@@ -4967,7 +5121,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
 
       var st = t.closest('[data-aistake]');
-      if (st) { setStake(S.stake + (+st.getAttribute('data-aistake'))); return; }
+      if (st) {
+        var step = API.money.stakeChips().step;
+        setStake(stakeShown() + (+st.getAttribute('data-aistake')) * step);
+        return;
+      }
 
       if (t.closest('#aiAuto')) {
         S.auto = !S.auto;
@@ -4981,7 +5139,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     root.addEventListener('input', function (e) {
       if (e.target.id !== 'aiStake') return;
-      S.stake = Math.max(0, +e.target.value || 0);
+      setStakeShown(e.target.value);
     });
   }
 
@@ -4991,6 +5149,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var root = $('aiPage');
     if (!root) return;
     el.root = root;
+
+    if (!root.__stakeSet) {
+      root.__stakeSet = true;
+      S.stake = API.money.fromDisplay(API.money.stakeChips().start);
+    }
 
     unsub.forEach(function (f) { f(); });
     unsub = [];
@@ -6133,9 +6296,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
+        /* The field and the fee are both in the viewer's currency
+           already, so this formats rather than converts. */
         var fee = +(total.getAttribute('data-fee') || 0);
         var fx = +(total.getAttribute('data-fx') || 1) || 1;
-        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee) / fx);
+        total.textContent = F.localMoney(Math.max(0, (+el.value || 0) - fee) / fx);
       }
     });
 
@@ -6295,7 +6460,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (name === 'withdraw') {
       if (!API.kyc.verified()) { gotoStep('kyc'); return; }
       clearErrors();
-      var w = +((document.getElementById('wAmount') || {}).value) || 0;
+      /* Typed in the viewer's money; every check below is in USD, so
+         it converts once here and not again anywhere after. */
+      var wShown = +((document.getElementById('wAmount') || {}).value) || 0;
+      var w = API.money.fromDisplay(wShown);
       if (w <= 0) return fieldError('wAmount', 'Enter an amount to withdraw');
       if (w < 10) return fieldError('wAmount', 'Minimum withdrawal is ' + F.money(10));
       if (w > API.account.balance()) return fieldError('wAmount',

@@ -18,7 +18,7 @@
     tab: 'even_odd',        /* even_odd | matches | over_under */
     side: 'even',
     barrier: 5,
-    stake: 10,
+    stake: 10,               /* USD; replaced at init with a round local figure */
     ticks: 5,             /* fixed: the duration picker was removed */
     mode: 'manual',         /* manual | auto */
     error: null,
@@ -139,13 +139,15 @@
       '<div>' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
-          '<div class="f"><input id="stake" value="' + S.stake + '" inputmode="decimal" aria-label="Stake">' +
+          '<div class="f"><input id="stake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
             '<span class="cur">' + API.account.currency() + '</span></div>' +
           '<button id="plus" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
         '</div>' +
         (S.error ? '<div class="field-error" role="alert">' + S.error + '</div>' : '') +
         '<div class="quick" id="quick">' +
-          [1, 5, 10, 25, 50].map(function (n) { return '<button data-add="' + n + '">+' + n + '</button>'; }).join('') +
+          API.money.stakeChips().chips.map(function (n) {
+            return '<button data-add="' + n + '">+' + F.count(n) + '</button>';
+          }).join('') +
         '</div>' +
       '</div>' +
       /* one line, not two: the trade screen is short on height and this
@@ -359,11 +361,12 @@
         return;
       }
 
-      if (t.closest('#plus')) { setStake(S.stake + 1); return; }
-      if (t.closest('#minus')) { setStake(S.stake - 1); return; }
+      var step = API.money.stakeChips().step;
+      if (t.closest('#plus')) { setStake(stakeShown() + step); return; }
+      if (t.closest('#minus')) { setStake(stakeShown() - step); return; }
 
       var add = t.closest('[data-add]');
-      if (add) { setStake(S.stake + (+add.getAttribute('data-add'))); return; }
+      if (add) { setStake(stakeShown() + (+add.getAttribute('data-add'))); return; }
 
       var sell = t.closest('[data-sell]');
       if (sell) {
@@ -409,7 +412,7 @@
     root.addEventListener('input', function (e) {
       var id = e.target.id;
       if (id === 'stake') {
-        S.stake = Math.max(0, +e.target.value || 0);
+        setStakeShown(e.target.value);
         check();
         refreshValidity();
         return;
@@ -424,11 +427,31 @@
     }, true);
   }
 
+  /* S.stake is USD, like every other amount inside the app. These two
+     are the only places it turns into the figure on screen and back, so
+     a stake typed in shillings is stored in dollars and nothing else in
+     this file has to know that happened.
+
+     Round in display units, not USD: rounding the dollars first leaves
+     the shillings showing 4,999.87 after somebody typed 5,000. */
+  function stakeShown() {
+    var v = API.money.toDisplay(S.stake);
+    return Math.round(v * 100) / 100;
+  }
+  function setStakeShown(shown) {
+    var v = Math.max(0, Math.round((+shown || 0) * 100) / 100);
+    S.stake = API.money.fromDisplay(v);
+  }
+
+  /* v is in display units — what the buttons add and what the field holds. */
   function setStake(v) {
-    S.stake = Math.max(0, Math.round(v * 100) / 100);
+    setStakeShown(v);
     check();
-    if (typing()) { var f = el.panel.querySelector('#stake'); if (f) f.value = S.stake; refreshValidity(); }
-    else { renderPanel(); renderDock(); }
+    if (typing()) {
+      var f = el.panel.querySelector('#stake');
+      if (f) f.value = stakeShown();
+      refreshValidity();
+    } else { renderPanel(); renderDock(); }
   }
 
   /* ---------- mount ---------- */
@@ -442,6 +465,14 @@
     el.panel = $('panel');
     el.dock = $('dock');
     el.active = $('activeList');
+
+    /* Open on a round figure in the viewer's own money — 500 KES, not
+       the 1,290 that a $10 default converts to. Only on a first mount,
+       so a stake the trader chose is never overwritten. */
+    if (!root.__stakeSet) {
+      root.__stakeSet = true;
+      S.stake = API.money.fromDisplay(API.money.stakeChips().start);
+    }
 
     unsub.forEach(function (f) { f(); });
     unsub = [];

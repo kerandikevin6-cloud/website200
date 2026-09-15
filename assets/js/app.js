@@ -1101,9 +1101,11 @@
       }
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
+        /* The field and the fee are both in the viewer's currency
+           already, so this formats rather than converts. */
         var fee = +(total.getAttribute('data-fee') || 0);
         var fx = +(total.getAttribute('data-fx') || 1) || 1;
-        total.textContent = F.money(Math.max(0, (+el.value || 0) - fee) / fx);
+        total.textContent = F.localMoney(Math.max(0, (+el.value || 0) - fee) / fx);
       }
     });
 
@@ -1263,7 +1265,10 @@
     if (name === 'withdraw') {
       if (!API.kyc.verified()) { gotoStep('kyc'); return; }
       clearErrors();
-      var w = +((document.getElementById('wAmount') || {}).value) || 0;
+      /* Typed in the viewer's money; every check below is in USD, so
+         it converts once here and not again anywhere after. */
+      var wShown = +((document.getElementById('wAmount') || {}).value) || 0;
+      var w = API.money.fromDisplay(wShown);
       if (w <= 0) return fieldError('wAmount', 'Enter an amount to withdraw');
       if (w < 10) return fieldError('wAmount', 'Minimum withdrawal is ' + F.money(10));
       if (w > API.account.balance()) return fieldError('wAmount',

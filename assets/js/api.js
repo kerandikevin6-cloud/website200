@@ -97,6 +97,49 @@
   };
   var DEFAULT_COUNTRY = 'KE';
 
+  /* What this viewer's money is called, and what one USD is worth in it.
+     A country we quote gets its own currency; everyone else gets USD and
+     a rate of 1, which makes the conversion a no-op rather than a branch
+     at every call site. */
+  function display() {
+    /* Deliberately not countryCode(): that falls back to Kenya so the
+       deposit sheet has a phone format to show, which is the right
+       default for a form and the wrong one for a currency. Somebody in
+       Berlin should read dollars, not shillings.
+
+       So: a country we have actually established, and quote in, gets its
+       own money. Anyone else — established as elsewhere, or not yet
+       established at all — gets USD, which every balance is already held
+       in. A Kenyan visitor whose timezone is unusual reads dollars for
+       the second or two before the IP lookup answers, then flips. */
+    var cc = (S.geo && COUNTRIES[S.geo]) ? S.geo
+           : (!S.geo ? tzCountry() : null);
+    var c = cc && COUNTRIES[cc];
+    return (c && c.cur) ? { cur: c.cur, rate: c.rate } : { cur: 'USD', rate: 1 };
+  }
+
+  /* Push it into the formatter, which is what actually renders money.
+     Called on boot and again whenever the country is settled. */
+  function applyDisplay() {
+    var d = display();
+    if (window.NexFmt) window.NexFmt.setDisplay(d.cur, d.rate);
+    return d;
+  }
+
+  function toDisplay(usd) { return (+usd || 0) * display().rate; }
+  function fromDisplay(v) { return (+v || 0) / display().rate; }
+
+  /* Stake controls, in the viewer's own money. A +1 button is sensible
+     in dollars and absurd in shillings, so the steps are chosen per
+     currency rather than converted from a dollar figure. */
+  function stakeChips() {
+    var r = display().rate;
+    if (r === 1) return { step: 1, chips: [1, 5, 10, 25, 50], start: 10 };
+    if (r >= 1000) return { step: 500, chips: [500, 1000, 5000, 10000, 25000], start: 5000 };
+    if (r >= 100)  return { step: 50,  chips: [50, 100, 500, 1000, 2500], start: 500 };
+    return { step: 10, chips: [10, 25, 50, 100, 250], start: 50 };
+  }
+
   /* Timezone is a decent offline guess and costs no request, so it seeds
      the value before the IP lookup comes back (and stands in for it if the
      lookup is blocked or offline). */
@@ -105,12 +148,18 @@
     'Africa/Kigali': 'RW', 'Africa/Lagos': 'NG', 'Africa/Accra': 'GH',
     'Africa/Johannesburg': 'ZA'
   };
-  function guessCountry() {
+  /* The timezone, only when it names a country we quote. Returns null
+     rather than a default, so a caller that must not guess can tell the
+     difference between "Kenya" and "no idea". */
+  function tzCountry() {
     try {
       var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (TZ_COUNTRY[tz]) return TZ_COUNTRY[tz];
     } catch (e) {}
-    return DEFAULT_COUNTRY;
+    return null;
+  }
+  function guessCountry() {
+    return tzCountry() || DEFAULT_COUNTRY;
   }
   function countryCode() {
     return (S.geo && COUNTRIES[S.geo]) ? S.geo : guessCountry();
@@ -132,7 +181,12 @@
         if (!cc || !COUNTRIES[cc]) return;
         S.geo = cc;
         persist();
+        /* The currency on screen follows the country, so it has to move
+           the moment the country does — otherwise a Kenyan visitor reads
+           dollars until the next reload. */
+        applyDisplay();
         B.emit('geo', cc);
+        B.emit('balance', { balance: balance(), account: S.account });
       })
       .catch(function () { clearTimeout(t); });
   }
@@ -339,9 +393,10 @@
     if (!S.session) return 'Sign in to place a trade';
     if (connection.status !== 'live') return 'Waiting for the price feed';
     var stake = +spec.stake;
-    if (!stake || stake < LIMITS.min) return 'Minimum stake is ' + LIMITS.min + ' ' + S.currency;
-    if (stake > LIMITS.max) return 'Maximum stake is ' + window.NexFmt.count(LIMITS.max) + ' ' + S.currency;
-    if (stake > balance()) return 'Not enough funds. Available ' + window.NexFmt.money(balance(), S.currency);
+    var F = window.NexFmt;
+    if (!stake || stake < LIMITS.min) return 'Minimum stake is ' + F.money(LIMITS.min);
+    if (stake > LIMITS.max) return 'Maximum stake is ' + F.money(LIMITS.max);
+    if (stake > balance()) return 'Not enough funds. Available ' + F.money(balance());
     if (spec.ticks < LIMITS.minTicks || spec.ticks > LIMITS.maxTicks) return 'Duration must be 1–10 ticks';
     return null;
   }
@@ -499,6 +554,7 @@
   var readyFns = [];
   setTimeout(function () {
     booted = true;
+    applyDisplay();
     enforceAccount();
     setConnection('live');
     start();
@@ -528,7 +584,10 @@
     account: {
       kind: function () { return S.account; },
       balance: balance,
-      currency: function () { return S.currency; },
+      /* What to print beside a figure. The stored currency is USD and
+         stays USD; this is the label the viewer reads. */
+      currency: function () { return display().cur; },
+      baseCurrency: function () { return S.currency; },
       balances: function () { return S.balances; },
       /* Returns false when the switch was refused, so the caller can
          send the visitor to sign up instead of reporting success. */
@@ -566,6 +625,15 @@
       code: countryCode,
       country: function () { return COUNTRIES[countryCode()]; },
       detect: detectCountry
+    },
+
+    /* The unit the screen speaks. Internals stay in USD. */
+    money: {
+      display: display,
+      apply: applyDisplay,
+      toDisplay: toDisplay,
+      fromDisplay: fromDisplay,
+      stakeChips: stakeChips
     },
 
     referrals: {

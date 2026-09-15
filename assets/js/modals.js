@@ -159,6 +159,7 @@
           body: function () {
             var kind = API().account.kind(), b = API().account.balances();
             var canReal = API().account.realAvailable();
+            var cur = API().account.currency();
 
             function row(id, name, note, value) {
               return '<button class="choice' + (kind === id ? ' selected' : '') + '" data-action="useAccount" data-kind="' + id + '">' +
@@ -172,9 +173,9 @@
                number about money this visitor does not have. */
             return '<div class="choices">' +
               (canReal
-                ? row('real', 'Real', 'USD · live funds', F().amount(b.real))
+                ? row('real', 'Real', cur + ' · live funds', F().amount(b.real))
                 : row('real', 'Real', 'Create an account to trade real funds', 'Sign up')) +
-              row('demo', 'Demo', 'USD · practice funds', F().amount(b.demo)) +
+              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo)) +
             '</div><p class="hint" style="margin:14px 2px 0">' +
               (canReal
                 ? 'Open positions stay with the account they were taken on.'
@@ -726,13 +727,23 @@
               : phoneField('wPhone', 'M-Pesa number',
                   'Must match the number registered to your verified name.');
 
+            /* The sheet works in the viewer's own money from the first
+               figure: the field, the fee and the total are all display
+               units, so nothing here is converted twice. The USD figures
+               behind them (10 minimum, 1 fee) are converted once, here. */
+            var feeLocal = Math.round(API().money.toDisplay(1) * 100) / 100;
+            var startLocal = Math.round(API().money.toDisplay(100));
+
             return '<div class="modal-form">' +
               '<div class="field"><label for="wAmount">Amount</label>' +
-                '<div class="input-wrap"><input class="input num" id="wAmount" value="100" inputmode="decimal">' +
-                '<span class="suffix">' + API().account.currency() + '</span></div></div>' +
+                '<div class="input-wrap"><input class="input num" id="wAmount" value="' + startLocal +
+                  '" inputmode="decimal">' +
+                '<span class="suffix">' + API().account.currency() + '</span></div>' +
+                '<span class="hint">Minimum ' + F().money(10) + '</span></div>' +
               inner +
-              '<div class="totals">' + kv('Network fee', F().money(1)) +
-                kv('You receive', F().money(99), 'data-total="wAmount" data-fee="1"') + '</div>' +
+              '<div class="totals">' + kv('Network fee', F().localMoney(feeLocal)) +
+                kv('You receive', F().localMoney(Math.max(0, startLocal - feeLocal)),
+                   'data-total="wAmount" data-fee="' + feeLocal + '"') + '</div>' +
               (API().kyc.verified() ? '' :
                 '<div class="notice">' + I('shield', 17) +
                 '<span>Identity verification is required before your first payout.</span></div>') +

@@ -25,7 +25,7 @@
     step: 0,                 /* instrument index while scanning */
     signals: [],
     pick: null,              /* symbol id of the selected signal */
-    stake: 10,
+    stake: 10,              /* USD; set to a round local figure on mount */
     ticks: 5,
     auto: false,
     error: null,
@@ -157,8 +157,19 @@
     render();
   }
 
+  /* Same split as the terminal: S.stake is USD, the field is the
+     viewer's own money. Rounding happens in display units so a typed
+     5,000 stays 5,000. */
+  function stakeShown() {
+    return Math.round(API.money.toDisplay(S.stake) * 100) / 100;
+  }
+  function setStakeShown(shown) {
+    S.stake = API.money.fromDisplay(Math.max(0, Math.round((+shown || 0) * 100) / 100));
+  }
+
+  /* v is in display units. */
   function setStake(v) {
-    S.stake = Math.max(0, Math.round(v * 100) / 100);
+    setStakeShown(v);
     S.error = null;
     render();
   }
@@ -239,7 +250,7 @@
         '</div>' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button data-aistake="-1" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
-          '<div class="f"><input id="aiStake" value="' + S.stake + '" inputmode="decimal" aria-label="Stake">' +
+          '<div class="f"><input id="aiStake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
             '<span class="cur">' + API.account.currency() + '</span></div>' +
           '<button data-aistake="1" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
         '</div>' +
@@ -311,7 +322,11 @@
       }
 
       var st = t.closest('[data-aistake]');
-      if (st) { setStake(S.stake + (+st.getAttribute('data-aistake'))); return; }
+      if (st) {
+        var step = API.money.stakeChips().step;
+        setStake(stakeShown() + (+st.getAttribute('data-aistake')) * step);
+        return;
+      }
 
       if (t.closest('#aiAuto')) {
         S.auto = !S.auto;
@@ -325,7 +340,7 @@
 
     root.addEventListener('input', function (e) {
       if (e.target.id !== 'aiStake') return;
-      S.stake = Math.max(0, +e.target.value || 0);
+      setStakeShown(e.target.value);
     });
   }
 
@@ -335,6 +350,11 @@
     var root = $('aiPage');
     if (!root) return;
     el.root = root;
+
+    if (!root.__stakeSet) {
+      root.__stakeSet = true;
+      S.stake = API.money.fromDisplay(API.money.stakeChips().start);
+    }
 
     unsub.forEach(function (f) { f(); });
     unsub = [];

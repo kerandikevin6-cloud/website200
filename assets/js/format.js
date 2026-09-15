@@ -7,7 +7,19 @@
   "use strict";
 
   var locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+
+  /* ---------- display currency ----------
+     Balances, stakes and contracts are held in USD everywhere inside the
+     app: one unit, so the arithmetic has no seams in it. What a person
+     reads is their own money, and that conversion happens here and only
+     here — a rate applied twice is a bug you find in a support ticket.
+
+     rate is display units per 1 USD, so 1 means "already USD" and the
+     conversion is a no-op for anyone outside the countries we quote. */
   var currency = 'USD';
+  var rate = 1;
+
+  function local(v) { return (+v || 0) * rate; }
 
   function nf(min, max) {
     return new Intl.NumberFormat(locale, { minimumFractionDigits: min, maximumFractionDigits: max });
@@ -17,20 +29,41 @@
   var F = {
     setLocale: function (l) { locale = l; n2 = nf(2, 2); n0 = nf(0, 0); },
     setCurrency: function (c) { currency = c; },
+
+    /* Set both at once: the currency shown and the rate to get there.
+       Called when the country is known, and again if it changes. */
+    setDisplay: function (cur, r) {
+      currency = cur || 'USD';
+      rate = (+r > 0) ? +r : 1;
+    },
     currency: function () { return currency; },
+    rate: function () { return rate; },
+
+    /* USD in, display units out — and back. Every amount crossing
+       between the two goes through these, so there is one place to look
+       when a figure is wrong by exactly the exchange rate. */
+    toDisplay: local,
+    fromDisplay: function (v) { return (+v || 0) / rate; },
+
+    /* All four take USD and render the viewer's currency. */
 
     /* 2,480.00 */
-    amount: function (v) { return n2.format(+v || 0); },
+    amount: function (v) { return n2.format(local(v)); },
 
-    /* 2,480.00 USD — currency after the figure, the way traders read it */
-    money: function (v, cur) { return n2.format(+v || 0) + ' ' + (cur || currency); },
+    /* 2,480.00 KES — currency after the figure, the way traders read it */
+    money: function (v, cur) { return n2.format(local(v)) + ' ' + (cur || currency); },
 
     /* +12.40 / −3.05, always signed */
     signed: function (v) {
-      var x = +v || 0;
+      var x = local(v);
       return (x > 0 ? '+' : x < 0 ? '−' : '') + n2.format(Math.abs(x));
     },
     signedMoney: function (v, cur) { return F.signed(v) + ' ' + (cur || currency); },
+
+    /* Already in display units — formatted, never converted. Deposit and
+       withdrawal sheets work in local money from the start. */
+    localAmount: function (v) { return n2.format(+v || 0); },
+    localMoney: function (v, cur) { return n2.format(+v || 0) + ' ' + (cur || currency); },
 
     /* 0.42% */
     pct: function (v, digits) {
