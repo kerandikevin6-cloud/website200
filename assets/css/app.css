@@ -258,7 +258,11 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   height:var(--tabbar-h);min-width:0;padding:0 0 6px;
   color:var(--muted);font-weight:500;
 }
-.tabbar .tb-ico{display:block;width:20px;height:20px;flex:none}
+/* the box is fixed so a solid glyph cannot nudge the label; the icons
+   are Material Symbols on a 960 grid and carry their own optical
+   padding, so 22 here matches the old 20px outline weight */
+.tabbar .tb-ico{display:block;width:22px;height:22px;flex:none}
+.tabbar .tb-ico svg{display:block}
 .tabbar .tb-lab{
   display:block;font-style:normal;font-size:9.5px;line-height:1;letter-spacing:.07em;
   text-transform:uppercase;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;

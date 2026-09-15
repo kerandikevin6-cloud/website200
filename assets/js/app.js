@@ -46,6 +46,39 @@
     radar: 'M12 12l4.6-4.6|M4.6 16.9a8.5 8.5 0 1114.8 0',
     target: 'M12 2v3M12 19v3M2 12h3M19 12h3'
   };
+  /* ---------- solid icons ----------
+     Material Symbols (Apache 2.0), drawn on Google's 0 -960 960 960 grid
+     rather than the 24-box the stroke set above uses, so they need their
+     own renderer. Filled weight, because the tab bar and the composer
+     read better solid at 20px than a 1.5px outline does.
+
+     The paths are inlined rather than linked as .svg files: build.js
+     folds the whole app into one file, and an <img src> would be the one
+     thing in it that still needs the network. */
+  var M = {
+    /* candlestick_chart */
+    candles: 'M280-200v-40h-40q-17 0-28.5-11.5T200-280v-400q0-17 11.5-28.5T240-720h40v-40q0-17 11.5-28.5T320-800q17 0 28.5 11.5T360-760v40h40q17 0 28.5 11.5T440-680v400q0 17-11.5 28.5T400-240h-40v40q0 17-11.5 28.5T320-160q-17 0-28.5-11.5T280-200Zm320 0v-160h-40q-17 0-28.5-11.5T520-400v-200q0-17 11.5-28.5T560-640h40v-120q0-17 11.5-28.5T640-800q17 0 28.5 11.5T680-760v120h40q17 0 28.5 11.5T760-600v200q0 17-11.5 28.5T720-360h-40v160q0 17-11.5 28.5T640-160q-17 0-28.5-11.5T600-200Z',
+    /* smart_toy (assets/bot.svg) */
+    bot: 'M160-360q-50 0-85-35t-35-85q0-50 35-85t85-35v-80q0-33 23.5-56.5T240-760h120q0-50 35-85t85-35q50 0 85 35t35 85h120q33 0 56.5 23.5T800-680v80q50 0 85 35t35 85q0 50-35 85t-85 35v160q0 33-23.5 56.5T720-120H240q-33 0-56.5-23.5T160-200v-160Zm242.5-97.5Q420-475 420-500t-17.5-42.5Q385-560 360-560t-42.5 17.5Q300-525 300-500t17.5 42.5Q335-440 360-440t42.5-17.5Zm240 0Q660-475 660-500t-17.5-42.5Q625-560 600-560t-42.5 17.5Q540-525 540-500t17.5 42.5Q575-440 600-440t42.5-17.5ZM320-280h320v-80H320v80Zm-80 80h480v-480H240v480Zm240-240Z',
+    /* receipt_long */
+    positions: 'M240-80q-50 0-85-35t-35-85v-80q0-17 11.5-28.5T160-320h80v-536q0-7 6-9.5t11 2.5l29 29q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l32-32q6-6 14-6t14 6l32 32q6 6 14 6t14-6l29-29q5-5 11-2.5t6 9.5v656q0 50-35 85t-85 35H240Zm480-80q17 0 28.5-11.5T760-200v-560H320v440h320q17 0 28.5 11.5T680-280v80q0 17 11.5 28.5T720-160ZM400-680h160q17 0 28.5 11.5T600-640q0 17-11.5 28.5T560-600H400q-17 0-28.5-11.5T360-640q0-17 11.5-28.5T400-680Zm0 120h160q17 0 28.5 11.5T600-520q0 17-11.5 28.5T560-480H400q-17 0-28.5-11.5T360-520q0-17 11.5-28.5T400-560Zm280-40q-17 0-28.5-11.5T640-640q0-17 11.5-28.5T680-680q17 0 28.5 11.5T720-640q0 17-11.5 28.5T680-600Zm0 120q-17 0-28.5-11.5T640-520q0-17 11.5-28.5T680-560q17 0 28.5 11.5T720-520q0 17-11.5 28.5T680-480Z',
+    /* monitoring */
+    markets: 'M160-120q-17 0-28.5-11.5T120-160v-40q0-17 11.5-28.5T160-240q17 0 28.5 11.5T200-200v40q0 17-11.5 28.5T160-120Zm160 0q-17 0-28.5-11.5T280-160v-220q0-17 11.5-28.5T320-420q17 0 28.5 11.5T360-380v220q0 17-11.5 28.5T320-120Zm160 0q-17 0-28.5-11.5T440-160v-140q0-17 11.5-28.5T480-340q17 0 28.5 11.5T520-300v140q0 17-11.5 28.5T480-120Zm160 0q-17 0-28.5-11.5T600-160v-200q0-17 11.5-28.5T640-400q17 0 28.5 11.5T680-360v200q0 17-11.5 28.5T640-120Zm160 0q-17 0-28.5-11.5T760-160v-360q0-17 11.5-28.5T800-560q17 0 28.5 11.5T840-520v360q0 17-11.5 28.5T800-120ZM560-481q-16 0-30.5-6T503-504L400-607 188-395q-12 12-28.5 11.5T131-396q-11-12-10.5-28.5T132-452l211-211q12-12 26.5-17.5T400-686q16 0 31 5.5t26 17.5l103 103 212-212q12-12 28.5-11.5T829-771q11 12 10.5 28.5T828-715L617-504q-11 11-26 17t-31 6Z',
+    /* send (assets/send.svg) */
+    send: 'M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z',
+    /* attach_file (assets/attach.svg) */
+    attach: 'M640-520v-200h80v200h-80ZM440-244q-35-10-57.5-39T360-350v-370h80v476Zm30 164q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v300h-80v-300q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q25 0 47.5-6.5T560-186v89q-21 8-43.5 12.5T470-80Zm170-40v-120H520v-80h120v-120h80v120h120v80H720v120h-80Z'
+  };
+
+  function micon(name, size) {
+    var d = M[name];
+    if (!d) return '';
+    var n = size || 20;
+    return '<svg width="' + n + '" height="' + n + '" viewBox="0 -960 960 960" ' +
+      'fill="currentColor" aria-hidden="true" focusable="false"><path d="' + d + '"></path></svg>';
+  }
+  window.NexSolid = micon;
+
   function icon(name, size) {
     var d = I[name] || '', parts = d.split('|'), body = '';
     if (name === 'globe' || name === 'coin' || name === 'clock') body += '<circle cx="12" cy="12" r="9"></circle>';
@@ -147,9 +180,9 @@
   /* ---------- chrome ---------- */
   var TABS = [
     { id: 'trade', label: 'Trade', file: 'index.html', icon: 'candles' },
-    { id: 'ai', label: 'AI', file: 'ai.html', icon: 'spark' },
-    { id: 'positions', label: 'Positions', file: 'positions.html', icon: 'book' },
-    { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'globe' }
+    { id: 'ai', label: 'AI', file: 'ai.html', icon: 'bot' },
+    { id: 'positions', label: 'Positions', file: 'positions.html', icon: 'positions' },
+    { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'markets' }
   ];
   /* the desktop bar carries one extra link the bottom bar has no room for */
   var DESK = TABS.concat([{ id: 'learn', label: 'Learn', file: 'learn.html' }]);
@@ -250,7 +283,7 @@
   function tabbar(page) {
     return '<nav class="tabbar only-mob">' + TABS.map(function (t) {
       return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
-        '<i class="tb-ico">' + icon(t.icon, 20) + '</i>' +
+        '<i class="tb-ico">' + micon(t.icon, 22) + '</i>' +
         '<i class="tb-lab">' + t.label + '</i></a>';
     }).join('') + '</nav>';
   }
@@ -303,9 +336,20 @@
   });
 
   var closeToken = 0;
+  /* Money surfaces need an account behind them, for the same reason the
+     real balance does: a deposit form for somebody with no account
+     collects a number and then fails at the server. Send them to sign up
+     instead — it is what the form was going to ask for anyway. */
+  var NEEDS_ACCOUNT = { deposit: 1, withdraw: 1 };
+
   function openModal(key, stepId, data) {
     var def = window.NexModals && window.NexModals[key];
     if (!def) return;
+    if (NEEDS_ACCOUNT[key] && !API.account.realAvailable()) {
+      closeModals();
+      go('signup.html');
+      return;
+    }
     closeToken++;
     lastFocus = document.activeElement;
     modalOpen = true;
@@ -1266,7 +1310,14 @@
     }
     if (name === 'useAccount') {
       var kind = node.getAttribute('data-kind');
-      API.account.use(kind);
+      /* use() refuses 'real' when there is no account behind it. That is
+         not an error to report — it is the moment to offer the thing
+         they were reaching for. */
+      if (!API.account.use(kind)) {
+        closeModals();
+        go('signup.html');
+        return;
+      }
       gotoStep('done');
       return;
     }
@@ -1389,6 +1440,9 @@
   /* ---------- boot ---------- */
   function boot() {
     API = window.NexAPI; F = window.NexFmt;
+    /* Before anything is painted: a stored 'real' with no account behind
+       it collapses to demo, so no screen ever renders the word. */
+    API.account.enforce();
     clearInterval(window.__nexMkt);
     if (!guard()) return;
     document.body.classList.add('loading');

@@ -159,7 +159,10 @@
     geo: saved.geo || null,
     referrals: saved.referrals || null,
     session: saved.session || null,
-    account: saved.account || 'real',
+    /* Demo until an account exists. A visitor who has never signed up
+       must never be looking at a screen that says "real" — not even at
+       zero, because the number is not the point: the word is. */
+    account: saved.account === 'real' ? 'real' : 'demo',
     /* A real account starts empty. The demo balance is a product
        feature, not seed data, so it opens with virtual funds. */
     balances: saved.balances || { real: 0, demo: 10000 },
@@ -441,6 +444,33 @@
   }
 
   /* ---------- session ---------- */
+  /* ---------- may this browser trade a real balance? ----------
+     Real means there is an account behind it. With an API configured
+     that is the server session and nothing else — a token in this tab,
+     not a flag in localStorage, which anybody can edit. Without one
+     (running the files locally) a local sign-in is all there is to go
+     on, and the balances are openly a simulation.
+
+     Everything real-vs-demo funnels through here so there is one answer
+     rather than four that drift. */
+  function realAvailable() {
+    if (window.NexNet && window.NexNet.live) return !!window.NexNet.signedIn();
+    return !!S.session;
+  }
+
+  /* Called on boot, after sign-out, and before any switch. A stored
+     'real' from an earlier session — or a hand-edited one — collapses
+     back to demo here rather than being displayed. */
+  function enforceAccount() {
+    if (S.account === 'real' && !realAvailable()) {
+      S.account = 'demo';
+      persist();
+      B.emit('balance', { balance: balance(), account: S.account });
+      return true;
+    }
+    return false;
+  }
+
   function signIn(email, method) {
     S.session = {
       token: 'demo.' + Math.random().toString(36).slice(2),
@@ -455,14 +485,21 @@
   }
   function signOut() {
     S.session = null;
+    /* The balance is not the only thing that has to go: leaving the
+       account kind on 'real' means the next visitor to this browser
+       opens on a real-looking terminal. */
+    S.account = 'demo';
+    S.balances.real = 0;
     persist();
     B.emit('session', null);
+    B.emit('balance', { balance: balance(), account: S.account });
   }
 
   /* ---------- boot ---------- */
   var readyFns = [];
   setTimeout(function () {
     booted = true;
+    enforceAccount();
     setConnection('live');
     start();
     readyFns.forEach(function (f) { f(); });
@@ -493,12 +530,18 @@
       balance: balance,
       currency: function () { return S.currency; },
       balances: function () { return S.balances; },
+      /* Returns false when the switch was refused, so the caller can
+         send the visitor to sign up instead of reporting success. */
       use: function (kind) {
-        if (kind !== 'real' && kind !== 'demo') return;
+        if (kind !== 'real' && kind !== 'demo') return false;
+        if (kind === 'real' && !realAvailable()) return false;
         S.account = kind;
         persist();
         B.emit('balance', { balance: balance(), account: kind });
+        return true;
       },
+      realAvailable: realAvailable,
+      enforce: enforceAccount,
       credit: function (amount, kind) { adjust(Math.abs(+amount || 0), { kind: kind || 'Deposit' }); },
       debit: function (amount, kind) { adjust(-Math.abs(+amount || 0), { kind: kind || 'Withdrawal' }); }
     },

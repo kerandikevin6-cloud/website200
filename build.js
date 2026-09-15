@@ -38,7 +38,13 @@ for (const name of PAGES) {
   };
 }
 
+/* The bundle is one file with no assets beside it, so the icon travels
+   inside it as a data URI rather than as a link to something that will
+   not be there. */
+const favicon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAADbUlEQVR42u1WO4wcRRCtV909s7tzPziMDAc6AoyFZBNYAhMhRIJIkJATEkRCQg6ZcURmiQiBREgEERKZA0sESASIDGRhiwAuMLJYe7nbz8x0dxVB78zO7e1hXWAR4NEEM9P1+lV1vX7T+PTV3+hBXkwP+HpI8N8T2OMGlFRVmjcwllMRFSKdD4NBOAGBklpkme01c8UqTpdi+naNYdJzHWdB/UoOe8zsblju/XHwM4NFZeA2zmy93CmIAP5l+N007AOsKrvr5x/t7azksMuTE4nG3G7eHP3w5Y0P0tcni+euXLxea8kEIhLSDO7rm1duT2+lgHef/+SVnXdqf9fMa8IKAhAInPoOgoVjGMsuiM9tQUQMkxJkUiLKbcEwhl0Ub+BAYBgkAlVt2rMgCOpFYqogmEKJRKMoi0ZVUdI6zhKBkhq7piqiEcqiMcHrOEtdYRgDuyAQjYXb+urXyz/e+dZx5qV+fff97d7TizI5+7u6c/Wnt6J6IrLsPrzwjWXXBgzs+vW9L679/nmCv/j4m2+f/XjiRwxjm/XhsR+Oqj9BUNKJHz3W2+30BqJhWO51NBq6Cw3wxI9a+NgP0eywhboZDgTHOQiMo+qCRQZCiqEjamHYDtytVJFqcy8pIUmgHVLSI3Kc96aJ0UNWAULU4KVqlVrH6Szst0FRw9jf66Yy9veihvZ9Fvbr+U5UIvJSRQ2N5JIqYB3nbS6Z6fXtGhHSbWAHbrOb78BtGtg2oG/XMtNr4Y5zA5vKPc7sElKVYlo6rFqxNqCJP4nZAWw5s+xA3iJbgURmOTPsInmAT+amszA+v/3aRy9dYzhV6dn1MkwAtO4ZNLx37rMyHAAs6k8Pzty4+/19CABmWIZJGs1tcar/DMMmZ70dbjEsQ5IiifSR/ImQbYMgGhovmcO7BbUbDVUYi4YqBiKqZKqqXkqGUxIwqUqjE6pjUJKotZcSxKJeVSuZLuBh3PbMptxrmV08femp9XMMIxp3N16o4zTtHZARlcJtXXr2crIdhhnYLVFhSs5j6zi9cOqN7XwnwXeKs7XMUh1I5yIlzU3hOFNVAD5WlUxx2Az6ZgOYe+UsHnR/D0qa88CZfA6XuoqTBD+0RCVJUieIl4ShKmP/V+cPapZUW8VJGQ+Owg81Gf96BlhlUHRf+MNz0f+A4B+tJL14xgpcYQAAAABJRU5ErkJggg==';
+
 const out = `<title>Nexas Terminal</title>
+<link rel="icon" type="image/png" href="${favicon}">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>

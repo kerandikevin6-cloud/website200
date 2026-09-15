@@ -159,16 +159,28 @@
           sub: 'Practise with virtual funds, or trade your real balance.',
           body: function () {
             var kind = API().account.kind(), b = API().account.balances();
-            function row(id, name, note) {
+            var canReal = API().account.realAvailable();
+
+            function row(id, name, note, value) {
               return '<button class="choice' + (kind === id ? ' selected' : '') + '" data-action="useAccount" data-kind="' + id + '">' +
                 '<span class="dot"></span>' +
                 '<span class="c-t"><b>' + name + '</b><span>' + note + '</span></span>' +
-                '<span class="c-v num">' + F().amount(b[id]) + '</span></button>';
+                '<span class="c-v num">' + value + '</span></button>';
             }
+
+            /* Without an account there is no real balance to show, so the
+               row does not pretend there is one. Showing $0.00 would be a
+               number about money this visitor does not have. */
             return '<div class="choices">' +
-              row('real', 'Real', 'USD · live funds') +
-              row('demo', 'Demo', 'USD · practice funds') +
-            '</div><p class="hint" style="margin:14px 2px 0">Open positions stay with the account they were taken on.</p>';
+              (canReal
+                ? row('real', 'Real', 'USD · live funds', F().amount(b.real))
+                : row('real', 'Real', 'Create an account to trade real funds', 'Sign up')) +
+              row('demo', 'Demo', 'USD · practice funds', F().amount(b.demo)) +
+            '</div><p class="hint" style="margin:14px 2px 0">' +
+              (canReal
+                ? 'Open positions stay with the account they were taken on.'
+                : 'Everything here is the demo balance: virtual funds, real prices.') +
+            '</p>';
           }
         },
         done: okStep(
