@@ -1826,3 +1826,26 @@ body[data-chrome="app"] main{background:var(--bg)}
 .method.off .badge{
   background:var(--surface-3);color:var(--muted);
 }
+
+
+/* ---------------- fitting a short phone ----------------
+   On a tall handset the chart keeps its full height. On a short one it
+   gives height back so the stake box still lands above the fold —
+   scrolling to find the amount you are about to risk is the one thing
+   this screen must never make you do.
+
+   455px is what sits around the chart and must be accounted for: the
+   top bar and contract tabs above it, the digits, mode switch, targets
+   and stake row below it, and the fixed dock and tab bar at the foot. */
+#chart{height:clamp(150px, calc(100dvh - 455px), 288px)}
+
+/* a little more air recovered from the panel itself */
+.panel{gap:9px;padding-top:0}
+.seg button{padding:8px 0 9px}
+.tgt{padding:7px 4px 8px}
+.quick button{padding:7px 0}
+.session{font-size:11px}
+
+@media (min-width:900px){
+  #chart{height:min(50vh,420px)}
+}

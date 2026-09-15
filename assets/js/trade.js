@@ -43,30 +43,6 @@
     return ((API.contracts.payoutRate(typeFor(side)) - 1) * 100).toFixed(2) + '%';
   }
 
-  /* ---------- instrument header ---------- */
-  function renderInstrument() {
-    var meta = API.symbol(S.symbol);
-    var h = API.feed.history(S.symbol);
-    var last = h[h.length - 1], prev = h[h.length - 2] || last;
-    var d = last.price - prev.price;
-    var conn = API.connection.status();
-
-    html(el.instrument,
-      '<button class="inst-mark" id="symbolBtn" aria-label="Change instrument">' +
-        I('chart', 16) + '</button>' +
-      '<div class="inst-main">' +
-        '<button class="inst-name" id="symbolName">' + meta.name + I('chevD', 13) + '</button>' +
-        '<div class="inst-price">' +
-          '<span class="p num" aria-live="polite">' + F.price(last.price, meta.digits) + '</span>' +
-          '<span class="c num ' + (d >= 0 ? 'pos' : 'neg') + '">' + F.signed(d) + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="inst-right">' +
-        '<span class="feed ' + conn + '"><i></i>' +
-        (conn === 'live' ? F.count(API.connection.latency()) + 'ms' : 'reconnecting') + '</span>' +
-      '</div>');
-  }
-
   /* ---------- digits ---------- */
   function renderDigits() {
     var meta = API.symbol(S.symbol);
@@ -172,10 +148,12 @@
           [1, 5, 10, 25, 50].map(function (n) { return '<button data-add="' + n + '">+' + n + '</button>'; }).join('') +
         '</div>' +
       '</div>' +
-      '<div class="session"><span>Today</span><span class="num">' + today.length + ' trades · ' +
-        wins + 'W / ' + losses + 'L</span></div>' +
-      '<div class="session"><span>Session P/L</span><span class="num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' +
-        F.signedMoney(pnl) + '</span></div>');
+      /* one line, not two: the trade screen is short on height and this
+         is the least load-bearing thing on it */
+      '<div class="session">' +
+        '<span class="num">' + today.length + ' trades · ' + wins + 'W / ' + losses + 'L</span>' +
+        '<span class="num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + F.signedMoney(pnl) + '</span>' +
+      '</div>');
   }
 
   /* ---------- dock (the two CTAs) ----------
@@ -238,7 +216,7 @@
   function renderActive() { html(el.active, ''); }
 
   function renderAll() {
-    renderTabs(); renderInstrument(); renderDigits();
+    renderTabs(); renderDigits();
     if (!typing()) renderPanel();
     renderDock(); renderActive();
     if (chart) chart.setMarkers(API.contracts.all().filter(function (c) { return c.symbol === S.symbol; }).slice(0, 12));
@@ -460,7 +438,6 @@
     if (!root) return;
 
     el.tabs = $('contractTabs');
-    el.instrument = $('instrument');
     el.digits = $('digits');
     el.panel = $('panel');
     el.dock = $('dock');
@@ -485,7 +462,7 @@
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
-        renderInstrument(); renderDigits();
+        renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
            under the finger once a second for no reason */
         if (S.run || API.contracts.open().length) renderDock();
@@ -493,7 +470,7 @@
       }));
       unsub.push(API.on('settled', onSettled));
       unsub.push(API.on('balance', function () { check(); typing() ? refreshValidity() : renderPanel(); }));
-      unsub.push(API.on('connection', function () { renderInstrument(); renderDock(); }));
+      unsub.push(API.on('connection', renderDock));
     });
   }
 
