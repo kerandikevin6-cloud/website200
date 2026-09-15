@@ -117,6 +117,41 @@
         '<button class="btn btn-fill" type="button" data-close>Done</button>' +
       '</div>';
   }
+  /* The other ending. A payment that does not go through is the moment a
+     person is most likely to think they have lost money, so this says
+     what happened, whose problem it is, and what to do next — in that
+     order. It never blames the customer for something that was not
+     theirs, and never claims a fault is ours when the truth is that the
+     prompt was declined. app.js decides which of those it was. */
+  function failBody(f) {
+    f = f || {};
+    return '<div class="done">' +
+      '<span class="done-mark bad">' + I('alert', 30) + '</span>' +
+      '<b>' + (f.headline || 'That payment did not go through') + '</b>' +
+      '<span>' + (f.note || 'No money has left your account.') + '</span>' +
+      '</div>' +
+      '<div class="modal-form">' +
+        (f.detail
+          ? '<div class="totals">' + kv('What happened', f.detail) +
+            (f.ref ? kv('Reference', f.ref) : '') + '</div>'
+          : (f.ref ? '<div class="totals">' + kv('Reference', f.ref) + '</div>' : '')) +
+        (f.reassure ? '<div class="notice">' + I('shield', 17) +
+          '<span>' + f.reassure + '</span></div>' : '') +
+        (f.retry === false ? '' :
+          '<button class="btn btn-fill" type="button" data-goto="form">Try again</button>') +
+        '<button class="btn btn-ghost" type="button" data-close>Close</button>' +
+      '</div>';
+  }
+
+  function failStep(title, sub) {
+    return {
+      title: title,
+      sub: sub,
+      noBack: true,
+      body: function (s) { return failBody(s.fail); }
+    };
+  }
+
   function okStep(title, sub, headline, note, rows, cta) {
     return {
       title: title,
@@ -505,6 +540,7 @@
                 : 'Confirming ' + s.payLabel + ' with the card issuer.');
           }
         },
+        failed: failStep('Deposit not completed', 'Nothing has been taken.'),
         success: {
           title: 'Deposit received',
           sub: 'The funds are in your trading balance.',
@@ -761,6 +797,7 @@
               (NAMES[s.method] || 'M-Pesa') + ' account.');
           }
         },
+        failed: failStep('Withdrawal not sent', 'Your balance is unchanged.'),
         success: {
           title: 'Payout sent',
           sub: 'Your provider will confirm by SMS.',

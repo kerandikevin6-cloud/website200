@@ -44,7 +44,8 @@
     link: 'M9.5 14.5l5-5|M11 6.6l1.3-1.3a3.8 3.8 0 015.4 5.4L16.4 12|M13 17.4l-1.3 1.3a3.8 3.8 0 01-5.4-5.4L7.6 12',
     spark: 'M12 3.1l1.86 4.93 4.93 1.86-4.93 1.86L12 16.68l-1.86-4.93L5.21 9.89l4.93-1.86z|M18.5 15.2l.66 1.74 1.74.66-1.74.66-.66 1.74-.66-1.74-1.74-.66 1.74-.66z',
     radar: 'M12 12l4.6-4.6|M4.6 16.9a8.5 8.5 0 1114.8 0',
-    target: 'M12 2v3M12 19v3M2 12h3M19 12h3'
+    target: 'M12 2v3M12 19v3M2 12h3M19 12h3',
+    alert: 'M12 8v5M12 16.2v.1'
   };
   /* ---------- solid icons ----------
      Material Symbols (Apache 2.0), drawn on Google's 0 -960 960 960 grid
@@ -91,6 +92,7 @@
     if (name === 'target') body =
       '<circle cx="12" cy="12" r="7.6"></circle><circle cx="12" cy="12" r="3.1"></circle>' + body;
     if (name === 'radar') body = '<circle cx="12" cy="12" r="1.5"></circle>' + body;
+    if (name === 'alert') body = '<circle cx="12" cy="12" r="9"></circle>' + body;
     if (name === 'gift') body = '<rect x="4.4" y="8.5" width="15.2" height="12.5" rx="1.8"></rect>' + body;
     if (name === 'copy') body =
       '<rect x="9" y="9" width="11" height="11" rx="2"></rect>' +
@@ -1157,6 +1159,79 @@
      provider confirms, and the screen picks that up from the session
      it re-reads afterwards. A client that adds to its own balance is a
      client that disagrees with the ledger the moment anything fails. */
+  /* ---------- explaining a failed payment ----------
+     Two kinds of failure, and telling them apart is the whole job.
+
+     Some are the customer's to act on: the prompt was declined, the PIN
+     was wrong, the balance was short. Telling that person "this is our
+     fault, we are fixing it" sends them away to wait for a fix that is
+     never coming, and they try again an hour later with the same empty
+     wallet. So those say plainly what happened.
+
+     The rest — a provider that did not answer, a gateway error, a push
+     that never left — are ours. Those say so, and say it without making
+     the customer feel they did something wrong, because they did not.
+
+     Anything we cannot place goes in the second bucket. Blaming the
+     customer on a guess is the worse of the two mistakes. */
+  var MPESA_THEIRS = [
+    { re: /cancel/i,
+      headline: 'The prompt was cancelled',
+      detail: 'Cancelled on the handset',
+      note: 'The M-Pesa request was declined on your phone, so nothing was taken. ' +
+            'Start again when you are ready.' },
+    { re: /insufficient|balance/i,
+      headline: 'Not enough in your M-Pesa',
+      detail: 'Insufficient funds',
+      note: 'Your M-Pesa balance did not cover this amount. Nothing was taken. ' +
+            'Top up, or try a smaller deposit.' },
+    { re: /pin|incorrect|wrong/i,
+      headline: 'The PIN was not accepted',
+      detail: 'PIN not accepted',
+      note: 'M-Pesa did not accept the PIN, so nothing was taken. ' +
+            'You can try again.' },
+    { re: /timeout|timed out|expired|no response|not answered/i,
+      headline: 'The prompt expired',
+      detail: 'No response in time',
+      note: 'The request timed out before it was approved, so nothing was taken. ' +
+            'Send it again and approve the prompt when it appears.' }
+  ];
+
+  function explainFailure(reason, method) {
+    var text = String(reason || '');
+    var mpesa = method !== 'card';
+
+    if (mpesa) {
+      for (var i = 0; i < MPESA_THEIRS.length; i++) {
+        if (MPESA_THEIRS[i].re.test(text)) {
+          return {
+            headline: MPESA_THEIRS[i].headline,
+            note: MPESA_THEIRS[i].note,
+            detail: MPESA_THEIRS[i].detail,
+            ref: state.data.ref || null
+          };
+        }
+      }
+    }
+
+    /* Ours, or unattributable — which we treat as ours. */
+    return {
+      headline: mpesa ? 'M-Pesa could not be reached' : 'The payment could not be completed',
+      note: 'This one is on us, not you. No money has left your account and nothing ' +
+            'was charged.',
+      detail: text ? text.slice(0, 120) : 'The provider did not respond',
+      reassure: 'The fault has been logged and is being looked at. It is usually ' +
+                'short-lived — try again in a few minutes, and your balance is ' +
+                'untouched either way.',
+      ref: state.data.ref || null
+    };
+  }
+
+  function failDeposit(reason, method) {
+    state.data.fail = explainFailure(reason, method);
+    gotoStep('failed');
+  }
+
   /* phone is passed in, not read from the DOM. gotoStep('pending') below
      replaces the modal body, so by the time this function looks for the
      number the input it came from no longer exists — which sent an empty
@@ -1195,13 +1270,18 @@
         closeModals();
         window.NexToast('Still waiting on the payment. It will credit on its own once it clears.');
       } else {
-        closeModals();
-        window.NexToast(payment.failureReason || 'That payment did not go through.');
+        failDeposit(payment.failureReason, method);
       }
     } catch (err) {
       if (token !== payToken) return;
-      closeModals();
-      window.NexToast(serverErrorText(err));
+      /* A validation error is about what was typed, so it belongs on the
+         form. Anything else is a payment that did not happen. */
+      if (err.fields) {
+        gotoStep('form');
+        showServerErrors(document, err);
+        return;
+      }
+      failDeposit(serverErrorText(err), method);
     }
   }
 
@@ -1222,8 +1302,20 @@
       gotoStep('success');
     } catch (err) {
       if (token !== payToken) return;
-      closeModals();
-      showServerErrors(document, err);
+      if (err.fields) {
+        gotoStep('form');
+        showServerErrors(document, err);
+        return;
+      }
+      state.data.fail = {
+        headline: 'The payout was not sent',
+        note: 'This one is on us, not you. Your balance is unchanged and nothing ' +
+              'has been deducted.',
+        detail: serverErrorText(err),
+        reassure: 'The fault has been logged and is being looked at. Nothing is ' +
+                  'lost — request it again in a few minutes.'
+      };
+      gotoStep('failed');
     }
   }
 

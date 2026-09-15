@@ -1216,6 +1216,11 @@ body.locked{overflow:hidden}
   background:var(--pos-soft);color:var(--pos);margin-bottom:4px;
   animation:donepop .42s cubic-bezier(.22,1.2,.36,1) both;
 }
+/* The same mark, for the other ending. Amber rather than red: the money
+   is safe, which is the first thing the reader needs to believe, and a
+   red disc says "something has gone badly wrong with your funds". */
+.done-mark.bad{background:var(--warn-soft);color:var(--warn)}
+.done-mark.bad svg{stroke-width:1.8}
 
 @keyframes donepop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 
