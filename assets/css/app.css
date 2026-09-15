@@ -126,6 +126,9 @@
 html,body{height:100%}
 /* keep the gutter reserved so fixed bars never resize between pages */
 html{scrollbar-gutter:stable}
+/* The UA gives [hidden] display:none, but any author display rule beats
+   it — .dropzone{display:flex} kept showing zones we had hidden. */
+[hidden]{display:none!important}
 body{
   margin:0;background:var(--bg);color:var(--text);
   font-family:var(--sans);font-size:14px;line-height:1.5;
@@ -437,29 +440,50 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .mkt .p span{display:block;font-size:11px;margin-top:3px}
 
 /* ---------------- page type ---------------- */
-.page{padding:22px 18px 34px;width:100%;max-width:760px;margin:0 auto}
-.page-kicker{color:var(--accent);margin-bottom:12px;display:block}
+.page{padding:28px 20px 44px;width:100%;max-width:760px;margin:0 auto}
+.page-kicker{color:var(--accent);margin-bottom:14px;display:block}
 .page h1{
-  font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.14;
-  margin:0 0 12px;letter-spacing:-.01em;text-wrap:balance;
+  font-family:var(--serif);font-weight:400;font-size:33px;line-height:1.16;
+  margin:0 0 16px;letter-spacing:-.01em;text-wrap:balance;
 }
-.page h2{font-size:15px;font-weight:600;margin:30px 0 10px}
-.page p{color:var(--text-2);margin:0 0 14px;max-width:66ch;line-height:1.7}
-.lede{font-size:15.5px;line-height:1.75}
-.rule{height:1px;background:var(--line-soft);margin:24px 0}
-.cards{display:flex;flex-direction:column;gap:10px}
-.card{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:18px}
-.card h3{margin:0 0 6px;font-size:14px;font-weight:600}
-.card p{margin:0;font-size:13px;color:var(--muted);line-height:1.65}
-.tool{display:flex;align-items:flex-start;gap:14px}
-.tool > svg{color:var(--accent);flex:none;margin-top:2px}
-.tool b{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
-.tool p{margin:0;font-size:13px;color:var(--muted);line-height:1.65}
-.tool .chip{margin-top:10px}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat{background:var(--surface);border:1px solid var(--line-soft);border-radius:0;padding:16px}
-.stat b{display:block;font-family:var(--mono);font-size:23px;font-weight:500;margin-bottom:6px}
-.stat span{font-size:11.5px;color:var(--muted);line-height:1.5;display:block}
+/* A section heading needs air above it far more than below: the gap is
+   what tells you a new idea has started. */
+.page h2{
+  font-size:12px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);margin:46px 0 16px;
+}
+.page p{color:var(--text-2);margin:0 0 18px;max-width:64ch;line-height:1.78}
+/* a paragraph that answers the block above it still needs a gap */
+.stats + p,.cards + p{margin-top:24px}
+.lede{font-size:16px;line-height:1.8;margin-bottom:6px!important}
+.rule{height:1px;background:var(--line-soft);margin:36px 0 0}
+.cards{display:flex;flex-direction:column;gap:14px}
+.card{
+  background:var(--surface);border:1px solid var(--line-soft);
+  border-radius:var(--r-lg);padding:22px;
+}
+.card h3{margin:0 0 9px;font-size:14.5px;font-weight:600;letter-spacing:-.005em}
+.card p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.78;max-width:58ch}
+.tool{display:flex;align-items:flex-start;gap:16px}
+/* The icon gets a soft tile so the cards line up on a strong left edge
+   instead of on ragged glyph shapes. */
+.tool > svg{
+  width:38px;height:38px;flex:none;padding:9px;box-sizing:border-box;
+  border-radius:var(--r);background:var(--accent-soft);color:var(--accent);
+}
+.tool b{display:block;font-weight:600;font-size:14.5px;margin-bottom:7px;letter-spacing:-.005em}
+.tool p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.78;max-width:56ch}
+.tool .chip{margin-top:13px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stat{
+  background:var(--surface);border:1px solid var(--line-soft);
+  border-radius:var(--r-lg);padding:20px 18px;
+}
+.stat b{
+  display:block;font-family:var(--mono);font-size:26px;font-weight:500;
+  margin-bottom:10px;color:var(--text);letter-spacing:-.02em;
+}
+.stat span{font-size:12px;color:var(--muted);line-height:1.66;display:block}
 .empty{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:8px;padding:64px 20px;text-align:center;
@@ -1126,17 +1150,30 @@ body.locked{overflow:hidden}
 .dropzone{cursor:pointer}
 .dropzone .btn{pointer-events:none}
 .picked{
-  display:flex;align-items:center;gap:12px;padding:10px 8px 10px 10px;
-  border:1px solid var(--line);background:var(--surface);
+  position:relative;display:flex;align-items:flex-end;min-height:168px;
+  border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;
+  background:var(--surface-2);
 }
-.picked-thumb{
-  width:52px;height:38px;flex:none;border-radius:var(--r-sm);object-fit:cover;
-  background:var(--surface-2);border:1px solid var(--line-soft);display:block;
+.picked-fill{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.picked-doc{
+  position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);
 }
-.picked-thumb.doc{display:grid;place-items:center;color:var(--muted)}
+/* A solid scrim, not a gradient: the file name has to stay readable over
+   whatever the photo happens to be. */
+.picked-bar{
+  position:relative;z-index:1;display:flex;align-items:center;gap:10px;
+  width:100%;padding:10px 8px 10px 13px;
+}
+.picked.shot .picked-bar{background:rgba(9,13,18,.74);color:#fff}
 .picked-t{flex:1;min-width:0}
 .picked-t b{display:block;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .picked-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.picked.shot .picked-t span{color:rgba(255,255,255,.72)}
+.picked-x{
+  flex:none;width:34px;height:34px;display:grid;place-items:center;
+  border-radius:var(--r-sm);color:var(--text-2);
+}
+.picked.shot .picked-x{color:#fff;background:rgba(255,255,255,.14)}
 
 /* ---------------- awaiting payment ---------------- */
 .await{
@@ -1199,3 +1236,349 @@ body.locked{overflow:hidden}
 
 /* check() draws at 1.5 like every other icon; at 30px it needs weight */
 .done-mark svg{stroke-width:2.4}
+
+
+/* ---------------- top bar tiles ----------------
+   The menu and bell sat as bare glyphs next to two bordered controls,
+   so they read as a different class of thing. Same box, same height,
+   same surface — only inside the top bar, so modal and chat icon
+   buttons keep their bare treatment. */
+.topbar .iconbtn{
+  width:38px;height:38px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:0;
+}
+.topbar .iconbtn:hover{background:var(--surface-3);color:var(--text)}
+.topbar .acct{height:38px}
+.topbar .btn-primary{height:38px;display:flex;align-items:center;padding:0 16px}
+/* the invisible spacer opposite a back button must stay invisible */
+.topbar .iconbtn[aria-hidden="true"]{background:none;border:none}
+
+
+/* ============================================================
+   Landing page
+   One idea per section, centred heads, and a lot of air. Sections
+   alternate white / blue / white / purple so the eye gets a beat
+   between them instead of one continuous wall.
+   ============================================================ */
+:root{
+  --lpad:22px;
+  --lsec-y:76px;
+  --tint-blue:#AECBF0;
+  --tint-blue-fg:#0D1A2B;
+  --tint-purple:#B7ACE8;
+  --tint-purple-fg:#171233;
+  --lhero-bg:#F1F2F5;
+  --lnav-h:72px;
+  --lfoot-bg:#101820;
+  --lfoot-fg:#E7EDF4;
+  --lfoot-muted:#8FA0B2;
+}
+:root[data-theme="dark"]{
+  --tint-blue:#152740;
+  --tint-blue-fg:#E3ECF8;
+  --tint-purple:#241D3F;
+  --tint-purple-fg:#EAE4F8;
+  --lhero-bg:#0E1A28;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --tint-blue:#152740;
+    --tint-blue-fg:#E3ECF8;
+    --tint-purple:#241D3F;
+    --tint-purple-fg:#EAE4F8;
+    --lhero-bg:#0E1A28;
+  }
+}
+
+/* every section is full-bleed; the inner rail holds the content */
+.lsec,.lnav,.lfoot{width:100%}
+.lsec-in,.lnav-in{width:100%;max-width:1080px;margin:0 auto;padding-left:var(--lpad);padding-right:var(--lpad)}
+
+/* ---- nav ---- */
+.lnav{
+  position:sticky;top:0;z-index:40;background:var(--bg);
+  border-bottom:1px solid var(--line-soft);
+}
+.lnav-in{display:flex;align-items:center;gap:18px;padding-top:15px;padding-bottom:15px}
+.lnav .wordmark{margin-right:auto;font-size:17px}
+.lnav-links{display:none;gap:6px;margin-right:auto}
+.lnav-links a{padding:8px 13px;border-radius:999px;color:var(--text-2);font-size:13.5px}
+.lnav-links a:hover{background:var(--surface-2);color:var(--text)}
+.lnav-cta{display:flex;align-items:center;gap:8px}
+.btn-ghost-sm,.btn-solid-sm{padding:10px 16px;font-size:13px;font-weight:500;white-space:nowrap}
+.btn-ghost-sm{border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.btn-ghost-sm:hover{background:var(--surface-2)}
+.btn-solid-sm{background:var(--pos);color:#fff;font-weight:600}
+.btn-solid-sm:hover{filter:brightness(1.07)}
+
+/* ---- section frame ---- */
+.lsec{padding-top:var(--lsec-y);padding-bottom:var(--lsec-y)}
+.lsec.tint{background:var(--tint);color:var(--tint-fg)}
+.lsec.blue{--tint:var(--tint-blue);--tint-fg:var(--tint-blue-fg)}
+.lsec.purple{--tint:var(--tint-purple);--tint-fg:var(--tint-purple-fg)}
+
+/* A centred head, then a wide block under it — the reference rhythm. */
+.lsec-head{text-align:center;max-width:56ch;margin:0 auto 52px}
+.lkicker{display:block;color:var(--accent);margin-bottom:18px}
+.lsec.tint .lkicker{color:inherit;opacity:.58}
+.lsec h2,.lhero h1{
+  font-family:var(--serif);font-weight:400;letter-spacing:-.015em;
+  margin:0 0 18px;text-wrap:balance;
+}
+.lsec h2{font-size:31px;line-height:1.16}
+.lsec-head p{margin:0;font-size:15.5px;line-height:1.8;color:var(--text-2)}
+.lsec.tint .lsec-head p{color:inherit;opacity:.76}
+
+/* ---- hero ---- */
+/* A shade off white, so the hero reads as its own panel against the
+   plain white sections below it rather than running into them.
+
+   On a phone it fills what is left of the screen under the bar and
+   centres its content in that space, so there is no dead strip between
+   the last button and the section below. svh, not vh, so the address
+   bar sliding away does not leave a gap. The extra top padding sits the
+   block a touch below true centre, which reads as centred. */
+.lhero{
+  text-align:center;
+  background:var(--lhero-bg);border-bottom:1px solid var(--line-soft);
+  display:flex;align-items:center;
+  min-height:calc(100vh - var(--lnav-h));
+  min-height:calc(100svh - var(--lnav-h));
+  padding-top:56px;padding-bottom:40px;
+}
+.lhero > .lsec-in{width:100%}
+.lhero h1{font-size:40px;line-height:1.1}
+.lhero-p{
+  margin:0 auto 34px;max-width:58ch;font-size:16.5px;line-height:1.8;color:var(--text-2);
+}
+.lcta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.lcta .btn{width:auto;padding:15px 26px}
+
+
+/* ---- live chart card ---- */
+.lshot{
+  border:1px solid var(--line);background:var(--surface);
+  border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow);
+  color:var(--text);
+}
+.lshot-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:16px 18px;border-bottom:1px solid var(--line-soft);
+}
+.lshot-name{font-size:13.5px;font-weight:500}
+.lshot-live{
+  display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);
+  font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;
+}
+.lshot-live i{width:6px;height:6px;border-radius:50%;background:var(--pos)}
+.lshot-chart{position:relative;background:var(--chart-bg)}
+#landingChart{display:block;width:100%;height:270px;position:relative;z-index:1}
+.lshot-digits{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:18px 16px 6px}
+.lsd{
+  display:grid;place-items:center;aspect-ratio:1;max-width:36px;width:100%;margin:0 auto;
+  border-radius:50%;border:1px solid var(--line-soft);background:var(--surface);
+  font-family:var(--mono);font-size:12px;color:var(--text-2);
+}
+.lsd.on{border-color:var(--accent);color:var(--accent)}
+.lshot-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px 18px;font-size:11.5px;color:var(--muted);
+}
+.lshot-foot .num{font-size:14px;color:var(--text)}
+
+/* ---- cards ---- */
+.lgrid{display:grid;grid-template-columns:1fr;gap:16px}
+.lcard{
+  background:var(--surface);border:1px solid var(--line-soft);
+  border-radius:var(--r-lg);padding:28px;color:var(--text);
+}
+.lsec.tint .lcard{border-color:transparent}
+.lnum{
+  display:block;font-family:var(--mono);font-size:11px;color:var(--accent);
+  letter-spacing:.16em;margin-bottom:18px;
+}
+.lcard h3{margin:0 0 11px;font-size:16.5px;font-weight:600;letter-spacing:-.005em}
+.lcard p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.8}
+.lcard .chip{margin-top:20px}
+
+/* ---- contract table ---- */
+.ltable{
+  border:1px solid var(--line-soft);background:var(--surface);
+  border-radius:var(--r-lg);overflow:hidden;color:var(--text);
+}
+.lsec.tint .ltable{border-color:transparent}
+.ltrow{
+  display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:baseline;
+  padding:18px 20px;font-size:14px;
+}
+.ltrow + .ltrow{border-top:1px solid var(--line-soft)}
+.ltrow > span:first-child{font-weight:500}
+.ltrow > span:nth-child(2){grid-column:1;color:var(--muted);font-size:13px;line-height:1.6}
+.ltrow > span:last-child{grid-column:2;grid-row:1/span 2;align-self:center;text-align:right}
+.lthead{display:none}
+
+/* ---- ai panel ---- */
+.lpanel{
+  border:1px solid var(--line-soft);background:var(--surface);
+  border-radius:var(--r-lg);overflow:hidden;color:var(--text);
+}
+.lsig{
+  display:grid;grid-template-columns:1fr auto;gap:3px 14px;align-items:baseline;
+  padding:17px 18px;font-size:13.5px;
+}
+.lsig + .lsig{border-top:1px solid var(--line-soft)}
+.lsig-b{font-weight:500}
+.lsig > span:nth-child(2){grid-column:1;color:var(--muted);font-size:12.5px}
+.lsig b{grid-column:2;grid-row:1/span 2;align-self:center;font-size:13px}
+
+.lsmall{font-size:13px;color:var(--muted);line-height:1.8;margin:26px 0 0;max-width:62ch}
+.lsec.tint .lsmall{color:inherit;opacity:.72}
+.lsmall.centered{margin-left:auto;margin-right:auto;text-align:center}
+.lsmall a{color:var(--accent);font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.lsec.tint .lsmall a{color:inherit}
+
+/* ---- faq ---- */
+.lfaq{
+  border:1px solid var(--line-soft);border-radius:var(--r-lg);
+  overflow:hidden;background:var(--surface);
+}
+.lfaq details + details{border-top:1px solid var(--line-soft)}
+.lfaq summary{
+  display:flex;align-items:center;gap:16px;padding:21px 22px;cursor:pointer;
+  font-size:15px;font-weight:500;list-style:none;
+}
+.lfaq summary::-webkit-details-marker{display:none}
+.lfaq summary::after{
+  content:"";margin-left:auto;flex:none;width:9px;height:9px;
+  border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .2s ease;
+}
+.lfaq details[open] summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.lfaq summary:hover{background:var(--surface-2)}
+.lfaq p{
+  margin:0;padding:0 22px 24px;color:var(--muted);font-size:13.5px;
+  line-height:1.85;max-width:66ch;
+}
+
+/* ---- closing cta ---- */
+.lclose{text-align:center}
+.lclose h2{margin-bottom:14px}
+.lclose p{font-size:16px;margin:0 auto 32px;line-height:1.75;max-width:52ch;opacity:.8;text-wrap:balance}
+/* An accent-blue button on the purple panel is a clash. On a tinted
+   section the primary button borrows the section's own ink instead, so
+   it stays the strongest thing there without introducing a third hue. */
+.lsec.tint .btn-fill{background:var(--tint-fg);color:var(--tint)}
+.lsec.tint .btn-ghost{background:transparent;border-color:currentColor;color:inherit}
+.lsec.tint .btn-ghost:hover{background:rgba(127,127,127,.16)}
+
+/* ---- footer ---- */
+.lfoot{background:var(--lfoot-bg);color:var(--lfoot-fg)}
+.lfoot .wordmark{color:var(--lfoot-fg)}
+.lfoot-top{display:flex;flex-direction:column;gap:40px;padding:60px 0 40px}
+.lfoot-brand .wordmark{font-size:17px;display:inline-block;margin-bottom:14px}
+.lfoot-brand p{margin:0;color:var(--lfoot-muted);font-size:13px;line-height:1.8;max-width:38ch}
+.lfoot-cols{display:grid;grid-template-columns:repeat(2,1fr);gap:34px 28px}
+.lfoot-cols div{display:flex;flex-direction:column;gap:13px}
+.lfoot-cols b{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.lfoot-cols a{color:var(--lfoot-muted);font-size:13.5px}
+.lfoot-cols a:hover{color:var(--lfoot-fg)}
+.lfoot-risk{padding:30px 0;border-top:1px solid rgba(255,255,255,.1)}
+.lfoot-risk b{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:11px}
+.lfoot-risk p{margin:0;color:var(--lfoot-muted);font-size:12px;line-height:1.85;max-width:88ch}
+.lfoot-bar{
+  display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;
+  padding:20px 0 30px;border-top:1px solid rgba(255,255,255,.1);
+  color:var(--lfoot-muted);font-size:11.5px;
+}
+
+/* ---- wider screens ---- */
+@media (min-width:720px){
+  :root{--lpad:32px;--lsec-y:100px}
+  .lgrid{grid-template-columns:repeat(3,1fr)}
+  .lfoot-cols{grid-template-columns:repeat(3,1fr)}
+  .lfoot-top{flex-direction:row;justify-content:space-between;gap:60px}
+  .lfoot-cols{flex:1;max-width:580px}
+  .ltrow{grid-template-columns:1.1fr 2fr .7fr;align-items:center;padding:18px 24px}
+  .ltrow > span:nth-child(2){grid-column:2;font-size:13.5px}
+  .ltrow > span:last-child{grid-column:3;grid-row:1}
+  .lthead{
+    display:grid;background:var(--surface-2);padding:13px 24px;
+    font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+  }
+  .lthead > span{font-weight:500!important;color:var(--muted)!important;font-size:10px!important}
+  .lsig{grid-template-columns:auto 1fr auto;align-items:center;padding:18px 20px}
+  .lsig > span:nth-child(2){grid-column:2}
+  .lsig b{grid-column:3;grid-row:1}
+}
+@media (min-width:1000px){
+  :root{--lsec-y:124px}
+  .lnav-links{display:flex}
+  .lhero{
+    min-height:0;display:block;
+    padding-top:104px;padding-bottom:112px;
+  }
+  .lhero h1{font-size:56px}
+  .lsec h2{font-size:38px}
+  .lsec-head{margin-bottom:64px}
+  #landingChart{height:340px}
+  .lcard{padding:32px}
+}
+
+/* anchors should not land under the sticky bar */
+[id]{scroll-margin-top:88px}
+@media (prefers-reduced-motion:no-preference){
+  html:has(.lnav){scroll-behavior:smooth}
+}
+
+/* ---------------- Paystack handoff ----------------
+   Not a .notice: this is the whole content of the card step, so it gets
+   a heading and room to explain why there is no card field here. */
+.handoff{
+  display:flex;gap:14px;align-items:flex-start;padding:16px;
+  border:1px solid var(--line-soft);border-radius:var(--r-lg);background:var(--surface-2);
+}
+.handoff-mark{
+  width:38px;height:38px;flex:none;display:grid;place-items:center;
+  border-radius:var(--r);background:var(--pos-soft);color:var(--pos);
+}
+.handoff-t{min-width:0}
+.handoff-t b{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.handoff-t p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.7}
+.handoff-marks{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
+.handoff-marks span{
+  padding:5px 10px;border:1px solid var(--line-soft);border-radius:999px;
+  font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface);
+}
+
+
+/* ---------------- landing: square corners ----------------
+   Every panel and control on this page is square. Stated once here
+   rather than zeroed on each rule, so a new card cannot arrive with a
+   stray radius. The digit pips stay round — they are pips, not cards. */
+.lsec .lcard,
+.lsec .lshot,
+.lsec .ltable,
+.lsec .lpanel,
+.lsec .lfaq,
+.lsec .btn,
+.lsec .chip,
+.lnav .btn-ghost-sm,
+.lnav .btn-solid-sm,
+.lnav-links a{border-radius:0}
+
+/* ---------------- FAQ plus control ----------------
+   Two bars: the upright one collapses on open, so + becomes −. */
+.lfaq summary::after{content:none}
+.lplus{
+  position:relative;margin-left:auto;flex:none;width:18px;height:18px;
+  color:var(--muted);
+}
+.lplus::before,.lplus::after{
+  content:"";position:absolute;left:50%;top:50%;background:currentColor;
+  transform:translate(-50%,-50%);transition:transform .22s ease,opacity .22s ease;
+}
+.lplus::before{width:15px;height:1.7px}
+.lplus::after{width:1.7px;height:15px}
+.lfaq details[open] .lplus{color:var(--text)}
+.lfaq details[open] .lplus::after{transform:translate(-50%,-50%) scaleY(0);opacity:0}

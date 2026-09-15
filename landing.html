@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nexas &mdash; Trade synthetic indices</title>
+<meta name="description" content="Nexas is a terminal for digit contracts on synthetic indices. Open every hour of every day, settled in ticks, funded with M-Pesa, card or USDT.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0A1420">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="landing" data-chrome="plain">
+<div class="app">
+  <main>
+
+    <!-- ---------------- nav ---------------- -->
+    <header class="lnav">
+      <div class="lnav-in">
+        <a class="wordmark" href="landing.html">Nexas</a>
+        <nav class="lnav-links">
+          <a href="#market">Live market</a>
+          <a href="#how">How it works</a>
+          <a href="#contracts">Contracts</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <div class="lnav-cta">
+          <a class="btn-ghost-sm" href="login.html">Log in</a>
+          <a class="btn-solid-sm" href="signup.html">Create account</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- ---------------- hero: white ---------------- -->
+    <section class="lsec lhero">
+      <div class="lsec-in">
+        <h1>The market never closes.<br>Neither does your terminal.</h1>
+        <p class="lhero-p">Nexas is a trading terminal for digit contracts on synthetic indices &mdash; price series generated continuously by a published random process. No earnings calls, no market open, no waiting for Monday.</p>
+        <div class="lcta">
+          <a class="btn btn-fill" href="signup.html">Create a free account</a>
+          <a class="btn btn-ghost" href="login.html">Try the demo balance</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- live market: blue ---------------- -->
+    <section class="lsec tint blue" id="market">
+      <div class="lsec-in">
+        <div class="lsec-head">
+          <span class="label lkicker">Live market</span>
+          <h2>This is the feed, running right now.</h2>
+          <p>Not a screenshot. The chart below is the same Volatility 10 series the terminal trades, ticking as you read this. The last digit of each price is what settles a contract.</p>
+        </div>
+
+        <div class="lshot">
+          <div class="lshot-head">
+            <span class="lshot-name">Volatility 10 (1s) Index</span>
+            <span class="lshot-live"><i></i>live</span>
+          </div>
+          <div class="lshot-chart">
+            <svg class="chart-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <path fill="currentColor" fill-rule="evenodd" d="M527.8 147.2L555.6 159.7L569.4 161.1L586.1 162.5L597.2 172.2L602.8 188.9L608.3 208.3L619.4 218.1L633.3 219.4L641.7 216.7L633.3 236.1L625.0 244.4L613.9 255.6L611.1 269.4L612.5 294.4L597.2 316.7L588.9 330.6L575.0 344.4L561.1 344.4L551.4 345.8L541.7 325.0L533.3 311.1L533.3 294.4L536.1 275.0L525.0 252.8L526.4 238.9L513.9 238.9L500.0 234.7L486.1 236.1L475.0 236.1L463.9 225.0L451.4 209.2L455.6 191.7L463.9 175.0L472.2 166.7L483.3 150.6L500.0 150.0L508.3 147.8L527.8 147.2ZM473.6 142.5L475.0 130.6L495.8 122.2L487.5 115.3L500.0 112.5L505.6 108.3L511.1 102.8L522.2 97.2L522.2 91.7L513.9 87.5L530.6 72.2L538.9 63.9L550.0 56.9L569.4 52.8L591.7 58.3L611.1 61.1L638.9 58.3L666.7 55.6L688.9 47.2L708.3 50.0L736.1 44.4L777.8 36.1L813.9 44.4L855.6 47.2L888.9 47.2L922.2 55.6L944.4 55.6L972.2 66.7L994.4 69.4L977.8 77.8L952.8 83.3L944.4 94.4L933.3 108.3L897.2 100.0L888.9 122.2L869.4 130.6L861.1 130.6L852.8 141.7L838.9 141.7L836.1 163.9L825.0 183.3L805.6 191.7L800.0 205.6L791.7 222.2L788.9 244.4L777.8 233.3L772.2 222.2L769.4 205.6L761.1 200.0L750.0 188.9L741.7 191.7L722.2 208.3L713.9 227.8L702.8 208.3L700.0 191.7L688.9 186.1L680.6 180.6L669.4 180.6L658.3 180.6L647.2 175.0L638.9 169.4L633.3 166.7L655.6 177.8L661.1 188.9L652.8 200.0L644.4 202.8L633.3 211.1L625.0 215.3L619.4 208.3L608.3 191.7L600.0 180.6L594.4 172.2L597.2 161.1L600.0 150.0L591.7 150.0L583.3 138.9L572.2 138.9L561.1 138.9L555.6 138.9L547.2 133.3L538.9 133.3L533.3 127.8L522.2 127.8L508.3 130.6L500.0 138.9L494.4 147.2L486.1 150.0L480.6 147.2L473.6 142.5ZM41.7 83.3L69.4 80.6L83.3 80.6L111.1 83.3L130.6 91.7L138.9 100.0L150.0 111.1L155.6 116.7L158.3 127.8L161.1 147.2L169.4 155.6L175.0 161.1L183.3 172.2L194.4 186.1L208.3 194.4L225.0 205.6L238.9 205.6L244.4 208.3L255.6 205.6L258.3 213.9L269.4 225.0L280.6 225.0L272.2 208.3L258.3 191.7L250.0 191.7L247.2 197.2L236.1 197.2L230.6 188.9L238.9 177.8L252.8 169.4L266.7 166.7L275.0 180.6L277.8 175.0L275.0 163.9L280.6 158.3L291.7 152.8L294.4 138.9L305.6 130.6L316.7 125.0L322.2 122.2L333.3 119.4L344.4 108.3L341.7 100.0L322.2 88.9L305.6 86.1L283.3 94.4L277.8 105.6L269.4 97.2L280.6 77.8L263.9 66.7L236.1 61.1L208.3 61.1L180.6 58.3L152.8 55.6L125.0 58.3L97.2 55.6L66.7 52.8L47.2 66.7L33.3 69.4L41.7 83.3ZM280.6 225.0L291.7 219.4L302.8 216.7L316.7 219.4L327.8 222.2L333.3 227.8L347.2 233.3L358.3 238.9L361.1 250.0L377.8 255.6L394.4 263.9L402.8 272.2L397.2 283.3L391.7 294.4L386.1 311.1L366.7 319.4L366.7 327.8L352.8 344.4L341.7 355.6L327.8 361.1L319.4 375.0L311.1 388.9L311.1 394.4L300.0 400.0L291.7 388.9L291.7 380.6L297.2 366.7L297.2 352.8L302.8 333.3L305.6 313.9L305.6 300.0L288.9 288.9L280.6 272.2L275.0 266.7L277.8 255.6L283.3 247.2L286.1 233.3L280.6 225.0ZM813.9 311.1L816.7 322.2L819.4 344.4L830.6 344.4L844.4 341.7L858.3 338.9L872.2 341.7L880.6 347.2L888.9 355.6L905.6 358.3L916.7 352.8L925.0 338.9L925.0 327.8L925.0 319.4L913.9 311.1L905.6 302.8L897.2 291.7L894.4 280.6L886.1 297.2L877.8 283.3L869.4 280.6L861.1 283.3L852.8 288.9L847.2 288.9L838.9 297.2L827.8 305.6L813.9 311.1ZM375.0 83.3L361.1 72.2L355.6 61.1L347.2 50.0L347.2 38.9L361.1 27.8L388.9 19.4L422.2 22.2L438.9 33.3L438.9 50.0L427.8 61.1L408.3 66.7L383.3 80.6L375.0 83.3ZM636.1 283.3L638.9 291.7L638.9 302.8L631.9 319.4L625.0 319.4L622.2 305.6L620.8 297.2L627.8 286.1L636.1 283.3ZM891.7 125.0L902.8 127.8L897.2 133.3L891.7 138.9L888.9 150.0L880.6 147.2L875.0 155.6L866.7 155.6L861.1 163.9L863.9 158.3L875.0 150.0L883.3 144.4L891.7 125.0ZM486.1 88.9L491.7 87.5L494.4 91.7L497.2 100.0L502.8 104.2L502.8 108.3L494.4 109.7L486.1 111.1L486.1 102.8L483.3 97.2L486.1 88.9ZM802.8 244.4L813.9 238.9L825.0 238.9L830.6 247.2L825.0 258.3L808.3 258.3L802.8 252.8L802.8 244.4ZM763.9 236.1L775.0 241.7L788.9 255.6L794.4 266.7L788.9 266.7L777.8 250.0L763.9 244.4L763.9 236.1ZM863.9 252.8L877.8 255.6L891.7 258.3L908.3 266.7L916.7 275.0L900.0 272.2L883.3 272.2L869.4 261.1L863.9 252.8ZM980.6 347.2L994.4 355.6L991.7 361.1L983.3 363.9L975.0 372.2L966.7 380.6L963.9 375.0L975.0 366.7L980.6 347.2ZM833.3 200.0L838.9 202.8L844.4 213.9L850.0 222.2L850.0 230.6L838.9 233.3L833.3 222.2L833.3 211.1L833.3 200.0ZM433.3 69.4L447.2 66.7L461.1 68.1L461.1 72.2L447.2 73.9L436.1 72.2L433.3 69.4ZM722.2 223.6L727.8 230.6L722.2 233.3L720.8 227.8L722.2 223.6ZM263.9 188.9L280.6 186.1L291.7 194.4L283.3 194.4L266.7 190.3L263.9 188.9ZM830.6 247.2L847.2 247.2L847.2 255.6L836.1 263.9L830.6 258.3L830.6 247.2ZM791.7 266.7L816.7 269.4L816.7 273.6L794.4 269.4L791.7 266.7Z"></path>
+            </svg>
+            <canvas id="landingChart" aria-label="Live price chart"></canvas>
+          </div>
+          <div class="lshot-digits" id="landingDigits"></div>
+          <div class="lshot-foot">
+            <span>Last digit settles the contract</span>
+            <span class="num" id="landingPrice">&mdash;</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- how: white ---------------- -->
+    <section class="lsec" id="how">
+      <div class="lsec-in">
+        <div class="lsec-head">
+          <span class="label lkicker">How it works</span>
+          <h2>Three steps, and it is over in seconds.</h2>
+          <p>A contract asks one question about the last digit of the next few ticks. You pick the answer, set a stake, and it settles itself.</p>
+        </div>
+        <div class="lgrid">
+          <article class="lcard">
+            <span class="lnum">01</span>
+            <h3>Fund the account</h3>
+            <p>M-Pesa, card or USDT. Mobile money lands in about two minutes and is quoted in your own currency, so you send the figure you expect to send.</p>
+          </article>
+          <article class="lcard">
+            <span class="lnum">02</span>
+            <h3>Pick a contract</h3>
+            <p>Even or odd, over or under a barrier, matches or differs from one digit. Every payout is on the button before you commit anything.</p>
+          </article>
+          <article class="lcard">
+            <span class="lnum">03</span>
+            <h3>Watch it settle</h3>
+            <p>One to ten ticks later it is done. Wins are credited immediately, and every contract stays on your ledger with its entry and exit price.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- contracts: purple ---------------- -->
+    <section class="lsec tint purple" id="contracts">
+      <div class="lsec-in">
+        <div class="lsec-head">
+          <span class="label lkicker">Contracts</span>
+          <h2>Five ways to read one digit.</h2>
+          <p>Each digit 0&ndash;9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. We publish it rather than bury it.</p>
+        </div>
+        <div class="ltable">
+          <div class="ltrow lthead"><span>Contract</span><span>You win when</span><span class="num">True odds</span></div>
+          <div class="ltrow"><span>Even / Odd</span><span>The last digit is even, or odd</span><span class="num">50%</span></div>
+          <div class="ltrow"><span>Over</span><span>The digit lands above your barrier</span><span class="num">10&ndash;90%</span></div>
+          <div class="ltrow"><span>Under</span><span>The digit lands below your barrier</span><span class="num">10&ndash;90%</span></div>
+          <div class="ltrow"><span>Matches</span><span>The digit is exactly the one you chose</span><span class="num">10%</span></div>
+          <div class="ltrow"><span>Differs</span><span>The digit is anything but the one you chose</span><span class="num">90%</span></div>
+        </div>
+        <p class="lsmall">Payouts sit slightly below fair value &mdash; that margin is how the platform earns. Differs wins nine times in ten and still runs a negative expectation. <a href="learn.html">Read the full breakdown</a>.</p>
+      </div>
+    </section>
+
+    <!-- ---------------- ai: white ---------------- -->
+    <section class="lsec" id="ai">
+      <div class="lsec-in">
+        <div class="lsec-head">
+          <span class="label lkicker">AI scanner</span>
+          <h2>It tells you when there is nothing worth trading.</h2>
+          <p>The scanner reads the last 180 ticks on all eight instruments, scores every contract it could write against them, and ranks by expected return rather than by win rate.</p>
+        </div>
+        <div class="lpanel">
+          <div class="lsig"><span class="lsig-b">Over 3</span><span>Volatility 75 (1s)</span><b class="num pos">+1.42% EV</b></div>
+          <div class="lsig"><span class="lsig-b">Even</span><span>Volatility 10 (1s)</span><b class="num pos">+0.38% EV</b></div>
+          <div class="lsig"><span class="lsig-b">Differs 7</span><span>Step Index</span><b class="num neg">&minus;0.91% EV</b></div>
+          <div class="lsig"><span class="lsig-b">Under 6</span><span>Crash 1000</span><b class="num neg">&minus;1.20% EV</b></div>
+        </div>
+        <p class="lsmall centered">Most of the time the honest answer is that no edge clears the payout margin, and it says so.</p>
+      </div>
+    </section>
+
+    <!-- ---------------- funding: blue ---------------- -->
+    <section class="lsec tint blue" id="funding">
+      <div class="lsec-in">
+        <div class="lsec-head">
+          <span class="label lkicker">Funding</span>
+          <h2>Pay the way you already pay.</h2>
+        </div>
+        <div class="lgrid">
+          <article class="lcard">
+            <h3>M-Pesa</h3>
+            <p>An STK push to your own number. Amounts are shown in your local currency with the exchange rate stated, so nothing is a surprise.</p>
+            <span class="chip">About two minutes</span>
+          </article>
+          <article class="lcard">
+            <h3>Card</h3>
+            <p>Visa, Mastercard and Verve through Paystack. Your card number is entered on Paystack&rsquo;s checkout and never touches our servers.</p>
+            <span class="chip">Secured by Paystack</span>
+          </article>
+          <article class="lcard">
+            <h3>USDT</h3>
+            <p>TRC-20, ERC-20 and BEP-20. Send to the address shown and the balance credits on confirmation.</p>
+            <span class="chip">From $10</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- faq: white ---------------- -->
+    <section class="lsec" id="faq">
+      <div class="lsec-in">
+        <div class="lsec-head">
+          <span class="label lkicker">FAQ</span>
+          <h2>The questions worth asking first.</h2>
+        </div>
+        <div class="lfaq">
+          <details>
+            <summary>What is a synthetic index?<span class="lplus" aria-hidden="true"></span></summary>
+            <p>A price series generated by a published random process rather than by a real-world market. Nothing external moves it &mdash; no news, no earnings, no opening bell. The number in the name is its volatility: Volatility 10 moves gently, Volatility 100 moves ten times as hard.</p>
+          </details>
+          <details>
+            <summary>Can I actually make money doing this?<span class="lplus" aria-hidden="true"></span></summary>
+            <p>Every contract is priced slightly below fair value, so the expected return on each one starts negative. Over enough contracts that margin is what you pay to trade. People do finish sessions ahead, but no strategy on this platform turns a negative expectation positive, and anyone telling you otherwise is selling something.</p>
+          </details>
+          <details>
+            <summary>Is there a free way to try it?<span class="lplus" aria-hidden="true"></span></summary>
+            <p>Yes. Every account opens with a demo balance running on the same feed, the same pricing and the same contracts, with virtual funds. Place a hundred contracts there and look at the total before you fund anything.</p>
+          </details>
+          <details>
+            <summary>How fast are withdrawals?<span class="lplus" aria-hidden="true"></span></summary>
+            <p>Payouts are reviewed and sent within the hour to the M-Pesa number or USDT address on your profile. Identity verification is a one-time check before your first payout leaves the account.</p>
+          </details>
+          <details>
+            <summary>What does the referral programme pay?<span class="lplus" aria-hidden="true"></span></summary>
+            <p>Not cash. Each referral who funds an account raises your payout tier, which lifts what every winning contract pays you &mdash; up to a cap that deliberately stays below the house margin. It makes your own trading cheaper rather than paying you to recruit.</p>
+          </details>
+          <details>
+            <summary>What happens if I lose connection mid-contract?<span class="lplus" aria-hidden="true"></span></summary>
+            <p>The contract settles on the feed regardless of whether your screen is open. The result and the credit are on your ledger when you come back.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- close: purple ---------------- -->
+    <section class="lsec tint purple lclose">
+      <div class="lsec-in">
+        <h2>Open an account and start on the demo balance.</h2>
+        <p>No deposit required to look around. Fund it when, and if, you decide to.</p>
+        <div class="lcta">
+          <a class="btn btn-fill" href="signup.html">Create a free account</a>
+          <a class="btn btn-ghost" href="learn.html">Learn the contracts first</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- footer ---------------- -->
+    <footer class="lfoot">
+      <div class="lsec-in">
+        <div class="lfoot-top">
+          <div class="lfoot-brand">
+            <a class="wordmark" href="landing.html">Nexas</a>
+            <p>A trading terminal for digit contracts on synthetic indices. Open every hour of every day.</p>
+          </div>
+          <div class="lfoot-cols">
+            <div>
+              <b>Platform</b>
+              <a href="login.html">Terminal</a>
+              <a href="markets.html">Markets</a>
+              <a href="positions.html">Positions</a>
+              <a href="login.html">AI scanner</a>
+            </div>
+            <div>
+              <b>Learn</b>
+              <a href="learn.html">Trading guide</a>
+              <a href="#contracts">Contract types</a>
+              <a href="#faq">FAQ</a>
+              <a href="responsible.html">Responsible trading</a>
+            </div>
+            <div>
+              <b>Company</b>
+              <a href="chat.html">Support</a>
+              <a href="#">Terms</a>
+              <a href="#">Privacy</a>
+              <a href="#">Complaints</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="lfoot-risk">
+          <b>Risk warning</b>
+          <p>Trading synthetic indices carries a high level of risk and is not suitable for everyone. You can lose your full stake. Every contract on this platform is priced with a margin in the platform&rsquo;s favour, so the expected return on each one is negative. Never trade with money you cannot afford to lose, and set your limits before you start, not during a losing run.</p>
+        </div>
+
+        <div class="lfoot-bar">
+          <span>&copy; 2026 Nexas. A demonstration interface.</span>
+          <span>Nothing on this site is financial advice.</span>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+</div>
+<script src="assets/js/format.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/chart.js"></script>
+<script src="assets/js/modals.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* The market section shows the real feed rather than a picture of one:
+   the same chart module the terminal uses, on the same series. */
+(function () {
+  var canvas = document.getElementById('landingChart');
+  if (!canvas || !window.NexChart) return;
+  var API = window.NexAPI, F = window.NexFmt, SYM = 'R_10';
+
+  API.ready(function () {
+    var chart = window.NexChart.create(canvas, { symbol: SYM });
+    chart.resize();
+
+    function digits() {
+      var h = API.feed.history(SYM).slice(-10);
+      var out = '';
+      for (var i = 0; i < h.length; i++) {
+        var p = h[i];
+        var d = p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;
+        out += '<span class="lsd' + (i === h.length - 1 ? ' on' : '') + '">' + d + '</span>';
+      }
+      document.getElementById('landingDigits').innerHTML = out;
+      var last = API.feed.last(SYM);
+      if (last) document.getElementById('landingPrice').textContent = F.price(last.price);
+    }
+
+    digits();
+    API.on('tick', function (t) {
+      if (t.symbol !== SYM) return;
+      if (chart) chart.dirty = true;
+      digits();
+    });
+  });
+})();
+
+/* FAQ: opening one answer closes the one before it, so the section
+   never grows into a wall of open text. Done here rather than with the
+   native [name] grouping, which older browsers ignore. */
+(function () {
+  var items = document.querySelectorAll('.lfaq details');
+  for (var i = 0; i < items.length; i++) {
+    items[i].addEventListener('toggle', function () {
+      if (!this.open) return;
+      for (var j = 0; j < items.length; j++) {
+        if (items[j] !== this) items[j].open = false;
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

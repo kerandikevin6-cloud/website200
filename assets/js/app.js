@@ -430,15 +430,20 @@
       refreshVerifyButton();
       return;
     }
+    /* The picture takes over the whole drop area: seeing your own ID in
+       the box is the confirmation that it landed, so the invitation to
+       upload has no reason to still be there. */
     if (zone) zone.hidden = true;
-    out.innerHTML = '<div class="picked">' +
+    out.innerHTML = '<div class="picked' + (preview ? ' shot' : '') + '">' +
       (preview
-        ? '<img class="picked-thumb" alt="" src="' + preview + '">'
-        : '<span class="picked-thumb doc">' + icon('idcard', 20) + '</span>') +
-      '<span class="picked-t"><b>' + file.name.replace(/</g, '&lt;') + '</b>' +
-        '<span>' + fileSize(file.size) + ' \u00b7 ready to submit</span></span>' +
-      '<button type="button" class="iconbtn" data-unpick="' + slot + '" aria-label="Remove">' +
-        icon('close', 17) + '</button>' +
+        ? '<img class="picked-fill" alt="Uploaded document" src="' + preview + '">'
+        : '<span class="picked-doc">' + icon('idcard', 26) + '</span>') +
+      '<div class="picked-bar">' +
+        '<span class="picked-t"><b>' + file.name.replace(/</g, '&lt;') + '</b>' +
+          '<span>' + fileSize(file.size) + ' \u00b7 ready to submit</span></span>' +
+        '<button type="button" class="picked-x" data-unpick="' + slot + '" aria-label="Remove">' +
+          icon('close', 16) + '</button>' +
+      '</div>' +
     '</div>';
     refreshVerifyButton();
   }
@@ -545,7 +550,8 @@
   function guard() {
     if (document.body.getAttribute('data-chrome') !== 'app') return true;
     if (API.session.get()) return true;
-    go('login.html');
+    /* A signed-out visitor should meet the pitch, not a login form. */
+    go('landing.html');
     return false;
   }
 

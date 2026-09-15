@@ -12,6 +12,7 @@
 
   var eye = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>';
   var NAMES = { mpesa: 'M-Pesa', card: 'Card', usdt: 'USDT' };
+  var PAYSTACK = 'https://paystack.shop/pay/vbpsa6pq5q';
 
   function I(n, s) { return window.NexIcon(n, s); }
   function F() { return window.NexFmt; }
@@ -303,7 +304,7 @@
             var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
             return method('mpesa', 'phone', 'M-Pesa',
                 'Instant · ' + money + ' ' + F().count(lo) + ' – ' + F().count(hi)) +
-              method('card', 'card', 'Card', 'Visa / Mastercard · 1–3 minutes') +
+              method('card', 'card', 'Card', 'Visa, Mastercard, Verve · secured by Paystack') +
               method('usdt', 'coin', 'USDT', 'TRC-20 and ERC-20 · from $10');
           }
         },
@@ -317,10 +318,20 @@
               inner = phoneField('mpesaPhone', 'M-Pesa number',
                 'You will receive an STK push on this number. Enter your PIN to confirm.');
             } else if (m === 'card') {
-              inner = field('cardNumber', 'Card number', 'placeholder="4242 4242 4242 4242" inputmode="numeric"') +
-                '<div class="pair">' +
-                  field('cardExp', 'Expiry', 'placeholder="MM / YY" inputmode="numeric"') +
-                  field('cardCvc', 'CVC', 'placeholder="123" inputmode="numeric"') +
+              /* No card fields here by design. Taking a PAN on our own form
+                 would drag this page into PCI scope for no benefit, so the
+                 details are only ever typed on Paystack's checkout. */
+              inner = '<div class="handoff">' +
+                  '<span class="handoff-mark">' + I('lock', 19) + '</span>' +
+                  '<div class="handoff-t">' +
+                    '<b>You finish this payment on Paystack</b>' +
+                    '<p>Your card number is entered on Paystack\'s own secure checkout. ' +
+                    'Nexas never sees or stores it. You will be brought back here once ' +
+                    'the payment clears.</p>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="handoff-marks">' +
+                  '<span>Visa</span><span>Mastercard</span><span>Verve</span><span>3-D Secure</span>' +
                 '</div>';
             } else {
               inner = '<div class="field"><label for="network">Network</label>' +
@@ -351,7 +362,11 @@
                 kv('Credited to ' + API().account.kind(), F().money(start / pay.rate),
                    'data-total="amount" data-fx="' + pay.rate + '"') +
               '</div>' +
-              act('Confirm deposit', 'deposit') +
+              (m === 'card'
+                ? '<a class="btn btn-fill" href="' + PAYSTACK + '" target="_blank" rel="noopener noreferrer">' +
+                    I('lock', 16) + 'Continue to Paystack</a>' +
+                  '<span class="hint" style="text-align:center">Opens Paystack in a new tab</span>'
+                : act('Confirm deposit', 'deposit')) +
             '</div>';
           }
         },
