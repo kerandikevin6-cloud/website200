@@ -67,6 +67,18 @@
     return refreshing;
   }
 
+  /* Is the server there at all? An opaque response counts as yes: we
+     cannot read it, and do not need to — only whether it arrived. */
+  async function probe() {
+    if (!BASE) return false;
+    try {
+      await fetch(BASE + '/health', { mode: 'no-cors', cache: 'no-store' });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   async function call(path, options, retried) {
     options = options || {};
     var t = tokens();
@@ -84,6 +96,21 @@
         body: options.body ? JSON.stringify(options.body) : undefined
       });
     } catch (e) {
+      /* fetch() throws the same way for a dead network and for a request
+         the browser refused to send because this origin is not on the
+         API's allow-list — the CORS reason never reaches JavaScript. So
+         ask again with mode:'no-cors': that request is not origin-checked,
+         so if it resolves the server is up and the problem is the
+         allow-list, which is a different thing to tell somebody. */
+      var reachable = await probe();
+      if (reachable) {
+        try {
+          console.error('[nexas] the API is up but refused this origin: ' +
+            location.origin + ' — add it to CORS_ORIGINS on the API.');
+        } catch (e2) {}
+        throw ApiError('This site is not cleared to reach the Nexas API. ' +
+          'If you are testing a preview link, use the main address.', 'origin');
+      }
       throw ApiError('Could not reach Nexas. Check your connection.', 'offline');
     }
 
