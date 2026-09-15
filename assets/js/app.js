@@ -206,7 +206,7 @@
 
     if (title) {
       return '<header class="topbar">' +
-        '<a class="iconbtn" href="' + href(back || 'index.html') + '" aria-label="Back">' + icon('back', 19) + '</a>' +
+        '<a class="iconbtn back-btn" href="' + href(back || 'index.html') + '" aria-label="Back">' + icon('back', 18) + '</a>' +
         '<div class="topbar-title">' + title + '</div>' +
         '<span class="iconbtn" aria-hidden="true"></span>' +
       '</header>';
@@ -377,7 +377,7 @@
         '<div class="modal-box">' +
           '<div class="modal-head">' +
             (state.trail.length && !step.noBack
-              ? '<button class="iconbtn" data-modal-back aria-label="Back">' + icon('back', 18) + '</button>'
+              ? '<button class="iconbtn back-btn" data-modal-back aria-label="Back">' + icon('back', 17) + '</button>'
               : '') +
             '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
             '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +

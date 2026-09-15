@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>pages probe</title>
+<script>
+var now = Date.now();
+function c(i, sym, type, side, barrier, stake, profit, ago) {
+  return { id:'c'+i, symbol:sym, type:type, side:side, barrier:barrier, stake:stake,
+           profit:profit, status: profit>0?'won':'lost', entryTime:now-ago, exitTime:now-ago+1000 };
+}
+try { localStorage.setItem('nexas.v1', JSON.stringify({
+  account:'demo', consent:true, riskAck:true, geo:'KE',
+  balances:{real:0,demo:10000},
+  session:{email:'p@nexas.trade',name:'P',at:now},
+  contracts:[
+    c(1,'R_10','even_odd','even',null,3.88,3.69,120000),
+    c(2,'R_100','matches','matches',5,3.88,-3.88,600000),
+    c(3,'R_25','over','over',4,7.75,7.37,900000),
+    c(4,'R_10','even_odd','odd',null,3.88,-3.88,1800000),
+    c(5,'R_75','differs','differs',2,3.88,0.33,3600000),
+    c(6,'R_50','under','under',5,7.75,-7.75,90000000),
+    c(7,'R_100','even_odd','even',null,3.88,3.69,92000000)
+  ]
+})); } catch(e){}
+location.replace(new URLSearchParams(location.search).get('to') || 'history.html');
+</script>

@@ -24,7 +24,6 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 <div class="app">
   <main>
     <div class="shell" id="history">
-      <div id="histSummary"><div class="sk sk-summary"></div></div>
       <div id="histList"><div class="sk sk-list"></div></div>
       <div style="height:22px"></div>
     </div>
@@ -45,9 +44,8 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
      rather than a third tab nobody finds. */
   function init() {
     var API = window.NexAPI, F = window.NexFmt;
-    var summary = document.getElementById('histSummary');
     var list = document.getElementById('histList');
-    if (!summary || !list) return;
+    if (!list) return;
 
     function dayKey(ts) {
       var d = new Date(ts);
@@ -68,7 +66,6 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
       });
 
       if (!closed.length) {
-        summary.innerHTML = '';
         list.innerHTML = '<div class="empty" style="padding:56px 20px">' +
           window.NexIcon('book', 24) +
           '<b>No trades yet</b>' +
@@ -76,21 +73,10 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
         return;
       }
 
-      var pnl = closed.reduce(function (a, c) { return a + c.profit; }, 0);
-      var wins = closed.filter(function (c) { return c.profit > 0; }).length;
-      var rate = Math.round(wins / closed.length * 100);
-
-      summary.innerHTML =
-        '<div class="hist-head">' +
-          '<div><span class="label">Net profit / loss</span>' +
-            '<div class="big num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' +
-              F.signedMoney(pnl) + '</div></div>' +
-          '<div class="hist-side">' +
-            '<div><span class="label">Trades</span><b class="num">' +
-              F.count(closed.length) + '</b></div>' +
-            '<div><span class="label">Won</span><b class="num">' + rate + '%</b></div>' +
-          '</div>' +
-        '</div>';
+      /* No totals. A history is a record of what happened; a running
+         net at the top turns it into a scoreboard, and the figure people
+         read first is then the one that decides how they feel about the
+         next trade. Each row carries its own number. */
 
       var out = '', lastDay = null;
       closed.forEach(function (c) {

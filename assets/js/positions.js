@@ -33,28 +33,11 @@
     return API.transactions.list().filter(function (t) { return within(t.t); });
   }
 
-  /* ---------- summary ---------- */
-  function renderSummary() {
-    var closed = API.contracts.closed().filter(function (c) { return within(c.exitTime || c.entryTime) && typeOk(c); });
-    var open = API.contracts.open();
-    var pnl = closed.reduce(function (a, c) { return a + c.profit; }, 0);
-    var wins = closed.filter(function (c) { return c.profit > 0; }).length;
-    var rate = closed.length ? Math.round(wins / closed.length * 100) : 0;
-    var staked = closed.reduce(function (a, c) { return a + c.stake; }, 0);
+  /* The P&L header used to sit here. Removed on purpose: this page is
+     for what is open and what settled, and a running total at the top
+     turns every visit into a scoreboard check. The numbers are still on
+     each row, where they belong to a trade rather than to a mood. */
 
-    el.summary.innerHTML =
-      '<div class="pnl-head">' +
-        '<div><span class="label">Net profit / loss</span>' +
-        '<div class="big num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pnl) + '</div>' +
-        '<div class="sub">' + API.account.currency() + ' · ' + labelRange() + '</div></div>' +
-        '<div class="pnl-side">' +
-          '<div class="kv"><span>Win rate</span><b class="num">' + rate + '%</b></div>' +
-          '<div class="kv"><span>Settled</span><b class="num">' + closed.length + '</b></div>' +
-          '<div class="kv"><span>Staked</span><b class="num">' + F.amount(staked) + '</b></div>' +
-          '<div class="kv"><span>Running</span><b class="num">' + open.length + '</b></div>' +
-        '</div>' +
-      '</div>';
-  }
   function labelRange() {
     return { today: 'today', '7d': 'last 7 days', '30d': 'last 30 days', all: 'all time' }[filter.range];
   }
@@ -201,14 +184,13 @@
   }
 
   /* ---------- mount ---------- */
-  function renderAll() { renderSummary(); renderFilters(); renderList(); }
+  function renderAll() { renderFilters(); renderList(); }
 
   function init() {
     API = window.NexAPI; F = window.NexFmt; I = window.NexIcon;
     var root = document.getElementById('positions');
     if (!root) return;
 
-    el.summary = document.getElementById('posSummary');
     el.filters = document.getElementById('posFilters');
     el.list = document.getElementById('posList');
 

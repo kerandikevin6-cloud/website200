@@ -193,6 +193,17 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   border-radius:var(--r-sm);color:var(--text-2);flex:none;
 }
 .iconbtn:hover{color:var(--text);background:var(--surface-3)}
+
+/* Back is the one round control in a square system, and deliberately so:
+   it is the only button whose job is "leave", and a shape nothing else
+   shares is quicker to find than a label. The ring is what makes it read
+   as a control rather than a stray arrow. */
+.back-btn{
+  width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--line);color:var(--text-2);
+}
+.back-btn:hover{background:var(--surface-3);border-color:var(--line);color:var(--text)}
+.back-btn:active{transform:scale(.94)}
 .brand{display:flex;align-items:center;gap:9px;margin-right:auto}
 .brand-mark{
   width:28px;height:28px;border:1px solid var(--accent);border-radius:0;
@@ -1912,33 +1923,25 @@ body[data-chrome="app"] main{background:var(--bg)}
 /* ---------------- history ----------------
    Grouped by day, on the page ground like the markets list. A settled
    trade is a fact, not a control, so none of it is a card or a button. */
-.hist-head{
-  display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;
-  margin:0 14px 24px;padding-bottom:18px;border-bottom:1px solid var(--line-soft);
-}
-.hist-head .label{
-  display:block;font-size:10.5px;font-weight:600;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--muted);margin-bottom:6px;
-}
-.hist-head .big{font-family:var(--mono);font-size:26px;line-height:1}
-.hist-side{display:flex;gap:26px;margin-left:auto}
-.hist-side b{font-size:16px}
-.hist-day{margin:0 14px 20px}
+.hist-day{margin:0 14px 16px}
+.hist-day:first-child{margin-top:14px}
 .hist-day-label{
   font-size:10.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;
   color:var(--muted);padding:0 2px 8px;
 }
+/* Tight rows: a history is scanned, not read. Everything about one
+   trade fits on a single line, so ten of them fit on a screen. */
 .hist-row{
-  display:flex;align-items:center;gap:14px;padding:13px 2px;
+  display:flex;align-items:baseline;gap:10px;padding:8px 2px;
   border-bottom:1px solid var(--line-soft);
 }
-.hist-what{flex:1;min-width:0}
-.hist-what b{display:block;font-size:13.5px;font-weight:500}
+.hist-what{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px}
+.hist-what b{font-size:13px;font-weight:500;flex:none}
 .hist-what span{
-  display:block;font-size:11.5px;color:var(--muted);margin-top:3px;
+  font-size:11px;color:var(--muted);min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.hist-num{font-size:14px;flex:none}
+.hist-num{font-size:12.5px;flex:none}
 
 /* The instrument, over the chart rather than above it — the terminal is
    short on height and this is a label, not a panel. */
