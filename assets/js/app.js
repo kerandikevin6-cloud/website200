@@ -685,6 +685,19 @@
 
   /* The server answers with per-field complaints; put each one under the
      field it belongs to instead of flattening them into a toast. */
+  /* A validation failure carries a message per field. On a form we can
+     mark the input; from a modal that has already moved on there is no
+     input left to mark, so the field message has to travel in the toast
+     — "Check the details you entered" on its own tells nobody anything. */
+  function serverErrorText(err) {
+    var msg = err.message || 'Something went wrong';
+    if (err.fields) {
+      var first = Object.keys(err.fields)[0];
+      if (first && err.fields[first]) return err.fields[first];
+    }
+    return msg;
+  }
+
   function showServerErrors(form, err) {
     if (err.fields) {
       var placed = false;
@@ -697,7 +710,7 @@
       });
       if (placed) return;
     }
-    window.NexToast(err.message);
+    window.NexToast(serverErrorText(err));
   }
 
   async function submitAuthForm(f) {
@@ -1142,7 +1155,12 @@
      provider confirms, and the screen picks that up from the session
      it re-reads afterwards. A client that adds to its own balance is a
      client that disagrees with the ledger the moment anything fails. */
-  async function liveDeposit(amount, money) {
+  /* phone is passed in, not read from the DOM. gotoStep('pending') below
+     replaces the modal body, so by the time this function looks for the
+     number the input it came from no longer exists — which sent an empty
+     string to the API, failed validation, and meant no STK prompt ever
+     left the building. Read your inputs before you repaint. */
+  async function liveDeposit(amount, money, phone) {
     var method = state.data.method;
     var token = ++payToken;
     gotoStep('pending');
@@ -1151,13 +1169,15 @@
       var started;
       if (method === 'card') {
         started = await window.NexNet.depositCard(Math.round(amount * 100));
-        /* Paystack collects the card on its own page. */
-        if (started.checkoutUrl) window.open(started.checkoutUrl, '_blank', 'noopener');
+        /* Paystack collects the card on its own page. Same tab, not a
+           popup: this runs after an await, so the click that opened it is
+           no longer the current gesture and window.open is silently
+           blocked. The return trip carries ?deposit=<reference>, which
+           resumeDeposit() picks up on the way back in. */
+        if (started.checkoutUrl) { location.href = started.checkoutUrl; return; }
+        throw new Error('Paystack did not return a checkout page. Try again.');
       } else {
-        started = await window.NexNet.depositMpesa(
-          Math.round(amount * 100),
-          (document.getElementById('mpesaPhone') || {}).value || ''
-        );
+        started = await window.NexNet.depositMpesa(Math.round(amount * 100), phone);
       }
 
       state.data.ref = started.reference;
@@ -1179,18 +1199,19 @@
     } catch (err) {
       if (token !== payToken) return;
       closeModals();
-      window.NexToast(err.message);
+      window.NexToast(serverErrorText(err));
     }
   }
 
-  async function liveWithdraw(amountUsd) {
+  /* phone read by the caller, before the repaint — see liveDeposit. */
+  async function liveWithdraw(amountUsd, phone) {
     var token = ++payToken;
     gotoStep('pending');
     try {
       await window.NexNet.withdraw({
         amountMinor: Math.round(amountUsd * 100),
         method: 'mpesa',
-        phone: (document.getElementById('wPhone') || {}).value || undefined
+        phone: phone || undefined
       });
       if (token !== payToken) return;
 
@@ -1231,7 +1252,7 @@
       state.data.payLabel = F.count(amount) + ' ' + money;
       state.data.credited = Math.round(usd * 100) / 100;
 
-      if (window.NexNet && window.NexNet.live) return liveDeposit(amount, money);
+      if (window.NexNet && window.NexNet.live) return liveDeposit(amount, money, state.data.payTo || '');
 
       state.data.ref = reference();
       settle(function () {
@@ -1249,7 +1270,7 @@
         'Not enough funds. Available ' + F.money(API.account.balance()));
       state.data.sent = w;
 
-      if (window.NexNet && window.NexNet.live) return liveWithdraw(w);
+      if (window.NexNet && window.NexNet.live) return liveWithdraw(w, (document.getElementById('wPhone') || {}).value || '');
 
       state.data.ref = reference();
       settle(function () { API.account.debit(w, 'Withdrawal'); });

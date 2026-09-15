@@ -12,7 +12,6 @@
 
   var eye = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>';
   var NAMES = { mpesa: 'M-Pesa', card: 'Card', usdt: 'USDT' };
-  var PAYSTACK = 'https://paystack.shop/pay/vbpsa6pq5q';
 
   function I(n, s) { return window.NexIcon(n, s); }
   function F() { return window.NexFmt; }
@@ -480,9 +479,14 @@
                 '<span class="hint">Minimum ' + F().count(floor) + ' ' + pay.cur + '</span></div>' +
               inner +
               (m === 'card'
-                ? '<a class="btn btn-pos" href="' + PAYSTACK + '" target="_blank" rel="noopener noreferrer">' +
-                    I('lock', 16) + 'Continue to Paystack</a>' +
-                  '<span class="hint" style="text-align:center">Opens Paystack in a new tab</span>'
+                /* Not a link to a hosted page: that page is a fixed form
+                   that knows nothing about this deposit, so whatever is
+                   paid through it arrives with no reference and can never
+                   be matched to an account. The button runs the same
+                   action M-Pesa does — the server opens a transaction for
+                   this exact amount and hands back the checkout URL. */
+                ? act(I('lock', 16) + 'Continue to Paystack', 'deposit', 'btn-pos') +
+                  '<span class="hint" style="text-align:center">Paystack collects the card details. Nexas never sees them.</span>'
                 : act('Confirm deposit', 'deposit', 'btn-pos')) +
             '</div>';
           }

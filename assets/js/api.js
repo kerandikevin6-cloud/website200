@@ -81,7 +81,7 @@
      local money, rounded to figures people actually send. */
   var COUNTRIES = {
     KE: { name: 'Kenya',        dial: '254', sample: '712 345 678',  len: 9,
-          cur: 'KES', rate: 129,   min: 100,    quick: [100, 500, 1000, 2500, 5000] },
+          cur: 'KES', rate: 129,   min: 10,     quick: [10, 100, 500, 1000, 2500] },
     UG: { name: 'Uganda',       dial: '256', sample: '712 345 678',  len: 9,
           cur: 'UGX', rate: 3720,  min: 3000,   quick: [3000, 10000, 25000, 50000, 100000] },
     TZ: { name: 'Tanzania',     dial: '255', sample: '712 345 678',  len: 9,
