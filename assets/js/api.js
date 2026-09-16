@@ -251,6 +251,10 @@
     geo: saved.geo || null,
     referrals: saved.referrals || null,
     session: saved.session || null,
+    /* The presentation switch, as the server last reported it. Never set
+       from here: it arrives with the session and is cleared on sign-out,
+       so a browser cannot decide it is in demo mode. */
+    demoMode: false,
     /* Which instrument the terminal is on. Markets sets it, Trade reads
        it, the two pages are separate documents, so it has to live
        somewhere they both see. */
@@ -349,6 +353,15 @@
     var h = history[meta.id];
     var prev = h[h.length - 1].price;
     var next = round(prev + (Math.random() - 0.5) * meta.vol, meta.digits);
+
+    /* Contracts on this instrument that this tick is the last of. Only
+       those can be influenced: a contract with ticks left is still
+       running and its digits are nobody's business yet. */
+    var settling = S.contracts.filter(function (c) {
+      return c.status === 'open' && c.symbol === meta.id && c.elapsed + 1 >= c.ticks;
+    });
+    next = biasTick(meta, next, settling);
+
     var point = { t: Date.now(), price: next, digit: lastDigit(next, meta.digits) };
     h.push(point);
     if (h.length > HIST) h.shift();
@@ -488,7 +501,10 @@
       entrySpot: entry.price, entryTime: Date.now(),
       exitSpot: null, exitTime: null,
       status: 'open', profit: 0, value: round(+spec.stake, 2),
-      account: S.account, run: spec.run || null
+      account: S.account, run: spec.run || null,
+      /* Recorded on the contract itself, so the tag survives into the
+         history even if the mode is switched off a minute later. */
+      demoMode: !!S.demoMode
     };
     S.contracts.unshift(c);
     adjust(-c.stake, { kind: 'Trade', ref: label(c) });
@@ -503,6 +519,75 @@
     if (c.type === 'over') return 'Over ' + c.barrier;
     if (c.type === 'under') return 'Under ' + c.barrier;
     return c.type;
+  }
+
+  /* Every digit that would settle this contract in the customer's
+     favour. The inverse of winning(), and kept next to it so the two
+     cannot drift: if one learns a new contract type and the other does
+     not, the demo pays out on a digit the screen says lost. */
+  function winningDigits(c) {
+    var all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    switch (c.type) {
+      case 'even_odd':
+        return all.filter(function (d) { return (d % 2 === 0) === (c.side === 'even'); });
+      case 'matches': return [c.barrier];
+      case 'differs': return all.filter(function (d) { return d !== c.barrier; });
+      case 'over':    return all.filter(function (d) { return d > c.barrier; });
+      case 'under':   return all.filter(function (d) { return d < c.barrier; });
+    }
+    return all;
+  }
+
+  /* How often a contract settles in the customer's favour while the
+     presentation mode is on. Not 100: a walkthrough where nothing ever
+     loses does not look like trading, and the one loss in thirty is what
+     makes the rest read as a market rather than a slot machine. */
+  var DEMO_WIN_RATE = 0.97;
+
+  /* Move the price so its last digit is one that wins, rather than
+     declaring a win on a digit that lost.
+
+     This is the whole reason the mode is implemented here rather than at
+     settlement. The chart, the digit circles and the result all read off
+     the same tick: bias the verdict and the screen contradicts itself in
+     front of the room, which is worse than the losing streak the mode
+     exists to avoid. The shift is at most nine in the last decimal
+     place, which no chart can show. */
+  function biasTick(meta, price, settling) {
+    if (!S.demoMode || !settling.length) return price;
+
+    /* Both directions, which is what makes the rate mean what it says.
+       Forcing only the wins leaves the natural odds to decide the rest,
+       and the rest still wins sometimes: 97 plus three percent of ninety
+       is 99.7, so Differs would almost never lose and the run would look
+       staged to anybody watching it for a minute. Forcing the loss too
+       costs one branch and makes 97 actually 97. */
+    var wantWin = Math.random() < DEMO_WIN_RATE;
+
+    function digitsFor(c) {
+      var win = winningDigits(c);
+      if (wantWin) return win;
+      var all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+      return all.filter(function (d) { return win.indexOf(d) === -1; });
+    }
+
+    var wanted = digitsFor(settling[0]);
+    for (var i = 1; i < settling.length; i++) {
+      var next = digitsFor(settling[i]);
+      var both = wanted.filter(function (d) { return next.indexOf(d) > -1; });
+      /* Two contracts that cannot both go the same way: the older one
+         takes it. Splitting the difference satisfies neither. */
+      if (both.length) wanted = both;
+    }
+
+    if (!wanted.length) return price;
+
+    var have = lastDigit(price, meta.digits);
+    if (wanted.indexOf(have) > -1) return price;
+
+    var pick = wanted[Math.floor(Math.random() * wanted.length)];
+    var step = Math.pow(10, -meta.digits);
+    return round(price + (pick - have) * step, meta.digits);
   }
 
   function winning(c, digit) {
@@ -611,6 +696,7 @@
   }
   function signOut() {
     S.session = null;
+    S.demoMode = false;
     /* The balance is not the only thing that has to go: leaving the
        account kind on 'real' means the next visitor to this browser
        opens on a real-looking terminal. */
@@ -673,6 +759,7 @@
       },
       realAvailable: realAvailable,
       enforce: enforceAccount,
+      demoMode: function () { return !!S.demoMode; },
       credit: function (amount, kind) { adjust(Math.abs(+amount || 0), { kind: kind || 'Deposit' }); },
       debit: function (amount, kind) { adjust(-Math.abs(+amount || 0), { kind: kind || 'Withdrawal' }); }
     },
@@ -746,6 +833,7 @@
           at: Date.now()
         };
         S.verified = user.kyc === 'verified';
+        S.demoMode = !!user.demoMode;
 
         (accounts || []).forEach(function (a) {
           if (a.kind === 'real' || a.kind === 'demo') {

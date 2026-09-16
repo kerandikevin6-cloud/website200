@@ -842,8 +842,13 @@
         name: out.profile && out.profile.display_name,
         kyc: out.profile && out.profile.kyc_status,
         phone: out.profile && out.profile.phone,
-        country: out.profile && out.profile.country
+        country: out.profile && out.profile.country,
+        /* The presentation switch, as the server reports it. The browser
+           never decides this. */
+        demoMode: !!(out.profile && out.profile.demo_mode),
+        tier: (out.profile && out.profile.tier) || 'standard'
       }, out.accounts || []);
+      paintDemoBadge();
       return out;
     } catch (err) {
       return null;
@@ -1708,6 +1713,7 @@
     return {
       clientRef: String(c.id),
       accountKind: c.account === 'real' ? 'real' : 'demo',
+      demoMode: !!c.demoMode,
       symbol: c.symbol,
       symbolName: c.symbolName || undefined,
       contractType: c.type,
@@ -1735,6 +1741,30 @@
     /* Quietly. A failure here costs a record, not a trade. */
     window.NexNet.recordTrades(settled.slice(0, 200).map(tradePayload))
       .catch(function () {});
+  }
+
+  /* ---------- the presentation marker ----------
+     While the mode is on, the terminal says so, in the top bar, where it
+     is in shot for anything recorded off this screen. A staged win that
+     is labelled is a demonstration; the same win unlabelled is a claim
+     about how the product performs, and this is the line between the
+     two. It is not dismissible for that reason. */
+  function paintDemoBadge() {
+    var on = API.account.demoMode && API.account.demoMode();
+    var el = document.getElementById('demoBadge');
+
+    if (!on) { if (el) el.remove(); return; }
+    if (el) return;
+
+    var bar = document.querySelector('.topbar');
+    if (!bar) return;
+
+    el = document.createElement('span');
+    el.id = 'demoBadge';
+    el.className = 'demo-badge';
+    el.setAttribute('role', 'status');
+    el.textContent = 'VIP DEMO';
+    bar.appendChild(el);
   }
 
   /* ---------- coming back from Google ----------
@@ -1828,6 +1858,7 @@
       });
     }
     mountChrome(document.querySelector('.app') || document.body);
+    paintDemoBadge();
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
     bindChrome();
     consentBar();
