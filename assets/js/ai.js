@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — AI scanner
+   Novi, AI scanner
    Reads the recent tick history of every instrument, scores each
    digit contract it could write against that instrument, and
    surfaces the strongest edge it finds. The chosen signal can be
@@ -8,7 +8,7 @@
    The scoring is deliberately plain: observed frequency over the
    sample window, multiplied by the contract's payout, minus the
    stake. Anything above zero is a positive expected return on the
-   sample — which is all a scanner can honestly claim.
+   sample, which is all a scanner can honestly claim.
    ============================================================ */
 (function () {
   "use strict";
@@ -368,8 +368,7 @@
       document.body.classList.remove('loading');
       render();
 
-      /* while results are on screen, keep them honest against the feed —
-         but only every second or so, or the list would rebuild under the
+      /* while results are on screen, keep them honest against the feed, but only every second or so, or the list would rebuild under the
          finger on every tick */
       var lastRefresh = 0;
       unsub.push(API.on('tick', function () {

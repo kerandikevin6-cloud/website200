@@ -10,19 +10,19 @@
    and remove it. */
 try{document.documentElement.setAttribute('data-theme',localStorage.getItem('nexas.theme')||'dark')}
 catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
-<title>Nexas &mdash; Trade synthetic indices</title>
+<title>Trade synthetic indices · Novi</title>
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Nexas">
-<meta property="og:title" content="Nexas &mdash; Trade synthetic indices">
+<meta property="og:site_name" content="Novi">
+<meta property="og:title" content="Trade synthetic indices · Novi">
 <meta property="og:description" content="Trade digit contracts on synthetic indices. Open every hour of every day, funded with M-Pesa or card, settled in ticks.">
-<meta property="og:image" content="https://website200-ten.vercel.app/assets/share-card.png">
+<meta property="og:image" content="https://novibinary.com/assets/share-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="https://website200-ten.vercel.app/landing.html">
+<meta property="og:url" content="https://novibinary.com/landing">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Nexas &mdash; Trade synthetic indices">
+<meta name="twitter:title" content="Trade synthetic indices · Novi">
 <meta name="twitter:description" content="Trade digit contracts on synthetic indices. Open every hour of every day, funded with M-Pesa or card, settled in ticks.">
-<meta name="twitter:image" content="https://website200-ten.vercel.app/assets/share-card.png">
+<meta name="twitter:image" content="https://novibinary.com/assets/share-card.png">
 <meta name="description" content="Trade digit contracts on synthetic indices. Open every hour of every day, funded with M-Pesa or card, settled in ticks.">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
@@ -40,7 +40,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     <!-- ---------------- nav ---------------- -->
     <header class="lnav">
       <div class="lnav-in">
-        <a class="wordmark" href="landing.html">Nexas</a>
+        <a class="wordmark" href="landing">Novi</a>
         <nav class="lnav-links">
           <a href="#market">Live market</a>
           <a href="#how">How it works</a>
@@ -48,8 +48,8 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
           <a href="#faq">FAQ</a>
         </nav>
         <div class="lnav-cta">
-          <a class="btn-ghost-sm" href="login.html">Log in</a>
-          <a class="btn-solid-sm" href="signup.html">Create account</a>
+          <a class="btn-ghost-sm" href="login">Log in</a>
+          <a class="btn-solid-sm" href="signup">Create account</a>
         </div>
       </div>
     </header>
@@ -58,10 +58,10 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     <section class="lsec lhero">
       <div class="lsec-in">
         <h1>The market never closes.<br>Neither does your terminal.</h1>
-        <p class="lhero-p">Nexas is a trading terminal for digit contracts on synthetic indices &mdash; price series generated continuously by a published random process. No earnings calls, no market open, no waiting for Monday.</p>
+        <p class="lhero-p">Novi is a trading terminal for digit contracts on synthetic indices, price series generated continuously by a published random process. No earnings calls, no market open, no waiting for Monday.</p>
         <div class="lcta">
-          <a class="btn btn-fill" href="signup.html">Create a free account</a>
-          <a class="btn btn-ghost" href="login.html">Try the demo balance</a>
+          <a class="btn btn-fill" href="signup">Create a free account</a>
+          <a class="btn btn-ghost" href="login">Try the demo balance</a>
         </div>
       </div>
     </section>
@@ -89,7 +89,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
           <div class="lshot-digits" id="landingDigits"></div>
           <div class="lshot-foot">
             <span>Last digit settles the contract</span>
-            <span class="num" id="landingPrice">&mdash;</span>
+            <span class="num" id="landingPrice"></span>
           </div>
         </div>
       </div>
@@ -129,17 +129,17 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
         <div class="lsec-head">
           <span class="label lkicker">Contracts</span>
           <h2>Five ways to read one digit.</h2>
-          <p>Each digit 0&ndash;9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. We publish it rather than bury it.</p>
+          <p>Each digit 0-9 is equally likely over a long run, so the true probability of every contract is fixed and knowable. We publish it rather than bury it.</p>
         </div>
         <div class="ltable">
           <div class="ltrow lthead"><span>Contract</span><span>You win when</span><span class="num">True odds</span></div>
           <div class="ltrow"><span>Even / Odd</span><span>The last digit is even, or odd</span><span class="num">50%</span></div>
-          <div class="ltrow"><span>Over</span><span>The digit lands above your barrier</span><span class="num">10&ndash;90%</span></div>
-          <div class="ltrow"><span>Under</span><span>The digit lands below your barrier</span><span class="num">10&ndash;90%</span></div>
+          <div class="ltrow"><span>Over</span><span>The digit lands above your barrier</span><span class="num">10-90%</span></div>
+          <div class="ltrow"><span>Under</span><span>The digit lands below your barrier</span><span class="num">10-90%</span></div>
           <div class="ltrow"><span>Matches</span><span>The digit is exactly the one you chose</span><span class="num">10%</span></div>
           <div class="ltrow"><span>Differs</span><span>The digit is anything but the one you chose</span><span class="num">90%</span></div>
         </div>
-        <p class="lsmall">Payouts sit slightly below fair value &mdash; that margin is how the platform earns. Differs wins nine times in ten and still runs a negative expectation. <a href="learn.html">Read the full breakdown</a>.</p>
+        <p class="lsmall">Payouts sit slightly below fair value, that margin is how the platform earns. Differs wins nine times in ten and still runs a negative expectation. <a href="learn">Read the full breakdown</a>.</p>
       </div>
     </section>
 
@@ -198,7 +198,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
         <div class="lfaq">
           <details>
             <summary>What is a synthetic index?<span class="lplus" aria-hidden="true"></span></summary>
-            <p>A price series generated by a published random process rather than by a real-world market. Nothing external moves it &mdash; no news, no earnings, no opening bell. The number in the name is its volatility: Volatility 10 moves gently, Volatility 100 moves ten times as hard.</p>
+            <p>A price series generated by a published random process rather than by a real-world market. Nothing external moves it, no news, no earnings, no opening bell. The number in the name is its volatility: Volatility 10 moves gently, Volatility 100 moves ten times as hard.</p>
           </details>
           <details>
             <summary>Can I actually make money doing this?<span class="lplus" aria-hidden="true"></span></summary>
@@ -214,7 +214,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
           </details>
           <details>
             <summary>What does the referral programme pay?<span class="lplus" aria-hidden="true"></span></summary>
-            <p>Not cash. Each referral who funds an account raises your payout tier, which lifts what every winning contract pays you &mdash; up to a cap that deliberately stays below the house margin. It makes your own trading cheaper rather than paying you to recruit.</p>
+            <p>Not cash. Each referral who funds an account raises your payout tier, which lifts what every winning contract pays you, up to a cap that deliberately stays below the house margin. It makes your own trading cheaper rather than paying you to recruit.</p>
           </details>
           <details>
             <summary>What happens if I lose connection mid-contract?<span class="lplus" aria-hidden="true"></span></summary>
@@ -230,8 +230,8 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
         <h2>Open an account and start on the demo balance.</h2>
         <p>No deposit required to look around. Fund it when, and if, you decide to.</p>
         <div class="lcta">
-          <a class="btn btn-fill" href="signup.html">Create a free account</a>
-          <a class="btn btn-ghost" href="learn.html">Learn the contracts first</a>
+          <a class="btn btn-fill" href="signup">Create a free account</a>
+          <a class="btn btn-ghost" href="learn">Learn the contracts first</a>
         </div>
       </div>
     </section>
@@ -241,30 +241,30 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
       <div class="lsec-in">
         <div class="lfoot-top">
           <div class="lfoot-brand">
-            <a class="wordmark" href="landing.html">Nexas</a>
+            <a class="wordmark" href="landing">Novi</a>
             <p>A trading terminal for digit contracts on synthetic indices. Open every hour of every day.</p>
           </div>
           <div class="lfoot-cols">
             <div>
               <b>Platform</b>
-              <a href="login.html">Terminal</a>
-              <a href="markets.html">Markets</a>
-              <a href="positions.html">Positions</a>
-              <a href="login.html">AI scanner</a>
+              <a href="login">Terminal</a>
+              <a href="markets">Markets</a>
+              <a href="positions">Positions</a>
+              <a href="login">AI scanner</a>
             </div>
             <div>
               <b>Learn</b>
-              <a href="learn.html">Trading guide</a>
+              <a href="learn">Trading guide</a>
               <a href="#contracts">Contract types</a>
               <a href="#faq">FAQ</a>
-              <a href="responsible.html">Responsible trading</a>
+              <a href="responsible">Responsible trading</a>
             </div>
             <div>
               <b>Company</b>
-              <a href="chat.html">Support</a>
-              <a href="terms.html">Terms</a>
-              <a href="privacy.html">Privacy</a>
-              <a href="complaints.html">Complaints</a>
+              <a href="chat">Support</a>
+              <a href="terms">Terms</a>
+              <a href="privacy">Privacy</a>
+              <a href="complaints">Complaints</a>
             </div>
           </div>
         </div>
@@ -275,7 +275,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
         </div>
 
         <div class="lfoot-bar">
-          <span>&copy; 2026 Nexas. Nairobi, Kenya.</span>
+          <span>&copy; 2026 Novi. Nairobi, Kenya.</span>
           <span>Nothing on this site is financial advice.</span>
         </div>
       </div>

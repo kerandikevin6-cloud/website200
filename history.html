@@ -10,19 +10,19 @@
    and remove it. */
 try{document.documentElement.setAttribute('data-theme',localStorage.getItem('nexas.theme')||'dark')}
 catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
-<title>Nexas — History</title>
+<title>History · Novi</title>
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Nexas">
-<meta property="og:title" content="Nexas — History">
+<meta property="og:site_name" content="Novi">
+<meta property="og:title" content="History · Novi">
 <meta property="og:description" content="Trade digit contracts on synthetic indices. M-Pesa and card, in your own currency.">
-<meta property="og:image" content="https://website200-ten.vercel.app/assets/share-card.png">
+<meta property="og:image" content="https://novibinary.com/assets/share-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="https://website200-ten.vercel.app/history.html">
+<meta property="og:url" content="https://novibinary.com/history">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Nexas — History">
+<meta name="twitter:title" content="History · Novi">
 <meta name="twitter:description" content="Trade digit contracts on synthetic indices. M-Pesa and card, in your own currency.">
-<meta name="twitter:image" content="https://website200-ten.vercel.app/assets/share-card.png">
+<meta name="twitter:image" content="https://novibinary.com/assets/share-card.png">
 <meta name="description" content="Trade digit contracts on synthetic indices. M-Pesa and card, in your own currency.">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
@@ -33,7 +33,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/css/app.css">
 </head>
-<body data-page="history" data-chrome="app" data-title="History" data-back="index.html">
+<body data-page="history" data-chrome="app" data-title="History" data-back="/">
 <div class="app">
   <main>
     <div class="shell" id="history">
@@ -54,9 +54,9 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
   /* Every settled trade, newest first, grouped by day.
 
      Source of the list, in order of preference:
-       the API   — when signed in, so the history follows the person
+       the API, when signed in, so the history follows the person
                    between devices instead of living in one browser
-       localStorage — otherwise, which is the demo and offline case
+       localStorage, otherwise, which is the demo and offline case
 
      The server is the record, not the referee: contracts still settle in
      the browser, so what is listed is what this account reported. That

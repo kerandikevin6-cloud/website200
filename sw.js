@@ -1,11 +1,11 @@
-/* Nexas — offline shell.
+/* Novi, offline shell.
    Network-first for our own files, cache as the offline fallback.
 
    This used to be cache-first, which meant a stylesheet cached once was
    served forever and a fix to app.css never reached the page. Network-first
    costs nothing on a fast connection, still works fully offline, and can
    never pin the UI to a stale build. */
-var CACHE = 'nexas-v12';
+var CACHE = 'nexas-v13';
 var SHELL = [
   'landing.html', 'index.html', 'ai.html', 'markets.html', 'positions.html', 'learn.html', 'responsible.html', 'account.html',
   'chat.html', 'history.html', 'terms.html', 'privacy.html', 'risk.html',
@@ -44,8 +44,18 @@ self.addEventListener('fetch', function (e) {
       caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
       return res;
     }).catch(function () {
+      /* Offline. The cache holds real file names, but links are clean
+         now, so a request for /positions has to find positions.html.
+         Try the exact request, then the .html behind it, then the
+         terminal as a last resort. */
       return caches.match(e.request).then(function (hit) {
-        return hit || caches.match('index.html');
+        if (hit) return hit;
+        var path = new URL(e.request.url).pathname.replace(/^\//, '');
+        if (!path) path = 'index.html';
+        else if (!/\.[a-z0-9]+$/i.test(path)) path += '.html';
+        return caches.match(path).then(function (alt) {
+          return alt || caches.match('index.html');
+        });
       });
     })
   );

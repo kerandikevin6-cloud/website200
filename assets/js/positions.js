@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — positions
+   Novi, positions
    Open contracts, settled history and the cash ledger, with
    filters, a detail sheet and CSV export.
    ============================================================ */
@@ -50,7 +50,7 @@
 
     /* Two groups, not five loose controls: the period chips, then the
        controls that act on what they select. Left to right, they read as
-       "this period, of this type, exported" — and the export sits at the
+       "this period, of this type, exported", and the export sits at the
        far right where an action belongs, instead of wherever the wrap
        happened to drop it. */
     el.filters.innerHTML =
@@ -109,8 +109,8 @@
           (live ? I('clock', 16) : I(pl >= 0 ? 'check' : 'close', 16)) + '</span>' +
         '<span class="t"><b>' + API.contracts.label(c) + '</b>' +
           /* symbolName is written when the contract is opened, so a row
-             restored from an older stored shape — or one that arrives
-             from the server later — can be missing it. Reading through
+             restored from an older stored shape, or one that arrives
+             from the server later, can be missing it. Reading through
              it directly threw, and a throw here loses the whole list and
              leaves the previous screen in place with nothing to say why. */
           '<span>' + instrumentName(c).replace(' Index', '') + ' · ' + F.money(c.stake) +
@@ -197,7 +197,7 @@
       window.NexToast('CSV exported');
     } catch (e) {
       navigator.clipboard && navigator.clipboard.writeText(text);
-      window.NexToast('Download blocked here — CSV copied to the clipboard');
+      window.NexToast('Download blocked here, CSV copied to the clipboard');
     }
   }
 

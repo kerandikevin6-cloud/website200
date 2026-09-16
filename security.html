@@ -10,20 +10,20 @@
    and remove it. */
 try{document.documentElement.setAttribute('data-theme',localStorage.getItem('nexas.theme')||'dark')}
 catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
-<title>Nexas &mdash; Security</title>
+<title>Security · Novi</title>
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Nexas">
-<meta property="og:title" content="Nexas &mdash; Security">
-<meta property="og:description" content="How Nexas holds funds, protects accounts and moves money.">
-<meta property="og:image" content="https://website200-ten.vercel.app/assets/share-card.png">
+<meta property="og:site_name" content="Novi">
+<meta property="og:title" content="Security · Novi">
+<meta property="og:description" content="How Novi holds funds, protects accounts and moves money.">
+<meta property="og:image" content="https://novibinary.com/assets/share-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="https://website200-ten.vercel.app/security.html">
+<meta property="og:url" content="https://novibinary.com/security">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Nexas &mdash; Security">
-<meta name="twitter:description" content="How Nexas holds funds, protects accounts and moves money.">
-<meta name="twitter:image" content="https://website200-ten.vercel.app/assets/share-card.png">
-<meta name="description" content="How Nexas holds funds, protects accounts and moves money.">
+<meta name="twitter:title" content="Security · Novi">
+<meta name="twitter:description" content="How Novi holds funds, protects accounts and moves money.">
+<meta name="twitter:image" content="https://novibinary.com/assets/share-card.png">
+<meta name="description" content="How Novi holds funds, protects accounts and moves money.">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -31,7 +31,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/css/app.css">
 </head>
-<body data-page="security" data-chrome="app" data-title="Security" data-back="learn.html">
+<body data-page="security" data-chrome="app" data-title="Security" data-back="learn">
 <div class="app">
   <main class="lrn-flow">
     <section class="lrn lrn-hero lrn-center">
@@ -45,7 +45,7 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     <section class="lrn lrn-tint lrn-blue">
       <div class="lrn-in">
         <h2>Balances cannot be written by a request</h2>
-        <p>No route in our API can change a balance. Money moves only through database functions that credit an account and write the matching ledger entry in the same transaction &mdash; so a balance and its history can never disagree.</p>
+        <p>No route in our API can change a balance. Money moves only through database functions that credit an account and write the matching ledger entry in the same transaction, so a balance and its history can never disagree.</p>
         <p>The database grants no UPDATE on accounts and no INSERT on ledger entries to anyone, including a signed-in customer. Even a leaked key could not write itself money.</p>
       </div>
     </section>
@@ -65,26 +65,26 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     <section class="lrn">
       <div class="lrn-in">
         <h2>Your account</h2>
-        <p>Passwords are hashed by our authentication provider and are never stored or seen by us. Sessions expire, and signing out clears them on that device. If you think someone has your password, change it and tell support &mdash; we can end every session on the account immediately.</p>
+        <p>Passwords are hashed by our authentication provider and are never stored or seen by us. Sessions expire, and signing out clears them on that device. If you think someone has your password, change it and tell support, we can end every session on the account immediately.</p>
         <p>We will never ask you for your password, your M-Pesa PIN, or a code sent to your phone. Anyone who does is not us.</p>
       </div>
     </section>
     <section class="lrn lrn-tint lrn-blue lrn-center">
       <div class="lrn-in">
         <h2>What we would tell you</h2>
-        <p>If a security problem affected your account or your money, we would tell you what happened, what it touched and what we did about it &mdash; without waiting for the story to be tidy. Report anything that looks wrong to <a href="chat.html">support</a>.</p>
+        <p>If a security problem affected your account or your money, we would tell you what happened, what it touched and what we did about it, without waiting for the story to be tidy. Report anything that looks wrong to <a href="chat">support</a>.</p>
       </div>
     </section>
 
     <footer>
       <div class="fl">
-        <a href="learn.html">Learn</a>
-        <a href="responsible.html">Responsible Trading</a>
-        <a href="risk.html">Risk Disclosure</a>
-        <a href="terms.html">Terms</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="security.html">Security</a>
-        <a href="complaints.html">Complaints</a>
+        <a href="learn">Learn</a>
+        <a href="responsible">Responsible Trading</a>
+        <a href="risk">Risk Disclosure</a>
+        <a href="terms">Terms</a>
+        <a href="privacy">Privacy</a>
+        <a href="security">Security</a>
+        <a href="complaints">Complaints</a>
       </div>
       <p style="margin:0;line-height:1.7;max-width:62ch">Trading synthetic indices carries a high level of risk and is not suitable for everyone. You can lose the money you put in. Nothing on this page is financial advice.</p>
     </footer>

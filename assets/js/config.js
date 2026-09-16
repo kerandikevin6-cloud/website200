@@ -9,7 +9,7 @@
 
    The price feed and contract settlement stay local either way: the
    backend does not own them yet. That is worth knowing rather than
-   assuming — while the browser decides outcomes, a balance is not
+   assuming, while the browser decides outcomes, a balance is not
    a claim anyone should rely on.
    ============================================================ */
 window.NEXAS_CONFIG = {

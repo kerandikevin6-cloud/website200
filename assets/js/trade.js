@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — terminal
+   Novi, terminal
    Renders the contract panel for the selected trade type, runs
    validation, places and sells contracts, drives the automated
    run loop, and keeps the chart, digits and open positions in
@@ -47,7 +47,7 @@
   function renderDigits() {
     var meta = API.symbol(S.symbol);
     /* Markets is where this is chosen, so the terminal has to say which
-       one it landed on — otherwise the choice is invisible the moment
+       one it landed on, otherwise the choice is invisible the moment
        the page changes. Drawn over the chart so it costs no height. */
     var instEl = $('chartInst');
     if (instEl) instEl.textContent = meta.name;
@@ -166,7 +166,7 @@
   /* ---------- dock (the two CTAs) ----------
      Idle, each side shows its name and what it pays, nothing else. Once
      a side is running it turns amber and becomes the stop control, with
-     its progress drawn along the bottom of the button itself — that is
+     its progress drawn along the bottom of the button itself, that is
      the whole progress display, so nothing has to appear elsewhere on
      the page and push the layout around. */
   function sidesFor() {
@@ -448,7 +448,7 @@
     S.stake = API.money.fromDisplay(v);
   }
 
-  /* v is in display units — what the buttons add and what the field holds. */
+  /* v is in display units, what the buttons add and what the field holds. */
   function setStake(v) {
     setStakeShown(v);
     check();
@@ -471,7 +471,7 @@
     el.dock = $('dock');
     el.active = $('activeList');
 
-    /* Open on a round figure in the viewer's own money — 500 KES, not
+    /* Open on a round figure in the viewer's own money, 500 KES, not
        the 1,290 that a $10 default converts to. Only on a first mount,
        so a stake the trader chose is never overwritten. */
     if (!root.__stakeSet) {
@@ -480,7 +480,7 @@
     }
 
     /* Markets is where an instrument is chosen; this is where that choice
-       arrives. Read every mount, not just the first — coming back from
+       arrives. Read every mount, not just the first, coming back from
        Markets is a fresh document. */
     S.symbol = API.prefs.symbol();
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — shell
+   Novi, shell
    Injects the chrome (top bar, drawer, tab bar), owns the modal
    engine, theme, session guard, connection banner and consent
    surfaces. Page-specific logic lives in trade.js / positions.js.
@@ -152,9 +152,17 @@
 
   /* ---------- routing ---------- */
   var BUNDLE = !!window.NEXAS_BUNDLE;
-  function href(file) { return BUNDLE ? '#/' + file.replace('.html', '') : file; }
+  /* Links are clean now: "positions", not "positions.html". The single
+     file bundle still routes on a hash, and the multi page site lets the
+     host resolve the extension, so both forms have to be accepted here
+     rather than assumed. "/" is the terminal, which is index. */
+  function pageName(file) {
+    var name = String(file || '').replace(/^\//, '').replace(/\.html$/, '');
+    return name || 'index';
+  }
+  function href(file) { return BUNDLE ? '#/' + pageName(file) : file; }
   function go(file) {
-    if (BUNDLE) location.hash = '#/' + file.replace('.html', '');
+    if (BUNDLE) location.hash = '#/' + pageName(file);
     else location.href = file;
   }
   window.NexHref = href;
@@ -164,7 +172,7 @@
   /* ---------- theme ---------- */
   var THEME_KEY = 'nexas.theme';
   /* Dark is the product's default. Light is opt-in and, once chosen,
-     remembered — so a new visitor always arrives in dark. */
+     remembered, so a new visitor always arrives in dark. */
   function storedTheme() {
     try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { return 'dark'; }
   }
@@ -181,13 +189,13 @@
 
   /* ---------- chrome ---------- */
   var TABS = [
-    { id: 'trade', label: 'Trade', file: 'index.html', icon: 'candles' },
-    { id: 'ai', label: 'AI', file: 'ai.html', icon: 'bot' },
-    { id: 'positions', label: 'Positions', file: 'positions.html', icon: 'positions' },
-    { id: 'markets', label: 'Markets', file: 'markets.html', icon: 'markets' }
+    { id: 'trade', label: 'Trade', file: '/', icon: 'candles' },
+    { id: 'ai', label: 'AI', file: 'ai', icon: 'bot' },
+    { id: 'positions', label: 'Positions', file: 'positions', icon: 'positions' },
+    { id: 'markets', label: 'Markets', file: 'markets', icon: 'markets' }
   ];
   /* the desktop bar carries one extra link the bottom bar has no room for */
-  var DESK = TABS.concat([{ id: 'learn', label: 'Learn', file: 'learn.html' }]);
+  var DESK = TABS.concat([{ id: 'learn', label: 'Learn', file: 'learn' }]);
 
   /* Stacked: the account kind sits over the amount, which roughly halves
      how much of the top bar this button takes. */
@@ -206,7 +214,7 @@
 
     if (title) {
       return '<header class="topbar">' +
-        '<a class="iconbtn back-btn" href="' + href(back || 'index.html') + '" aria-label="Back">' + icon('back', 18) + '</a>' +
+        '<a class="iconbtn back-btn" href="' + href(back || '/') + '" aria-label="Back">' + icon('back', 18) + '</a>' +
         '<div class="topbar-title">' + title + '</div>' +
         '<span class="iconbtn" aria-hidden="true"></span>' +
       '</header>';
@@ -219,7 +227,7 @@
 
     return '<header class="topbar">' +
       '<button class="iconbtn only-mob" id="menuBtn" aria-label="Open menu">' + icon('menu', 19) + '</button>' +
-      '<a class="wordmark only-desk" href="' + href('index.html') + '">Nexas</a>' +
+      '<a class="wordmark only-desk" href="' + href('/') + '">Novi</a>' +
       menu +
       '<span class="spacer"></span>' +
       '<button class="acct ' + API.account.kind() + '" data-open="switch" id="acctBtn" ' +
@@ -250,7 +258,7 @@
 
     return '<div class="scrim" id="scrim"></div>' +
       '<aside class="drawer" id="drawer" aria-label="Menu">' +
-        '<a class="drawer-user" href="' + href('account.html') + '">' +
+        '<a class="drawer-user" href="' + href('account') + '">' +
           '<div class="avatar">' + (s.name || 'A').charAt(0) + '</div>' +
           '<div><b>' + (s.name || 'Guest') + '</b><span>' + (s.email || 'not signed in') + '</span></div>' +
           icon('chev', 16) +
@@ -268,9 +276,9 @@
         '</div>' +
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
-          item('Trading history', { icon: 'clock', href: 'history.html' }) +
-          item('Support', { icon: 'headset', href: 'chat.html' }) +
-          item('Learn', { icon: 'book', href: 'learn.html' }) +
+          item('Trading history', { icon: 'clock', href: 'history' }) +
+          item('Support', { icon: 'headset', href: 'chat' }) +
+          item('Learn', { icon: 'book', href: 'learn' }) +
           item('Refer and earn', { icon: 'gift', modal: 'refer' }) +
           item('Light / dark theme', {
             icon: isDark() ? 'moon' : 'sun',
@@ -343,7 +351,7 @@
   /* Money surfaces need an account behind them, for the same reason the
      real balance does: a deposit form for somebody with no account
      collects a number and then fails at the server. Send them to sign up
-     instead — it is what the form was going to ask for anyway. */
+     instead, it is what the form was going to ask for anyway. */
   var NEEDS_ACCOUNT = { deposit: 1, withdraw: 1 };
 
   function openModal(key, stepId, data) {
@@ -351,7 +359,7 @@
     if (!def) return;
     if (NEEDS_ACCOUNT[key] && !API.account.realAvailable()) {
       closeModals();
-      go('signup.html');
+      go('signup');
       return;
     }
     closeToken++;
@@ -452,17 +460,17 @@
     window.NexToast(msg);
   }
   /* The share sheet where the device has one, the clipboard everywhere
-     else — either way the person ends up holding the link. */
+     else, either way the person ends up holding the link. */
   function shareLink(url) {
     if (navigator.share) {
       navigator.share({
-        title: 'Nexas',
-        text: 'I trade synthetic indices on Nexas. Join with my link.',
+        title: 'Novi',
+        text: 'I trade synthetic indices on Novi. Join with my link.',
         url: url
       }).catch(function () {});
       return;
     }
-    copyText(url, 'Referral link copied — paste it anywhere');
+    copyText(url, 'Referral link copied, paste it anywhere');
   }
 
   /* ---------- phone number formatting ---------- */
@@ -598,7 +606,7 @@
     var v = document.createElement('div');
     v.className = 'boot';
     v.id = 'bootVeil';
-    v.innerHTML = '<div class="boot-word">Nexas</div>' + loader() +
+    v.innerHTML = '<div class="boot-word">Novi</div>' + loader() +
       '<span>Connecting to the feed</span>';
     document.body.appendChild(v);
   }
@@ -639,7 +647,7 @@
     var st = API.connection.status();
     /* Only a real drop. 'booting' is the second before the feed answers
        on a fresh load, and announcing it flashed an amber "Connecting"
-       bar on every single navigation — which reads as a platform that
+       bar on every single navigation, which reads as a platform that
        keeps losing its connection, on a site whose whole job is to look
        dependable. The boot veil already covers that moment. */
     var show = st === 'reconnecting';
@@ -667,7 +675,7 @@
     el.className = 'splash';
     el.innerHTML = '<div class="splash-inner">' +
       '<div class="pulse"><i></i><i></i><i></i></div>' +
-      '<div class="splash-word">Nexas</div>' +
+      '<div class="splash-word">Novi</div>' +
       '<div class="splash-msg" role="status">' + message + '</div></div>';
     document.body.appendChild(el);
     requestAnimationFrame(function () { el.classList.add('open'); });
@@ -683,7 +691,7 @@
     if (API.session.get()) return true;
     if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) return true;
     /* A signed-out visitor should meet the pitch, not a login form. */
-    go('landing.html');
+    go('landing');
     return false;
   }
 
@@ -710,7 +718,7 @@
   /* A validation failure carries a message per field. On a form we can
      mark the input; from a modal that has already moved on there is no
      input left to mark, so the field message has to travel in the toast
-     — "Check the details you entered" on its own tells nobody anything. */
+     "Check the details you entered" on its own tells nobody anything. */
   function serverErrorText(err) {
     var msg = err.message || 'Something went wrong';
     if (err.fields) {
@@ -737,7 +745,7 @@
 
   async function submitAuthForm(f) {
     var kind = f.getAttribute('data-auth') || 'login';
-    var to = f.getAttribute('data-to') || 'index.html';
+    var to = f.getAttribute('data-to') || '/';
     var splashText = f.getAttribute('data-splash');
     var emailInput = f.querySelector('input[type=email]');
     var email = emailInput ? emailInput.value.trim().toLowerCase() : '';
@@ -778,7 +786,7 @@
         await window.NexNet.resetPassword(token, (f.querySelector('#newPassword') || {}).value);
         busy(f, false);
         window.NexToast('Password updated. Sign in with the new one.');
-        setTimeout(function () { go('login.html'); }, 900);
+        setTimeout(function () { go('login'); }, 900);
         return;
       } else if (kind === 'forgot') {
         await window.NexNet.forgotPassword(email);
@@ -1009,7 +1017,7 @@
       if (t.closest('#signOut')) {
         if (window.NexNet && window.NexNet.live) window.NexNet.logout();
         API.session.signOut();
-        splash('Signing you out', 'landing.html');
+        splash('Signing you out', 'landing');
         return;
       }
 
@@ -1037,7 +1045,7 @@
           return;
         }
         API.session.signIn(null, 'google');
-        splash(sp.getAttribute('data-splash'), sp.getAttribute('data-to') || 'index.html');
+        splash(sp.getAttribute('data-splash'), sp.getAttribute('data-to') || '/');
         return;
       }
 
@@ -1188,8 +1196,8 @@
      never coming, and they try again an hour later with the same empty
      wallet. So those say plainly what happened.
 
-     The rest — a provider that did not answer, a gateway error, a push
-     that never left — are ours. Those say so, and say it without making
+     The rest, a provider that did not answer, a gateway error, a push
+     that never left, are ours. Those say so, and say it without making
      the customer feel they did something wrong, because they did not.
 
      Anything we cannot place goes in the second bucket. Blaming the
@@ -1230,10 +1238,10 @@
       }
     }
 
-    /* Ours, or unattributable — which we treat as ours. */
+    /* Ours, or unattributable, which we treat as ours. */
     return {
       headline: mpesa ? 'M-Pesa is not responding' : 'Payment could not be completed',
-      note: 'This is on us, not you. Nothing was charged. We are on it — try again shortly.',
+      note: 'This is on us, not you. Nothing was charged. We are on it, try again shortly.',
       detail: text ? text.slice(0, 90) : 'No response from the provider',
       ref: state.data.ref || null
     };
@@ -1246,7 +1254,7 @@
 
   /* phone is passed in, not read from the DOM. gotoStep('pending') below
      replaces the modal body, so by the time this function looks for the
-     number the input it came from no longer exists — which sent an empty
+     number the input it came from no longer exists, which sent an empty
      string to the API, failed validation, and meant no STK prompt ever
      left the building. Read your inputs before you repaint. */
   async function liveDeposit(amount, money, phone) {
@@ -1279,8 +1287,8 @@
         await hydrateSession();
         gotoStep('success');
       } else if (payment.status === 'pending') {
-        /* Still pending after the wait. That is not a failure — mobile
-           money is slow and callbacks get lost — but it cannot sit on a
+        /* Still pending after the wait. That is not a failure, mobile
+           money is slow and callbacks get lost, but it cannot sit on a
            spinner forever either, so it gets an honest screen with a way
            to look again. */
         state.data.fail = {
@@ -1308,7 +1316,7 @@
     }
   }
 
-  /* phone read by the caller, before the repaint — see liveDeposit. */
+  /* phone read by the caller, before the repaint, see liveDeposit. */
   async function liveWithdraw(amountUsd, phone) {
     var token = ++payToken;
     gotoStep('pending');
@@ -1472,11 +1480,11 @@
     if (name === 'useAccount') {
       var kind = node.getAttribute('data-kind');
       /* use() refuses 'real' when there is no account behind it. That is
-         not an error to report — it is the moment to offer the thing
+         not an error to report, it is the moment to offer the thing
          they were reaching for. */
       if (!API.account.use(kind)) {
         closeModals();
-        go('signup.html');
+        go('signup');
         return;
       }
       gotoStep('done');
@@ -1512,7 +1520,7 @@
       if (!b) return;
       b.innerHTML = balanceMarkup();
       /* The colour is the account, so it has to move when the account
-         does — not only when the bar is first drawn. */
+         does, not only when the bar is first drawn. */
       var kind = API.account.kind();
       b.classList.toggle('real', kind === 'real');
       b.classList.toggle('demo', kind !== 'real');
@@ -1546,7 +1554,7 @@
          minutes" is a claim that gets broken the first quiet evening;
          thirty is one that holds. */
       setTimeout(function () {
-        add('Thanks — this is Lucy. I am looking at it now and will come ' +
+        add('Thanks, this is Lucy. I am looking at it now and will come ' +
             'back to you shortly.', 'them');
       }, 900);
     });
@@ -1559,7 +1567,7 @@
      numbers here is something to read rather than something to use, and
      the only decision this page exists to support is "trade that one
      instead". So: grouped names, the current one marked, no card around
-     them — the rows sit on the page.
+     them, the rows sit on the page.
 
      Choosing writes the preference and goes to the terminal, which reads
      it on mount. */
@@ -1596,7 +1604,7 @@
       var id = pick.getAttribute('data-symbol');
       if (!API.prefs.setSymbol(id)) return;
       render();
-      go('index.html');
+      go('/');
     });
 
     API.ready(function () {
@@ -1610,7 +1618,7 @@
 
   /* ---------- returning from Paystack ----------
      The card flow opens Paystack in its own tab and the original tab
-     polls, but that tab can be gone — closed, reloaded, or the payment
+     polls, but that tab can be gone, closed, reloaded, or the payment
      finished on a phone. Paystack sends the customer back to
      ?deposit=<reference>, so treat that as a second, independent way of
      finding out what happened. The server is still the one that decides:
@@ -1654,8 +1662,7 @@
      they did on a phone they no longer use.
 
      Sent as a batch on load and one at a time after that. Re-sending is
-     safe — the server keys on the contract id and ignores duplicates —
-     so nothing has to be tracked as "already sent". */
+     safe, the server keys on the contract id and ignores duplicates, so nothing has to be tracked as "already sent". */
   function tradePayload(c) {
     return {
       clientRef: String(c.id),
@@ -1697,7 +1704,7 @@
     API.account.enforce();
     /* Wake the API early. An instance that has gone to sleep takes a few
        seconds to come back, and the request that wakes it is the one that
-       fails — better that is this one than somebody's deposit. */
+       fails, better that is this one than somebody's deposit. */
     if (window.NexNet && window.NexNet.live) window.NexNet.warm();
     clearInterval(window.__nexMkt);
     if (!guard()) return;
@@ -1705,8 +1712,7 @@
     bootVeil();
     API.ready(dropVeil);
     /* Re-read the account from the server on every load, so a balance
-       changed elsewhere — a deposit that cleared, a payout approved —
-       is reflected rather than trusting what this browser last saw. */
+       changed elsewhere, a deposit that cleared, a payout approved, is reflected rather than trusting what this browser last saw. */
     if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
       hydrateSession();
       /* Then chase anything that was paid while this browser was not

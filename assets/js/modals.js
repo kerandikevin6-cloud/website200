@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — modal definitions
+   Novi, modal definitions
    Each modal is a set of steps; the engine in app.js renders the
    shell and handles back, close and step transitions.
      data-goto="stepId"       advance
@@ -47,7 +47,7 @@
   }
 
   /* Just enough logo to confirm what is accepted. It sits above the
-     form as a small chip rather than a banner — the white ground is
+     form as a small chip rather than a banner, the white ground is
      only there because these marks are drawn for light backgrounds. */
   function brandMark(src, alt, inkSrc) {
     /* Only a mark that needs a second version is theme-tagged. The
@@ -119,7 +119,7 @@
   }
   /* The other ending. A payment that does not go through is the moment a
      person is most likely to think they have lost money, so this says
-     what happened, whose problem it is, and what to do next — in that
+     what happened, whose problem it is, and what to do next, in that
      order. It never blames the customer for something that was not
      theirs, and never claims a fault is ours when the truth is that the
      prompt was declined. app.js decides which of those it was. */
@@ -456,14 +456,14 @@
       steps: {
         choose: {
           title: 'Deposit funds',
-          sub: 'Funds land in the account you are trading. No fee from Nexas.',
+          sub: 'Funds land in the account you are trading. No fee from Novi.',
           body: function () {
             var c = API().geo.country();
             var money = c.cur || 'USD';
             var lo = c.min || 10;
             var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
             return method('mpesa', 'phone', 'M-Pesa',
-                'Instant · ' + money + ' ' + F().count(lo) + ' – ' + F().count(hi)) +
+                'Instant · ' + money + ' ' + F().count(lo) + ' - ' + F().count(hi)) +
               method('card', 'card', 'Card', 'Visa and Mastercard · secured by Paystack') +
               methodOff('coin', 'USDT', 'Crypto deposits are not open yet');
           }
@@ -482,14 +482,14 @@
             } else if (m === 'card') {
               /* No card fields here by design: taking a PAN on our own form
                  would drag this page into PCI scope for no benefit. One
-                 short line is all this step needs — the rest is Paystack's
+                 short line is all this step needs, the rest is Paystack's
                  job, and the whole sheet fits without scrolling. */
               logo = brandMark('assets/cards.png', 'Visa and Mastercard', 'assets/cards-ink.png');
               inner = '<div class="handoff">' +
                   '<span class="handoff-mark">' + I('lock', 18) + '</span>' +
                   '<div class="handoff-t">' +
                     '<p>Card details are entered on Paystack\'s secure checkout. ' +
-                    'Nexas never sees your card number.</p>' +
+                    'Novi never sees your card number.</p>' +
                   '</div>' +
                 '</div>';
             } else {
@@ -522,10 +522,10 @@
                    that knows nothing about this deposit, so whatever is
                    paid through it arrives with no reference and can never
                    be matched to an account. The button runs the same
-                   action M-Pesa does — the server opens a transaction for
+                   action M-Pesa does, the server opens a transaction for
                    this exact amount and hands back the checkout URL. */
                 ? act(I('lock', 16) + 'Continue to Paystack', 'deposit', 'btn-pos') +
-                  '<span class="hint" style="text-align:center">Paystack collects the card details. Nexas never sees them.</span>'
+                  '<span class="hint" style="text-align:center">Paystack collects the card details. Novi never sees them.</span>'
                 : act('Confirm deposit', 'deposit', 'btn-pos')) +
             '</div>';
           }
@@ -712,7 +712,7 @@
                 '<span class="t"><b>' + r.name + '</b>' +
                   '<span>Joined ' + F().ago(r.joined) + '</span></span>' +
                 '<span class="p"><span class="num ' + (r.funded ? 'pos' : '') + '">' +
-                  (r.funded ? 'counts' : '—') + '</span>' +
+                  (r.funded ? 'counts' : '') + '</span>' +
                   '<span class="sub">' + (r.funded ? 'funded' : 'not funded yet') + '</span></span>' +
               '</div>';
             }).join('') + '</div>';

@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — mock API
+   Novi, mock API
    Everything the UI knows about prices, money and contracts comes
    through this module. It is deliberately shaped like the real
    thing (subscribe to a feed, buy, sell, list) so swapping in a
@@ -108,8 +108,8 @@
        Berlin should read dollars, not shillings.
 
        So: a country we have actually established, and quote in, gets its
-       own money. Anyone else — established as elsewhere, or not yet
-       established at all — gets USD, which every balance is already held
+       own money. Anyone else, established as elsewhere, or not yet
+       established at all, gets USD, which every balance is already held
        in. A Kenyan visitor whose timezone is unusual reads dollars for
        the second or two before the IP lookup answers, then flips. */
     var cc = (S.geo && COUNTRIES[S.geo]) ? S.geo
@@ -134,7 +134,7 @@
      in USD like everything else, which is why it is set here rather than
      written as a constant: 10,000 USD reads as 1,290,000 KES, and a
      seven-figure practice balance makes every number on the screen feel
-     like play money — including the real ones.
+     like play money, including the real ones.
 
      Only ever applied to an untouched demo balance. Somebody who has
      been trading on demo keeps whatever they have made or lost. */
@@ -149,7 +149,7 @@
     if (S.balances.demo !== DEMO_SEED_USD) return;   /* already traded on */
     var d = display();
     /* Six decimals, not two. Rounding the dollars to cents first makes
-       100,000 shillings come back as 99,999.51 — the figure on screen
+       100,000 shillings come back as 99,999.51, the figure on screen
        has to be the round one, and the stored value is only ever a
        means to it. */
     S.balances.demo = round(demoStartFor(d.rate) / d.rate, 6);
@@ -163,7 +163,7 @@
      currency rather than converted from a dollar figure. */
   function stakeChips() {
     var r = display().rate;
-    /* min is the smallest stake, in this currency — a round local figure
+    /* min is the smallest stake, in this currency, a round local figure
        rather than a converted dollar, so the message reads "100.00 KES"
        and not "129.00". LIMITS.max is still the ceiling, in USD. */
     if (r === 1) return { step: 1, chips: [1, 5, 10, 25, 50], start: 10, min: 1 };
@@ -219,7 +219,7 @@
         S.geo = cc;
         persist();
         /* The currency on screen follows the country, so it has to move
-           the moment the country does — otherwise a Kenyan visitor reads
+           the moment the country does, otherwise a Kenyan visitor reads
            dollars until the next reload. */
         applyDisplay();
         seedDemoBalance();
@@ -252,17 +252,17 @@
     referrals: saved.referrals || null,
     session: saved.session || null,
     /* Which instrument the terminal is on. Markets sets it, Trade reads
-       it — the two pages are separate documents, so it has to live
+       it, the two pages are separate documents, so it has to live
        somewhere they both see. */
     symbol: (saved.symbol && BY_ID[saved.symbol]) ? saved.symbol : 'R_10',
     /* Demo until an account exists. A visitor who has never signed up
-       must never be looking at a screen that says "real" — not even at
+       must never be looking at a screen that says "real", not even at
        zero, because the number is not the point: the word is. */
     account: saved.account === 'real' ? 'real' : 'demo',
     /* A real account starts empty. The demo balance is a product
        feature, not seed data, so it opens with virtual funds. */
     /* Seeded in USD like every balance; the figure itself is chosen so
-       it reads as a round number in the viewer's own money — see
+       it reads as a round number in the viewer's own money, see
        seedDemoBalance(), which runs once the country is known. */
     balances: saved.balances || { real: 0, demo: 10000 },
     currency: 'USD',
@@ -302,7 +302,7 @@
   }
 
   /* A page being closed or hidden is the other way a pending write is
-     lost — a phone switching apps, a tab closed mid-trade. */
+     lost, a phone switching apps, a tab closed mid-trade. */
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden') persistNow();
@@ -373,7 +373,7 @@
     connection.since = Date.now();
     B.emit('connection', connection);
   }
-  /* There was a simulated dropout here — a 2% roll every 20 seconds that
+  /* There was a simulated dropout here, a 2% roll every 20 seconds that
      flipped the app to "reconnecting" for three to five seconds. It was
      written to exercise the reconnect path while everything was mock,
      and it has no business in a product that takes money: a platform
@@ -424,8 +424,8 @@
   }
   function boost() { return boostTier().boost; }
   function referralCode() {
-    var e = (S.session && S.session.email) || 'nexas';
-    var base = e.split('@')[0].replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 5) || 'NEXAS';
+    var e = (S.session && S.session.email) || 'novi';
+    var base = e.split('@')[0].replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 5) || 'NOVI';
     return base + '7K';
   }
 
@@ -468,7 +468,7 @@
     if (!stake || stake < floor) return 'Minimum stake is ' + F.money(minStakeUsd());
     if (stake > LIMITS.max) return 'Maximum stake is ' + F.money(LIMITS.max);
     if (stake > balance()) return 'Not enough funds. Available ' + F.money(balance());
-    if (spec.ticks < LIMITS.minTicks || spec.ticks > LIMITS.maxTicks) return 'Duration must be 1–10 ticks';
+    if (spec.ticks < LIMITS.minTicks || spec.ticks > LIMITS.maxTicks) return 'Duration must be 1-10 ticks';
     return null;
   }
 
@@ -572,7 +572,7 @@
   /* ---------- session ---------- */
   /* ---------- may this browser trade a real balance? ----------
      Real means there is an account behind it. With an API configured
-     that is the server session and nothing else — a token in this tab,
+     that is the server session and nothing else, a token in this tab,
      not a flag in localStorage, which anybody can edit. Without one
      (running the files locally) a local sign-in is all there is to go
      on, and the balances are openly a simulation.
@@ -585,7 +585,7 @@
   }
 
   /* Called on boot, after sign-out, and before any switch. A stored
-     'real' from an earlier session — or a hand-edited one — collapses
+     'real' from an earlier session, or a hand-edited one, collapses
      back to demo here rather than being displayed. */
   function enforceAccount() {
     if (S.account === 'real' && !realAvailable()) {
@@ -712,7 +712,7 @@
     referrals: {
       tiers: BOOST_TIERS,
       code: referralCode,
-      link: function () { return 'https://nexas.trade/r/' + referralCode(); },
+      link: function () { return 'https://novibinary.com/r/' + referralCode(); },
       list: function () { seedReferrals(); return S.referrals.slice(); },
       count: function () { seedReferrals(); return S.referrals.length; },
       funded: fundedCount,

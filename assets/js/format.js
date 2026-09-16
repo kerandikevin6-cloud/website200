@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — formatting
+   Nexas, formatting
    One place for money, numbers, percentages and time so locale
    and currency changes never have to be chased through views.
    ============================================================ */
@@ -12,7 +12,7 @@
      Balances, stakes and contracts are held in USD everywhere inside the
      app: one unit, so the arithmetic has no seams in it. What a person
      reads is their own money, and that conversion happens here and only
-     here — a rate applied twice is a bug you find in a support ticket.
+     here, a rate applied twice is a bug you find in a support ticket.
 
      rate is display units per 1 USD, so 1 means "already USD" and the
      conversion is a no-op for anyone outside the countries we quote. */
@@ -39,7 +39,7 @@
     currency: function () { return currency; },
     rate: function () { return rate; },
 
-    /* USD in, display units out — and back. Every amount crossing
+    /* USD in, display units out, and back. Every amount crossing
        between the two goes through these, so there is one place to look
        when a figure is wrong by exactly the exchange rate. */
     toDisplay: local,
@@ -50,7 +50,7 @@
     /* 2,480.00 */
     amount: function (v) { return n2.format(local(v)); },
 
-    /* 2,480.00 KES — currency after the figure, the way traders read it */
+    /* 2,480.00 KES, currency after the figure, the way traders read it */
     money: function (v, cur) { return n2.format(local(v)) + ' ' + (cur || currency); },
 
     /* +12.40 / −3.05, always signed */
@@ -60,7 +60,7 @@
     },
     signedMoney: function (v, cur) { return F.signed(v) + ' ' + (cur || currency); },
 
-    /* Already in display units — formatted, never converted. Deposit and
+    /* Already in display units, formatted, never converted. Deposit and
        withdrawal sheets work in local money from the start. */
     localAmount: function (v) { return n2.format(+v || 0); },
     localMoney: function (v, cur) { return n2.format(+v || 0) + ' ' + (cur || currency); },

@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexas — network layer
+   Novi, network layer
 
    Everything that talks to the server goes through here. When no API is
    configured, `NexNet.live` is false and callers fall back to the local
@@ -44,7 +44,7 @@
     if (!t || !t.refreshToken) return false;
 
     /* One refresh at a time. Three requests expiring together must not
-       each spend the refresh token — only the first would succeed. */
+       each spend the refresh token, only the first would succeed. */
     if (!refreshing) {
       refreshing = (async function () {
         try {
@@ -69,14 +69,13 @@
 
   /* ---------- what kind of failure was that? ----------
      fetch() throws identically for a dead network, a blocked origin and
-     a server that returned an error page without CORS headers on it —
-     the reason never reaches JavaScript. So ask /health and read the
+     a server that returned an error page without CORS headers on it, the reason never reaches JavaScript. So ask /health and read the
      shape of the answer:
 
        'ok'      the service answered normally, so both the network and
                  the allow-list are fine and the original call failed for
                  its own reasons
-       'error'   it answered, but badly — a 5xx, which on a host that
+       'error'   it answered, but badly, a 5xx, which on a host that
                  sleeps is usually an instance still waking up
        'blocked' a plain request threw while an opaque one succeeded:
                  something is answering, but the browser would not let us
@@ -87,7 +86,7 @@
      is. A host's own 502 page carries no CORS headers either, so a
      sleeping instance and an origin that is not on the allow-list look
      exactly alike from JavaScript. The message says what is true of
-     both — it did not get through, nothing was charged — and the console
+     both, it did not get through, nothing was charged, and the console
      line names both causes for whoever is actually debugging it. */
   async function diagnose() {
     if (!BASE) return 'down';
@@ -107,7 +106,7 @@
   /* Hosts that sleep take a few seconds to come back, and the request
      that wakes them is the one that fails. Nudge /health when the app
      loads so the instance is already awake by the time somebody presses
-     Deposit, and keep nudging while it is still waking — a cold start is
+     Deposit, and keep nudging while it is still waking, a cold start is
      ten to thirty seconds, which is longer than the gap between loading
      a page and using it. */
   var awake = false;
@@ -160,7 +159,7 @@
           console.error('[nexas] the API answered with an error. If it is hosted ' +
             'on an instance that sleeps, it may still be waking up.');
         } catch (e2) {}
-        throw ApiError('Nexas is having trouble right now. Nothing was charged — ' +
+        throw ApiError('Novi is having trouble right now. Nothing was charged, ' +
           'give it a moment and try again.', 'server');
       }
 
@@ -169,11 +168,11 @@
           console.error('[nexas] the API answered but the browser would not let us ' +
             'read it. Two causes look identical here: (1) ' + location.origin +
             ' is not in CORS_ORIGINS on the API, or (2) the API returned an error ' +
-            'page — a 5xx carries no CORS headers, so a sleeping or crashed ' +
+            'page, a 5xx carries no CORS headers, so a sleeping or crashed ' +
             'instance looks exactly like a blocked origin. Check the service is ' +
             'up first, then the allow-list.');
         } catch (e3) {}
-        throw ApiError('Nexas could not be reached just now. Nothing was charged — ' +
+        throw ApiError('Novi could not be reached just now. Nothing was charged, ' +
           'give it a moment and try again.', 'unreachable');
       }
 
@@ -182,11 +181,10 @@
         throw ApiError('That request did not get through. Please try again.', 'flaky');
       }
 
-      throw ApiError('Could not reach Nexas. Check your connection.', 'offline');
+      throw ApiError('Could not reach Novi. Check your connection.', 'offline');
     }
 
-    /* A 5xx on a read is usually an instance still waking. Retry once —
-       but only a GET. A POST that opens a payment is never retried
+    /* A 5xx on a read is usually an instance still waking. Retry once, but only a GET. A POST that opens a payment is never retried
        automatically: the row is written before the provider is called,
        so a blind retry is how one deposit becomes two. */
     if (res.status >= 500 && !retried && (options.method || 'GET') === 'GET') {
@@ -285,7 +283,7 @@
        The server keeps the record so it survives this browser. It does
        not decide it: contracts still settle client side, so these are
        sent up rather than fetched down as truth. Worth being honest
-       about — see sql/007_trades.sql. */
+       about, see sql/007_trades.sql. */
     history: async function (params) {
       var q = [];
       if (params && params.account) q.push('account=' + encodeURIComponent(params.account));
@@ -316,7 +314,7 @@
 
     /* Asking about a pending deposit makes the server re-check it with
        the provider, so this settles anything that was paid while nobody
-       was watching — a callback that never arrived, a tab closed on the
+       was watching, a callback that never arrived, a tab closed on the
        waiting screen, a phone that died after the PIN. Run on load, so a
        deposit cannot stay unpaid-looking just because the person who
        made it walked away.

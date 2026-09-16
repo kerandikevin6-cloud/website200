@@ -1,6 +1,6 @@
 {
-  "name": "Nexas Terminal",
-  "short_name": "Nexas",
+  "name": "Novi Terminal",
+  "short_name": "Novi",
   "description": "Trade synthetic indices from your phone.",
   "start_url": "index.html",
   "scope": ".",
