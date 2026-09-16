@@ -1768,7 +1768,7 @@
     /* Before the guard and before anything is painted. On the sign-in
        page a returning session has to be adopted, and on any other page
        this is a no-op that costs one URL parse. */
-    if (/[?#].*(access_token|[?&]code=|error_description)/.test(location.href)) {
+    if (/[?#].*(access_token|[?&]code=|error_code|error_description|[?&#]error=)/.test(location.href)) {
       resumeOAuth();
       return;
     }

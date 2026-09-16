@@ -300,8 +300,13 @@
       var frag = new URLSearchParams(hash);
       var query = new URLSearchParams(location.search || '');
 
-      var failed = frag.get('error_description') || frag.get('error') ||
-                   query.get('error_description') || query.get('error');
+      /* Supabase sends the reason under any of three names depending on
+         where it failed, and error_code alone is what comes back when
+         its own callback breaks rather than the provider refusing.
+         Reading only two of the three is how a real failure arrives
+         looking like nothing at all. */
+      var failed = frag.get('error_description') || frag.get('error_code') || frag.get('error') ||
+                   query.get('error_description') || query.get('error_code') || query.get('error');
       var access = frag.get('access_token');
       var refresh = frag.get('refresh_token');
       var code = query.get('code');
@@ -317,12 +322,29 @@
         url.hash = '';
         url.searchParams.delete('code');
         url.searchParams.delete('error');
+        url.searchParams.delete('error_code');
         url.searchParams.delete('error_description');
         url.searchParams.delete('oauth');
         history.replaceState(history.state, '', url.pathname + url.search);
       } catch (e) {}
 
-      if (failed) return { ok: false, message: String(failed).replace(/\+/g, ' ') };
+      if (failed) {
+        /* The raw codes are for logs, not for people. Everything else is
+           passed through rather than flattened into one vague sentence:
+           an unknown reason is still a reason, and hiding it helps
+           nobody sitting with support on the phone. */
+        var raw = String(failed).replace(/\+/g, ' ');
+        var friendly =
+          raw === 'unexpected_failure'
+            ? 'Google signed you in, but we could not finish creating the session. Try again, or use your email and password.'
+          : raw === 'access_denied'
+            ? 'That sign-in was cancelled.'
+          : raw === 'server_error'
+            ? 'The sign-in service had a problem. Try again in a moment.'
+          : raw;
+        try { console.error('[novi] sign-in failed: ' + raw); } catch (e) {}
+        return { ok: false, message: friendly };
+      }
 
       if (access) {
         setTokens({
