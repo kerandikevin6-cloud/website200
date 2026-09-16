@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>/* Before the first paint: app.js runs at the end of the body, and until
+   it does every page renders in the default light palette and then flips.
+   On a multi-page app that flip happens on every single navigation, which
+   is the flicker. Four lines here, ahead of the stylesheet, cost nothing
+   and remove it. */
+try{document.documentElement.setAttribute('data-theme',localStorage.getItem('nexas.theme')||'dark')}
+catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<title>Nexas &mdash; Privacy</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nexas">
+<meta property="og:title" content="Nexas &mdash; Privacy">
+<meta property="og:description" content="What Nexas collects, why, and what it never does with it.">
+<meta property="og:image" content="https://website200-ten.vercel.app/assets/share-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://website200-ten.vercel.app/privacy.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nexas &mdash; Privacy">
+<meta name="twitter:description" content="What Nexas collects, why, and what it never does with it.">
+<meta name="twitter:image" content="https://website200-ten.vercel.app/assets/share-card.png">
+<meta name="description" content="What Nexas collects, why, and what it never does with it.">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-page="privacy" data-chrome="app" data-title="Privacy" data-back="learn.html">
+<div class="app">
+  <main class="lrn-flow">
+    <section class="lrn lrn-hero lrn-center">
+      <div class="lrn-in">
+        <span class="label page-kicker">Privacy</span>
+        <h1>What we collect, and what we never do with it.</h1>
+        <p class="lede">We collect what is needed to run an account and pay you. Nothing else. Last updated 16 September 2026.</p>
+        <span class="lrn-more">Scroll</span>
+      </div>
+    </section>
+    <section class="lrn lrn-tint lrn-blue">
+      <div class="lrn-in">
+        <h2>What we hold</h2>
+        <p><b>To open an account:</b> your name, email address and phone number.</p>
+        <p><b>To pay you:</b> your M-Pesa number, and identity documents where a payout requires verification.</p>
+        <p><b>Because you traded:</b> your contracts, deposits, withdrawals and balance history.</p>
+        <p><b>Because a browser asked:</b> the country your connection appears to be in, so the app can show your own currency. We do not build a profile from it.</p>
+      </div>
+    </section>
+    <section class="lrn">
+      <div class="lrn-in">
+        <h2>What we never do</h2>
+        <p>We do not sell your data. We do not share it with advertisers. We do not run advertising or analytics trackers on the trading screens.</p>
+        <p>We share information only with those who must have it: the payment providers who move the money, and a regulator or court that compels us in writing.</p>
+      </div>
+    </section>
+    <section class="lrn lrn-tint lrn-purple">
+      <div class="lrn-in">
+        <h2>Your identity documents</h2>
+        <p>An ID or selfie sent for verification is used for that check and kept only as long as the law requires. It is not used for anything else, and it is never seen outside the small team that reviews payouts.</p>
+      </div>
+    </section>
+    <section class="lrn">
+      <div class="lrn-in">
+        <h2>How it is protected</h2>
+        <p>Everything travels over TLS. Balances and payments live in a database where a row can only be read by the account it belongs to, enforced by the database itself rather than by application code. Money moves only through audited database functions &mdash; there is no path from an ordinary request to a balance.</p>
+        <p>There is more detail on <a href="security.html">Security</a>.</p>
+      </div>
+    </section>
+    <section class="lrn lrn-tint lrn-blue lrn-center">
+      <div class="lrn-in">
+        <h2>What you can ask for</h2>
+        <p>A copy of everything we hold on you, a correction, or deletion. Ask through <a href="chat.html">support</a> and we will answer within 30 days. Deletion is limited by the records we are legally required to keep &mdash; payment history, mostly &mdash; and we will tell you exactly which those are.</p>
+        <p>Cookies: we store a session so you stay signed in, and a preference or two such as your theme. There are no third-party cookies to decline.</p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="fl">
+        <a href="learn.html">Learn</a>
+        <a href="responsible.html">Responsible Trading</a>
+        <a href="risk.html">Risk Disclosure</a>
+        <a href="terms.html">Terms</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="security.html">Security</a>
+        <a href="complaints.html">Complaints</a>
+      </div>
+      <p style="margin:0;line-height:1.7;max-width:62ch">Trading synthetic indices carries a high level of risk and is not suitable for everyone. You can lose the money you put in. Nothing on this page is financial advice.</p>
+    </footer>
+  </main>
+</div>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/net.js"></script>
+<script src="assets/js/format.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/modals.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

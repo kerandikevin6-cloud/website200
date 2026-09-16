@@ -127,6 +127,35 @@
   }
 
   function toDisplay(usd) { return (+usd || 0) * display().rate; }
+
+  /* ---------- the demo balance ----------
+     A practice balance is a product decision, not an amount of money, so
+     it should be a round figure in the currency the person reads. Held
+     in USD like everything else, which is why it is set here rather than
+     written as a constant: 10,000 USD reads as 1,290,000 KES, and a
+     seven-figure practice balance makes every number on the screen feel
+     like play money — including the real ones.
+
+     Only ever applied to an untouched demo balance. Somebody who has
+     been trading on demo keeps whatever they have made or lost. */
+  var DEMO_SEED_USD = 10000;        /* the value a fresh state starts at */
+  function demoStartFor(rate) {
+    if (rate === 1) return 1000;                 /* USD */
+    if (rate >= 1000) return 1000000;            /* UGX, TZS, NGN, RWF */
+    if (rate >= 100) return 100000;              /* KES */
+    return 10000;                                /* GHS, ZAR */
+  }
+  function seedDemoBalance() {
+    if (S.balances.demo !== DEMO_SEED_USD) return;   /* already traded on */
+    var d = display();
+    /* Six decimals, not two. Rounding the dollars to cents first makes
+       100,000 shillings come back as 99,999.51 — the figure on screen
+       has to be the round one, and the stored value is only ever a
+       means to it. */
+    S.balances.demo = round(demoStartFor(d.rate) / d.rate, 6);
+    persist();
+    B.emit('balance', { balance: balance(), account: S.account });
+  }
   function fromDisplay(v) { return (+v || 0) / display().rate; }
 
   /* Stake controls, in the viewer's own money. A +1 button is sensible
@@ -193,6 +222,7 @@
            the moment the country does — otherwise a Kenyan visitor reads
            dollars until the next reload. */
         applyDisplay();
+        seedDemoBalance();
         B.emit('geo', cc);
         B.emit('balance', { balance: balance(), account: S.account });
       })
@@ -231,6 +261,9 @@
     account: saved.account === 'real' ? 'real' : 'demo',
     /* A real account starts empty. The demo balance is a product
        feature, not seed data, so it opens with virtual funds. */
+    /* Seeded in USD like every balance; the figure itself is chosen so
+       it reads as a round number in the viewer's own money — see
+       seedDemoBalance(), which runs once the country is known. */
     balances: saved.balances || { real: 0, demo: 10000 },
     currency: 'USD',
     verified: !!saved.verified,
@@ -340,16 +373,18 @@
     connection.since = Date.now();
     B.emit('connection', connection);
   }
-  /* occasional realistic drop, so the UI's reconnect path is exercised */
-  setInterval(function () {
-    if (connection.status !== 'live' || document.hidden) return;
-    if (Math.random() > 0.02) return;
-    setConnection('reconnecting');
-    setTimeout(function () { setConnection('live'); }, 2600 + Math.random() * 2200);
-  }, 20000);
-  setInterval(function () {
-    if (connection.status === 'live') connection.latency = Math.round(28 + Math.random() * 60);
-  }, 4000);
+  /* There was a simulated dropout here — a 2% roll every 20 seconds that
+     flipped the app to "reconnecting" for three to five seconds. It was
+     written to exercise the reconnect path while everything was mock,
+     and it has no business in a product that takes money: a platform
+     that periodically announces it is losing the price feed is telling
+     people something untrue about its reliability, roughly every
+     seventeen minutes.
+
+     The reconnect path still exists and still shows, but only when the
+     feed actually stops. Latency is likewise no longer invented; it is
+     left at its last real value rather than being randomised into
+     something that looks plausible. */
 
   /* ---------- referrals ----------
      Referrals do not pay cash. Each one that funds an account lifts the
@@ -591,6 +626,7 @@
   setTimeout(function () {
     booted = true;
     applyDisplay();
+    seedDemoBalance();
     enforceAccount();
     setConnection('live');
     start();

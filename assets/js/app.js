@@ -637,9 +637,14 @@
       document.body.appendChild(b);
     }
     var st = API.connection.status();
-    b.className = 'conn-banner' + (st === 'live' ? '' : ' show');
-    b.innerHTML = st === 'live' ? '' : '<span class="spin"></span>' +
-      (st === 'reconnecting' ? 'Reconnecting to the price feed' : 'Connecting');
+    /* Only a real drop. 'booting' is the second before the feed answers
+       on a fresh load, and announcing it flashed an amber "Connecting"
+       bar on every single navigation — which reads as a platform that
+       keeps losing its connection, on a site whose whole job is to look
+       dependable. The boot veil already covers that moment. */
+    var show = st === 'reconnecting';
+    b.className = 'conn-banner' + (show ? ' show' : '');
+    b.innerHTML = show ? '<span class="spin"></span>Reconnecting to the price feed' : '';
     document.body.classList.toggle('feed-down', st !== 'live');
   }
 
@@ -1537,7 +1542,13 @@
       if (!v) return;
       add(v, 'me');
       input.value = '';
-      setTimeout(function () { add('Thanks — checking that for you now. One moment.', 'them'); }, 900);
+      /* A named person, and a promise the team can actually keep. "In
+         minutes" is a claim that gets broken the first quiet evening;
+         thirty is one that holds. */
+      setTimeout(function () {
+        add('Thanks — this is Lucy. I am looking at it now and will come ' +
+            'back to you shortly.', 'them');
+      }, 900);
     });
     log.scrollTop = log.scrollHeight;
   }
