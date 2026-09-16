@@ -281,6 +281,34 @@
       return call('/deposits/' + encodeURIComponent(reference));
     },
 
+    /* ---------- trade history ----------
+       The server keeps the record so it survives this browser. It does
+       not decide it: contracts still settle client side, so these are
+       sent up rather than fetched down as truth. Worth being honest
+       about — see sql/007_trades.sql. */
+    history: async function (params) {
+      var q = [];
+      if (params && params.account) q.push('account=' + encodeURIComponent(params.account));
+      if (params && params.before) q.push('before=' + encodeURIComponent(params.before));
+      q.push('limit=' + ((params && params.limit) || 50));
+      var out = await call('/trades?' + q.join('&'));
+      return { trades: out.trades || [], nextBefore: out.nextBefore || null };
+    },
+
+    recordTrades: async function (trades) {
+      if (!trades || !trades.length) return { recorded: 0 };
+      /* The server caps a batch at 200; send in chunks so a long
+         backlog after an offline spell still goes up. */
+      var done = 0;
+      for (var i = 0; i < trades.length; i += 100) {
+        var out = await call('/trades', {
+          method: 'POST', body: { trades: trades.slice(i, i + 100) }
+        });
+        done += out.recorded || 0;
+      }
+      return { recorded: done };
+    },
+
     deposits: async function () {
       var out = await call('/deposits');
       return out.payments || [];

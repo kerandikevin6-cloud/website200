@@ -23,7 +23,7 @@
     out: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4|M16 17l5-5-5-5M21 12H9',
     chev: 'M9 18l6-6-6-6',
     chevD: 'M6 9l6 6 6-6',
-    back: 'M15 18l-6-6 6-6',
+    back: 'M19 12H5|M11 18l-6-6 6-6',
     close: 'M6 6l12 12M18 6L6 18',
     bell: 'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9|M13.7 21a2 2 0 01-3.4 0',
     idcard: 'M3 5h18v14H3z|M7 10h3M7 14h6M15 9h3v4h-3z',
@@ -1497,6 +1497,11 @@
 
   /* ---------- live chrome updates ---------- */
   function bindChrome() {
+    API.on('settled', function (c) {
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
+      window.NexNet.recordTrades([tradePayload(c)]).catch(function () {});
+    });
+
     API.on('balance', function () {
       var b = document.getElementById('acctBtn');
       if (!b) return;
@@ -1630,6 +1635,49 @@
     }
   }
 
+  /* ---------- trade history, kept on the server ----------
+     Settlement still happens here, in the browser, so this is the
+     client telling the server what it decided rather than the other way
+     round. It is worth doing anyway: without it a person's history dies
+     with this browser's localStorage, and they have no record of what
+     they did on a phone they no longer use.
+
+     Sent as a batch on load and one at a time after that. Re-sending is
+     safe — the server keys on the contract id and ignores duplicates —
+     so nothing has to be tracked as "already sent". */
+  function tradePayload(c) {
+    return {
+      clientRef: String(c.id),
+      accountKind: c.account === 'real' ? 'real' : 'demo',
+      symbol: c.symbol,
+      symbolName: c.symbolName || undefined,
+      contractType: c.type,
+      side: c.side || undefined,
+      barrier: c.barrier == null ? null : c.barrier,
+      stakeMinor: Math.round((+c.stake || 0) * 100),
+      payoutMinor: Math.round((+c.payout || 0) * 100),
+      profitMinor: Math.round((+c.profit || 0) * 100),
+      currency: 'USD',
+      status: c.profit >= 0 ? 'won' : 'lost',
+      ticks: c.ticks || undefined,
+      entrySpot: c.entrySpot == null ? undefined : c.entrySpot,
+      exitSpot: c.exitSpot == null ? undefined : c.exitSpot,
+      openedAt: new Date(c.entryTime).toISOString(),
+      settledAt: new Date(c.exitTime || c.entryTime).toISOString()
+    };
+  }
+
+  function syncHistory() {
+    if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
+    var settled = API.contracts.closed().filter(function (c) {
+      return c.status === 'won' || c.status === 'lost';
+    });
+    if (!settled.length) return;
+    /* Quietly. A failure here costs a record, not a trade. */
+    window.NexNet.recordTrades(settled.slice(0, 200).map(tradePayload))
+      .catch(function () {});
+  }
+
   /* ---------- boot ---------- */
   function boot() {
     API = window.NexAPI; F = window.NexFmt;
@@ -1653,6 +1701,7 @@
       /* Then chase anything that was paid while this browser was not
          looking. A deposit that cleared after the tab closed has no
          other way of reaching the balance on screen. */
+      syncHistory();
       window.NexNet.settlePending().then(function (n) {
         if (!n) return;
         hydrateSession();

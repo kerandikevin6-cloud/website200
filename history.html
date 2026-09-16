@@ -39,72 +39,145 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 (function () {
   "use strict";
   /* Every settled trade, newest first, grouped by day.
-     Positions answers "what is happening now"; this answers "what have I
-     done", which is a different question and deserves its own page
-     rather than a third tab nobody finds. */
+
+     Source of the list, in order of preference:
+       the API   — when signed in, so the history follows the person
+                   between devices instead of living in one browser
+       localStorage — otherwise, which is the demo and offline case
+
+     The server is the record, not the referee: contracts still settle in
+     the browser, so what is listed is what this account reported. That
+     distinction matters enough to be written down here and in
+     sql/007_trades.sql, and not to be papered over in the interface. */
   function init() {
     var API = window.NexAPI, F = window.NexFmt;
     var list = document.getElementById('histList');
     if (!list) return;
+
+    var live = !!(window.NexNet && window.NexNet.live && window.NexNet.signedIn());
+    var cursor = null, loading = false, exhausted = false;
+    var rows = [];
 
     function dayKey(ts) {
       var d = new Date(ts);
       return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
     }
     function dayLabel(ts) {
-      var today = dayKey(Date.now());
-      var yest = dayKey(Date.now() - 86400000);
       var k = dayKey(ts);
-      if (k === today) return 'Today';
-      if (k === yest) return 'Yesterday';
+      if (k === dayKey(Date.now())) return 'Today';
+      if (k === dayKey(Date.now() - 86400000)) return 'Yesterday';
       return F.date(ts);
     }
 
+    /* Both sources end up in one shape, so the renderer never has to ask
+       where a row came from. */
+    function fromLocal(c) {
+      var meta = API.symbol(c.symbol);
+      return {
+        label: API.contracts.label(c),
+        name: c.symbolName || (meta && meta.name) || c.symbol,
+        at: c.exitTime || c.entryTime,
+        profit: c.profit
+      };
+    }
+    function fromServer(t) {
+      var meta = API.symbol(t.symbol);
+      return {
+        label: API.contracts.label({ type: t.type, side: t.side, barrier: t.barrier }),
+        name: t.symbolName || (meta && meta.name) || t.symbol,
+        at: new Date(t.settledAt).getTime(),
+        profit: (t.profitMinor || 0) / 100
+      };
+    }
+
+    function skeleton() {
+      return '<div class="sk sk-list"></div>';
+    }
+    function empty() {
+      return '<div class="empty" style="padding:56px 20px">' +
+        window.NexIcon('clock', 24) +
+        '<b>No trades yet</b>' +
+        '<span>Settled trades show up here, newest first.</span></div>';
+    }
+    function failed(message) {
+      return '<div class="empty" style="padding:56px 20px">' +
+        window.NexIcon('alert', 24) +
+        '<b>Could not load your history</b>' +
+        '<span>' + (message || 'Try again in a moment.') + '</span>' +
+        '<button class="btn-mini" id="histRetry" style="margin-top:14px">Try again</button>' +
+        '</div>';
+    }
+
     function render() {
-      var closed = API.contracts.closed().slice().sort(function (a, b) {
-        return (b.exitTime || b.entryTime) - (a.exitTime || a.entryTime);
-      });
-
-      if (!closed.length) {
-        list.innerHTML = '<div class="empty" style="padding:56px 20px">' +
-          window.NexIcon('book', 24) +
-          '<b>No trades yet</b>' +
-          '<span>Settled trades show up here, newest first.</span></div>';
-        return;
-      }
-
-      /* No totals. A history is a record of what happened; a running
-         net at the top turns it into a scoreboard, and the figure people
-         read first is then the one that decides how they feel about the
-         next trade. Each row carries its own number. */
+      if (!rows.length) { list.innerHTML = empty(); return; }
 
       var out = '', lastDay = null;
-      closed.forEach(function (c) {
-        var ts = c.exitTime || c.entryTime;
-        var k = dayKey(ts);
+      rows.forEach(function (r) {
+        var k = dayKey(r.at);
         if (k !== lastDay) {
           if (lastDay !== null) out += '</div>';
-          out += '<div class="hist-day"><div class="hist-day-label">' + dayLabel(ts) + '</div>';
+          out += '<div class="hist-day"><div class="hist-day-label">' + dayLabel(r.at) + '</div>';
           lastDay = k;
         }
-        var sym = API.symbol(c.symbol);
         out += '<div class="hist-row">' +
-          '<span class="hist-what"><b>' + API.contracts.label(c) + '</b>' +
-            '<span>' + (sym ? sym.name : c.symbol) + ' · ' + F.clock(ts) + '</span></span>' +
-          '<span class="hist-num num ' + (c.profit >= 0 ? 'pos' : 'neg') + '">' +
-            F.signedMoney(c.profit) + '</span>' +
+          '<span class="hist-what"><b>' + r.label + '</b>' +
+            '<span>' + r.name.replace(' Index', '') + ' · ' + F.clock(r.at) + '</span></span>' +
+          '<span class="hist-num num ' + (r.profit >= 0 ? 'pos' : 'neg') + '">' +
+            F.signedMoney(r.profit) + '</span>' +
         '</div>';
       });
       if (lastDay !== null) out += '</div>';
+
+      if (!exhausted && live) {
+        out += '<div class="hist-more"><button class="btn-mini" id="histMore">' +
+          (loading ? 'Loading' : 'Show older') + '</button></div>';
+      }
       list.innerHTML = out;
+
+      var more = document.getElementById('histMore');
+      if (more) more.addEventListener('click', function () { load(); });
+    }
+
+    function renderLocal() {
+      rows = API.contracts.closed().slice().sort(function (a, b) {
+        return (b.exitTime || b.entryTime) - (a.exitTime || a.entryTime);
+      }).map(fromLocal);
+      exhausted = true;
+      render();
+    }
+
+    async function load() {
+      if (loading || exhausted) return;
+      loading = true;
+      if (!rows.length) list.innerHTML = skeleton();
+      else render();
+
+      try {
+        var out = await window.NexNet.history({ before: cursor, limit: 50 });
+        rows = rows.concat(out.trades.map(fromServer));
+        cursor = out.nextBefore;
+        exhausted = !cursor;
+        loading = false;
+        render();
+      } catch (err) {
+        loading = false;
+        if (rows.length) { render(); return; }
+        list.innerHTML = failed(err && err.message);
+        var retry = document.getElementById('histRetry');
+        if (retry) retry.addEventListener('click', function () {
+          exhausted = false; load();
+        });
+      }
     }
 
     API.ready(function () {
       document.body.classList.remove('loading');
-      render();
-      /* 'contracts', not 'contract' — the bus emits one event for every
-         change to the set, buys and settlements alike. */
-      API.on('contracts', render);
+      if (live) {
+        load();
+      } else {
+        renderLocal();
+        API.on('contracts', renderLocal);
+      }
     });
   }
 
