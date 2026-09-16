@@ -1729,9 +1729,50 @@
       .catch(function () {});
   }
 
+  /* ---------- coming back from Google ----------
+     The redirect lands on the sign-in page with a session in the URL.
+     Without this the page renders exactly as it did before anyone signed
+     in, which is what somebody who has just signed in reads as "it did
+     not work" — and they are not wrong, because it had not.
+
+     Runs before the guard, so the terminal does not bounce a person who
+     is, as of this moment, signed in. */
+  async function resumeOAuth() {
+    if (!(window.NexNet && window.NexNet.live)) return false;
+
+    var out = await window.NexNet.adoptFromUrl();
+    if (!out) return false;
+
+    if (!out.ok) {
+      window.NexToast(out.message || 'That sign-in did not complete.');
+      return false;
+    }
+
+    try {
+      await hydrateSession();
+    } catch (e) {
+      window.NexToast('Signed in, but your account could not be loaded. Try again.');
+      return false;
+    }
+
+    /* Straight to the terminal rather than leaving them on a sign-in
+       form they have just finished with. */
+    go('/');
+    return true;
+  }
+
   /* ---------- boot ---------- */
   function boot() {
     API = window.NexAPI; F = window.NexFmt;
+
+    /* Before the guard and before anything is painted. On the sign-in
+       page a returning session has to be adopted, and on any other page
+       this is a no-op that costs one URL parse. */
+    if (/[?#].*(access_token|[?&]code=|error_description)/.test(location.href)) {
+      resumeOAuth();
+      return;
+    }
+
     /* Before anything is painted: a stored 'real' with no account behind
        it collapses to demo, so no screen ever renders the word. */
     API.account.enforce();
