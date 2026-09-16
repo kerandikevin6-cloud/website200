@@ -67,7 +67,7 @@
     var out = '';
     for (var i = 0; i < 10; i++) {
       var cls = 'digit' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
-        (picking && i === S.barrier ? ' picked' : '');
+        (picking && i === S.barrier ? ' sel' : '');
       out += '<button class="' + cls + '" data-digit="' + i + '"' + (picking ? '' : ' tabindex="-1"') + '>' +
         '<b>' + i + '</b><i>' + pctArr[i].toFixed(1) + '</i></button>';
     }

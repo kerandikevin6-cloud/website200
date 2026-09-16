@@ -426,8 +426,10 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .chart-map{opacity:.04}
 }
+/* Lifted clear of the bottom edge. At 10px the last button sat on the
+   card's border and read as half a control. */
 .chart-tools{
-  position:absolute;left:10px;bottom:10px;display:flex;flex-direction:column;
+  position:absolute;left:10px;bottom:26px;display:flex;flex-direction:column;
   border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);
 }
 .chart-tools button{width:30px;height:30px;display:grid;place-items:center;color:var(--muted)}
@@ -957,8 +959,13 @@ footer a:hover{color:var(--text-2)}
 #chart{touch-action:none;cursor:crosshair}
 
 /* ---------------- digits ---------------- */
-.digit.picked{border-color:var(--accent);background:var(--accent-soft)}
-.digit.picked i{color:var(--accent)}
+/* Named `sel`, not `picked`: the document picker further down owns
+   `.picked` and gives it a 168px minimum height, which turned the chosen
+   barrier digit into a tall blue slab and stretched the whole row with
+   it. The three contract tabs now lay out identically; only the barrier
+   control differs, which is the only thing that should. */
+.digit.sel{border-color:var(--accent);background:var(--accent-soft)}
+.digit.sel i{color:var(--accent)}
 
 /* ---------------- panel rows ---------------- */
 .stack-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -3040,6 +3047,20 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return fromDisplay(stakeChips().min);
   }
 
+  /* The smallest payout, in the viewer's own money and as a round local
+     figure rather than a converted dollar: a Kenyan reads "100.00 KES",
+     not "77.52". Chosen off the rate for the same reason the stake chips
+     are, so a currency we add later gets a sane floor without a second
+     table to keep in step. */
+  function minWithdrawDisplay() {
+    var r = display().rate;
+    if (r === 1) return 10;
+    if (r >= 1000) return 5000;
+    if (r >= 100) return 100;
+    return 50;
+  }
+  function minWithdrawUsd() { return fromDisplay(minWithdrawDisplay()); }
+
   /* Timezone is a decent offline guess and costs no request, so it seeds
      the value before the IP lookup comes back (and stands in for it if the
      lookup is blocked or offline). */
@@ -3667,6 +3688,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       apply: applyDisplay,
       toDisplay: toDisplay,
       fromDisplay: fromDisplay,
+      minWithdrawDisplay: minWithdrawDisplay,
+      minWithdrawUsd: minWithdrawUsd,
       stakeChips: stakeChips,
       minStakeUsd: minStakeUsd
     },
@@ -3703,6 +3726,18 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         S.verified = user.kyc === 'verified';
         S.kycStatus = user.kyc || 'unverified';
         S.demoMode = !!user.demoMode;
+
+        /* The country on the account beats anything guessed from an IP
+           lookup or a timezone, and it is the reason a Kenyan customer
+           could be shown shillings on the deposit sheet and dollars on
+           the withdrawal one: the deposit form falls back to Kenya, the
+           currency layer deliberately does not, and nothing ever told it
+           who this person is. */
+        if (user.country && COUNTRIES[user.country] && S.geo !== user.country) {
+          S.geo = user.country;
+          applyDisplay();
+          B.emit('geo', user.country);
+        }
 
         (accounts || []).forEach(function (a) {
           if (a.kind === 'real' || a.kind === 'demo') {
@@ -4862,7 +4897,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         },
         form: {
           title: function (s) { return 'Withdraw to ' + (NAMES[s.method] || 'M-Pesa'); },
-          sub: 'Minimum $10. One free withdrawal per day.',
+          sub: function () {
+            return 'Minimum ' + F().localMoney(API().money.minWithdrawDisplay()) +
+              '. One free withdrawal per day.';
+          },
           body: function (s) {
             var inner = s.method === 'usdt'
               ? '<div class="field"><label for="wNetwork">Network</label>' +
@@ -4872,22 +4910,27 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                   'Must match the number registered to your verified name.');
 
             /* The sheet works in the viewer's own money from the first
-               figure: the field, the fee and the total are all display
-               units, so nothing here is converted twice. The USD figures
-               behind them (10 minimum, 1 fee) are converted once, here. */
-            var feeLocal = Math.round(API().money.toDisplay(1) * 100) / 100;
-            var startLocal = Math.round(API().money.toDisplay(100));
+               figure to the last: the field, the minimum and the total
+               are all display units, so nothing here is converted twice.
+
+               There is no fee row any more. Nothing on the server takes a
+               cut, so a "network fee" line was a figure we invented that
+               made the customer expect less than we actually send, and at
+               a 100 KES floor a one-dollar fee ate the whole payout. */
+            var minLocal = API().money.minWithdrawDisplay();
+            var startLocal = Math.max(minLocal, Math.round(API().money.toDisplay(
+              Math.min(API().account.balance(), 100))));
 
             return '<div class="modal-form">' +
               '<div class="field"><label for="wAmount">Amount</label>' +
                 '<div class="input-wrap"><input class="input num" id="wAmount" value="' + startLocal +
                   '" inputmode="decimal">' +
                 '<span class="suffix">' + API().account.currency() + '</span></div>' +
-                '<span class="hint">Minimum ' + F().money(10) + '</span></div>' +
+                '<span class="hint">Minimum ' + F().localMoney(minLocal) + '</span></div>' +
               inner +
-              '<div class="totals">' + kv('Network fee', F().localMoney(feeLocal)) +
-                kv('You receive', F().localMoney(Math.max(0, startLocal - feeLocal)),
-                   'data-total="wAmount" data-fee="' + feeLocal + '"') + '</div>' +
+              '<div class="totals">' + kv('Available', F().money(API().account.balance())) +
+                kv('You receive', F().localMoney(startLocal),
+                   'data-total="wAmount" data-fee="0"') + '</div>' +
               (API().kyc.verified() ? '' :
                 '<div class="notice">' + I('shield', 17) +
                 '<span>Identity verification is required before your first payout.</span></div>') +
@@ -5017,7 +5060,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var out = '';
     for (var i = 0; i < 10; i++) {
       var cls = 'digit' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
-        (picking && i === S.barrier ? ' picked' : '');
+        (picking && i === S.barrier ? ' sel' : '');
       out += '<button class="' + cls + '" data-digit="' + i + '"' + (picking ? '' : ' tabindex="-1"') + '>' +
         '<b>' + i + '</b><i>' + pctArr[i].toFixed(1) + '</i></button>';
     }
@@ -7572,7 +7615,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       var wShown = +((document.getElementById('wAmount') || {}).value) || 0;
       var w = API.money.fromDisplay(wShown);
       if (w <= 0) return fieldError('wAmount', 'Enter an amount to withdraw');
-      if (w < 10) return fieldError('wAmount', 'Minimum withdrawal is ' + F.money(10));
+      /* Compared in USD, quoted in their money, so the message names the
+         same round figure the field's hint does. */
+      if (w < API.money.minWithdrawUsd() - 0.0001) {
+        return fieldError('wAmount', 'Minimum withdrawal is ' +
+          F.localMoney(API.money.minWithdrawDisplay()));
+      }
       if (w > API.account.balance()) return fieldError('wAmount',
         'Not enough funds. Available ' + F.money(API.account.balance()));
       state.data.sent = w;

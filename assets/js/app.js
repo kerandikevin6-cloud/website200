@@ -1453,7 +1453,12 @@
       var wShown = +((document.getElementById('wAmount') || {}).value) || 0;
       var w = API.money.fromDisplay(wShown);
       if (w <= 0) return fieldError('wAmount', 'Enter an amount to withdraw');
-      if (w < 10) return fieldError('wAmount', 'Minimum withdrawal is ' + F.money(10));
+      /* Compared in USD, quoted in their money, so the message names the
+         same round figure the field's hint does. */
+      if (w < API.money.minWithdrawUsd() - 0.0001) {
+        return fieldError('wAmount', 'Minimum withdrawal is ' +
+          F.localMoney(API.money.minWithdrawDisplay()));
+      }
       if (w > API.account.balance()) return fieldError('wAmount',
         'Not enough funds. Available ' + F.money(API.account.balance()));
       state.data.sent = w;

@@ -786,7 +786,10 @@
         },
         form: {
           title: function (s) { return 'Withdraw to ' + (NAMES[s.method] || 'M-Pesa'); },
-          sub: 'Minimum $10. One free withdrawal per day.',
+          sub: function () {
+            return 'Minimum ' + F().localMoney(API().money.minWithdrawDisplay()) +
+              '. One free withdrawal per day.';
+          },
           body: function (s) {
             var inner = s.method === 'usdt'
               ? '<div class="field"><label for="wNetwork">Network</label>' +
@@ -796,22 +799,27 @@
                   'Must match the number registered to your verified name.');
 
             /* The sheet works in the viewer's own money from the first
-               figure: the field, the fee and the total are all display
-               units, so nothing here is converted twice. The USD figures
-               behind them (10 minimum, 1 fee) are converted once, here. */
-            var feeLocal = Math.round(API().money.toDisplay(1) * 100) / 100;
-            var startLocal = Math.round(API().money.toDisplay(100));
+               figure to the last: the field, the minimum and the total
+               are all display units, so nothing here is converted twice.
+
+               There is no fee row any more. Nothing on the server takes a
+               cut, so a "network fee" line was a figure we invented that
+               made the customer expect less than we actually send, and at
+               a 100 KES floor a one-dollar fee ate the whole payout. */
+            var minLocal = API().money.minWithdrawDisplay();
+            var startLocal = Math.max(minLocal, Math.round(API().money.toDisplay(
+              Math.min(API().account.balance(), 100))));
 
             return '<div class="modal-form">' +
               '<div class="field"><label for="wAmount">Amount</label>' +
                 '<div class="input-wrap"><input class="input num" id="wAmount" value="' + startLocal +
                   '" inputmode="decimal">' +
                 '<span class="suffix">' + API().account.currency() + '</span></div>' +
-                '<span class="hint">Minimum ' + F().money(10) + '</span></div>' +
+                '<span class="hint">Minimum ' + F().localMoney(minLocal) + '</span></div>' +
               inner +
-              '<div class="totals">' + kv('Network fee', F().localMoney(feeLocal)) +
-                kv('You receive', F().localMoney(Math.max(0, startLocal - feeLocal)),
-                   'data-total="wAmount" data-fee="' + feeLocal + '"') + '</div>' +
+              '<div class="totals">' + kv('Available', F().money(API().account.balance())) +
+                kv('You receive', F().localMoney(startLocal),
+                   'data-total="wAmount" data-fee="0"') + '</div>' +
               (API().kyc.verified() ? '' :
                 '<div class="notice">' + I('shield', 17) +
                 '<span>Identity verification is required before your first payout.</span></div>') +

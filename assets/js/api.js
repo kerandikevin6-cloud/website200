@@ -177,6 +177,20 @@
     return fromDisplay(stakeChips().min);
   }
 
+  /* The smallest payout, in the viewer's own money and as a round local
+     figure rather than a converted dollar: a Kenyan reads "100.00 KES",
+     not "77.52". Chosen off the rate for the same reason the stake chips
+     are, so a currency we add later gets a sane floor without a second
+     table to keep in step. */
+  function minWithdrawDisplay() {
+    var r = display().rate;
+    if (r === 1) return 10;
+    if (r >= 1000) return 5000;
+    if (r >= 100) return 100;
+    return 50;
+  }
+  function minWithdrawUsd() { return fromDisplay(minWithdrawDisplay()); }
+
   /* Timezone is a decent offline guess and costs no request, so it seeds
      the value before the IP lookup comes back (and stands in for it if the
      lookup is blocked or offline). */
@@ -804,6 +818,8 @@
       apply: applyDisplay,
       toDisplay: toDisplay,
       fromDisplay: fromDisplay,
+      minWithdrawDisplay: minWithdrawDisplay,
+      minWithdrawUsd: minWithdrawUsd,
       stakeChips: stakeChips,
       minStakeUsd: minStakeUsd
     },
@@ -840,6 +856,18 @@
         S.verified = user.kyc === 'verified';
         S.kycStatus = user.kyc || 'unverified';
         S.demoMode = !!user.demoMode;
+
+        /* The country on the account beats anything guessed from an IP
+           lookup or a timezone, and it is the reason a Kenyan customer
+           could be shown shillings on the deposit sheet and dollars on
+           the withdrawal one: the deposit form falls back to Kenya, the
+           currency layer deliberately does not, and nothing ever told it
+           who this person is. */
+        if (user.country && COUNTRIES[user.country] && S.geo !== user.country) {
+          S.geo = user.country;
+          applyDisplay();
+          B.emit('geo', user.country);
+        }
 
         (accounts || []).forEach(function (a) {
           if (a.kind === 'real' || a.kind === 'demo') {

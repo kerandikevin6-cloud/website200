@@ -421,8 +421,10 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .chart-map{opacity:.04}
 }
+/* Lifted clear of the bottom edge. At 10px the last button sat on the
+   card's border and read as half a control. */
 .chart-tools{
-  position:absolute;left:10px;bottom:10px;display:flex;flex-direction:column;
+  position:absolute;left:10px;bottom:26px;display:flex;flex-direction:column;
   border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);
 }
 .chart-tools button{width:30px;height:30px;display:grid;place-items:center;color:var(--muted)}
@@ -952,8 +954,13 @@ footer a:hover{color:var(--text-2)}
 #chart{touch-action:none;cursor:crosshair}
 
 /* ---------------- digits ---------------- */
-.digit.picked{border-color:var(--accent);background:var(--accent-soft)}
-.digit.picked i{color:var(--accent)}
+/* Named `sel`, not `picked`: the document picker further down owns
+   `.picked` and gives it a 168px minimum height, which turned the chosen
+   barrier digit into a tall blue slab and stretched the whole row with
+   it. The three contract tabs now lay out identically; only the barrier
+   control differs, which is the only thing that should. */
+.digit.sel{border-color:var(--accent);background:var(--accent-soft)}
+.digit.sel i{color:var(--accent)}
 
 /* ---------------- panel rows ---------------- */
 .stack-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
