@@ -735,12 +735,29 @@
         var input = form.querySelector('#' + name) ||
                     form.querySelector('[name="' + name + '"]') ||
                     (name === 'email' ? form.querySelector('input[type=email]') : null) ||
-                    (name === 'password' ? form.querySelector('input[type=password]') : null);
+                    (name === 'password' ? passwordIn(form, '#password') : null);
         if (input) { markField(input, err.fields[name]); placed = true; }
       });
       if (placed) return;
     }
     window.NexToast(serverErrorText(err));
+  }
+
+  /* Find a password box by what it is for, rather than by its current
+     type. The reveal button flips type between "password" and "text", so
+     input[type=password] matches nothing the moment somebody taps the
+     eye to check what they typed: the form then submits an empty
+     password and the server rejects the body as malformed. A 400 on a
+     correct password, for exactly the people careful enough to look.
+
+     Used by the submit path, the client side check and the error
+     placer, so all three agree on which element is the password. */
+  function passwordIn(form, selector) {
+    return form.querySelector(selector) ||
+           form.querySelector('input[autocomplete=current-password]') ||
+           form.querySelector('input[autocomplete=new-password]') ||
+           form.querySelector('input[type=password]') ||
+           form.querySelector('input[type=text][data-password]');
   }
 
   async function submitAuthForm(f) {
@@ -765,7 +782,7 @@
         var whole = (first + ' ' + last).trim();
         var out = await window.NexNet.signup({
           email: email,
-          password: (f.querySelector('#newPassword') || {}).value || '',
+          password: (passwordIn(f, '#newPassword') || {}).value || '',
           name: whole || email.split('@')[0],
           phone: (f.querySelector('#sPhone') || {}).value || undefined
         });
@@ -783,7 +800,7 @@
           window.NexToast('Open this page from the link in your email.');
           return;
         }
-        await window.NexNet.resetPassword(token, (f.querySelector('#newPassword') || {}).value);
+        await window.NexNet.resetPassword(token, (passwordIn(f, '#newPassword') || {}).value || '');
         busy(f, false);
         window.NexToast('Password updated. Sign in with the new one.');
         setTimeout(function () { go('login'); }, 900);
@@ -794,7 +811,7 @@
         window.NexToast('If that address has an account, a reset link is on its way.');
         return;
       } else {
-        await window.NexNet.login(email, (f.querySelector('input[type=password]') || {}).value);
+        await window.NexNet.login(email, (passwordIn(f, '#password') || {}).value || '');
       }
 
       await hydrateSession();
@@ -877,15 +894,20 @@
         else markField(again, null);
       }
     } else {
-      var pw = f.querySelector('input[type=password]');
+      var pw = passwordIn(f, '#password');
       if (pw && !pw.value) fail(pw, 'Enter your password');
       else if (pw) markField(pw, null);
     }
 
-    var terms = f.querySelector('input[type=checkbox][required], .checkline input[type=checkbox]');
-    if (terms && !terms.checked) {
+    /* Only a box that actually is a consent. This used to match any
+       checkbox inside a .checkline, which on the sign-in page is "Keep
+       me signed in" — so anyone who left that unticked was told to
+       "accept the terms" and could not sign in at all. A convenience
+       toggle was gating the door. */
+    var consent = f.querySelector('input[type=checkbox][data-consent], input[type=checkbox][required]');
+    if (consent && !consent.checked) {
       window.NexToast('Accept the terms to continue');
-      if (!firstBad) firstBad = terms;
+      if (!firstBad) firstBad = consent;
     }
 
     var otp = f.querySelectorAll('.otp input');
