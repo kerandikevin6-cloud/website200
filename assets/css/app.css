@@ -29,37 +29,48 @@
      The page ground is off-white and panels are pure white, so cards,
      bars and dialogs sit *on* the page instead of dissolving into it.
      White-on-white was the whole problem with the old light mode. */
-  --bg:#F4F6F8;
+  /* The ground carries a little blue rather than being one step off
+     white. Every surface above it is then a real step up, which is what
+     was missing: a white card on a near-white page is not a card, and
+     the whole screen read as one unlit sheet. */
+  --bg:#E9EEF5;
   --surface:#FFFFFF;
-  --surface-2:#EDEFF3;
-  --surface-3:#E1E5EB;
-  --line:#D3D9E0;
-  --line-soft:#E2E6EB;
-  --text:#101519;
-  --text-2:#434A52;
-  --muted:#6B737C;
+  --surface-2:#F1F5FA;
+  --surface-3:#DFE7F1;
+  --line:#C6D2E0;
+  --line-soft:#DDE5EF;
+  --text:#0C1622;
+  --text-2:#3B4756;
+  --muted:#64717F;
 
-  /* brand + semantic */
-  --accent:#007FFA;
-  --accent-soft:#EAF3FF;
-  --pos:#0E8F58;
-  --pos-soft:#E7F4ED;
-  --neg:#C3352C;
-  --neg-soft:#FBEBEA;
+  /* brand + semantic
+     Deeper than the dark theme's. A blue that reads well on a dark
+     ground is thin and toy-like on a white one. */
+  --accent:#0A66D6;
+  --accent-soft:#E7F0FD;
+  --pos:#0B7A4B;
+  --pos-soft:#E3F2EA;
+  --neg:#B32B22;
+  --neg-soft:#FAE9E7;
   /* deep, saturated CTA colours - the buy / sell buttons only */
   --pos-deep:#046340;
   --neg-deep:#8C1710;
-  --warn:#B4690E;
-  --warn-soft:#FDF1E3;
+  --warn:#9C5A0B;
+  --warn-soft:#FBF0DF;
 
-  /* chart */
-  --chart-line:#101519;
-  --chart-grid:#E7EAEE;
-  --chart-fill:rgba(16,21,25,.05);
-  --chart-axis:#828A93;
-  --chart-bg:#FFFFFF;
+  /* chart
+     Its own ground, a shade off the white panels around it, so the
+     trace sits in a frame rather than floating on the page. The fill
+     under the line is accent-tinted, not grey: it is the one large area
+     of colour on the screen and it is what stops a light trading
+     terminal looking like a spreadsheet. */
+  --chart-line:#0C1622;
+  --chart-grid:#E2E9F2;
+  --chart-fill:rgba(10,102,214,.07);
+  --chart-axis:#7A8796;
+  --chart-bg:#F7FAFD;
 
-  --shadow:0 1px 2px rgba(16,24,34,.05), 0 10px 28px rgba(16,24,34,.07);
+  --shadow:0 1px 2px rgba(12,22,34,.06), 0 10px 28px rgba(12,22,34,.09);
   --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
   --r-xl:20px;
@@ -142,7 +153,7 @@
 
   --chart-line:#E6EDF5;
   --chart-grid:#17293C;
-  --chart-fill:rgba(230,237,245,.05);
+  --chart-fill:rgba(61,155,255,.09);
   --chart-axis:#6B809A;
   --chart-bg:#0A1420;
 
@@ -417,14 +428,18 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 /* A world map sits behind the trace, filled in the text colour at a very
    low alpha so it reads as a watermark in either theme and never competes
    with the price line. currentColor means one asset, both themes. */
+/* The map is a watermark, and at 2.5% it was one in name only: on a
+   phone, and against the accent-tinted fill under the trace, it simply
+   was not there. Enough to read as a map, not enough to compete with a
+   price line. */
 .chart-map{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:96%;height:auto;z-index:0;pointer-events:none;
-  color:var(--text);opacity:.025;
+  width:98%;height:auto;z-index:0;pointer-events:none;
+  color:#0C1622;opacity:.055;
 }
-:root[data-theme="dark"] .chart-map{opacity:.04}
+:root[data-theme="dark"] .chart-map{color:#9FC6F5;opacity:.1}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .chart-map{opacity:.04}
+  :root:not([data-theme="light"]) .chart-map{color:#9FC6F5;opacity:.1}
 }
 /* Lifted clear of the bottom edge. At 10px the last button sat on the
    card's border and read as half a control. */
@@ -478,10 +493,17 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .cell .v{font-family:var(--mono);font-size:15px}
 .cell .v small{color:var(--muted);font-size:11px;margin-right:2px}
 
+/* The one control on the terminal that is touched every trade, so it
+   gets the ground the plain inputs get and the accent on its figure. */
 .stake{
   display:flex;align-items:center;border:1px solid var(--line);
-  border-radius:0;background:var(--surface);overflow:hidden;
+  border-radius:0;background:var(--surface-2);overflow:hidden;
 }
+:root[data-theme="dark"] .stake{background:var(--surface)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .stake{background:var(--surface)}
+}
+.stake:focus-within{border-color:var(--accent)}
 .stake button{width:44px;height:44px;display:grid;place-items:center;color:var(--text-2)}
 .stake button:hover{background:var(--surface-2);color:var(--text)}
 .stake .f{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px}
@@ -610,12 +632,21 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 /* ---------------- forms / auth ---------------- */
 .field{display:flex;flex-direction:column;gap:7px}
 .field label{font-size:12px;color:var(--text-2);font-weight:500}
+/* A white input on a white card is an outline and nothing else. The
+   field carries its own ground, one step down from the card, so it reads
+   as somewhere to type before it is read at all. Dark mode keeps the
+   panel colour, where the contrast already exists. */
 .input{
   width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:var(--r);
-  background:var(--surface);color:var(--text);outline:none;
+  background:var(--surface-2);color:var(--text);outline:none;
+}
+:root[data-theme="dark"] .input{background:var(--surface)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .input{background:var(--surface)}
 }
 .input::placeholder{color:var(--muted)}
-.input:focus{border-color:var(--accent)}
+.input:focus{border-color:var(--accent);background:var(--surface)}
+:root[data-theme="dark"] .input:focus{background:var(--surface)}
 .input-wrap{position:relative;display:flex;align-items:center}
 .input-wrap .input{padding-right:44px}
 .input-wrap button{position:absolute;right:6px;width:34px;height:34px;display:grid;place-items:center;color:var(--muted);border-radius:var(--r-sm)}
@@ -1328,7 +1359,11 @@ body.locked{overflow:hidden}
    the local number. */
 .phone{
   display:flex;align-items:stretch;border:1px solid var(--line);
-  background:var(--surface);overflow:hidden;
+  background:var(--surface-2);overflow:hidden;
+}
+:root[data-theme="dark"] .phone{background:var(--surface)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .phone{background:var(--surface)}
 }
 .phone:focus-within{border-color:var(--accent)}
 .phone-cc{

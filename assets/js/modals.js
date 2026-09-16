@@ -33,12 +33,21 @@
      never part of the value, so the box itself starts empty and takes
      nothing but the local number. */
   function phoneField(id, label, hint) {
+    var cc = API().geo.code();
     var c = API().geo.country();
+    /* The dialling code comes from the full list, so a customer whose
+       country we do not collect deposits from still sees their own code
+       rather than Kenya's. The sample format only exists for the
+       countries we have one for. */
+    var world = window.NexCountries && window.NexCountries.get(cc);
+    var dial = (world && world.dial) || c.dial;
     return '<div class="field"><label for="' + id + '">' + label + '</label>' +
       '<div class="phone">' +
         '<span class="phone-cc" data-phone-cc>' +
-          '<i class="flag">' + window.NexFlag(API().geo.code()) + '</i>' +
-          '<b class="num">+' + c.dial + '</b>' +
+          '<i class="flag">' +
+            (window.NexCountries ? window.NexCountries.flag(cc, 19) : window.NexFlag(cc)) +
+          '</i>' +
+          '<b class="num">+' + dial + '</b>' +
         '</span>' +
         '<input class="input num phone-input" id="' + id + '" type="tel" inputmode="numeric" ' +
           'autocomplete="tel-national" placeholder="' + c.sample + '">' +

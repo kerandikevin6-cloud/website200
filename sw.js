@@ -5,13 +5,13 @@
    served forever and a fix to app.css never reached the page. Network-first
    costs nothing on a fast connection, still works fully offline, and can
    never pin the UI to a stale build. */
-var CACHE = 'nexas-v14';
+var CACHE = 'nexas-v15';
 var SHELL = [
   'landing.html', 'index.html', 'ai.html', 'markets.html', 'positions.html', 'learn.html', 'responsible.html', 'account.html',
   'chat.html', 'history.html', 'copy.html', 'terms.html', 'privacy.html', 'risk.html',
   'security.html', 'complaints.html', 'login.html', 'signup.html', 'forgot-password.html', 'reset-password.html',
   'assets/css/app.css',
-  'assets/js/config.js', 'assets/js/net.js', 'assets/js/format.js', 'assets/js/api.js', 'assets/js/chart.js',
+  'assets/js/config.js', 'assets/js/countries.js', 'assets/js/net.js', 'assets/js/format.js', 'assets/js/api.js', 'assets/js/chart.js',
   'assets/js/modals.js', 'assets/js/trade.js', 'assets/js/positions.js',
   'assets/js/ai.js', 'assets/js/app.js',
   'assets/mpesa.png', 'assets/cards.png', 'assets/cards-ink.png',

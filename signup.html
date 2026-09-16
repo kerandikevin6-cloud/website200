@@ -71,7 +71,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
           <div class="field">
             <label for="sPhone">Phone number</label>
             <div class="phone" id="sPhoneRow"></div>
-            <span class="hint">The number your M-Pesa is registered to. Payouts go here.</span>
+            <span class="hint">We use this to reach you about a deposit or a payout.</span>
           </div>
           <div class="field">
             <label for="newPassword">Password</label>
@@ -82,6 +82,13 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
               </button>
             </div>
             <div class="meter"><i></i><i></i><i></i><i></i></div>
+          </div>
+          <!-- Typed twice, because the first one is hidden while it is
+               typed and a typo in it locks somebody out of an account
+               they have just funded. -->
+          <div class="field">
+            <label for="confirmNew">Confirm password</label>
+            <input class="input" id="confirmNew" type="password" autocomplete="new-password" placeholder="Repeat your password">
           </div>
           <label class="checkline">
             <input type="checkbox" id="terms" data-consent required>
@@ -108,6 +115,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
   </main>
 </div>
 <script src="assets/js/config.js"></script>
+<script src="assets/js/countries.js"></script>
 <script src="assets/js/net.js"></script>
 <script src="assets/js/format.js"></script>
 <script src="assets/js/api.js"></script>
@@ -116,33 +124,34 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <script>
 (function () {
   "use strict";
-  /* A country that can be changed, not a guess that cannot. The flag and
-     the dialling code are drawn by us; the list itself is a real <select>
-     sitting invisibly on top, so a phone opens its own picker and the
-     keyboard reaches it for nothing. */
-  function init() {
-    var API = window.NexAPI;
-    var row = document.getElementById('sPhoneRow');
-    if (!row || !API) return;
+  /* Every dialling code there is, not the seven countries we happen to
+     take deposits from. Those are a payments table and this is a phone
+     field; conflating them meant a customer in Lagos or London could not
+     enter their own number.
 
-    var countries = API.geo.countries;
-    var codes = Object.keys(countries);
+     The flag and the code are drawn by us; the list itself is a real
+     <select> sitting invisibly on top, so a phone opens its own picker
+     and the keyboard reaches it for nothing. */
+  function init() {
+    var API = window.NexAPI, C = window.NexCountries;
+    var row = document.getElementById('sPhoneRow');
+    if (!row || !API || !C) return;
+
     var cc = API.geo.code();
-    if (codes.indexOf(cc) === -1) cc = codes[0];
+    if (!C.get(cc)) cc = 'KE';
 
     row.innerHTML =
       '<span class="phone-cc" id="sCC">' +
         '<i class="flag"></i><b class="num"></b>' +
         window.NexIcon('chevD', 12) +
         '<select id="sCountry" aria-label="Country">' +
-          codes.map(function (c) {
-            return '<option value="' + c + '">' + countries[c].name +
-              ' (+' + countries[c].dial + ')</option>';
+          C.all.map(function (c) {
+            return '<option value="' + c.cc + '">' + c.name + ' (+' + c.dial + ')</option>';
           }).join('') +
         '</select>' +
       '</span>' +
       '<input class="input num phone-input" id="sPhone" type="tel" inputmode="numeric" ' +
-        'autocomplete="tel-national">';
+        'autocomplete="tel-national" placeholder="Phone number">';
 
     var sel = document.getElementById('sCountry');
     var flag = row.querySelector('.flag');
@@ -150,14 +159,14 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
     var input = document.getElementById('sPhone');
 
     function paint() {
-      var c = countries[sel.value];
-      flag.innerHTML = window.NexFlag(sel.value) || '';
+      var c = C.get(sel.value);
+      flag.innerHTML = C.flag(sel.value, 20);
       dial.textContent = '+' + c.dial;
-      input.placeholder = c.sample;
-      /* The account's country follows the picker. It decides the
-         currency on every screen after this one, so getting it from a
-         field the person chose beats getting it from an IP lookup. */
-      input.setAttribute('data-country', sel.value);
+      /* A local format to copy, for the countries we have one for.
+         Everyone else gets a plain prompt rather than a Kenyan number
+         held up as the example. */
+      var pay = API.geo.countries[sel.value];
+      input.placeholder = pay ? pay.sample : 'Phone number';
     }
 
     sel.value = cc;
