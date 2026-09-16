@@ -106,6 +106,20 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     function skeleton() {
       return '<div class="sk sk-list"></div>';
     }
+
+    /* Where this list came from, said out loud. Without it there is no
+       way to tell a history kept on the server from whatever this
+       browser happens to have in localStorage, and the two look
+       identical: somebody sees trades from a week of testing and
+       reasonably concludes the page is showing mock data. */
+    function sourceNote() {
+      if (live) return '';
+      return '<div class="hist-source">' +
+        '<span>Practice history, kept on this device. ' +
+        'Sign in to see the trades recorded on your account.</span>' +
+        '<button class="btn-mini" id="histClear">Clear</button>' +
+      '</div>';
+    }
     function empty() {
       return '<div class="empty" style="padding:56px 20px">' +
         window.NexIcon('clock', 24) +
@@ -122,9 +136,9 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     }
 
     function render() {
-      if (!rows.length) { list.innerHTML = empty(); return; }
+      if (!rows.length) { list.innerHTML = sourceNote() + empty(); wireSource(); return; }
 
-      var out = '', lastDay = null;
+      var out = sourceNote(), lastDay = null;
       rows.forEach(function (r) {
         var k = dayKey(r.at);
         if (k !== lastDay) {
@@ -149,6 +163,21 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 
       var more = document.getElementById('histMore');
       if (more) more.addEventListener('click', function () { load(); });
+      wireSource();
+    }
+
+    /* Clearing is local only, and says so: it removes what this browser
+       remembers and touches nothing on the server. */
+    function wireSource() {
+      var btn = document.getElementById('histClear');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        if (!window.confirm('Remove the practice history kept on this device? ' +
+            'Nothing on your account is affected.')) return;
+        API.contracts.clearClosed();
+        renderLocal();
+        window.NexToast('Practice history cleared on this device');
+      });
     }
 
     function renderLocal() {

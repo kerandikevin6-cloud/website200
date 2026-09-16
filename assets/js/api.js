@@ -681,6 +681,13 @@
       buy: buy, sell: sell, validate: validate, label: label,
       payoutFor: payoutFor, payoutRate: payoutRate,
       open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
+      /* Drop settled contracts from this browser. Open ones stay: they
+         are still running, and forgetting one loses the stake. */
+      clearClosed: function () {
+        S.contracts = S.contracts.filter(function (c) { return c.status === 'open'; });
+        persist();
+        B.emit('contracts', { reason: 'cleared' });
+      },
       closed: function () { return S.contracts.filter(function (c) { return c.status !== 'open'; }); },
       all: function () { return S.contracts.slice(); },
       get: function (id) { return S.contracts.filter(function (c) { return c.id === id; })[0]; },

@@ -2137,3 +2137,12 @@ body[data-page="learn"] main.lrn-flow{background:var(--bg)}
 body.no-tabs .lrn{padding-bottom:var(--lsec-y)}
 
 .hist-more{display:flex;justify-content:center;padding:18px 14px 6px}
+
+/* Where a list came from, when there is more than one possible answer. */
+.hist-source{
+  display:flex;align-items:center;gap:12px;
+  margin:14px 14px 18px;padding:11px 12px;
+  background:var(--surface);border:1px solid var(--line-soft);
+}
+.hist-source span{flex:1;min-width:0;font-size:11.5px;color:var(--muted);line-height:1.5}
+.hist-source .btn-mini{flex:none}
