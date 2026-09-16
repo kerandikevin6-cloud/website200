@@ -367,6 +367,60 @@
       }
     },
 
+    /* ---------- verification ----------
+       The document goes straight from the browser into a private
+       Supabase Storage bucket, using the customer's own token, into a
+       folder named after their user id. It never passes through our API,
+       so a photo of somebody's electricity bill never sits in a request
+       log or an error report. Our API is then told the path, checks it
+       belongs to the caller, and records the submission. */
+    kycStatus: async function () {
+      return call('/kyc');
+    },
+
+    submitProofOfAddress: async function (file, userId) {
+      var cfg = window.NEXAS_CONFIG || {};
+      if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+        throw ApiError('Uploads are not configured on this site.', 'no_storage');
+      }
+
+      var t = tokens();
+      if (!t || !t.accessToken) throw ApiError('Sign in again to upload.', 'unauthorized');
+
+      /* The name is ours, not the file's. A customer's filename can
+         contain anything, including a path, and the folder is what the
+         storage policy checks. */
+      var dot = (file.name || '').lastIndexOf('.');
+      var ext = dot > -1 ? file.name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : 'jpg';
+      var path = userId + '/proof-of-address-' + Date.now() + '.' + (ext || 'jpg');
+
+      var res;
+      try {
+        res = await fetch(cfg.supabaseUrl + '/storage/v1/object/kyc/' + path, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + t.accessToken,
+            apikey: cfg.supabaseKey,
+            'Content-Type': file.type || 'application/octet-stream',
+            'x-upsert': 'false'
+          },
+          body: file
+        });
+      } catch (e) {
+        throw ApiError('Could not upload the document. Check your connection.', 'offline');
+      }
+
+      if (!res.ok) {
+        var detail = await res.json().catch(function () { return {}; });
+        throw ApiError(detail.message || 'That file could not be uploaded.', 'upload_failed');
+      }
+
+      return call('/kyc', {
+        method: 'POST',
+        body: { path: path, mimeType: file.type || undefined, byteSize: file.size || undefined }
+      });
+    },
+
     /* ---------- trade history ----------
        The server keeps the record so it survives this browser. It does
        not decide it: contracts still settle client side, so these are

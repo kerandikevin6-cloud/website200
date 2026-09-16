@@ -271,6 +271,11 @@
     balances: saved.balances || { real: 0, demo: 10000 },
     currency: 'USD',
     verified: !!saved.verified,
+    /* The four states the server actually has. `verified` stays as the
+       boolean everything already reads; this is what tells "not started"
+       apart from "waiting on us", which a customer needs and a boolean
+       cannot express. */
+    kycStatus: saved.kycStatus || (saved.verified ? 'verified' : 'unverified'),
     consent: !!saved.consent,
     riskAck: !!saved.riskAck,
     contracts: saved.contracts || [],
@@ -282,7 +287,7 @@
     try {
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
-        verified: S.verified, consent: S.consent, riskAck: S.riskAck,
+        verified: S.verified, kycStatus: S.kycStatus, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
         auto: S.auto
@@ -833,6 +838,7 @@
           at: Date.now()
         };
         S.verified = user.kyc === 'verified';
+        S.kycStatus = user.kyc || 'unverified';
         S.demoMode = !!user.demoMode;
 
         (accounts || []).forEach(function (a) {
@@ -850,11 +856,33 @@
 
     kyc: {
       verified: function () { return S.verified; },
+      status: function () { return S.kycStatus || 'unverified'; },
       docs: function () { return docs; },
       hasDoc: function (name) { return !!docs[name]; },
       setDoc: function (name, file) { docs[name] = file; B.emit('kyc', false); },
       clearDoc: function (name) { delete docs[name]; B.emit('kyc', false); },
-      submit: function () { S.verified = true; persist(); B.emit('kyc', true); }
+
+      /* Local only, and only when there is no server to ask. With a
+         backend configured the browser must never call itself verified:
+         that was the old flow, and it meant a withdrawal was gated on a
+         value the customer's own page had set. app.js uploads the
+         document and the status comes back from the server. */
+      submit: function () {
+        S.kycStatus = 'pending';
+        persist();
+        B.emit('kyc', false);
+      },
+      markPending: function () {
+        S.kycStatus = 'pending';
+        persist();
+        B.emit('kyc', false);
+      },
+      simulateApproval: function () {
+        S.verified = true;
+        S.kycStatus = 'verified';
+        persist();
+        B.emit('kyc', true);
+      }
     },
 
     connection: {

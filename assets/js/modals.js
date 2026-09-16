@@ -384,26 +384,55 @@
     verify: {
       steps: {
         list: {
-          title: 'Verify identity',
+          title: 'Verify your account',
           sub: 'Reviewed within an hour. Needed before your first withdrawal.',
           body: function () {
-            if (API().kyc.verified()) {
-              return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
-                '<b>Identity verified</b><span>Withdrawals are open on this account.</span></div>';
+            /* What to send, kept in one place: the rejected branch shows
+               the same list under a notice rather than a second copy of
+               it that can drift. */
+            function checklist() {
+              return '<div class="modal-form"><div class="list" style="margin:0">' +
+                '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
+                  '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
+                  '<span class="badge ok">Done</span></div>' +
+                '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
+                  '<span class="ico">' + I('card', 18) + '</span>' +
+                  '<span class="t"><b>Proof of address</b>' +
+                    '<span>Bill or statement, last 3 months</span></span>' +
+                  '<span class="badge warn">Required</span></button>' +
+                /* Government ID is listed but switched off rather than
+                   hidden. It comes back when payouts are large enough to
+                   require it, and an option that vanishes and returns
+                   looks like the rules changed. */
+                '<div class="row is-off">' +
+                  '<span class="ico">' + I('idcard', 18) + '</span>' +
+                  '<span class="t"><b>Government ID</b><span>Not needed yet</span></span>' +
+                  '<span class="badge">Coming soon</span></div>' +
+              '</div></div>';
             }
-            return '<div class="modal-form"><div class="list" style="margin:0">' +
-              '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
-                '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
-                '<span class="badge ok">Done</span></div>' +
-              '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
-                '<span class="ico">' + I('idcard', 18) + '</span>' +
-                '<span class="t"><b>Government ID</b><span>Passport, national ID or licence</span></span>' +
-                '<span class="badge warn">Required</span></button>' +
-              '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
-                '<span class="ico">' + I('card', 18) + '</span>' +
-                '<span class="t"><b>Proof of address</b><span>Bill or statement, last 3 months</span></span>' +
-                '<span class="badge warn">Required</span></button>' +
-            '</div></div>';
+
+            var state = API().kyc.status();
+
+            if (state === 'verified') {
+              return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
+                '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>';
+            }
+
+            /* Under review is a different answer from not started, and a
+               customer who cannot tell them apart sends it again. */
+            if (state === 'pending') {
+              return '<div class="empty" style="padding:26px 10px">' + I('clock', 24) +
+                '<b>Under review</b><span>Your document is with us. Most are checked ' +
+                'within the hour, and the answer appears here.</span></div>';
+            }
+
+            if (state === 'rejected') {
+              return '<div class="modal-form"><div class="notice">' + I('alert', 17) +
+                '<span>That document was not accepted. Send another and we will look ' +
+                'again.</span></div></div>' + checklist();
+            }
+
+            return checklist();
           }
         },
         upload: {
@@ -818,10 +847,22 @@
           title: 'Verification required',
           sub: 'A one-time check before the first payout leaves your account.',
           body: function () {
+            /* Somebody who already sent a document is waiting on us, not
+               on themselves, and telling them to start over is how a
+               queue gets a second copy of the same bill. */
+            if (API().kyc.status() === 'pending') {
+              return '<div class="modal-form">' +
+                '<div class="notice">' + I('clock', 17) +
+                  '<span>Your document is with us. Most are checked within the hour, ' +
+                  'and your withdrawal opens the moment it clears.</span></div>' +
+                '<button class="btn btn-ghost" type="button" data-close>Close</button>' +
+              '</div>';
+            }
             return '<div class="modal-form">' +
               '<div class="notice">' + I('shield', 17) +
                 '<span>Your funds stay in your account. Verification usually clears within the hour.</span></div>' +
-              '<button class="btn btn-fill" type="button" data-open="verify">Verify identity</button>' +
+              '<button class="btn btn-fill" type="button" data-open="verify">' +
+                (API().kyc.status() === 'rejected' ? 'Send another document' : 'Verify my account') + '</button>' +
               '<button class="btn btn-ghost" type="button" data-close>Later</button>' +
             '</div>';
           }

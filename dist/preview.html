@@ -2199,6 +2199,11 @@ html[data-oauth]::after{
   .demo-badge{margin-left:6px;padding:3px 6px;font-size:9px}
 }
 
+/* A row that is listed but not available yet. Dimmed rather than hidden:
+   an option that vanishes and comes back looks like the rules changed. */
+.row.is-off{opacity:.45;pointer-events:none}
+.row.is-off .badge{color:var(--muted);border-color:var(--line)}
+
 </style>
 
 <div class="app" id="app"></div>
@@ -2600,6 +2605,60 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       } catch (err) {
         return { ok: false, message: err.message };
       }
+    },
+
+    /* ---------- verification ----------
+       The document goes straight from the browser into a private
+       Supabase Storage bucket, using the customer's own token, into a
+       folder named after their user id. It never passes through our API,
+       so a photo of somebody's electricity bill never sits in a request
+       log or an error report. Our API is then told the path, checks it
+       belongs to the caller, and records the submission. */
+    kycStatus: async function () {
+      return call('/kyc');
+    },
+
+    submitProofOfAddress: async function (file, userId) {
+      var cfg = window.NEXAS_CONFIG || {};
+      if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+        throw ApiError('Uploads are not configured on this site.', 'no_storage');
+      }
+
+      var t = tokens();
+      if (!t || !t.accessToken) throw ApiError('Sign in again to upload.', 'unauthorized');
+
+      /* The name is ours, not the file's. A customer's filename can
+         contain anything, including a path, and the folder is what the
+         storage policy checks. */
+      var dot = (file.name || '').lastIndexOf('.');
+      var ext = dot > -1 ? file.name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : 'jpg';
+      var path = userId + '/proof-of-address-' + Date.now() + '.' + (ext || 'jpg');
+
+      var res;
+      try {
+        res = await fetch(cfg.supabaseUrl + '/storage/v1/object/kyc/' + path, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + t.accessToken,
+            apikey: cfg.supabaseKey,
+            'Content-Type': file.type || 'application/octet-stream',
+            'x-upsert': 'false'
+          },
+          body: file
+        });
+      } catch (e) {
+        throw ApiError('Could not upload the document. Check your connection.', 'offline');
+      }
+
+      if (!res.ok) {
+        var detail = await res.json().catch(function () { return {}; });
+        throw ApiError(detail.message || 'That file could not be uploaded.', 'upload_failed');
+      }
+
+      return call('/kyc', {
+        method: 'POST',
+        body: { path: path, mimeType: file.type || undefined, byteSize: file.size || undefined }
+      });
     },
 
     /* ---------- trade history ----------
@@ -3075,6 +3134,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     balances: saved.balances || { real: 0, demo: 10000 },
     currency: 'USD',
     verified: !!saved.verified,
+    /* The four states the server actually has. `verified` stays as the
+       boolean everything already reads; this is what tells "not started"
+       apart from "waiting on us", which a customer needs and a boolean
+       cannot express. */
+    kycStatus: saved.kycStatus || (saved.verified ? 'verified' : 'unverified'),
     consent: !!saved.consent,
     riskAck: !!saved.riskAck,
     contracts: saved.contracts || [],
@@ -3086,7 +3150,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     try {
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
-        verified: S.verified, consent: S.consent, riskAck: S.riskAck,
+        verified: S.verified, kycStatus: S.kycStatus, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
         auto: S.auto
@@ -3637,6 +3701,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           at: Date.now()
         };
         S.verified = user.kyc === 'verified';
+        S.kycStatus = user.kyc || 'unverified';
         S.demoMode = !!user.demoMode;
 
         (accounts || []).forEach(function (a) {
@@ -3654,11 +3719,33 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     kyc: {
       verified: function () { return S.verified; },
+      status: function () { return S.kycStatus || 'unverified'; },
       docs: function () { return docs; },
       hasDoc: function (name) { return !!docs[name]; },
       setDoc: function (name, file) { docs[name] = file; B.emit('kyc', false); },
       clearDoc: function (name) { delete docs[name]; B.emit('kyc', false); },
-      submit: function () { S.verified = true; persist(); B.emit('kyc', true); }
+
+      /* Local only, and only when there is no server to ask. With a
+         backend configured the browser must never call itself verified:
+         that was the old flow, and it meant a withdrawal was gated on a
+         value the customer's own page had set. app.js uploads the
+         document and the status comes back from the server. */
+      submit: function () {
+        S.kycStatus = 'pending';
+        persist();
+        B.emit('kyc', false);
+      },
+      markPending: function () {
+        S.kycStatus = 'pending';
+        persist();
+        B.emit('kyc', false);
+      },
+      simulateApproval: function () {
+        S.verified = true;
+        S.kycStatus = 'verified';
+        persist();
+        B.emit('kyc', true);
+      }
     },
 
     connection: {
@@ -4373,26 +4460,55 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     verify: {
       steps: {
         list: {
-          title: 'Verify identity',
+          title: 'Verify your account',
           sub: 'Reviewed within an hour. Needed before your first withdrawal.',
           body: function () {
-            if (API().kyc.verified()) {
-              return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
-                '<b>Identity verified</b><span>Withdrawals are open on this account.</span></div>';
+            /* What to send, kept in one place: the rejected branch shows
+               the same list under a notice rather than a second copy of
+               it that can drift. */
+            function checklist() {
+              return '<div class="modal-form"><div class="list" style="margin:0">' +
+                '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
+                  '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
+                  '<span class="badge ok">Done</span></div>' +
+                '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
+                  '<span class="ico">' + I('card', 18) + '</span>' +
+                  '<span class="t"><b>Proof of address</b>' +
+                    '<span>Bill or statement, last 3 months</span></span>' +
+                  '<span class="badge warn">Required</span></button>' +
+                /* Government ID is listed but switched off rather than
+                   hidden. It comes back when payouts are large enough to
+                   require it, and an option that vanishes and returns
+                   looks like the rules changed. */
+                '<div class="row is-off">' +
+                  '<span class="ico">' + I('idcard', 18) + '</span>' +
+                  '<span class="t"><b>Government ID</b><span>Not needed yet</span></span>' +
+                  '<span class="badge">Coming soon</span></div>' +
+              '</div></div>';
             }
-            return '<div class="modal-form"><div class="list" style="margin:0">' +
-              '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
-                '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
-                '<span class="badge ok">Done</span></div>' +
-              '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
-                '<span class="ico">' + I('idcard', 18) + '</span>' +
-                '<span class="t"><b>Government ID</b><span>Passport, national ID or licence</span></span>' +
-                '<span class="badge warn">Required</span></button>' +
-              '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
-                '<span class="ico">' + I('card', 18) + '</span>' +
-                '<span class="t"><b>Proof of address</b><span>Bill or statement, last 3 months</span></span>' +
-                '<span class="badge warn">Required</span></button>' +
-            '</div></div>';
+
+            var state = API().kyc.status();
+
+            if (state === 'verified') {
+              return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
+                '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>';
+            }
+
+            /* Under review is a different answer from not started, and a
+               customer who cannot tell them apart sends it again. */
+            if (state === 'pending') {
+              return '<div class="empty" style="padding:26px 10px">' + I('clock', 24) +
+                '<b>Under review</b><span>Your document is with us. Most are checked ' +
+                'within the hour, and the answer appears here.</span></div>';
+            }
+
+            if (state === 'rejected') {
+              return '<div class="modal-form"><div class="notice">' + I('alert', 17) +
+                '<span>That document was not accepted. Send another and we will look ' +
+                'again.</span></div></div>' + checklist();
+            }
+
+            return checklist();
           }
         },
         upload: {
@@ -4807,10 +4923,22 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           title: 'Verification required',
           sub: 'A one-time check before the first payout leaves your account.',
           body: function () {
+            /* Somebody who already sent a document is waiting on us, not
+               on themselves, and telling them to start over is how a
+               queue gets a second copy of the same bill. */
+            if (API().kyc.status() === 'pending') {
+              return '<div class="modal-form">' +
+                '<div class="notice">' + I('clock', 17) +
+                  '<span>Your document is with us. Most are checked within the hour, ' +
+                  'and your withdrawal opens the moment it clears.</span></div>' +
+                '<button class="btn btn-ghost" type="button" data-close>Close</button>' +
+              '</div>';
+            }
             return '<div class="modal-form">' +
               '<div class="notice">' + I('shield', 17) +
                 '<span>Your funds stay in your account. Verification usually clears within the hour.</span></div>' +
-              '<button class="btn btn-fill" type="button" data-open="verify">Verify identity</button>' +
+              '<button class="btn btn-fill" type="button" data-open="verify">' +
+                (API().kyc.status() === 'rejected' ? 'Send another document' : 'Verify my account') + '</button>' +
               '<button class="btn btn-ghost" type="button" data-close>Later</button>' +
             '</div>';
           }
@@ -7420,7 +7548,24 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       return;
     }
     if (name === 'withdraw') {
-      if (!API.kyc.verified()) { gotoStep('kyc'); return; }
+      /* Ask the server before refusing. An approval made five minutes
+         ago must not stay invisible until the next page load: somebody
+         who was told to verify, verified, and came straight back would
+         be told to verify again, which is the moment they stop
+         believing the queue moves at all. */
+      if (!API.kyc.verified()) {
+        if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
+          if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
+          hydrateSession().then(function () {
+            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (API.kyc.verified()) runAction('withdraw', node);
+            else gotoStep('kyc');
+          });
+          return;
+        }
+        gotoStep('kyc');
+        return;
+      }
       clearErrors();
       /* Typed in the viewer's money; every check below is in USD, so
          it converts once here and not again anywhere after. */
@@ -7487,8 +7632,40 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }
     if (name === 'verify') {
       if (node && node.disabled) return;
-      API.kyc.submit();
-      gotoStep('done');
+
+      /* No backend: the old local behaviour, which is a simulation and
+         is the only place it is still honest. */
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        API.kyc.simulateApproval();
+        gotoStep('done');
+        return;
+      }
+
+      var docs = API.kyc.docs();
+      var file = docs['Proof of address'];
+      if (!file) {
+        window.NexToast('Choose the document first.');
+        return;
+      }
+
+      var session = API.session.get() || {};
+      if (!session.id) {
+        window.NexToast('Sign in again to send this.');
+        return;
+      }
+
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
+
+      window.NexNet.submitProofOfAddress(file, session.id).then(function () {
+        /* Pending, not verified. The server decides, and the difference
+           is the whole reason this route exists. */
+        API.kyc.markPending();
+        API.kyc.clearDoc('Proof of address');
+        gotoStep('done');
+      }).catch(function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Submit for review'; }
+        window.NexToast(err.message);
+      });
       return;
     }
     if (name === 'recheckDeposit') {

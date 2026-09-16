@@ -1429,7 +1429,24 @@
       return;
     }
     if (name === 'withdraw') {
-      if (!API.kyc.verified()) { gotoStep('kyc'); return; }
+      /* Ask the server before refusing. An approval made five minutes
+         ago must not stay invisible until the next page load: somebody
+         who was told to verify, verified, and came straight back would
+         be told to verify again, which is the moment they stop
+         believing the queue moves at all. */
+      if (!API.kyc.verified()) {
+        if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
+          if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
+          hydrateSession().then(function () {
+            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (API.kyc.verified()) runAction('withdraw', node);
+            else gotoStep('kyc');
+          });
+          return;
+        }
+        gotoStep('kyc');
+        return;
+      }
       clearErrors();
       /* Typed in the viewer's money; every check below is in USD, so
          it converts once here and not again anywhere after. */
@@ -1496,8 +1513,40 @@
     }
     if (name === 'verify') {
       if (node && node.disabled) return;
-      API.kyc.submit();
-      gotoStep('done');
+
+      /* No backend: the old local behaviour, which is a simulation and
+         is the only place it is still honest. */
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        API.kyc.simulateApproval();
+        gotoStep('done');
+        return;
+      }
+
+      var docs = API.kyc.docs();
+      var file = docs['Proof of address'];
+      if (!file) {
+        window.NexToast('Choose the document first.');
+        return;
+      }
+
+      var session = API.session.get() || {};
+      if (!session.id) {
+        window.NexToast('Sign in again to send this.');
+        return;
+      }
+
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
+
+      window.NexNet.submitProofOfAddress(file, session.id).then(function () {
+        /* Pending, not verified. The server decides, and the difference
+           is the whole reason this route exists. */
+        API.kyc.markPending();
+        API.kyc.clearDoc('Proof of address');
+        gotoStep('done');
+      }).catch(function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Submit for review'; }
+        window.NexToast(err.message);
+      });
       return;
     }
     if (name === 'recheckDeposit') {
