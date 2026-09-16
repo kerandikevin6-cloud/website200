@@ -71,6 +71,13 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     var cursor = null, loading = false, exhausted = false;
     var rows = [];
 
+    /* Which account's history this is. Practice trades are recorded to
+       the server like any other, so without this filter a real account
+       shows demo contracts, including ones synced from a browser used
+       for testing months ago. They are genuine trades, and they belong
+       under the account they were placed on and nowhere else. */
+    function accountKind() { return API.account.kind() === 'real' ? 'real' : 'demo'; }
+
     function dayKey(ts) {
       var d = new Date(ts);
       return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
@@ -113,7 +120,13 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
        identical: somebody sees trades from a week of testing and
        reasonably concludes the page is showing mock data. */
     function sourceNote() {
-      if (live) return '';
+      var demo = accountKind() === 'demo';
+      if (live) {
+        return demo
+          ? '<div class="hist-source"><span>Practice account. ' +
+            'Switch to the real account to see its history.</span></div>'
+          : '';
+      }
       return '<div class="hist-source">' +
         '<span>Practice history, kept on this device. ' +
         'Sign in to see the trades recorded on your account.</span>' +
@@ -181,7 +194,12 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
     }
 
     function renderLocal() {
-      rows = API.contracts.closed().slice().sort(function (a, b) {
+      var kind = accountKind();
+      rows = API.contracts.closed().filter(function (c) {
+        /* Contracts written before the account was recorded on them are
+           practice by definition: real trading needed an account. */
+        return (c.account === 'real' ? 'real' : 'demo') === kind;
+      }).sort(function (a, b) {
         return (b.exitTime || b.entryTime) - (a.exitTime || a.entryTime);
       }).map(fromLocal);
       exhausted = true;
@@ -195,7 +213,9 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
       else render();
 
       try {
-        var out = await window.NexNet.history({ before: cursor, limit: 50 });
+        var out = await window.NexNet.history({
+          account: accountKind(), before: cursor, limit: 50
+        });
         rows = rows.concat(out.trades.map(fromServer));
         cursor = out.nextBefore;
         exhausted = !cursor;
@@ -212,14 +232,28 @@ catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
       }
     }
 
+    /* Switching account changes which history this is, so the page has
+       to fetch again rather than keep showing the other one. */
+    function reload() {
+      rows = [];
+      cursor = null;
+      exhausted = false;
+      loading = false;
+      if (live) load(); else renderLocal();
+    }
+
     API.ready(function () {
       document.body.classList.remove('loading');
-      if (live) {
-        load();
-      } else {
-        renderLocal();
-        API.on('contracts', renderLocal);
-      }
+      reload();
+      if (!live) API.on('contracts', renderLocal);
+
+      var lastKind = accountKind();
+      API.on('balance', function () {
+        var kind = accountKind();
+        if (kind === lastKind) return;
+        lastKind = kind;
+        reload();
+      });
     });
   }
 
