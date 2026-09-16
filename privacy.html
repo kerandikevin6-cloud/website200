@@ -10,6 +10,13 @@
    and remove it. */
 try{document.documentElement.setAttribute('data-theme',localStorage.getItem('nexas.theme')||'dark')}
 catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
+<script>/* Coming back from Google, the session is in the URL and the page under
+   it is the sign-in form the customer has just finished with. Marked here,
+   in the head, because app.js runs at the end of the body: by the time it
+   could hide the form the browser has already painted it, and a flash of
+   "sign up" after signing up is the app appearing to have failed. */
+try{if(/[?#].*(access_token|[?&]code=|error_code|error_description|[?&#]error=)/.test(location.href))
+document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <title>Privacy · Novi</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Novi">

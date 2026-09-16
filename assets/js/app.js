@@ -670,6 +670,10 @@
   }
 
   /* ---------- sign-in transition ---------- */
+  /* Pass a destination and it shows, waits, and goes there. Pass none
+     and it simply stays up until the caller takes it down, which is what
+     an OAuth return needs: the wait is a network round trip of unknown
+     length, not a fixed 1.6 seconds. */
   function splash(message, to) {
     var el = document.createElement('div');
     el.className = 'splash';
@@ -679,9 +683,13 @@
       '<div class="splash-msg" role="status">' + message + '</div></div>';
     document.body.appendChild(el);
     requestAnimationFrame(function () { el.classList.add('open'); });
-    setTimeout(function () {
-      if (BUNDLE) { go(to); el.remove(); } else location.href = to;
-    }, 1600);
+
+    if (to) {
+      setTimeout(function () {
+        if (BUNDLE) { go(to); el.remove(); } else location.href = to;
+      }, 1600);
+    }
+    return el;
   }
   window.NexSplash = splash;
 
@@ -1738,27 +1746,45 @@
      Runs before the guard, so the terminal does not bounce a person who
      is, as of this moment, signed in. */
   async function resumeOAuth() {
-    if (!(window.NexNet && window.NexNet.live)) return false;
+    if (!(window.NexNet && window.NexNet.live)) { unveil(); return false; }
 
-    var out = await window.NexNet.adoptFromUrl();
-    if (!out) return false;
+    /* Up before anything is awaited: the form is already hidden by the
+       head script, and this is what replaces it. */
+    var veil = splash('Signing you in', null);
+    var startedAt = Date.now();
 
-    if (!out.ok) {
-      window.NexToast(out.message || 'That sign-in did not complete.');
+    function fail(message) {
+      veil.remove();
+      unveil();
+      window.NexToast(message);
       return false;
     }
+
+    var out = await window.NexNet.adoptFromUrl();
+    if (!out) { veil.remove(); unveil(); return false; }
+    if (!out.ok) return fail(out.message || 'That sign-in did not complete.');
 
     try {
       await hydrateSession();
     } catch (e) {
-      window.NexToast('Signed in, but your account could not be loaded. Try again.');
-      return false;
+      return fail('Signed in, but your account could not be loaded. Try again.');
     }
 
-    /* Straight to the terminal rather than leaving them on a sign-in
-       form they have just finished with. */
+    /* A floor on how briefly this can show. Without it a fast round trip
+       strobes: rings appear and are gone before they have drawn, which
+       reads as a glitch rather than as a welcome. */
+    var held = Date.now() - startedAt;
+    if (held < 1100) await new Promise(function (r) { setTimeout(r, 1100 - held); });
+
     go('/');
     return true;
+  }
+
+  /* Let the page show again. Used on every path that ends with the
+     customer still on this page, so a failure never leaves them looking
+     at a hidden form. */
+  function unveil() {
+    document.documentElement.removeAttribute('data-oauth');
   }
 
   /* ---------- boot ---------- */

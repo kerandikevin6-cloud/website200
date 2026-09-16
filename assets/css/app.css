@@ -2146,3 +2146,36 @@ body.no-tabs .lrn{padding-bottom:var(--lsec-y)}
 }
 .hist-source span{flex:1;min-width:0;font-size:11.5px;color:var(--muted);line-height:1.5}
 .hist-source .btn-mini{flex:none}
+
+/* ---------------- returning from Google ----------------
+   The page under the redirect is the sign-in form the customer has just
+   finished with, and the session takes a round trip to adopt. Hiding the
+   form for that moment is the difference between a welcome and an app
+   that appears to have bounced you back to where you started.
+
+   The ground is painted immediately so there is no white frame, and the
+   splash that app.js raises sits outside .app, so it stays visible. */
+html[data-oauth] .app{visibility:hidden}
+html[data-oauth],html[data-oauth] body{background:var(--bg)}
+
+/* A mark on screen from the first paint, drawn in CSS because the real
+   splash cannot exist until app.js has loaded, and the second of dark
+   nothing before it does reads as a page that failed rather than one
+   that is working. Same dot and expanding ring the splash uses, so when
+   the real one takes over (z-index 100, above this) nothing jumps. */
+html[data-oauth]::before{
+  content:"";position:fixed;inset:0;background:var(--bg);z-index:90;
+}
+html[data-oauth]::after{
+  content:"";position:fixed;top:50%;left:50%;width:9px;height:9px;
+  margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--accent);z-index:91;
+  animation:oauthping 1.9s cubic-bezier(.2,.6,.3,1) infinite;
+}
+@keyframes oauthping{
+  0%{box-shadow:0 0 0 0 var(--accent-soft)}
+  70%{box-shadow:0 0 0 30px rgba(0,0,0,0)}
+  100%{box-shadow:0 0 0 0 rgba(0,0,0,0)}
+}
+@media (prefers-reduced-motion:reduce){
+  html[data-oauth]::after{animation:none}
+}
