@@ -135,6 +135,14 @@
         '<rect width="24" height="5.33" fill="#CE1126"/>' +
         '<rect y="10.67" width="24" height="5.33" fill="#006B3F"/>' +
         '<path d="M12 5.6l1.1 3.3 3.2-1.9-2 3.2 3.3 1.1h-6.9z" fill="#000"/>',
+    /* Thirteen stripes would be mud at 13px wide, so this is seven,
+       which is what the eye reads as "the American flag" at this size. */
+    US: '<rect width="24" height="16" fill="#fff"/>' +
+        '<rect width="24" height="2.29" y="0" fill="#B22234"/>' +
+        '<rect width="24" height="2.29" y="4.57" fill="#B22234"/>' +
+        '<rect width="24" height="2.29" y="9.14" fill="#B22234"/>' +
+        '<rect width="24" height="2.29" y="13.71" fill="#B22234"/>' +
+        '<rect width="10" height="8.6" fill="#3C3B6E"/>',
     ZA: '<rect width="24" height="16" fill="#002395"/>' +
         '<rect width="24" height="8" fill="#DE3831"/>' +
         '<path d="M0 0l10 8-10 8z" fill="#000"/>' +
@@ -227,7 +235,7 @@
 
     return '<header class="topbar">' +
       '<button class="iconbtn only-mob" id="menuBtn" aria-label="Open menu">' + icon('menu', 19) + '</button>' +
-      '<a class="wordmark only-desk" href="' + href('/') + '">Novi</a>' +
+      '<a class="wordmark" href="' + href('/') + '">Novi</a>' +
       menu +
       '<span class="spacer"></span>' +
       '<button class="acct ' + API.account.kind() + '" data-open="switch" id="acctBtn" ' +
@@ -235,6 +243,20 @@
       '<button class="btn-primary" data-open="deposit">Deposit</button>' +
       '<button class="iconbtn bell" data-open="alerts" aria-label="Notifications">' + icon('bell', 18) + '<i></i></button>' +
     '</header>';
+  }
+
+  /* The drawer is open on a table, on a phone somebody else can see, in
+     a screen share. The address is there to confirm which account this
+     is, and the middle of it does not help with that. */
+  function maskEmail(e) {
+    e = (e || '').trim();
+    var at = e.indexOf('@');
+    if (at < 1) return e;
+    var name = e.slice(0, at), rest = e.slice(at);
+    var shown = name.length <= 2
+      ? name.charAt(0) + '•••'
+      : name.charAt(0) + '•••' + name.charAt(name.length - 1);
+    return shown + rest;
   }
 
   function drawer() {
@@ -260,7 +282,8 @@
       '<aside class="drawer" id="drawer" aria-label="Menu">' +
         '<a class="drawer-user" href="' + href('account') + '">' +
           '<div class="avatar">' + (s.name || 'A').charAt(0) + '</div>' +
-          '<div><b>' + (s.name || 'Guest') + '</b><span>' + (s.email || 'not signed in') + '</span></div>' +
+          '<div><b>' + (s.name || 'Guest') + '</b><span>' +
+            (s.email ? maskEmail(s.email) : 'not signed in') + '</span></div>' +
           icon('chev', 16) +
         '</a>' +
         '<div class="dnav">' +
@@ -277,6 +300,7 @@
         '<div class="drawer-sect label">Support</div>' +
         '<div class="dnav">' +
           item('Trading history', { icon: 'clock', href: 'history' }) +
+          item('Copy trading', { icon: 'copy', href: 'copy' }) +
           item('Support', { icon: 'headset', href: 'chat' }) +
           item('Learn', { icon: 'book', href: 'learn' }) +
           item('Refer and earn', { icon: 'gift', modal: 'refer' }) +
@@ -1363,15 +1387,13 @@
   }
 
   /* phone read by the caller, before the repaint, see liveDeposit. */
-  async function liveWithdraw(amountUsd, phone) {
+  async function liveWithdraw(amountUsd, dest) {
     var token = ++payToken;
     gotoStep('pending');
     try {
-      await window.NexNet.withdraw({
-        amountMinor: Math.round(amountUsd * 100),
-        method: 'mpesa',
-        phone: phone || undefined
-      });
+      await window.NexNet.withdraw(Object.assign({
+        amountMinor: Math.round(amountUsd * 100)
+      }, dest));
       if (token !== payToken) return;
 
       state.data.ref = reference();
@@ -1463,7 +1485,28 @@
         'Not enough funds. Available ' + F.money(API.account.balance()));
       state.data.sent = w;
 
-      if (window.NexNet && window.NexNet.live) return liveWithdraw(w, (document.getElementById('wPhone') || {}).value || '');
+      /* Each rail needs a different thing, and each is checked here so a
+         mistyped address is caught before the balance is held rather
+         than after. */
+      var method = state.data.method || 'mpesa';
+      var dest = { method: method };
+
+      if (method === 'usdt') {
+        var addr = ((document.getElementById('wAddress') || {}).value || '').trim();
+        if (addr.length < 20) return fieldError('wAddress', 'Enter the full wallet address');
+        dest.address = addr;
+        dest.network = (document.getElementById('wNetwork') || {}).value || undefined;
+      } else if (method === 'card') {
+        var holder = ((document.getElementById('wCardName') || {}).value || '').trim();
+        var last4 = ((document.getElementById('wCardLast4') || {}).value || '').replace(/\D/g, '');
+        if (holder.length < 2) return fieldError('wCardName', 'Enter the name printed on the card');
+        if (last4.length !== 4) return fieldError('wCardLast4', 'Enter the last 4 digits');
+        dest.card = { name: holder, last4: last4 };
+      } else {
+        dest.phone = (document.getElementById('wPhone') || {}).value || undefined;
+      }
+
+      if (window.NexNet && window.NexNet.live) return liveWithdraw(w, dest);
 
       state.data.ref = reference();
       settle(function () { API.account.debit(w, 'Withdrawal'); });

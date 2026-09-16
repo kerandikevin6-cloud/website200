@@ -157,14 +157,13 @@
     render();
   }
 
-  /* Same split as the terminal: S.stake is USD, the field is the
-     viewer's own money. Rounding happens in display units so a typed
-     5,000 stays 5,000. */
+  /* Same as the terminal: the stake is USD in the field as well as in
+     the contract, so there is nothing to convert either way. */
   function stakeShown() {
-    return Math.round(API.money.toDisplay(S.stake) * 100) / 100;
+    return Math.round(S.stake * 100) / 100;
   }
   function setStakeShown(shown) {
-    S.stake = API.money.fromDisplay(Math.max(0, Math.round((+shown || 0) * 100) / 100));
+    S.stake = Math.max(0, Math.round((+shown || 0) * 100) / 100);
   }
 
   /* v is in display units. */
@@ -251,12 +250,12 @@
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button data-aistake="-1" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
           '<div class="f"><input id="aiStake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
-            '<span class="cur">' + API.account.currency() + '</span></div>' +
+            '<span class="cur">' + API.money.stakeCurrency() + '</span></div>' +
           '<button data-aistake="1" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
         '</div>' +
         (S.error ? '<div class="field-error" role="alert">' + S.error + '</div>' : '') +
         '<div class="session"><span>Payout if it lands</span><span class="num">' +
-          F.money(API.contracts.payoutFor(sig.type, S.stake)) + '</span></div>' +
+          F.usd(API.contracts.payoutFor(sig.type, S.stake)) + '</span></div>' +
         '<label class="ai-auto">' +
           '<span><b>Let the engine place it</b>' +
           '<span>Every scan writes its top signal automatically.</span></span>' +
@@ -353,7 +352,7 @@
 
     if (!root.__stakeSet) {
       root.__stakeSet = true;
-      S.stake = API.money.fromDisplay(API.money.stakeChips().start);
+      S.stake = API.money.stakeChips().start;
     }
 
     unsub.forEach(function (f) { f(); });

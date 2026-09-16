@@ -50,6 +50,12 @@
     /* 2,480.00 */
     amount: function (v) { return n2.format(local(v)); },
 
+    /* 1,250.00 USD. Takes USD and leaves it there: for the few figures
+       that are quoted in dollars whatever the viewer's currency is, the
+       stake among them. */
+    usd: function (v) { return n2.format(+v || 0) + ' USD'; },
+    usdAmount: function (v) { return n2.format(+v || 0); },
+
     /* 2,480.00 KES, currency after the figure, the way traders read it */
     money: function (v, cur) { return n2.format(local(v)) + ' ' + (cur || currency); },
 
@@ -59,6 +65,12 @@
       return (x > 0 ? '+' : x < 0 ? '−' : '') + n2.format(Math.abs(x));
     },
     signedMoney: function (v, cur) { return F.signed(v) + ' ' + (cur || currency); },
+
+    /* Signed, in dollars, for the figures that sit beside a stake. */
+    signedUsd: function (v) {
+      var x = +v || 0;
+      return (x > 0 ? '+' : x < 0 ? '−' : '') + n2.format(Math.abs(x)) + ' USD';
+    },
 
     /* Already in display units, formatted, never converted. Deposit and
        withdrawal sheets work in local money from the start. */

@@ -125,7 +125,7 @@
         '<div>' +
           '<span class="label">Automated run</span>' +
           '<div class="runbar-t">' + (S.run
-            ? S.run.done + ' of ' + S.run.total + ' · ' + F.signedMoney(S.run.pnl)
+            ? S.run.done + ' of ' + S.run.total + ' · ' + F.signedUsd(S.run.pnl)
             : auto.runs + ' runs · ×' + auto.multiplier + ' on loss') + '</div>' +
         '</div>' +
         (S.run
@@ -145,7 +145,7 @@
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
           '<div class="f"><input id="stake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
-            '<span class="cur">' + API.account.currency() + '</span></div>' +
+            '<span class="cur">' + API.money.stakeCurrency() + '</span></div>' +
           '<button id="plus" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
         '</div>' +
         (S.error ? '<div class="field-error" role="alert">' + S.error + '</div>' : '') +
@@ -159,7 +159,7 @@
          is the least load-bearing thing on it */
       '<div class="session">' +
         '<span class="num">' + today.length + ' trades · ' + wins + 'W / ' + losses + 'L</span>' +
-        '<span class="num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + F.signedMoney(pnl) + '</span>' +
+        '<span class="num ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + F.signedUsd(pnl) + '</span>' +
       '</div>');
   }
 
@@ -213,7 +213,10 @@
         return '<button class="tbtn ' + tone + '" data-side="' + sd[0] + '"' +
           (blocked || busy ? ' disabled' : '') + '>' +
           '<div class="t">' + sd[1] + '</div>' +
-          '<div class="s">' + F.amount(payoutFor(sd[0])) + '</div>' +
+          /* Dollars, because the stake above it is dollars. A payout
+             quoted in shillings against a stake typed in dollars is two
+             different questions on one button. */
+          '<div class="s">' + F.usdAmount(payoutFor(sd[0])) + '</div>' +
         '</button>';
       }).join('') + '</div>');
   }
@@ -322,9 +325,9 @@
     r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
     S.stake = r.stake;
 
-    if (r.pnl >= r.takeProfit) return stopRun('Take-profit reached at ' + F.signedMoney(r.pnl));
-    if (-r.pnl >= r.stopLoss) return stopRun('Stop-loss reached at ' + F.signedMoney(r.pnl));
-    if (r.done >= r.total) return stopRun('Run finished at ' + F.signedMoney(r.pnl));
+    if (r.pnl >= r.takeProfit) return stopRun('Take-profit reached at ' + F.signedUsd(r.pnl));
+    if (-r.pnl >= r.stopLoss) return stopRun('Stop-loss reached at ' + F.signedUsd(r.pnl));
+    if (r.done >= r.total) return stopRun('Run finished at ' + F.signedUsd(r.pnl));
     if (!check()) return stopRun('Run stopped: ' + S.error);
 
     renderAll();
@@ -432,7 +435,9 @@
     }, true);
   }
 
-  /* S.stake is USD, like every other amount inside the app. These two
+  /* S.stake is USD, like every other amount inside the app, and now so
+     is the field: stakes are quoted in dollars whatever currency the
+     balance is shown in. These two
      are the only places it turns into the figure on screen and back, so
      a stake typed in shillings is stored in dollars and nothing else in
      this file has to know that happened.
@@ -440,12 +445,10 @@
      Round in display units, not USD: rounding the dollars first leaves
      the shillings showing 4,999.87 after somebody typed 5,000. */
   function stakeShown() {
-    var v = API.money.toDisplay(S.stake);
-    return Math.round(v * 100) / 100;
+    return Math.round(S.stake * 100) / 100;
   }
   function setStakeShown(shown) {
-    var v = Math.max(0, Math.round((+shown || 0) * 100) / 100);
-    S.stake = API.money.fromDisplay(v);
+    S.stake = Math.max(0, Math.round((+shown || 0) * 100) / 100);
   }
 
   /* v is in display units, what the buttons add and what the field holds. */
@@ -476,7 +479,7 @@
        so a stake the trader chose is never overwritten. */
     if (!root.__stakeSet) {
       root.__stakeSet = true;
-      S.stake = API.money.fromDisplay(API.money.stakeChips().start);
+      S.stake = API.money.stakeChips().start;
     }
 
     /* Markets is where an instrument is chosen; this is where that choice

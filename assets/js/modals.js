@@ -199,9 +199,14 @@
             var canReal = API().account.realAvailable();
             var cur = API().account.currency();
 
-            function row(id, name, note, value) {
+            /* The flag is the fastest way to say which money this is.
+               Both balances are held in dollars underneath, and the real
+               one is now quoted that way on its face as well, so the
+               figure on the card is the figure in the ledger. */
+            function row(id, name, note, value, cc) {
               return '<button class="choice' + (kind === id ? ' selected' : '') + '" data-action="useAccount" data-kind="' + id + '">' +
                 '<span class="dot"></span>' +
+                (cc ? '<span class="c-flag">' + window.NexFlag(cc) + '</span>' : '') +
                 '<span class="c-t"><b>' + name + '</b><span>' + note + '</span></span>' +
                 '<span class="c-v num">' + value + '</span></button>';
             }
@@ -211,9 +216,10 @@
                number about money this visitor does not have. */
             return '<div class="choices">' +
               (canReal
-                ? row('real', 'Real', cur + ' · live funds', F().amount(b.real))
-                : row('real', 'Real', 'Create an account to trade real funds', 'Sign up')) +
-              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo)) +
+                ? row('real', 'Real', 'USD · live funds', F().usdAmount(b.real), 'US')
+                : row('real', 'Real', 'Create an account to trade real funds', 'Sign up', 'US')) +
+              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo),
+                  API().geo.code()) +
             '</div><p class="hint" style="margin:14px 2px 0">' +
               (canReal
                 ? 'Open positions stay with the account they were taken on.'
@@ -781,7 +787,8 @@
             return '<div class="balance-strip"><span class="label">Available</span>' +
               '<b class="num">' + F().money(API().account.balance()) + '</b></div>' +
               method('mpesa', 'phone', 'M-Pesa', 'To the number on your profile') +
-              methodOff('coin', 'USDT', 'Crypto payouts are not open yet');
+              method('card', 'card', 'Card', 'Back to the card you deposited with') +
+              method('usdt', 'coin', 'USDT', 'TRC-20, ERC-20 or BEP-20');
           }
         },
         form: {
@@ -791,12 +798,28 @@
               '. One free withdrawal per day.';
           },
           body: function (s) {
-            var inner = s.method === 'usdt'
-              ? '<div class="field"><label for="wNetwork">Network</label>' +
-                '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option></select></div>' +
-                field('wAddress', 'Wallet address', 'placeholder="T..."', 'Check carefully. Transfers cannot be reversed.')
-              : phoneField('wPhone', 'M-Pesa number',
-                  'Must match the number registered to your verified name.');
+            var inner;
+            if (s.method === 'usdt') {
+              inner = '<div class="field"><label for="wNetwork">Network</label>' +
+                '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option>' +
+                '<option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
+                field('wAddress', 'Wallet address', 'placeholder="T..."',
+                  'Check carefully. Transfers cannot be reversed.');
+            } else if (s.method === 'card') {
+              /* Four digits and a name, never the card number. A payout
+                 goes back to the card it came from through the processor,
+                 which already holds the card; the digits are only here so
+                 the person can tell us which card they mean, and a full
+                 PAN on our form would drag the whole page into PCI scope
+                 to collect something we cannot use. */
+              inner = brandMark('assets/cards.png', 'Visa and Mastercard', 'assets/cards-ink.png') +
+                field('wCardName', 'Name on the card', 'placeholder="As printed"') +
+                field('wCardLast4', 'Last 4 digits', 'inputmode="numeric" maxlength="4" placeholder="4242"',
+                  'Refunds go back to the card you deposited with. We never ask for the full number.');
+            } else {
+              inner = phoneField('wPhone', 'M-Pesa number',
+                'Must match the number registered to your verified name.');
+            }
 
             /* The sheet works in the viewer's own money from the first
                figure to the last: the field, the minimum and the total

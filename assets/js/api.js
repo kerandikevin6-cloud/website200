@@ -162,19 +162,22 @@
      in dollars and absurd in shillings, so the steps are chosen per
      currency rather than converted from a dollar figure. */
   function stakeChips() {
-    var r = display().rate;
-    /* min is the smallest stake, in this currency, a round local figure
-       rather than a converted dollar, so the message reads "100.00 KES"
-       and not "129.00". LIMITS.max is still the ceiling, in USD. */
-    if (r === 1) return { step: 1, chips: [1, 5, 10, 25, 50], start: 10, min: 1 };
-    if (r >= 1000) return { step: 500, chips: [500, 1000, 5000, 10000, 25000], start: 5000, min: 1000 };
-    if (r >= 100)  return { step: 50,  chips: [100, 500, 1000, 2500, 5000], start: 500, min: 100 };
-    return { step: 10, chips: [10, 25, 50, 100, 250], start: 50, min: 10 };
+    /* Stakes are quoted in dollars for everybody, whatever currency the
+       rest of the screen is in. Contracts, payouts and the ceiling in
+       LIMITS are all USD, so the figure the trader types is now the same
+       figure the contract is written for, with nothing converted in
+       between and no rounding to explain. Deposits and payouts stay in
+       local money, which is where local money belongs. */
+    return { step: 1, chips: [1, 5, 10, 25, 50], start: 10, min: 1 };
   }
 
-  /* The floor in USD, which is the unit everything is checked in. */
+  /* What the stake field is denominated in, kept as a function so the
+     panel, the AI sheet and any error message all read one answer. */
+  function stakeCurrency() { return 'USD'; }
+
+  /* The floor, already in USD now that the field is. */
   function minStakeUsd() {
-    return fromDisplay(stakeChips().min);
+    return stakeChips().min;
   }
 
   /* The smallest payout, in the viewer's own money and as a round local
@@ -497,7 +500,7 @@
     /* A hair under, to forgive the float that a KES -> USD -> KES round
        trip leaves behind: 100 shillings must never fail its own minimum. */
     var floor = minStakeUsd() - 0.0001;
-    if (!stake || stake < floor) return 'Minimum stake is ' + F.money(minStakeUsd());
+    if (!stake || stake < floor) return 'Minimum stake is ' + F.usd(minStakeUsd());
     if (stake > LIMITS.max) return 'Maximum stake is ' + F.money(LIMITS.max);
     if (stake > balance()) return 'Not enough funds. Available ' + F.money(balance());
     if (spec.ticks < LIMITS.minTicks || spec.ticks > LIMITS.maxTicks) return 'Duration must be 1-10 ticks';
@@ -818,6 +821,7 @@
       apply: applyDisplay,
       toDisplay: toDisplay,
       fromDisplay: fromDisplay,
+      stakeCurrency: stakeCurrency,
       minWithdrawDisplay: minWithdrawDisplay,
       minWithdrawUsd: minWithdrawUsd,
       stakeChips: stakeChips,

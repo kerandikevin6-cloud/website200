@@ -763,6 +763,24 @@ footer{border-top:1px solid var(--line-soft);padding:24px 18px 32px;color:var(--
 footer .fl{display:flex;flex-wrap:wrap;gap:14px 20px;margin-bottom:16px}
 footer a:hover{color:var(--text-2)}
 
+/* ---------------- copy trading ---------------- */
+.copy-soon{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:26px 20px}
+.copy-mark{
+  display:grid;place-items:center;width:44px;height:44px;margin-bottom:2px;
+  border:1px solid var(--line-soft);background:var(--surface-2);color:var(--accent);
+}
+.copy-soon b{font-size:15px}
+.copy-soon p{color:var(--muted);font-size:12.5px;line-height:1.6;margin:0;max-width:46ch}
+.copy-steps{display:flex;flex-direction:column;margin:14px 0 18px;border-top:1px solid var(--line-soft)}
+.copy-step{display:flex;gap:14px;padding:15px 16px;border-bottom:1px solid var(--line-soft)}
+.copy-step i{
+  flex:none;width:24px;height:24px;display:grid;place-items:center;font-style:normal;
+  font-family:var(--mono);font-size:11.5px;color:var(--muted);border:1px solid var(--line-soft);
+}
+.copy-step b{display:block;font-size:13.5px;font-weight:500}
+.copy-step span{display:block;color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:3px}
+.copy-foot{display:flex;flex-direction:column;gap:10px;padding:0 16px}
+
 /* ---------------- desktop ---------------- */
 @media (min-width:900px){
   .only-desk{display:flex}
@@ -777,8 +795,42 @@ footer a:hover{color:var(--text-2)}
   .deskmenu a:hover{background:var(--surface-2);color:var(--text)}
   .deskmenu a.active{background:var(--surface-3);color:var(--text)}
   .brand{margin-right:0}
-  .terminal{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:16px;flex:1;align-items:start}
-  .terminal .col-mid{min-width:0}
+  /* The controls are a rail down the left, the chart takes the rest.
+     A trader's hand rests on the stake and the two buttons, so they sit
+     on one side, at a fixed width, in the same place on every tab,
+     rather than moving with whatever the middle column is doing. */
+  .terminal{
+    display:grid;grid-template-columns:344px minmax(0,1fr);
+    gap:16px;padding:16px;align-items:stretch;
+    /* A height, not a minimum. As a minimum the row grew to whatever the
+       digits needed and then the page scrolled, which on a laptop put
+       the two trade buttons below the fold. Fixed, the chart gives up
+       the space instead. */
+    height:calc(100vh - 64px);min-height:520px;
+  }
+  /* The chart takes the height that is there rather than a fixed 420
+     and a band of empty page under it: the column is as tall as the
+     rail beside it, the digits sit at its foot, and the canvas has the
+     rest. */
+  .terminal .col-mid{min-width:0;min-height:0;display:flex;flex-direction:column}
+  .terminal .col-mid .chart-card{flex:1;min-height:0;display:flex;flex-direction:column}
+  .terminal .col-mid #chart{flex:1;height:auto;min-height:260px}
+  /* Source order keeps the chart first for a phone, where the rail is
+     just the panel under it. `order` moves it on desktop only. */
+  .terminal .col-right{
+    order:-1;display:flex;flex-direction:column;gap:14px;
+    position:sticky;top:calc(64px + 16px);
+    height:calc(100vh - 64px - 32px);
+  }
+  /* The panel fills the rail and scrolls inside itself, so the two trade
+     buttons stay on the screen however long the panel gets. */
+  .terminal .col-right .panel{
+    flex:1;min-height:0;overflow-y:auto;position:static;top:auto;
+  }
+  .terminal .col-right .trade-dock{flex:none;margin-top:0}
+  /* The day's tally sits at the foot of the rail rather than floating in
+     the middle of it with empty panel underneath. */
+  .terminal .col-right .panel .session{margin-top:auto}
   #chart{height:min(50vh,420px)}
   .digits{gap:8px;padding:14px 0}
   .digit{max-width:48px}
@@ -849,7 +901,17 @@ footer a:hover{color:var(--text-2)}
 }
 .wordmark{
   font-size:14px;letter-spacing:.24em;text-transform:uppercase;font-weight:600;
-  padding-right:6px;
+  padding-right:6px;flex:none;
+}
+/* On a phone the bar carries the menu, the name, the balance, Deposit
+   and the bell. The name is the first thing to give ground: it shrinks
+   and the gaps tighten rather than the balance wrapping. */
+@media (max-width:899px){
+  .topbar{gap:8px;padding:0 10px}
+  .wordmark{font-size:12px;letter-spacing:.16em;padding-right:0;margin-left:-2px}
+}
+@media (max-width:359px){
+  .wordmark{display:none}
 }
 .topbar .acct{flex:none}
 .topbar .iconbtn[aria-hidden="true"]{pointer-events:none}
@@ -911,6 +973,11 @@ footer a:hover{color:var(--text-2)}
 .choice.selected .dot::after{
   content:"";position:absolute;inset:3.5px;border-radius:50%;background:var(--accent);
 }
+.choice .c-flag{
+  display:flex;align-items:center;justify-content:center;flex:none;
+  width:28px;height:20px;border:1px solid var(--line-soft);overflow:hidden;
+}
+.choice .c-flag svg{display:block;width:100%;height:100%}
 .choice .c-t{flex:1;min-width:0}
 .choice .c-t b{display:block;font-size:14px;font-weight:600;color:var(--text)}
 .choice .c-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
