@@ -82,14 +82,28 @@
   function submit(label, done) {
     return '<button class="btn btn-fill" type="button" data-done="' + done + '">' + label + '</button>';
   }
-  /* Mobile money is quoted in the money the person actually holds. Card
-     follows the same country; USDT is a dollar rail, so it stays in USD. */
-  function payCur(methodId) {
+  /* Every rail is quoted in dollars now, because the account is. What
+     changes per rail is what the customer's bank or handset will
+     actually be debited, which is shown as a separate line at the moment
+     it applies rather than by pricing the whole product in it. */
+  function payCur() {
+    return { cur: 'USD', rate: 1, min: API().money.minDepositUsd(), quick: [5, 10, 25, 50, 100] };
+  }
+
+  /* What the phone or the card is actually debited, for a rail that
+     cannot charge dollars. Null when there is nothing to convert.
+
+     It is a live line rather than a footnote: the figure that leaves
+     somebody's account is the one they check against their SMS, and a
+     note pinned to the minimum while the field says something else is
+     worse than no note at all. */
+  function railChargeLine(methodId, usd) {
+    if (methodId === 'usdt') return '';
     var c = API().geo.country();
-    if (methodId === 'usdt' || !c.cur) {
-      return { cur: API().account.currency(), rate: 1, min: 10, quick: [10, 25, 50, 100, 250] };
-    }
-    return { cur: c.cur, rate: c.rate, min: c.min, quick: c.quick };
+    if (!c.cur || !c.rate || c.rate === 1) return '';
+    return '<span class="hint" data-charge="amount" data-rate="' + c.rate +
+      '" data-cur="' + c.cur + '">Charged as ' +
+      F().localMoney(Math.round(usd * c.rate), c.cur) + '</span>';
   }
 
   /* The waiting and done screens are shared by deposit and withdraw, so
@@ -216,10 +230,9 @@
                number about money this visitor does not have. */
             return '<div class="choices">' +
               (canReal
-                ? row('real', 'Real', 'USD · live funds', F().usdAmount(b.real), 'US')
+                ? row('real', 'Real', cur + ' · live funds', F().amount(b.real), 'US')
                 : row('real', 'Real', 'Create an account to trade real funds', 'Sign up', 'US')) +
-              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo),
-                  API().geo.code()) +
+              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo), 'US') +
             '</div><p class="hint" style="margin:14px 2px 0">' +
               (canReal
                 ? 'Open positions stay with the account they were taken on.'
@@ -493,12 +506,9 @@
           title: 'Deposit funds',
           sub: 'Funds land in the account you are trading. No fee from Novi.',
           body: function () {
-            var c = API().geo.country();
-            var money = c.cur || 'USD';
-            var lo = c.min || 10;
-            var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
+            var lo = API().money.minDepositUsd();
             return method('mpesa', 'phone', 'M-Pesa',
-                'Instant · ' + money + ' ' + F().count(lo) + ' - ' + F().count(hi)) +
+                'Instant · USD ' + F().count(lo) + ' - ' + F().count(1200)) +
               method('card', 'card', 'Card', 'Visa and Mastercard · secured by Paystack') +
               methodOff('coin', 'USDT', 'Crypto deposits are not open yet');
           }
@@ -537,9 +547,10 @@
                 '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
             }
 
-            var pay = payCur(m);
+            var pay = payCur();
             var start = pay.quick[1];
             var floor = pay.min || pay.quick[0];
+            var charged = railChargeLine(m, start);
 
             return '<div class="modal-form">' +
               logo +
@@ -550,7 +561,8 @@
                 '<div class="quick">' + pay.quick.map(function (n) {
                   return '<button type="button" data-amount="' + n + '">' + F().count(n) + '</button>';
                 }).join('') + '</div>' +
-                '<span class="hint">Minimum ' + F().count(floor) + ' ' + pay.cur + '</span></div>' +
+                '<span class="hint">Minimum ' + F().count(floor) + ' ' + pay.cur + '</span>' +
+                charged + '</div>' +
               inner +
               (m === 'card'
                 /* Not a link to a hosted page: that page is a fixed form
@@ -806,16 +818,19 @@
                 field('wAddress', 'Wallet address', 'placeholder="T..."',
                   'Check carefully. Transfers cannot be reversed.');
             } else if (s.method === 'card') {
-              /* Four digits and a name, never the card number. A payout
-                 goes back to the card it came from through the processor,
-                 which already holds the card; the digits are only here so
-                 the person can tell us which card they mean, and a full
-                 PAN on our form would drag the whole page into PCI scope
-                 to collect something we cannot use. */
-              inner = brandMark('assets/cards.png', 'Visa and Mastercard', 'assets/cards-ink.png') +
-                field('wCardName', 'Name on the card', 'placeholder="As printed"') +
-                field('wCardLast4', 'Last 4 digits', 'inputmode="numeric" maxlength="4" placeholder="4242"',
-                  'Refunds go back to the card you deposited with. We never ask for the full number.');
+              /* Bank, name and account number. A payout is a transfer
+                 into an account, not a reverse card charge: somebody who
+                 deposited by phone has no card to send it back to, and
+                 somebody who did deposit by card may have closed it since.
+
+                 Deliberately not the card number. We never ask for a PAN
+                 on our own form, and we could not use one for a payout
+                 anyway. */
+              inner = field('wBank', 'Bank', 'placeholder="Equity, KCB, Co-operative"') +
+                field('wCardName', 'Name on the account', 'placeholder="As it appears at the bank"') +
+                field('wAccount', 'Account number', 'inputmode="numeric" placeholder="0123456789"',
+                  'Payouts are sent to an account in your own name. A mismatch is the ' +
+                  'one thing that delays a transfer.');
             } else {
               inner = phoneField('wPhone', 'M-Pesa number',
                 'Must match the number registered to your verified name.');

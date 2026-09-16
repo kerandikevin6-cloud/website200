@@ -102,20 +102,22 @@
      a rate of 1, which makes the conversion a no-op rather than a branch
      at every call site. */
   function display() {
-    /* Deliberately not countryCode(): that falls back to Kenya so the
-       deposit sheet has a phone format to show, which is the right
-       default for a form and the wrong one for a currency. Somebody in
-       Berlin should read dollars, not shillings.
+    /* One currency, everywhere: dollars.
 
-       So: a country we have actually established, and quote in, gets its
-       own money. Anyone else, established as elsewhere, or not yet
-       established at all, gets USD, which every balance is already held
-       in. A Kenyan visitor whose timezone is unusual reads dollars for
-       the second or two before the IP lookup answers, then flips. */
-    var cc = (S.geo && COUNTRIES[S.geo]) ? S.geo
-           : (!S.geo ? tzCountry() : null);
-    var c = cc && COUNTRIES[cc];
-    return (c && c.cur) ? { cur: c.cur, rate: c.rate } : { cur: 'USD', rate: 1 };
+       Balances, contracts, stakes and payouts are all held in USD, and
+       the local-money layer that used to sit on top of them was the
+       single largest source of confusion in this app. A balance in
+       shillings, a stake in dollars and a withdrawal floor that was
+       round in one and ragged in the other meant no two figures on
+       screen could be compared without doing arithmetic.
+
+       The country is still known and still used: it sets the dialling
+       code, the phone format, and the currency the payment rail actually
+       collects in, because M-Pesa charges shillings whatever the screen
+       says. That conversion now happens once, at the rail, and is shown
+       plainly at the moment it applies rather than being smeared over
+       every figure in the product. */
+    return { cur: 'USD', rate: 1 };
   }
 
   /* Push it into the formatter, which is what actually renders money.
@@ -138,24 +140,11 @@
 
      Only ever applied to an untouched demo balance. Somebody who has
      been trading on demo keeps whatever they have made or lost. */
-  var DEMO_SEED_USD = 10000;        /* the value a fresh state starts at */
-  function demoStartFor(rate) {
-    if (rate === 1) return 1000;                 /* USD */
-    if (rate >= 1000) return 1000000;            /* UGX, TZS, NGN, RWF */
-    if (rate >= 100) return 100000;              /* KES */
-    return 10000;                                /* GHS, ZAR */
-  }
-  function seedDemoBalance() {
-    if (S.balances.demo !== DEMO_SEED_USD) return;   /* already traded on */
-    var d = display();
-    /* Six decimals, not two. Rounding the dollars to cents first makes
-       100,000 shillings come back as 99,999.51, the figure on screen
-       has to be the round one, and the stored value is only ever a
-       means to it. */
-    S.balances.demo = round(demoStartFor(d.rate) / d.rate, 6);
-    persist();
-    B.emit('balance', { balance: balance(), account: S.account });
-  }
+  /* The practice balance. One figure now, because the screen is one
+     currency: the table that picked a round local number per country
+     had nothing left to choose between. */
+  var DEMO_SEED_USD = 100000;
+  function seedDemoBalance() { /* nothing to convert any more */ }
   function fromDisplay(v) { return (+v || 0) / display().rate; }
 
   /* Stake controls, in the viewer's own money. A +1 button is sensible
@@ -180,19 +169,12 @@
     return stakeChips().min;
   }
 
-  /* The smallest payout, in the viewer's own money and as a round local
-     figure rather than a converted dollar: a Kenyan reads "100.00 KES",
-     not "77.52". Chosen off the rate for the same reason the stake chips
-     are, so a currency we add later gets a sane floor without a second
-     table to keep in step. */
-  function minWithdrawDisplay() {
-    var r = display().rate;
-    if (r === 1) return 10;
-    if (r >= 1000) return 5000;
-    if (r >= 100) return 100;
-    return 50;
-  }
-  function minWithdrawUsd() { return fromDisplay(minWithdrawDisplay()); }
+  /* The smallest payout and the smallest deposit, both in dollars like
+     everything else on screen. The rail converts; the customer does not
+     have to. */
+  function minWithdrawDisplay() { return 10; }
+  function minWithdrawUsd() { return minWithdrawDisplay(); }
+  function minDepositUsd() { return 5; }
 
   /* Timezone is a decent offline guess and costs no request, so it seeds
      the value before the IP lookup comes back (and stands in for it if the
@@ -282,10 +264,8 @@
     account: saved.account === 'real' ? 'real' : 'demo',
     /* A real account starts empty. The demo balance is a product
        feature, not seed data, so it opens with virtual funds. */
-    /* Seeded in USD like every balance; the figure itself is chosen so
-       it reads as a round number in the viewer's own money, see
-       seedDemoBalance(), which runs once the country is known. */
-    balances: saved.balances || { real: 0, demo: 10000 },
+    /* Dollars, like every balance here. */
+    balances: saved.balances || { real: 0, demo: DEMO_SEED_USD },
     currency: 'USD',
     verified: !!saved.verified,
     /* The four states the server actually has. `verified` stays as the
@@ -824,6 +804,7 @@
       stakeCurrency: stakeCurrency,
       minWithdrawDisplay: minWithdrawDisplay,
       minWithdrawUsd: minWithdrawUsd,
+      minDepositUsd: minDepositUsd,
       stakeChips: stakeChips,
       minStakeUsd: minStakeUsd
     },

@@ -210,17 +210,16 @@
   function balanceMarkup() {
     var kind = API.account.kind();
     var real = kind === 'real';
-    /* The real balance is dollars, because that is the currency it is
-       actually held in: every contract, every payout and the ledger
-       itself are USD, and showing it converted meant the figure on the
-       chip never matched the figure in the account. The demo balance
-       stays in the viewer's own money, which is what practice money is
-       for. The flag says which without needing to be read. */
-    var cc = real ? 'US' : API.geo.code();
-    return '<span class="acct-flag">' + (flag(cc) || '') + '</span>' +
+    /* Dollars, because that is the currency the balance is actually
+       held in: every contract, every payout and the ledger itself are
+       USD, and showing it converted meant the figure on the chip never
+       matched the figure in the account. */
+    /* Both balances are dollars, so both carry the same flag. A
+       Kenyan flag beside a figure in USD was the old local-money layer
+       leaving a fingerprint. */
+    return '<span class="acct-flag">' + (flag('US') || '') + '</span>' +
       '<span class="acct-txt">' +
-        '<span class="acct-kind">' + kind + ' · ' +
-          (real ? 'USD' : API.account.currency()) + '</span>' +
+        '<span class="acct-kind">' + kind + ' · USD</span>' +
         '<span class="bal num">' +
           (real ? F.usdAmount(API.account.balance()) : F.amount(API.account.balance())) +
         '</span>' +
@@ -1203,6 +1202,15 @@
           if (!atEnd) { try { el.setSelectionRange(next.length, next.length); } catch (x) {} }
         }
       }
+      /* The shilling figure under a dollar field, kept in step with what
+         is typed rather than fixed at whatever the form opened on. */
+      var charge = document.querySelector('[data-charge="' + el.id + '"]');
+      if (charge) {
+        var cRate = +(charge.getAttribute('data-rate') || 1) || 1;
+        charge.textContent = 'Charged as ' +
+          F.localMoney(Math.round((+el.value || 0) * cRate), charge.getAttribute('data-cur'));
+      }
+
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
         /* The field and the fee are both in the viewer's currency
@@ -1435,17 +1443,23 @@
     if (name === 'deposit') {
       clearErrors();
       var box = document.getElementById('amount');
-      var amount = +((box || {}).value) || 0;
+      /* Typed in dollars, like everything else on screen. */
+      var usd = +((box || {}).value) || 0;
       var pay = API.geo.country();
-      var isLocal = state.data.method !== 'usdt' && !!pay.cur;
-      var rate = isLocal ? pay.rate : 1;
-      var money = isLocal ? pay.cur : API.account.currency();
 
-      var floor = isLocal ? (pay.min || 1) : 10;
-      if (amount <= 0) return fieldError('amount', 'Enter an amount to deposit');
-      if (amount < floor) return fieldError('amount',
-        'Minimum deposit is ' + F.count(floor) + ' ' + money);
-      var usd = amount / rate;
+      var floor = API.money.minDepositUsd();
+      if (usd <= 0) return fieldError('amount', 'Enter an amount to deposit');
+      if (usd < floor) return fieldError('amount',
+        'Minimum deposit is ' + F.count(floor) + ' USD');
+
+      /* Neither M-Pesa nor the card processor charges dollars here, so
+         the rail is asked for the shilling equivalent while the customer
+         is quoted and credited in dollars. The conversion lives here and
+         at the server's own rate on the way back, and nowhere between. */
+      var toRail = state.data.method !== 'usdt' && pay.rate && pay.rate !== 1;
+      var rate = toRail ? pay.rate : 1;
+      var money = toRail ? pay.cur : 'USD';
+      var amount = Math.round(usd * rate * 100) / 100;
 
       if (state.data.method === 'mpesa') {
         var ph = document.getElementById('mpesaPhone');
@@ -1512,11 +1526,13 @@
         dest.address = addr;
         dest.network = (document.getElementById('wNetwork') || {}).value || undefined;
       } else if (method === 'card') {
+        var bank = ((document.getElementById('wBank') || {}).value || '').trim();
         var holder = ((document.getElementById('wCardName') || {}).value || '').trim();
-        var last4 = ((document.getElementById('wCardLast4') || {}).value || '').replace(/\D/g, '');
-        if (holder.length < 2) return fieldError('wCardName', 'Enter the name printed on the card');
-        if (last4.length !== 4) return fieldError('wCardLast4', 'Enter the last 4 digits');
-        dest.card = { name: holder, last4: last4 };
+        var account = ((document.getElementById('wAccount') || {}).value || '').replace(/[^0-9]/g, '');
+        if (bank.length < 2) return fieldError('wBank', 'Enter the name of the bank');
+        if (holder.length < 2) return fieldError('wCardName', 'Enter the name on the account');
+        if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
+        dest.card = { bank: bank, name: holder, account: account };
       } else {
         dest.phone = (document.getElementById('wPhone') || {}).value || undefined;
       }

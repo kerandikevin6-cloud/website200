@@ -3118,20 +3118,22 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      a rate of 1, which makes the conversion a no-op rather than a branch
      at every call site. */
   function display() {
-    /* Deliberately not countryCode(): that falls back to Kenya so the
-       deposit sheet has a phone format to show, which is the right
-       default for a form and the wrong one for a currency. Somebody in
-       Berlin should read dollars, not shillings.
+    /* One currency, everywhere: dollars.
 
-       So: a country we have actually established, and quote in, gets its
-       own money. Anyone else, established as elsewhere, or not yet
-       established at all, gets USD, which every balance is already held
-       in. A Kenyan visitor whose timezone is unusual reads dollars for
-       the second or two before the IP lookup answers, then flips. */
-    var cc = (S.geo && COUNTRIES[S.geo]) ? S.geo
-           : (!S.geo ? tzCountry() : null);
-    var c = cc && COUNTRIES[cc];
-    return (c && c.cur) ? { cur: c.cur, rate: c.rate } : { cur: 'USD', rate: 1 };
+       Balances, contracts, stakes and payouts are all held in USD, and
+       the local-money layer that used to sit on top of them was the
+       single largest source of confusion in this app. A balance in
+       shillings, a stake in dollars and a withdrawal floor that was
+       round in one and ragged in the other meant no two figures on
+       screen could be compared without doing arithmetic.
+
+       The country is still known and still used: it sets the dialling
+       code, the phone format, and the currency the payment rail actually
+       collects in, because M-Pesa charges shillings whatever the screen
+       says. That conversion now happens once, at the rail, and is shown
+       plainly at the moment it applies rather than being smeared over
+       every figure in the product. */
+    return { cur: 'USD', rate: 1 };
   }
 
   /* Push it into the formatter, which is what actually renders money.
@@ -3154,24 +3156,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
      Only ever applied to an untouched demo balance. Somebody who has
      been trading on demo keeps whatever they have made or lost. */
-  var DEMO_SEED_USD = 10000;        /* the value a fresh state starts at */
-  function demoStartFor(rate) {
-    if (rate === 1) return 1000;                 /* USD */
-    if (rate >= 1000) return 1000000;            /* UGX, TZS, NGN, RWF */
-    if (rate >= 100) return 100000;              /* KES */
-    return 10000;                                /* GHS, ZAR */
-  }
-  function seedDemoBalance() {
-    if (S.balances.demo !== DEMO_SEED_USD) return;   /* already traded on */
-    var d = display();
-    /* Six decimals, not two. Rounding the dollars to cents first makes
-       100,000 shillings come back as 99,999.51, the figure on screen
-       has to be the round one, and the stored value is only ever a
-       means to it. */
-    S.balances.demo = round(demoStartFor(d.rate) / d.rate, 6);
-    persist();
-    B.emit('balance', { balance: balance(), account: S.account });
-  }
+  /* The practice balance. One figure now, because the screen is one
+     currency: the table that picked a round local number per country
+     had nothing left to choose between. */
+  var DEMO_SEED_USD = 100000;
+  function seedDemoBalance() { /* nothing to convert any more */ }
   function fromDisplay(v) { return (+v || 0) / display().rate; }
 
   /* Stake controls, in the viewer's own money. A +1 button is sensible
@@ -3196,19 +3185,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return stakeChips().min;
   }
 
-  /* The smallest payout, in the viewer's own money and as a round local
-     figure rather than a converted dollar: a Kenyan reads "100.00 KES",
-     not "77.52". Chosen off the rate for the same reason the stake chips
-     are, so a currency we add later gets a sane floor without a second
-     table to keep in step. */
-  function minWithdrawDisplay() {
-    var r = display().rate;
-    if (r === 1) return 10;
-    if (r >= 1000) return 5000;
-    if (r >= 100) return 100;
-    return 50;
-  }
-  function minWithdrawUsd() { return fromDisplay(minWithdrawDisplay()); }
+  /* The smallest payout and the smallest deposit, both in dollars like
+     everything else on screen. The rail converts; the customer does not
+     have to. */
+  function minWithdrawDisplay() { return 10; }
+  function minWithdrawUsd() { return minWithdrawDisplay(); }
+  function minDepositUsd() { return 5; }
 
   /* Timezone is a decent offline guess and costs no request, so it seeds
      the value before the IP lookup comes back (and stands in for it if the
@@ -3298,10 +3280,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     account: saved.account === 'real' ? 'real' : 'demo',
     /* A real account starts empty. The demo balance is a product
        feature, not seed data, so it opens with virtual funds. */
-    /* Seeded in USD like every balance; the figure itself is chosen so
-       it reads as a round number in the viewer's own money, see
-       seedDemoBalance(), which runs once the country is known. */
-    balances: saved.balances || { real: 0, demo: 10000 },
+    /* Dollars, like every balance here. */
+    balances: saved.balances || { real: 0, demo: DEMO_SEED_USD },
     currency: 'USD',
     verified: !!saved.verified,
     /* The four states the server actually has. `verified` stays as the
@@ -3840,6 +3820,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       stakeCurrency: stakeCurrency,
       minWithdrawDisplay: minWithdrawDisplay,
       minWithdrawUsd: minWithdrawUsd,
+      minDepositUsd: minDepositUsd,
       stakeChips: stakeChips,
       minStakeUsd: minStakeUsd
     },
@@ -4343,14 +4324,28 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   function submit(label, done) {
     return '<button class="btn btn-fill" type="button" data-done="' + done + '">' + label + '</button>';
   }
-  /* Mobile money is quoted in the money the person actually holds. Card
-     follows the same country; USDT is a dollar rail, so it stays in USD. */
-  function payCur(methodId) {
+  /* Every rail is quoted in dollars now, because the account is. What
+     changes per rail is what the customer's bank or handset will
+     actually be debited, which is shown as a separate line at the moment
+     it applies rather than by pricing the whole product in it. */
+  function payCur() {
+    return { cur: 'USD', rate: 1, min: API().money.minDepositUsd(), quick: [5, 10, 25, 50, 100] };
+  }
+
+  /* What the phone or the card is actually debited, for a rail that
+     cannot charge dollars. Null when there is nothing to convert.
+
+     It is a live line rather than a footnote: the figure that leaves
+     somebody's account is the one they check against their SMS, and a
+     note pinned to the minimum while the field says something else is
+     worse than no note at all. */
+  function railChargeLine(methodId, usd) {
+    if (methodId === 'usdt') return '';
     var c = API().geo.country();
-    if (methodId === 'usdt' || !c.cur) {
-      return { cur: API().account.currency(), rate: 1, min: 10, quick: [10, 25, 50, 100, 250] };
-    }
-    return { cur: c.cur, rate: c.rate, min: c.min, quick: c.quick };
+    if (!c.cur || !c.rate || c.rate === 1) return '';
+    return '<span class="hint" data-charge="amount" data-rate="' + c.rate +
+      '" data-cur="' + c.cur + '">Charged as ' +
+      F().localMoney(Math.round(usd * c.rate), c.cur) + '</span>';
   }
 
   /* The waiting and done screens are shared by deposit and withdraw, so
@@ -4477,10 +4472,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                number about money this visitor does not have. */
             return '<div class="choices">' +
               (canReal
-                ? row('real', 'Real', 'USD · live funds', F().usdAmount(b.real), 'US')
+                ? row('real', 'Real', cur + ' · live funds', F().amount(b.real), 'US')
                 : row('real', 'Real', 'Create an account to trade real funds', 'Sign up', 'US')) +
-              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo),
-                  API().geo.code()) +
+              row('demo', 'Demo', cur + ' · practice funds', F().amount(b.demo), 'US') +
             '</div><p class="hint" style="margin:14px 2px 0">' +
               (canReal
                 ? 'Open positions stay with the account they were taken on.'
@@ -4754,12 +4748,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           title: 'Deposit funds',
           sub: 'Funds land in the account you are trading. No fee from Novi.',
           body: function () {
-            var c = API().geo.country();
-            var money = c.cur || 'USD';
-            var lo = c.min || 10;
-            var hi = c.rate ? Math.round(1200 * c.rate / 1000) * 1000 : 1200;
+            var lo = API().money.minDepositUsd();
             return method('mpesa', 'phone', 'M-Pesa',
-                'Instant · ' + money + ' ' + F().count(lo) + ' - ' + F().count(hi)) +
+                'Instant · USD ' + F().count(lo) + ' - ' + F().count(1200)) +
               method('card', 'card', 'Card', 'Visa and Mastercard · secured by Paystack') +
               methodOff('coin', 'USDT', 'Crypto deposits are not open yet');
           }
@@ -4798,9 +4789,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                 '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
             }
 
-            var pay = payCur(m);
+            var pay = payCur();
             var start = pay.quick[1];
             var floor = pay.min || pay.quick[0];
+            var charged = railChargeLine(m, start);
 
             return '<div class="modal-form">' +
               logo +
@@ -4811,7 +4803,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                 '<div class="quick">' + pay.quick.map(function (n) {
                   return '<button type="button" data-amount="' + n + '">' + F().count(n) + '</button>';
                 }).join('') + '</div>' +
-                '<span class="hint">Minimum ' + F().count(floor) + ' ' + pay.cur + '</span></div>' +
+                '<span class="hint">Minimum ' + F().count(floor) + ' ' + pay.cur + '</span>' +
+                charged + '</div>' +
               inner +
               (m === 'card'
                 /* Not a link to a hosted page: that page is a fixed form
@@ -5067,16 +5060,19 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                 field('wAddress', 'Wallet address', 'placeholder="T..."',
                   'Check carefully. Transfers cannot be reversed.');
             } else if (s.method === 'card') {
-              /* Four digits and a name, never the card number. A payout
-                 goes back to the card it came from through the processor,
-                 which already holds the card; the digits are only here so
-                 the person can tell us which card they mean, and a full
-                 PAN on our form would drag the whole page into PCI scope
-                 to collect something we cannot use. */
-              inner = brandMark('assets/cards.png', 'Visa and Mastercard', 'assets/cards-ink.png') +
-                field('wCardName', 'Name on the card', 'placeholder="As printed"') +
-                field('wCardLast4', 'Last 4 digits', 'inputmode="numeric" maxlength="4" placeholder="4242"',
-                  'Refunds go back to the card you deposited with. We never ask for the full number.');
+              /* Bank, name and account number. A payout is a transfer
+                 into an account, not a reverse card charge: somebody who
+                 deposited by phone has no card to send it back to, and
+                 somebody who did deposit by card may have closed it since.
+
+                 Deliberately not the card number. We never ask for a PAN
+                 on our own form, and we could not use one for a payout
+                 anyway. */
+              inner = field('wBank', 'Bank', 'placeholder="Equity, KCB, Co-operative"') +
+                field('wCardName', 'Name on the account', 'placeholder="As it appears at the bank"') +
+                field('wAccount', 'Account number', 'inputmode="numeric" placeholder="0123456789"',
+                  'Payouts are sent to an account in your own name. A mismatch is the ' +
+                  'one thing that delays a transfer.');
             } else {
               inner = phoneField('wPhone', 'M-Pesa number',
                 'Must match the number registered to your verified name.');
@@ -6597,17 +6593,16 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   function balanceMarkup() {
     var kind = API.account.kind();
     var real = kind === 'real';
-    /* The real balance is dollars, because that is the currency it is
-       actually held in: every contract, every payout and the ledger
-       itself are USD, and showing it converted meant the figure on the
-       chip never matched the figure in the account. The demo balance
-       stays in the viewer's own money, which is what practice money is
-       for. The flag says which without needing to be read. */
-    var cc = real ? 'US' : API.geo.code();
-    return '<span class="acct-flag">' + (flag(cc) || '') + '</span>' +
+    /* Dollars, because that is the currency the balance is actually
+       held in: every contract, every payout and the ledger itself are
+       USD, and showing it converted meant the figure on the chip never
+       matched the figure in the account. */
+    /* Both balances are dollars, so both carry the same flag. A
+       Kenyan flag beside a figure in USD was the old local-money layer
+       leaving a fingerprint. */
+    return '<span class="acct-flag">' + (flag('US') || '') + '</span>' +
       '<span class="acct-txt">' +
-        '<span class="acct-kind">' + kind + ' · ' +
-          (real ? 'USD' : API.account.currency()) + '</span>' +
+        '<span class="acct-kind">' + kind + ' · USD</span>' +
         '<span class="bal num">' +
           (real ? F.usdAmount(API.account.balance()) : F.amount(API.account.balance())) +
         '</span>' +
@@ -7590,6 +7585,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           if (!atEnd) { try { el.setSelectionRange(next.length, next.length); } catch (x) {} }
         }
       }
+      /* The shilling figure under a dollar field, kept in step with what
+         is typed rather than fixed at whatever the form opened on. */
+      var charge = document.querySelector('[data-charge="' + el.id + '"]');
+      if (charge) {
+        var cRate = +(charge.getAttribute('data-rate') || 1) || 1;
+        charge.textContent = 'Charged as ' +
+          F.localMoney(Math.round((+el.value || 0) * cRate), charge.getAttribute('data-cur'));
+      }
+
       var total = document.querySelector('[data-total="' + el.id + '"]');
       if (total) {
         /* The field and the fee are both in the viewer's currency
@@ -7822,17 +7826,23 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (name === 'deposit') {
       clearErrors();
       var box = document.getElementById('amount');
-      var amount = +((box || {}).value) || 0;
+      /* Typed in dollars, like everything else on screen. */
+      var usd = +((box || {}).value) || 0;
       var pay = API.geo.country();
-      var isLocal = state.data.method !== 'usdt' && !!pay.cur;
-      var rate = isLocal ? pay.rate : 1;
-      var money = isLocal ? pay.cur : API.account.currency();
 
-      var floor = isLocal ? (pay.min || 1) : 10;
-      if (amount <= 0) return fieldError('amount', 'Enter an amount to deposit');
-      if (amount < floor) return fieldError('amount',
-        'Minimum deposit is ' + F.count(floor) + ' ' + money);
-      var usd = amount / rate;
+      var floor = API.money.minDepositUsd();
+      if (usd <= 0) return fieldError('amount', 'Enter an amount to deposit');
+      if (usd < floor) return fieldError('amount',
+        'Minimum deposit is ' + F.count(floor) + ' USD');
+
+      /* Neither M-Pesa nor the card processor charges dollars here, so
+         the rail is asked for the shilling equivalent while the customer
+         is quoted and credited in dollars. The conversion lives here and
+         at the server's own rate on the way back, and nowhere between. */
+      var toRail = state.data.method !== 'usdt' && pay.rate && pay.rate !== 1;
+      var rate = toRail ? pay.rate : 1;
+      var money = toRail ? pay.cur : 'USD';
+      var amount = Math.round(usd * rate * 100) / 100;
 
       if (state.data.method === 'mpesa') {
         var ph = document.getElementById('mpesaPhone');
@@ -7899,11 +7909,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         dest.address = addr;
         dest.network = (document.getElementById('wNetwork') || {}).value || undefined;
       } else if (method === 'card') {
+        var bank = ((document.getElementById('wBank') || {}).value || '').trim();
         var holder = ((document.getElementById('wCardName') || {}).value || '').trim();
-        var last4 = ((document.getElementById('wCardLast4') || {}).value || '').replace(/\D/g, '');
-        if (holder.length < 2) return fieldError('wCardName', 'Enter the name printed on the card');
-        if (last4.length !== 4) return fieldError('wCardLast4', 'Enter the last 4 digits');
-        dest.card = { name: holder, last4: last4 };
+        var account = ((document.getElementById('wAccount') || {}).value || '').replace(/[^0-9]/g, '');
+        if (bank.length < 2) return fieldError('wBank', 'Enter the name of the bank');
+        if (holder.length < 2) return fieldError('wCardName', 'Enter the name on the account');
+        if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
+        dest.card = { bank: bank, name: holder, account: account };
       } else {
         dest.phone = (document.getElementById('wPhone') || {}).value || undefined;
       }
