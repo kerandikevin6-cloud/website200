@@ -76,11 +76,10 @@
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 
   --topbar-h:58px;
-  /* The floating bar is 58px tall and sits 10px off the bottom edge, so
-     the space a page must leave for it is 68 — not the 62 the old
-     full-width shelf needed. Six pixels of the last row would otherwise
-     slide under it. */
-  --tabbar-h:70px;
+  /* The floating bar is 64px tall (50px slots + 6px padding either side
+     + the border) and sits 10px off the bottom edge, so a page has to
+     leave 74 clear. Anything less and the last row slides underneath. */
+  --tabbar-h:78px;
   color-scheme:light;
 }
 
@@ -314,9 +313,9 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .tabbar{
   position:fixed;left:50%;transform:translateX(-50%);z-index:45;
   bottom:calc(env(safe-area-inset-bottom) + 10px);
-  display:flex;align-items:center;gap:2px;
-  height:auto;width:auto;max-width:calc(100% - 28px);
-  padding:5px;border-radius:999px;
+  display:flex;align-items:center;gap:6px;
+  height:auto;width:calc(100% - 24px);max-width:420px;
+  padding:6px;border-radius:999px;
   background:var(--tabbar-bg);
   border:1px solid var(--tabbar-line);
   box-shadow:0 8px 28px rgba(0,0,0,.28);
@@ -331,23 +330,26 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
    it never changes a size, so the bar cannot shift between pages */
 /* Every slot is the same capsule, and the active state only repaints
    inside it — the bar cannot resize between pages. */
+/* The slots share the bar's width equally, so the spacing between them
+   grows with the screen instead of leaving four icons huddled in the
+   middle of a wide pill. */
 .tabbar a{
   position:relative;
-  display:flex;align-items:center;justify-content:center;
-  width:56px;height:46px;flex:none;padding:0;border-radius:999px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  flex:1 1 0;min-width:0;height:50px;padding:0 4px;border-radius:999px;
   color:var(--muted);
 }
 /* the box is fixed so a solid glyph cannot nudge the label; the icons
    are Material Symbols on a 960 grid and carry their own optical
    padding, so 22 here matches the old 20px outline weight */
-.tabbar .tb-ico{display:block;width:22px;height:22px;flex:none}
+.tabbar .tb-ico{display:block;width:21px;height:21px;flex:none}
 .tabbar .tb-ico svg{display:block}
-/* The label stays in the markup for screen readers and disappears from
-   the screen: at this size the icon is the label, and four words across
-   a floating pill is what made the old bar look like a toolbar. */
+/* Named. An icon alone is a guess for anyone who has not used the app
+   before, and "Positions" is not a concept a receipt glyph conveys. */
 .tabbar .tb-lab{
-  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-  overflow:hidden;clip-path:inset(50%);white-space:nowrap;
+  display:block;font-style:normal;font-size:9px;line-height:1;letter-spacing:.06em;
+  text-transform:uppercase;font-weight:600;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 /* The lit capsule behind the active icon. Painted behind, at the size
    of the slot, so selecting one never changes a measurement. */
