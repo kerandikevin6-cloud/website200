@@ -901,7 +901,7 @@
 
     /* Only a box that actually is a consent. This used to match any
        checkbox inside a .checkline, which on the sign-in page is "Keep
-       me signed in" — so anyone who left that unticked was told to
+       me signed in", so anyone who left that unticked was told to
        "accept the terms" and could not sign in at all. A convenience
        toggle was gating the door. */
     var consent = f.querySelector('input[type=checkbox][data-consent], input[type=checkbox][required]');
@@ -1300,6 +1300,17 @@
       }
 
       state.data.ref = started.reference;
+
+      /* Some rails settle in the request itself rather than through a
+         callback, and answer with the finished payment. Polling for
+         three seconds to rediscover something we were just told is a
+         waiting screen shown for no reason. */
+      if (started.status === 'success') {
+        state.data.credited = (started.creditedMinor || 0) / 100;
+        await hydrateSession();
+        gotoStep('success');
+        return;
+      }
 
       var payment = await window.NexNet.waitForDeposit(started.reference);
       if (token !== payToken) return;            /* closed while waiting */
