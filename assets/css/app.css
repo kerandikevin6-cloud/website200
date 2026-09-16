@@ -218,8 +218,28 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   background:var(--surface-2);border:1px solid var(--line);border-radius:0;
 }
 .acct:hover{color:var(--text);background:var(--surface-3)}
+
+/* Which account is being traded is the single most consequential thing
+   on the screen, and a 6px dot is not enough to carry it — somebody
+   glancing down mid-trade needs to know whether that number is money.
+   Green is real, amber is practice, and the whole chip says so. */
+.acct.real{
+  background:color-mix(in srgb, var(--pos) 16%, transparent);
+  border-color:color-mix(in srgb, var(--pos) 55%, transparent);
+}
+.acct.real:hover{background:color-mix(in srgb, var(--pos) 24%, transparent)}
+.acct.real .acct-kind{color:var(--pos)}
+
+.acct.demo{
+  background:color-mix(in srgb, var(--warn) 16%, transparent);
+  border-color:color-mix(in srgb, var(--warn) 55%, transparent);
+}
+.acct.demo:hover{background:color-mix(in srgb, var(--warn) 24%, transparent)}
+.acct.demo .acct-kind{color:var(--warn)}
+
 .acct-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex:none}
-.acct-dot.demo{background:var(--accent)}
+.acct.demo .acct-dot{background:var(--warn)}
+.acct-dot.demo{background:var(--warn)}
 .acct-txt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0}
 .acct-kind{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:1}
 .acct .bal{font-size:12.5px;color:var(--text);line-height:1.1}
@@ -926,8 +946,28 @@ footer a:hover{color:var(--text-2)}
 .pnl-head .sub{font-size:11.5px;color:var(--muted)}
 .pnl-side{flex:1;min-width:190px;display:grid;grid-template-columns:1fr 1fr;gap:0 18px;align-content:center}
 .pnl-side .kv{padding:6px 0;border:none;font-size:12.5px}
-.filters{display:flex;align-items:center;gap:10px;padding:0 14px 12px;flex-wrap:wrap}
-.chipline{display:flex;gap:6px;flex-wrap:wrap}
+.filters{display:flex;align-items:center;gap:10px;padding:0 14px 14px;flex-wrap:wrap}
+
+/* The period chips scroll sideways rather than wrapping. Wrapping left
+   a ragged second row that pushed the type filter and the export button
+   around depending on how many chips fitted — the controls moved every
+   time the tab changed, which is the one thing a control row must not
+   do. */
+.chipline{
+  display:flex;gap:6px;flex:1 1 auto;min-width:0;
+  overflow-x:auto;scrollbar-width:none;padding-bottom:2px;
+}
+.chipline::-webkit-scrollbar{display:none}
+.filter-tail{display:flex;align-items:center;gap:8px;flex:none;margin-left:auto}
+
+/* Narrow: the chips take the first line, the controls the second, with
+   the export still hard right. */
+@media (max-width:539px){
+  .chipline{flex:1 0 100%}
+  .filter-tail{flex:1 0 100%;margin-left:0}
+  .filter-tail .input.sm{flex:1;min-width:0}
+  .filter-tail #exportBtn{margin-left:auto;flex:none}
+}
 .fchip{padding:6px 11px;font-size:12px;border:1px solid var(--line-soft);color:var(--muted);background:var(--surface)}
 .fchip.on{border-color:var(--text);color:var(--text)}
 .input.sm{width:auto;padding:7px 10px;font-size:12.5px}
@@ -2027,3 +2067,13 @@ body[data-page="learn"] main.lrn-flow{background:var(--bg)}
 @media (prefers-reduced-motion:reduce){
   html{scroll-snap-type:none}
 }
+
+/* The auth pages have no top bar, so their back control sits above the
+   wordmark. The header centres its text; this one thing stays left,
+   where a back control belongs on every other screen. */
+.auth-head{position:relative}
+.auth-back{margin:0 auto 18px 0}
+
+/* A sub-page has no tab bar, so the sections should not reserve room
+   for one. */
+body.no-tabs .lrn{padding-bottom:var(--lsec-y)}

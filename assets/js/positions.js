@@ -48,18 +48,31 @@
     var ranges = [['today', 'Today'], ['7d', '7 days'], ['30d', '30 days'], ['all', 'All']];
     var types = [['all', 'All types'], ['evenodd', 'Even / Odd'], ['digits', 'Matches / Differs'], ['overunder', 'Over / Under']];
 
+    /* Two groups, not five loose controls: the period chips, then the
+       controls that act on what they select. Left to right, they read as
+       "this period, of this type, exported" — and the export sits at the
+       far right where an action belongs, instead of wherever the wrap
+       happened to drop it. */
     el.filters.innerHTML =
       '<div class="filters">' +
         '<div class="chipline">' + ranges.map(function (r) {
           return '<button class="fchip' + (filter.range === r[0] ? ' on' : '') + '" data-range="' + r[0] + '">' + r[1] + '</button>';
         }).join('') + '</div>' +
-        (view === 'closed'
-          ? '<select class="input sm" id="typeFilter" aria-label="Contract type">' + types.map(function (t) {
-              return '<option value="' + t[0] + '"' + (filter.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>';
-            }).join('') + '</select>'
-          : '') +
-        '<button class="btn-mini" id="exportBtn">' + I('down', 14) + 'CSV</button>' +
+        '<div class="filter-tail">' +
+          (view === 'closed'
+            ? '<select class="input sm" id="typeFilter" aria-label="Contract type">' + types.map(function (t) {
+                return '<option value="' + t[0] + '"' + (filter.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>';
+              }).join('') + '</select>'
+            : '') +
+          '<button class="btn-mini" id="exportBtn">' + I('down', 14) + 'CSV</button>' +
+        '</div>' +
       '</div>';
+  }
+
+  function instrumentName(c) {
+    if (c.symbolName) return c.symbolName;
+    var meta = API.symbol(c.symbol);
+    return (meta && meta.name) || c.symbol || 'Unknown';
   }
 
   /* ---------- list ---------- */
@@ -95,7 +108,12 @@
         '<span class="ico ' + (live ? 'live' : pl >= 0 ? 'pos' : 'neg') + '">' +
           (live ? I('clock', 16) : I(pl >= 0 ? 'check' : 'close', 16)) + '</span>' +
         '<span class="t"><b>' + API.contracts.label(c) + '</b>' +
-          '<span>' + c.symbolName.replace(' Index', '') + ' · ' + F.money(c.stake) +
+          /* symbolName is written when the contract is opened, so a row
+             restored from an older stored shape — or one that arrives
+             from the server later — can be missing it. Reading through
+             it directly threw, and a throw here loses the whole list and
+             leaves the previous screen in place with nothing to say why. */
+          '<span>' + instrumentName(c).replace(' Index', '') + ' · ' + F.money(c.stake) +
           (live ? ' · ' + Math.max(0, c.ticks - c.elapsed) + ' ticks left' : ' · ' + F.clock(c.exitTime)) + '</span></span>' +
         '<span class="p"><span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
           '<span class="num sub">' + (live ? 'value ' + F.amount(c.value) : c.status) + '</span></span>' +

@@ -222,7 +222,8 @@
       '<a class="wordmark only-desk" href="' + href('index.html') + '">Nexas</a>' +
       menu +
       '<span class="spacer"></span>' +
-      '<button class="acct" data-open="switch" id="acctBtn" aria-label="Switch account">' + balanceMarkup() + '</button>' +
+      '<button class="acct ' + API.account.kind() + '" data-open="switch" id="acctBtn" ' +
+        'aria-label="Switch account">' + balanceMarkup() + '</button>' +
       '<button class="btn-primary" data-open="deposit">Deposit</button>' +
       '<button class="iconbtn bell" data-open="alerts" aria-label="Notifications">' + icon('bell', 18) + '<i></i></button>' +
     '</header>';
@@ -1498,7 +1499,13 @@
   function bindChrome() {
     API.on('balance', function () {
       var b = document.getElementById('acctBtn');
-      if (b) b.innerHTML = balanceMarkup();
+      if (!b) return;
+      b.innerHTML = balanceMarkup();
+      /* The colour is the account, so it has to move when the account
+         does — not only when the bar is first drawn. */
+      var kind = API.account.kind();
+      b.classList.toggle('real', kind === 'real');
+      b.classList.toggle('demo', kind !== 'real');
     });
     API.on('connection', connectionBanner);
     API.on('geo', paintCountry);
