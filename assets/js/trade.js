@@ -49,8 +49,29 @@
     /* Markets is where this is chosen, so the terminal has to say which
        one it landed on, otherwise the choice is invisible the moment
        the page changes. Drawn over the chart so it costs no height. */
+    /* A real <select>, not a custom menu: on a phone it opens the
+       system picker, it is reachable from the keyboard for nothing, and
+       it cannot end up behind the canvas. Rebuilt only when the
+       instrument changes, so opening it is not interrupted by the tick
+       that repaints the digits underneath. */
     var instEl = $('chartInst');
-    if (instEl) instEl.textContent = meta.name;
+    if (instEl && instEl.getAttribute('data-for') !== S.symbol) {
+      instEl.setAttribute('data-for', S.symbol);
+      var groups = [], seen = {};
+      API.symbols.forEach(function (sym) {
+        if (!seen[sym.group]) { seen[sym.group] = []; groups.push(sym.group); }
+        seen[sym.group].push(sym);
+      });
+      instEl.innerHTML =
+        '<select class="inst-pick" id="instPick" aria-label="Instrument">' +
+          groups.map(function (g) {
+            return '<optgroup label="' + g + '">' + seen[g].map(function (sym) {
+              return '<option value="' + sym.id + '"' +
+                (sym.id === S.symbol ? ' selected' : '') + '>' + sym.name + '</option>';
+            }).join('') + '</optgroup>';
+          }).join('') +
+        '</select>' + I('chevD', 13);
+    }
     var h = API.feed.history(S.symbol).slice(-120);
     var counts = [0,0,0,0,0,0,0,0,0,0];
     h.forEach(function (p) {
@@ -66,10 +87,14 @@
     var picking = S.tab !== 'even_odd';
     var out = '';
     for (var i = 0; i < 10; i++) {
-      var cls = 'digit' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
+      /* The circle holds the digit and nothing else. The share sat
+         inside it at 7.5px, which is under the size anything is meant to
+         be read at, and it was competing with the number it describes. */
+      var cls = 'dcell' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
         (picking && i === S.barrier ? ' sel' : '');
       out += '<button class="' + cls + '" data-digit="' + i + '"' + (picking ? '' : ' tabindex="-1"') + '>' +
-        '<b>' + i + '</b><i>' + pctArr[i].toFixed(1) + '</i></button>';
+        '<span class="digit">' + i + '</span>' +
+        '<i class="dpct">' + pctArr[i].toFixed(1) + '%</i></button>';
     }
     html(el.digits, out);
   }
@@ -97,7 +122,7 @@
   function targetsRow(auto) {
     return '<div class="targets">' +
       targetCell('tgtTP', 'Target profit', '$', auto.takeProfit, 'pos') +
-      targetCell('tgtSL', 'Target loss', '$', auto.stopLoss, 'neg') +
+      targetCell('tgtSL', 'Stop loss', '$', auto.stopLoss, 'neg') +
       targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier, 'warn') +
     '</div>';
   }
@@ -133,14 +158,18 @@
           : '<button class="btn-mini" data-open="autorun">Settings</button>') +
       '</div>';
 
+    /* The three targets are the rules an automated run stops on. In
+       manual mode there is no run to stop, so they were three fields
+       that did nothing sitting above the one control that does. */
+    var targets = S.mode === 'auto' ? targetsRow(auto) : '';
+
     html(el.panel,
       '<div class="seg" id="modeSeg">' +
         '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '">Auto</button>' +
         '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '">Manual</button>' +
       '</div>' +
-      targetsRow(auto) +
-      runRow +
-      barrierRow +
+      /* Stake first: it is the field that gets touched on every single
+         trade, and it was below three that are set once and left. */
       '<div>' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
@@ -155,6 +184,9 @@
           }).join('') +
         '</div>' +
       '</div>' +
+      barrierRow +
+      targets +
+      runRow +
       /* one line, not two: the trade screen is short on height and this
          is the least load-bearing thing on it */
       '<div class="session">' +
@@ -417,6 +449,10 @@
       }
     });
 
+    root.addEventListener('change', function (e) {
+      if (e.target.id === 'instPick') switchSymbol(e.target.value);
+    });
+
     root.addEventListener('input', function (e) {
       var id = e.target.id;
       if (id === 'stake') {
@@ -460,6 +496,20 @@
       if (f) f.value = stakeShown();
       refreshValidity();
     } else { renderPanel(); renderDock(); }
+  }
+
+  /* Change instrument without leaving the terminal. The chart is torn
+     down and rebuilt rather than re-pointed: it holds a window into one
+     series' history, and carrying that across to a different price
+     range draws a cliff between the two. */
+  function switchSymbol(id) {
+    if (!id || id === S.symbol) return;
+    if (!API.prefs.setSymbol(id)) return;
+    S.symbol = id;
+    if (chart) { chart.destroy(); chart = null; }
+    chart = window.NexChart.create($('chart'), { symbol: S.symbol });
+    chart.resize();
+    renderAll();
   }
 
   /* ---------- mount ---------- */

@@ -65,6 +65,14 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
             <label for="sEmail">Email address</label>
             <input class="input" id="sEmail" type="email" autocomplete="email" placeholder="you@mail.com">
           </div>
+          <!-- The country picker is built at runtime from the same table
+               the deposit sheet uses, so the two can never disagree about
+               which countries we take money from. -->
+          <div class="field">
+            <label for="sPhone">Phone number</label>
+            <div class="phone" id="sPhoneRow"></div>
+            <span class="hint">The number your M-Pesa is registered to. Payouts go here.</span>
+          </div>
           <div class="field">
             <label for="newPassword">Password</label>
             <div class="input-wrap">
@@ -105,5 +113,62 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <script src="assets/js/api.js"></script>
 <script src="assets/js/modals.js"></script>
 <script src="assets/js/app.js"></script>
+<script>
+(function () {
+  "use strict";
+  /* A country that can be changed, not a guess that cannot. The flag and
+     the dialling code are drawn by us; the list itself is a real <select>
+     sitting invisibly on top, so a phone opens its own picker and the
+     keyboard reaches it for nothing. */
+  function init() {
+    var API = window.NexAPI;
+    var row = document.getElementById('sPhoneRow');
+    if (!row || !API) return;
+
+    var countries = API.geo.countries;
+    var codes = Object.keys(countries);
+    var cc = API.geo.code();
+    if (codes.indexOf(cc) === -1) cc = codes[0];
+
+    row.innerHTML =
+      '<span class="phone-cc" id="sCC">' +
+        '<i class="flag"></i><b class="num"></b>' +
+        window.NexIcon('chevD', 12) +
+        '<select id="sCountry" aria-label="Country">' +
+          codes.map(function (c) {
+            return '<option value="' + c + '">' + countries[c].name +
+              ' (+' + countries[c].dial + ')</option>';
+          }).join('') +
+        '</select>' +
+      '</span>' +
+      '<input class="input num phone-input" id="sPhone" type="tel" inputmode="numeric" ' +
+        'autocomplete="tel-national">';
+
+    var sel = document.getElementById('sCountry');
+    var flag = row.querySelector('.flag');
+    var dial = row.querySelector('b');
+    var input = document.getElementById('sPhone');
+
+    function paint() {
+      var c = countries[sel.value];
+      flag.innerHTML = window.NexFlag(sel.value) || '';
+      dial.textContent = '+' + c.dial;
+      input.placeholder = c.sample;
+      /* The account's country follows the picker. It decides the
+         currency on every screen after this one, so getting it from a
+         field the person chose beats getting it from an IP lookup. */
+      input.setAttribute('data-country', sel.value);
+    }
+
+    sel.value = cc;
+    paint();
+    sel.addEventListener('change', paint);
+  }
+
+  if (window.NexAPI) init();
+  else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
 </body>
 </html>

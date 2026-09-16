@@ -240,6 +240,11 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .acct.demo:hover{background:color-mix(in srgb, var(--warn) 24%, transparent)}
 .acct.demo .acct-kind{color:var(--warn)}
 
+.acct-flag{
+  display:flex;align-items:center;justify-content:center;flex:none;
+  width:22px;height:15px;overflow:hidden;border:1px solid var(--line-soft);
+}
+.acct-flag svg{display:block;width:100%;height:100%}
 .acct-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex:none}
 .acct.demo .acct-dot{background:var(--warn)}
 .acct-dot.demo{background:var(--warn)}
@@ -433,16 +438,22 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 
 /* all ten digits share one row - never a horizontal scroll */
 .digits{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:10px 10px 12px}
+/* A cell is the circle plus the share under it. The share used to live
+   inside the circle at 7.5px, which is smaller than anything is meant to
+   be read at; outside, it has room to be legible. */
+.dcell{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
 .digit{
-  width:100%;max-width:38px;aspect-ratio:1;margin:0 auto;border-radius:50%;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;max-width:38px;aspect-ratio:1;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
   border:1px solid var(--line-soft);background:var(--surface);
+  font-family:var(--mono);font-size:12.5px;font-weight:500;line-height:1;
 }
-.digit b{font-family:var(--mono);font-size:12px;font-weight:500;line-height:1}
-.digit i{font-style:normal;font-size:7.5px;color:var(--muted);margin-top:2px;font-family:var(--mono);line-height:1}
-.digit.hot{border-color:var(--accent)}
-.digit.hot i{color:var(--accent)}
-.digit.cur{background:var(--surface-3)}
+.dpct{font-style:normal;font-size:9.5px;color:var(--muted);font-family:var(--mono);line-height:1}
+.dcell.hot .digit{border-color:var(--accent)}
+.dcell.hot .dpct{color:var(--accent)}
+.dcell.cur .digit{background:var(--surface-3)}
+.dcell.sel .digit{border-color:var(--accent);background:var(--accent-soft)}
+.dcell.sel .dpct{color:var(--accent)}
 
 .panel{padding:2px 14px 12px;display:flex;flex-direction:column;gap:10px}
 .seg{display:flex;border-bottom:1px solid var(--line-soft)}
@@ -763,6 +774,29 @@ footer{border-top:1px solid var(--line-soft);padding:24px 18px 32px;color:var(--
 footer .fl{display:flex;flex-wrap:wrap;gap:14px 20px;margin-bottom:16px}
 footer a:hover{color:var(--text-2)}
 
+/* ---------------- support tickets ---------------- */
+.ticket-form{display:flex;flex-direction:column;gap:14px;padding:16px}
+.ticket-text{resize:vertical;min-height:120px;line-height:1.55;font-family:inherit}
+.ticket-sect{padding:6px 18px 8px}
+.ticket{border-top:1px solid var(--line-soft);padding:15px 16px}
+.ticket-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ticket-top b{font-size:13.5px;font-weight:500;flex:1;min-width:0}
+/* Their own words, kept as they typed them: somebody writing at midnight
+   about a missing deposit uses line breaks, and flattening them into one
+   paragraph makes the ticket harder to read at both ends. */
+.ticket-said{
+  margin:0;font-size:13px;line-height:1.6;color:var(--text-2);white-space:pre-wrap;
+  word-break:break-word;
+}
+.ticket-reply{
+  margin-top:10px;padding:11px 12px;border-left:2px solid var(--accent);
+  background:var(--surface-2);
+}
+.ticket-reply b{display:block;font-size:11.5px;color:var(--accent);margin-bottom:4px}
+.ticket-reply p{margin:0;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.ticket-wait{margin-top:10px;font-size:12px;color:var(--muted)}
+.ticket-when{margin-top:9px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+
 /* ---------------- copy trading ---------------- */
 .copy-soon{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:26px 20px}
 .copy-mark{
@@ -833,7 +867,7 @@ footer a:hover{color:var(--text-2)}
   .terminal .col-right .panel .session{margin-top:auto}
   #chart{height:min(50vh,420px)}
   .digits{gap:8px;padding:14px 0}
-  .digit{max-width:48px}
+  .digit{max-width:46px}
   .ctab{font-size:13px;padding:13px 8px 18px}
   .panel{
     background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);
@@ -1024,10 +1058,7 @@ footer a:hover{color:var(--text-2)}
 /* Named `sel`, not `picked`: the document picker further down owns
    `.picked` and gives it a 168px minimum height, which turned the chosen
    barrier digit into a tall blue slab and stretched the whole row with
-   it. The three contract tabs now lay out identically; only the barrier
-   control differs, which is the only thing that should. */
-.digit.sel{border-color:var(--accent);background:var(--accent-soft)}
-.digit.sel i{color:var(--accent)}
+   it. The rule itself lives with the other .dcell states above. */
 
 /* ---------------- panel rows ---------------- */
 .stack-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -1307,6 +1338,14 @@ body.locked{overflow:hidden}
 .phone-cc .flag{display:flex;flex:none}
 .flagsvg{display:block;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.14) inset}
 .phone-cc b{font-size:13.5px;font-weight:500;color:var(--text-2)}
+/* The country list: a real <select> laid over the chip we drew, so the
+   flag and the code are ours and the menu is the operating system's. */
+.phone-cc{position:relative}
+.phone-cc select{
+  position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;
+  appearance:none;-webkit-appearance:none;border:0;
+}
+.phone-cc svg{color:var(--muted);flex:none;margin-left:-2px}
 .phone .input{
   flex:1;min-width:0;border:none;background:none;border-radius:0;
   letter-spacing:.06em;font-size:15px;
@@ -2121,11 +2160,25 @@ body[data-chrome="app"] main{background:var(--bg)}
 
 /* The instrument, over the chart rather than above it — the terminal is
    short on height and this is a label, not a panel. */
+/* The instrument name is the control that changes it. It reads as a
+   label until you go near it, which is the right weight for something
+   that sits on top of the chart. */
 .chart-inst{
-  position:absolute;top:8px;left:12px;z-index:2;pointer-events:none;
-  font-size:11px;letter-spacing:.04em;color:var(--muted);
-  max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  position:absolute;top:6px;left:8px;z-index:2;
+  display:flex;align-items:center;gap:2px;max-width:70%;
+  color:var(--muted);border:1px solid transparent;
 }
+.chart-inst:hover{color:var(--text);border-color:var(--line-soft);background:var(--surface-2)}
+.chart-inst svg{flex:none;pointer-events:none;margin-right:5px}
+.inst-pick{
+  appearance:none;-webkit-appearance:none;border:0;background:none;color:inherit;
+  font-family:var(--sans);font-size:11.5px;letter-spacing:.04em;
+  padding:5px 2px 5px 5px;max-width:100%;cursor:pointer;
+}
+.inst-pick:focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+/* The menu itself is drawn by the OS, so it needs a readable pair of
+   colours rather than the chart's. */
+.inst-pick option,.inst-pick optgroup{background:var(--surface);color:var(--text)}
 
 /* ---------------- learn: one idea per screen ----------------
    The page was a single long column that asked to be read all at once.

@@ -209,10 +209,21 @@
      how much of the top bar this button takes. */
   function balanceMarkup() {
     var kind = API.account.kind();
-    return '<i class="acct-dot ' + kind + '"></i>' +
+    var real = kind === 'real';
+    /* The real balance is dollars, because that is the currency it is
+       actually held in: every contract, every payout and the ledger
+       itself are USD, and showing it converted meant the figure on the
+       chip never matched the figure in the account. The demo balance
+       stays in the viewer's own money, which is what practice money is
+       for. The flag says which without needing to be read. */
+    var cc = real ? 'US' : API.geo.code();
+    return '<span class="acct-flag">' + (flag(cc) || '') + '</span>' +
       '<span class="acct-txt">' +
-        '<span class="acct-kind">' + kind + '</span>' +
-        '<span class="bal num">' + F.amount(API.account.balance()) + '</span>' +
+        '<span class="acct-kind">' + kind + ' · ' +
+          (real ? 'USD' : API.account.currency()) + '</span>' +
+        '<span class="bal num">' +
+          (real ? F.usdAmount(API.account.balance()) : F.amount(API.account.balance())) +
+        '</span>' +
       '</span>' + icon('chevD', 12);
   }
 
@@ -816,7 +827,11 @@
           email: email,
           password: (passwordIn(f, '#newPassword') || {}).value || '',
           name: whole || email.split('@')[0],
-          phone: (f.querySelector('#sPhone') || {}).value || undefined
+          phone: (f.querySelector('#sPhone') || {}).value || undefined,
+          /* Chosen on the form, not guessed from an IP address. It sets
+             the dialling code the number is read against and the
+             currency every later screen is priced in. */
+          country: ((f.querySelector('#sCountry') || {}).value) || undefined
         });
         if (out.needsConfirmation) {
           busy(f, false);
@@ -1673,35 +1688,123 @@
     connectionBanner();
   }
 
-  /* ---------- chat ---------- */
+  /* Everything a customer typed goes through here before it is put back
+     on the page: their own words, and the reply, both of which arrive as
+     text and must not arrive as markup. */
+  function escapeHtml(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* ---------- support tickets ----------
+     What was here before was a chat window that answered itself: the
+     message went into a div, "Lucy" replied nine hundred milliseconds
+     later, and nothing ever left the browser. Somebody who had lost a
+     deposit typed the whole story into a box that threw it away.
+
+     A ticket is smaller and real. One question, one answer, a status
+     they can see, and it lands in a queue a person works through. */
   function initChat() {
-    var log = document.getElementById('chatLog');
-    if (!log) return;
-    var form = document.getElementById('chatForm'), input = document.getElementById('chatInput');
-    function add(text, who) {
-      var blank = log.querySelector('.empty');
-      if (blank) blank.remove();
-      var m = document.createElement('div');
-      m.className = 'msg ' + who;
-      m.innerHTML = text.replace(/</g, '&lt;') + '<span class="time">' + F.clock(Date.now()) + '</span>';
-      log.appendChild(m);
-      log.scrollTop = log.scrollHeight;
+    var form = document.getElementById('ticketForm');
+    if (!form) return;
+
+    var listHost = document.getElementById('ticketList');
+    var cat = document.getElementById('tCat');
+    var body = document.getElementById('tBody');
+    var count = document.getElementById('tCount');
+    var send = document.getElementById('tSend');
+
+    var LABEL = {
+      deposit: 'A deposit', withdrawal: 'A withdrawal',
+      account: 'Account or verification', trading: 'Trading and contracts',
+      other: 'Something else'
+    };
+    var MIN = 10;
+
+    function live() {
+      return !!(window.NexNet && window.NexNet.live && window.NexNet.signedIn());
     }
-    form.addEventListener('submit', function (e) {
+
+    function countdown() {
+      var n = (body.value || '').trim().length;
+      count.textContent = n < MIN
+        ? (MIN - n) + ' more character' + (MIN - n === 1 ? '' : 's')
+        : n + ' of 2,000';
+    }
+
+    function card(t) {
+      var when = F.dateTime ? F.dateTime(t.at) : new Date(t.at).toLocaleString();
+      return '<div class="ticket">' +
+        '<div class="ticket-top">' +
+          '<b>' + (LABEL[t.category] || t.category) + '</b>' +
+          '<span class="badge ' + (t.status === 'open' ? 'warn' : 'ok') + '">' +
+            (t.status === 'open' ? 'Waiting' : t.status === 'closed' ? 'Closed' : 'Answered') +
+          '</span>' +
+        '</div>' +
+        '<p class="ticket-said">' + escapeHtml(t.body) + '</p>' +
+        (t.reply
+          ? '<div class="ticket-reply"><b>Lucy</b><p>' + escapeHtml(t.reply) + '</p></div>'
+          : '<div class="ticket-wait">Lucy usually comes back within 30 minutes.</div>') +
+        '<div class="ticket-when">' + when + '</div>' +
+      '</div>';
+    }
+
+    function paint(tickets) {
+      if (!tickets.length) {
+        listHost.innerHTML = '<div class="empty" style="padding:30px 16px">' +
+          icon('headset', 24) + '<b>Nothing open</b>' +
+          '<span>Anything you send appears here with its answer.</span></div>';
+        return;
+      }
+      listHost.innerHTML = tickets.map(card).join('');
+    }
+
+    async function refresh() {
+      if (!live()) {
+        listHost.innerHTML = '<div class="empty" style="padding:30px 16px">' +
+          icon('headset', 24) + '<b>Sign in to send this</b>' +
+          '<span>A ticket has to be attached to an account, so we know ' +
+          'whose deposit or payout we are looking at.</span></div>';
+        return;
+      }
+      try {
+        paint(await window.NexNet.tickets());
+      } catch (err) {
+        listHost.innerHTML = '<div class="empty" style="padding:30px 16px">' +
+          icon('alert', 24) + '<b>Could not load your tickets</b>' +
+          '<span>' + escapeHtml(err.message) + '</span></div>';
+      }
+    }
+
+    body.addEventListener('input', countdown);
+    countdown();
+
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      var v = input.value.trim();
-      if (!v) return;
-      add(v, 'me');
-      input.value = '';
-      /* A named person, and a promise the team can actually keep. "In
-         minutes" is a claim that gets broken the first quiet evening;
-         thirty is one that holds. */
-      setTimeout(function () {
-        add('Thanks, this is Lucy. I am looking at it now and will come ' +
-            'back to you shortly.', 'them');
-      }, 900);
+      var text = (body.value || '').trim();
+      if (text.length < MIN) { countdown(); body.focus(); return; }
+
+      if (!live()) {
+        window.NexToast('Sign in first, so the reply reaches you.');
+        return;
+      }
+
+      send.disabled = true;
+      send.innerHTML = loader('sm') + 'Sending';
+      try {
+        await window.NexNet.openTicket(cat.value, text);
+        body.value = '';
+        countdown();
+        window.NexToast('Sent. Lucy replies within 30 minutes.');
+        await refresh();
+      } catch (err) {
+        window.NexToast(err.message);
+      }
+      send.disabled = false;
+      send.textContent = 'Send to support';
     });
-    log.scrollTop = log.scrollHeight;
+
+    refresh();
   }
 
   /* ---------- markets ---------- */

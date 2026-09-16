@@ -421,6 +421,20 @@
       });
     },
 
+    /* ---------- support tickets ----------
+       One question, one answer. There is no polling here: a reply lands
+       when the page is next opened, which is the honest shape of a
+       promise to come back within half an hour. */
+    tickets: async function () {
+      var out = await call('/tickets');
+      return out.tickets || [];
+    },
+
+    openTicket: async function (category, body) {
+      var out = await call('/tickets', { method: 'POST', body: { category: category, body: body } });
+      return out.ticket;
+    },
+
     /* ---------- trade history ----------
        The server keeps the record so it survives this browser. It does
        not decide it: contracts still settle client side, so these are

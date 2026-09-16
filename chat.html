@@ -38,35 +38,46 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/css/app.css">
 </head>
-<body data-page="chat" data-chrome="app" data-back="account" data-title="Live chat">
+<body data-page="chat" data-chrome="app" data-back="account" data-title="Support">
 <div class="app">
   <main>
-    <div class="chat">
+    <div class="shell">
       <div class="chat-head">
         <span class="chat-face" aria-hidden="true"></span>
         <div>
           <b>Lucy &middot; Novi support</b>
-          <span>Typically replies within 30 minutes</span>
+          <span>Answers within 30 minutes</span>
         </div>
       </div>
 
-      <div class="chat-log" id="chatLog">
-        <div class="empty" style="padding:48px 20px">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>
-          <b>No messages yet</b>
-          <span>Send a message and Lucy will pick it up.</span>
+      <!-- A ticket, not a chat window. The chat here used to answer
+           itself: a message went into a div, a canned reply came back,
+           and nothing ever left the browser. This reaches a person. -->
+      <form class="ticket-form" id="ticketForm">
+        <div class="field">
+          <label for="tCat">What is this about</label>
+          <select class="input" id="tCat">
+            <option value="deposit">A deposit</option>
+            <option value="withdrawal">A withdrawal</option>
+            <option value="account">My account or verification</option>
+            <option value="trading">Trading and contracts</option>
+            <option value="other">Something else</option>
+          </select>
         </div>
-      </div>
 
-      <form class="chat-bar" id="chatForm">
-        <button class="iconbtn" type="button" aria-label="Attach file">
-          <svg width="20" height="20" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M640-520v-200h80v200h-80ZM440-244q-35-10-57.5-39T360-350v-370h80v476Zm30 164q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v300h-80v-300q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q25 0 47.5-6.5T560-186v89q-21 8-43.5 12.5T470-80Zm170-40v-120H520v-80h120v-120h80v120h120v80H720v120h-80Z"></path></svg>
-        </button>
-        <input class="input" id="chatInput" placeholder="Write a message" autocomplete="off" aria-label="Message">
-        <button class="chat-send" type="submit" aria-label="Send">
-          <svg width="19" height="19" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path></svg>
-        </button>
+        <div class="field">
+          <label for="tBody">What happened</label>
+          <textarea class="input ticket-text" id="tBody" rows="6" maxlength="2000"
+            placeholder="Dates, amounts and the number you used help us find it faster."></textarea>
+          <span class="hint" id="tCount">10 characters minimum</span>
+        </div>
+
+        <button class="btn btn-fill" type="submit" id="tSend">Send to support</button>
       </form>
+
+      <div class="ticket-sect label">Your tickets</div>
+      <div id="ticketList"><div class="sk sk-list"></div></div>
+      <div style="height:22px"></div>
     </div>
   </main>
 </div>
