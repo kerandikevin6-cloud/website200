@@ -423,6 +423,13 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   font-size:11.5px;line-height:1.3;color:var(--muted);
   white-space:nowrap;overflow:hidden;background:none;
 }
+/* A hairline between them, so the three read as three choices rather
+   than one run of words. Drawn short of the full height, which keeps it
+   a separator and not a table. */
+.ctab + .ctab::before{
+  content:"";position:absolute;left:0;top:22%;bottom:22%;
+  width:1px;background:var(--line-soft);
+}
 .ctab span{overflow:hidden;text-overflow:ellipsis}
 .ctab-ico{display:flex;flex:none;color:var(--muted)}
 .ctab.active .ctab-ico{color:var(--accent)}
@@ -2482,11 +2489,22 @@ body[data-chrome="app"] main{background:var(--bg)}
    label until you go near it, which is the right weight for something
    sitting on top of a chart. */
 .chart-inst{
-  position:absolute;top:6px;left:8px;z-index:3;max-width:74%;
+  position:absolute;top:6px;left:8px;z-index:3;display:flex;
+  /* Wide enough that the longest instrument name fits without being
+     cut, since the list below it is now this same width and a picker
+     that truncates the thing being picked is no use. */
+  width:min(244px,66%);
 }
+.chart-inst .sel{flex:1;min-width:0}
 .chart-inst .sel-btn{
+  flex:1;justify-content:space-between;
   font-size:11.5px;letter-spacing:.04em;color:var(--muted);
 }
+/* The list is the width of the control that opened it. It was up to
+   320px wide hanging off an chip half that size, which reads as a panel
+   that has escaped rather than a menu belonging to the thing above it. */
+.chart-inst .sel-pop{left:0;right:0;width:auto;min-width:0;max-width:none}
+.chart-inst .sel-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chart-inst .sel-btn:hover,.chart-inst.open .sel-btn{color:var(--text)}
 
 /* ---------------- learn: one idea per screen ----------------
