@@ -363,8 +363,16 @@
      reader is told what it is. */
   function mountPicker(host, opts) {
     opts = opts || {};
-    var value = (opts.value || 'KE').toUpperCase();
-    if (!BY_CC[value]) value = 'KE';
+    /* `only` narrows the list to a set of codes. A phone field for a
+       mobile-money payout uses it: offering all 195 countries on a rail
+       that reaches seven is offering something that cannot happen. */
+    var pool = opts.only && opts.only.length
+      ? COUNTRIES.filter(function (c) { return opts.only.indexOf(c.cc) > -1; })
+      : COUNTRIES;
+    if (!pool.length) pool = COUNTRIES;
+
+    var value = (opts.value || pool[0].cc).toUpperCase();
+    if (!BY_CC[value] || pool.indexOf(BY_CC[value]) === -1) value = pool[0].cc;
     var open = false;
 
     host.classList.add('cc');
@@ -374,10 +382,14 @@
         (window.NexIcon ? window.NexIcon('chevD', 12) : '') +
       '</button>' +
       '<div class="cc-pop" hidden>' +
-        '<div class="cc-find">' +
-          '<input type="text" class="cc-search" placeholder="Search country or code" ' +
-            'autocomplete="off" spellcheck="false" aria-label="Search countries">' +
-        '</div>' +
+        /* A list of seven fits on the screen; a search box over it is a
+           control that only ever gets in the way. */
+        (pool.length > 12
+          ? '<div class="cc-find">' +
+              '<input type="text" class="cc-search" placeholder="Search country or code" ' +
+                'autocomplete="off" spellcheck="false" aria-label="Search countries">' +
+            '</div>'
+          : '') +
         '<div class="cc-list" role="listbox"></div>' +
       '</div>';
 
@@ -394,7 +406,7 @@
 
     function paintList(q) {
       q = (q || '').trim().toLowerCase().replace(/^\+/, '');
-      var rows = COUNTRIES.filter(function (c) {
+      var rows = pool.filter(function (c) {
         if (!q) return true;
         return c.name.toLowerCase().indexOf(q) > -1 || c.dial.indexOf(q) === 0;
       });
@@ -417,10 +429,10 @@
       host.classList.toggle('open', open);
       if (open) {
         paintList('');
-        search.value = '';
+        if (search) search.value = '';
         /* Not on a touch keyboard: opening the list and throwing a
            keyboard over two thirds of it helps nobody. */
-        if (!matchMedia('(pointer:coarse)').matches) search.focus();
+        if (search && !matchMedia('(pointer:coarse)').matches) search.focus();
         var on = list.querySelector('.cc-row.on');
         if (on) list.scrollTop = Math.max(0, on.offsetTop - 60);
       }
@@ -435,7 +447,7 @@
     }
 
     btn.addEventListener('click', function (e) { e.preventDefault(); setOpen(!open); });
-    search.addEventListener('input', function () { paintList(search.value); });
+    if (search) search.addEventListener('input', function () { paintList(search.value); });
     list.addEventListener('click', function (e) {
       var row = e.target.closest('[data-cc]');
       if (row) choose(row.getAttribute('data-cc'));

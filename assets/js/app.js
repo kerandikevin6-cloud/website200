@@ -541,7 +541,11 @@
     if (pw) paintMeter(pw);
     /* Steps that need real elements wired once they are on screen. */
     if (state.key === 'ticket' && state.step === 'form') mountTicketForm();
+    mountPhonePickers();
   }
+  /* Exported so a page that renders a phone field outside a dialog can
+     bring its picker to life the same way. */
+  window.NexPhonePickers = function () { mountPhonePickers(); };
   function closeModals(fromPop) {
     payToken++;                               /* nothing pending may land now */
     var m = host().querySelector('.modal');
@@ -625,15 +629,53 @@
     }
     return out;
   }
+  /* The IP lookup landing later than the form did. Only the fields
+     nobody has touched are moved: somebody who has already chosen a
+     country has said something, and a background lookup must not
+     overrule them. */
   function paintCountry() {
     var c = API.geo.country();
-    var ccs = document.querySelectorAll('[data-phone-cc]');
+    var ccs = document.querySelectorAll('[data-cc-picker]');
     for (var i = 0; i < ccs.length; i++) {
-      ccs[i].innerHTML = '<i class="flag">' + flag(API.geo.code()) + '</i>' +
-        '<b class="num">+' + c.dial + '</b>';
+      if (ccs[i].__sel && !ccs[i].__touched) ccs[i].__sel.set(API.geo.code());
     }
-    var boxes = document.querySelectorAll('.phone-input');
-    for (var j = 0; j < boxes.length; j++) boxes[j].placeholder = c.sample;
+  }
+
+  /* ---------- the country on a phone field ----------
+     Mounted after the markup is on screen, because the picker is a live
+     control rather than a string. The list is the countries mobile money
+     actually reaches, which is the same table the deposit rails come
+     from, so the two can never offer different answers. */
+  function mountPhonePickers() {
+    var hosts = document.querySelectorAll('[data-cc-picker]');
+    for (var i = 0; i < hosts.length; i++) {
+      (function (host) {
+        if (host.__sel || !window.NexCountries) return;
+        var fieldId = host.getAttribute('data-cc-picker');
+        var hidden = document.getElementById(fieldId + 'Country');
+        var input = document.getElementById(fieldId);
+        var pay = API.geo.countries;
+
+        host.__sel = window.NexCountries.mountPicker(host, {
+          value: host.getAttribute('data-cc') || 'KE',
+          only: Object.keys(pay),
+          onChange: function (chosen) {
+            if (hidden) hidden.value = chosen.cc;
+            var local = pay[chosen.cc];
+            if (input && local) {
+              input.placeholder = local.sample;
+              /* The number was typed for a different country, and the
+                 length rules differ. Clearing is kinder than sending it
+                 and being told it is the wrong length. */
+              if (host.__touched) input.value = '';
+            }
+            host.__touched = true;
+          }
+        });
+        /* The first onChange is the mount, not a choice. */
+        host.__touched = false;
+      })(hosts[i]);
+    }
   }
 
   /* ---------- document pickers ---------- */
@@ -1589,10 +1631,13 @@
       var amount = Math.round(usd * rate * 100) / 100;
 
       if (state.data.method === 'mpesa') {
+        /* The country on the field, not the one the IP lookup guessed. */
+        var dcc = ((document.getElementById('mpesaPhoneCountry') || {}).value) || API.geo.code();
+        var dc = API.geo.countries[dcc] || pay;
         var ph = document.getElementById('mpesaPhone');
         var digits = ph ? ph.value.replace(/\D/g, '') : '';
-        if (digits.length < pay.len) return fieldError('mpesaPhone', 'Enter your ' + pay.len + '-digit number');
-        state.data.payTo = pay.dial + digits;
+        if (digits.length < dc.len) return fieldError('mpesaPhone', 'Enter your ' + dc.len + '-digit number');
+        state.data.payTo = dc.dial + digits;
       }
 
       if (state.data.method === 'usdt') {
@@ -1673,7 +1718,17 @@
         if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
         dest.card = { bank: bank, name: holder, account: account };
       } else {
-        dest.phone = (document.getElementById('wPhone') || {}).value || undefined;
+        var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
+        var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');
+        var wc = API.geo.countries[wcc];
+        if (wc && wdigits.length < wc.len) {
+          return fieldError('wPhone', 'Enter your ' + wc.len + '-digit number');
+        }
+        /* Sent in full, with the code the customer picked, so the server
+           is not left guessing the country from a profile that may say
+           something else. */
+        dest.phone = wc ? ('+' + wc.dial + wdigits) : (wdigits || undefined);
+        dest.country = wcc;
       }
 
       if (window.NexNet && window.NexNet.live) return liveWithdraw(w, dest);

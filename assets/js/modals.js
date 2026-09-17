@@ -35,20 +35,19 @@
   function phoneField(id, label, hint) {
     var cc = API().geo.code();
     var c = API().geo.country();
-    /* The dialling code comes from the full list, so a customer whose
-       country we do not collect deposits from still sees their own code
-       rather than Kenya's. The sample format only exists for the
-       countries we have one for. */
-    var world = window.NexCountries && window.NexCountries.get(cc);
-    var dial = (world && world.dial) || c.dial;
+    /* The country is chosen here, not assumed. It used to be whatever
+       the IP lookup had settled on, which for anyone it guessed wrongly
+       meant a Kenyan code they could not change, on the one field where
+       getting the country wrong means the money goes nowhere.
+
+       The list is the countries we can actually send mobile money to,
+       not all 195: offering Germany on an M-Pesa payout is offering
+       something that cannot happen. */
+    if (!API().geo.countries[cc]) cc = 'KE';
     return '<div class="field"><label for="' + id + '">' + label + '</label>' +
       '<div class="phone">' +
-        '<span class="phone-cc" data-phone-cc>' +
-          '<i class="flag">' +
-            (window.NexCountries ? window.NexCountries.flag(cc, 19) : window.NexFlag(cc)) +
-          '</i>' +
-          '<b class="num">+' + dial + '</b>' +
-        '</span>' +
+        '<span class="phone-cc" data-cc-picker="' + id + '" data-cc="' + cc + '"></span>' +
+        '<input type="hidden" id="' + id + 'Country" value="' + cc + '">' +
         '<input class="input num phone-input" id="' + id + '" type="tel" inputmode="numeric" ' +
           'autocomplete="tel-national" placeholder="' + c.sample + '">' +
       '</div>' +

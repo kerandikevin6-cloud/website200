@@ -1463,9 +1463,17 @@ body.locked{overflow:hidden}
 .phone{
   display:flex;align-items:stretch;border:1px solid var(--line);
   background:var(--surface-2);
-  /* Not hidden: the country list hangs out of the bottom of this row. */
-  overflow:visible;
+  /* Not hidden: the country list hangs out of the bottom of this row,
+     and positioned so the list can align to the row rather than to the
+     little chip at its left, which on a narrow screen put a third of the
+     list off the edge. */
+  overflow:visible;position:relative;
 }
+/* The picker inside a phone row does not position its own popover: the
+   row does, so the list is the width of the field instead of the width
+   of the little flag chip at its left. */
+.phone .cc{position:static}
+.phone .cc-pop{left:0;right:0;width:auto;max-width:none}
 :root[data-theme="dark"] .phone{background:var(--surface)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .phone{background:var(--surface)}
@@ -2950,8 +2958,16 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      reader is told what it is. */
   function mountPicker(host, opts) {
     opts = opts || {};
-    var value = (opts.value || 'KE').toUpperCase();
-    if (!BY_CC[value]) value = 'KE';
+    /* `only` narrows the list to a set of codes. A phone field for a
+       mobile-money payout uses it: offering all 195 countries on a rail
+       that reaches seven is offering something that cannot happen. */
+    var pool = opts.only && opts.only.length
+      ? COUNTRIES.filter(function (c) { return opts.only.indexOf(c.cc) > -1; })
+      : COUNTRIES;
+    if (!pool.length) pool = COUNTRIES;
+
+    var value = (opts.value || pool[0].cc).toUpperCase();
+    if (!BY_CC[value] || pool.indexOf(BY_CC[value]) === -1) value = pool[0].cc;
     var open = false;
 
     host.classList.add('cc');
@@ -2961,10 +2977,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         (window.NexIcon ? window.NexIcon('chevD', 12) : '') +
       '</button>' +
       '<div class="cc-pop" hidden>' +
-        '<div class="cc-find">' +
-          '<input type="text" class="cc-search" placeholder="Search country or code" ' +
-            'autocomplete="off" spellcheck="false" aria-label="Search countries">' +
-        '</div>' +
+        /* A list of seven fits on the screen; a search box over it is a
+           control that only ever gets in the way. */
+        (pool.length > 12
+          ? '<div class="cc-find">' +
+              '<input type="text" class="cc-search" placeholder="Search country or code" ' +
+                'autocomplete="off" spellcheck="false" aria-label="Search countries">' +
+            '</div>'
+          : '') +
         '<div class="cc-list" role="listbox"></div>' +
       '</div>';
 
@@ -2981,7 +3001,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     function paintList(q) {
       q = (q || '').trim().toLowerCase().replace(/^\+/, '');
-      var rows = COUNTRIES.filter(function (c) {
+      var rows = pool.filter(function (c) {
         if (!q) return true;
         return c.name.toLowerCase().indexOf(q) > -1 || c.dial.indexOf(q) === 0;
       });
@@ -3004,10 +3024,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       host.classList.toggle('open', open);
       if (open) {
         paintList('');
-        search.value = '';
+        if (search) search.value = '';
         /* Not on a touch keyboard: opening the list and throwing a
            keyboard over two thirds of it helps nobody. */
-        if (!matchMedia('(pointer:coarse)').matches) search.focus();
+        if (search && !matchMedia('(pointer:coarse)').matches) search.focus();
         var on = list.querySelector('.cc-row.on');
         if (on) list.scrollTop = Math.max(0, on.offsetTop - 60);
       }
@@ -3022,7 +3042,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }
 
     btn.addEventListener('click', function (e) { e.preventDefault(); setOpen(!open); });
-    search.addEventListener('input', function () { paintList(search.value); });
+    if (search) search.addEventListener('input', function () { paintList(search.value); });
     list.addEventListener('click', function (e) {
       var row = e.target.closest('[data-cc]');
       if (row) choose(row.getAttribute('data-cc'));
@@ -5021,20 +5041,19 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   function phoneField(id, label, hint) {
     var cc = API().geo.code();
     var c = API().geo.country();
-    /* The dialling code comes from the full list, so a customer whose
-       country we do not collect deposits from still sees their own code
-       rather than Kenya's. The sample format only exists for the
-       countries we have one for. */
-    var world = window.NexCountries && window.NexCountries.get(cc);
-    var dial = (world && world.dial) || c.dial;
+    /* The country is chosen here, not assumed. It used to be whatever
+       the IP lookup had settled on, which for anyone it guessed wrongly
+       meant a Kenyan code they could not change, on the one field where
+       getting the country wrong means the money goes nowhere.
+
+       The list is the countries we can actually send mobile money to,
+       not all 195: offering Germany on an M-Pesa payout is offering
+       something that cannot happen. */
+    if (!API().geo.countries[cc]) cc = 'KE';
     return '<div class="field"><label for="' + id + '">' + label + '</label>' +
       '<div class="phone">' +
-        '<span class="phone-cc" data-phone-cc>' +
-          '<i class="flag">' +
-            (window.NexCountries ? window.NexCountries.flag(cc, 19) : window.NexFlag(cc)) +
-          '</i>' +
-          '<b class="num">+' + dial + '</b>' +
-        '</span>' +
+        '<span class="phone-cc" data-cc-picker="' + id + '" data-cc="' + cc + '"></span>' +
+        '<input type="hidden" id="' + id + 'Country" value="' + cc + '">' +
         '<input class="input num phone-input" id="' + id + '" type="tel" inputmode="numeric" ' +
           'autocomplete="tel-national" placeholder="' + c.sample + '">' +
       '</div>' +
@@ -7874,7 +7893,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (pw) paintMeter(pw);
     /* Steps that need real elements wired once they are on screen. */
     if (state.key === 'ticket' && state.step === 'form') mountTicketForm();
+    mountPhonePickers();
   }
+  /* Exported so a page that renders a phone field outside a dialog can
+     bring its picker to life the same way. */
+  window.NexPhonePickers = function () { mountPhonePickers(); };
   function closeModals(fromPop) {
     payToken++;                               /* nothing pending may land now */
     var m = host().querySelector('.modal');
@@ -7958,15 +7981,53 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }
     return out;
   }
+  /* The IP lookup landing later than the form did. Only the fields
+     nobody has touched are moved: somebody who has already chosen a
+     country has said something, and a background lookup must not
+     overrule them. */
   function paintCountry() {
     var c = API.geo.country();
-    var ccs = document.querySelectorAll('[data-phone-cc]');
+    var ccs = document.querySelectorAll('[data-cc-picker]');
     for (var i = 0; i < ccs.length; i++) {
-      ccs[i].innerHTML = '<i class="flag">' + flag(API.geo.code()) + '</i>' +
-        '<b class="num">+' + c.dial + '</b>';
+      if (ccs[i].__sel && !ccs[i].__touched) ccs[i].__sel.set(API.geo.code());
     }
-    var boxes = document.querySelectorAll('.phone-input');
-    for (var j = 0; j < boxes.length; j++) boxes[j].placeholder = c.sample;
+  }
+
+  /* ---------- the country on a phone field ----------
+     Mounted after the markup is on screen, because the picker is a live
+     control rather than a string. The list is the countries mobile money
+     actually reaches, which is the same table the deposit rails come
+     from, so the two can never offer different answers. */
+  function mountPhonePickers() {
+    var hosts = document.querySelectorAll('[data-cc-picker]');
+    for (var i = 0; i < hosts.length; i++) {
+      (function (host) {
+        if (host.__sel || !window.NexCountries) return;
+        var fieldId = host.getAttribute('data-cc-picker');
+        var hidden = document.getElementById(fieldId + 'Country');
+        var input = document.getElementById(fieldId);
+        var pay = API.geo.countries;
+
+        host.__sel = window.NexCountries.mountPicker(host, {
+          value: host.getAttribute('data-cc') || 'KE',
+          only: Object.keys(pay),
+          onChange: function (chosen) {
+            if (hidden) hidden.value = chosen.cc;
+            var local = pay[chosen.cc];
+            if (input && local) {
+              input.placeholder = local.sample;
+              /* The number was typed for a different country, and the
+                 length rules differ. Clearing is kinder than sending it
+                 and being told it is the wrong length. */
+              if (host.__touched) input.value = '';
+            }
+            host.__touched = true;
+          }
+        });
+        /* The first onChange is the mount, not a choice. */
+        host.__touched = false;
+      })(hosts[i]);
+    }
   }
 
   /* ---------- document pickers ---------- */
@@ -8922,10 +8983,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       var amount = Math.round(usd * rate * 100) / 100;
 
       if (state.data.method === 'mpesa') {
+        /* The country on the field, not the one the IP lookup guessed. */
+        var dcc = ((document.getElementById('mpesaPhoneCountry') || {}).value) || API.geo.code();
+        var dc = API.geo.countries[dcc] || pay;
         var ph = document.getElementById('mpesaPhone');
         var digits = ph ? ph.value.replace(/\D/g, '') : '';
-        if (digits.length < pay.len) return fieldError('mpesaPhone', 'Enter your ' + pay.len + '-digit number');
-        state.data.payTo = pay.dial + digits;
+        if (digits.length < dc.len) return fieldError('mpesaPhone', 'Enter your ' + dc.len + '-digit number');
+        state.data.payTo = dc.dial + digits;
       }
 
       if (state.data.method === 'usdt') {
@@ -9006,7 +9070,17 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
         dest.card = { bank: bank, name: holder, account: account };
       } else {
-        dest.phone = (document.getElementById('wPhone') || {}).value || undefined;
+        var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
+        var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');
+        var wc = API.geo.countries[wcc];
+        if (wc && wdigits.length < wc.len) {
+          return fieldError('wPhone', 'Enter your ' + wc.len + '-digit number');
+        }
+        /* Sent in full, with the code the customer picked, so the server
+           is not left guessing the country from a profile that may say
+           something else. */
+        dest.phone = wc ? ('+' + wc.dial + wdigits) : (wdigits || undefined);
+        dest.country = wcc;
       }
 
       if (window.NexNet && window.NexNet.live) return liveWithdraw(w, dest);

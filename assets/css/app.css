@@ -1458,9 +1458,17 @@ body.locked{overflow:hidden}
 .phone{
   display:flex;align-items:stretch;border:1px solid var(--line);
   background:var(--surface-2);
-  /* Not hidden: the country list hangs out of the bottom of this row. */
-  overflow:visible;
+  /* Not hidden: the country list hangs out of the bottom of this row,
+     and positioned so the list can align to the row rather than to the
+     little chip at its left, which on a narrow screen put a third of the
+     list off the edge. */
+  overflow:visible;position:relative;
 }
+/* The picker inside a phone row does not position its own popover: the
+   row does, so the list is the width of the field instead of the width
+   of the little flag chip at its left. */
+.phone .cc{position:static}
+.phone .cc-pop{left:0;right:0;width:auto;max-width:none}
 :root[data-theme="dark"] .phone{background:var(--surface)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .phone{background:var(--surface)}
