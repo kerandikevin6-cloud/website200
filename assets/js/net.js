@@ -477,14 +477,18 @@
       if (!trades || !trades.length) return { recorded: 0 };
       /* The server caps a batch at 200; send in chunks so a long
          backlog after an offline spell still goes up. */
-      var done = 0;
+      var done = 0, balanceMinor = null, refused = [];
       for (var i = 0; i < trades.length; i += 100) {
         var out = await call('/trades', {
           method: 'POST', body: { trades: trades.slice(i, i + 100) }
         });
         done += out.recorded || 0;
+        /* The balance after the last chunk the server applied, which is
+           the one the caller should believe. */
+        if (out.balanceMinor != null) balanceMinor = out.balanceMinor;
+        if (out.refused) refused = refused.concat(out.refused);
       }
-      return { recorded: done };
+      return { recorded: done, balanceMinor: balanceMinor, refused: refused };
     },
 
     deposits: async function () {

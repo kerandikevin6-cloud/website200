@@ -762,6 +762,17 @@
         B.emit('balance', { balance: balance(), account: kind });
         return true;
       },
+      /* The server's figure for the real balance, adopted after it has
+         applied a settled contract. Not a way for the browser to decide
+         what it holds: every caller of this is handing over a number
+         that came back from the API. */
+      setReal: function (usd) {
+        var next = Math.round((+usd || 0) * 100) / 100;
+        if (S.balances.real === next) return;
+        S.balances.real = next;
+        persist();
+        B.emit('balance', { balance: balance(), account: S.account });
+      },
       realAvailable: realAvailable,
       enforce: enforceAccount,
       demoMode: function () { return !!S.demoMode; },

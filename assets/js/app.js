@@ -1853,7 +1853,16 @@
   function bindChrome() {
     API.on('settled', function (c) {
       if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
-      window.NexNet.recordTrades([tradePayload(c)]).catch(function () {});
+      window.NexNet.recordTrades([tradePayload(c)]).then(function (out) {
+        /* A settled contract on the real account moves the balance on
+           the server now, and the server is the one that counts. Adopt
+           what it says rather than trusting the figure this browser just
+           worked out for itself: if the two disagree, this is the moment
+           somebody finds out, not the withdrawal screen. */
+        if (out && out.balanceMinor != null && API.account.kind() === 'real') {
+          API.account.setReal(out.balanceMinor / 100);
+        }
+      }).catch(function () {});
     });
 
     API.on('balance', function () {
@@ -2096,10 +2105,14 @@
       side: c.side || undefined,
       barrier: c.barrier == null ? null : c.barrier,
       stakeMinor: Math.round((+c.stake || 0) * 100),
-      payoutMinor: Math.round((+c.payout || 0) * 100),
+      /* What was actually paid, not what the contract could have paid.
+         c.payout keeps the potential figure after a loss, and sending
+         that would have the server crediting a payout on a losing
+         contract — which it refuses, taking the whole record with it. */
+      payoutMinor: c.status === 'won' ? Math.round((+c.payout || 0) * 100) : 0,
       profitMinor: Math.round((+c.profit || 0) * 100),
       currency: 'USD',
-      status: c.profit >= 0 ? 'won' : 'lost',
+      status: c.status === 'won' ? 'won' : 'lost',
       ticks: c.ticks || undefined,
       entrySpot: c.entrySpot == null ? undefined : c.entrySpot,
       exitSpot: c.exitSpot == null ? undefined : c.exitSpot,
@@ -2114,8 +2127,16 @@
       return c.status === 'won' || c.status === 'lost';
     });
     if (!settled.length) return;
-    /* Quietly. A failure here costs a record, not a trade. */
+    /* Quietly. A failure here costs a record, not a trade. The backlog
+       carries money now, though: anything settled while this browser was
+       offline is applied to the balance when it goes up, so the figure
+       that comes back is the one to believe. */
     window.NexNet.recordTrades(settled.slice(0, 200).map(tradePayload))
+      .then(function (out) {
+        if (out && out.balanceMinor != null && API.account.kind() === 'real') {
+          API.account.setReal(out.balanceMinor / 100);
+        }
+      })
       .catch(function () {});
   }
 
