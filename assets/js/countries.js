@@ -366,7 +366,7 @@
     /* `only` narrows the list to a set of codes. A phone field for a
        mobile-money payout uses it: offering all 195 countries on a rail
        that reaches seven is offering something that cannot happen. */
-    var pool = opts.only && opts.only.length
+    var pool = (opts.only && opts.only.length)
       ? COUNTRIES.filter(function (c) { return opts.only.indexOf(c.cc) > -1; })
       : COUNTRIES;
     if (!pool.length) pool = COUNTRIES;

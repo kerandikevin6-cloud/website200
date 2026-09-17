@@ -2961,7 +2961,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     /* `only` narrows the list to a set of codes. A phone field for a
        mobile-money payout uses it: offering all 195 countries on a rail
        that reaches seven is offering something that cannot happen. */
-    var pool = opts.only && opts.only.length
+    var pool = (opts.only && opts.only.length)
       ? COUNTRIES.filter(function (c) { return opts.only.indexOf(c.cc) > -1; })
       : COUNTRIES;
     if (!pool.length) pool = COUNTRIES;
@@ -5038,7 +5038,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      standing in until it answers. The dialling code is a fixed prefix,
      never part of the value, so the box itself starts empty and takes
      nothing but the local number. */
-  function phoneField(id, label, hint) {
+  /* `all` opens the list to every dialling code rather than the seven
+     we collect deposits from. A deposit can only be taken where the rail
+     reaches, so that field stays narrow. A payout is sent by hand, so
+     that one does not have to. */
+  function phoneField(id, label, hint, all) {
     var cc = API().geo.code();
     var c = API().geo.country();
     /* The country is chosen here, not assumed. It used to be whatever
@@ -5049,10 +5053,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        The list is the countries we can actually send mobile money to,
        not all 195: offering Germany on an M-Pesa payout is offering
        something that cannot happen. */
-    if (!API().geo.countries[cc]) cc = 'KE';
+    if (!all && !API().geo.countries[cc]) cc = 'KE';
     return '<div class="field"><label for="' + id + '">' + label + '</label>' +
       '<div class="phone">' +
-        '<span class="phone-cc" data-cc-picker="' + id + '" data-cc="' + cc + '"></span>' +
+        '<span class="phone-cc" data-cc-picker="' + id + '" data-cc="' + cc + '"' +
+          (all ? ' data-cc-all="1"' : '') + '></span>' +
         '<input type="hidden" id="' + id + 'Country" value="' + cc + '">' +
         '<input class="input num phone-input" id="' + id + '" type="tel" inputmode="numeric" ' +
           'autocomplete="tel-national" placeholder="' + c.sample + '">' +
@@ -5958,8 +5963,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                   'Payouts are sent to an account in your own name. A mismatch is the ' +
                   'one thing that delays a transfer.');
             } else {
-              inner = phoneField('wPhone', 'M-Pesa number',
-                'Must match the number registered to your verified name.');
+              /* Every code, not only the seven the deposit rails cover:
+                 a payout is sent by a person, so the country it is going
+                 to is not limited by what we can collect. */
+              inner = phoneField('wPhone', 'Mobile money number',
+                'Must match the number registered to your verified name.', true);
             }
 
             /* The sheet works in the viewer's own money from the first
@@ -8007,15 +8015,21 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         var hidden = document.getElementById(fieldId + 'Country');
         var input = document.getElementById(fieldId);
         var pay = API.geo.countries;
+        /* Narrow to the deposit rails, unless the field asked for
+           everything — see phoneField(). */
+        var all = host.hasAttribute('data-cc-all');
 
         host.__sel = window.NexCountries.mountPicker(host, {
           value: host.getAttribute('data-cc') || 'KE',
-          only: Object.keys(pay),
+          only: all ? null : Object.keys(pay),
           onChange: function (chosen) {
             if (hidden) hidden.value = chosen.cc;
             var local = pay[chosen.cc];
-            if (input && local) {
-              input.placeholder = local.sample;
+            if (input) {
+              /* A local format to copy where we have one; a plain prompt
+                 where we do not, rather than holding up a Kenyan number
+                 as the example of a Portuguese one. */
+              input.placeholder = local ? local.sample : 'Phone number';
               /* The number was typed for a different country, and the
                  length rules differ. Clearing is kinder than sending it
                  and being told it is the wrong length. */
@@ -9073,13 +9087,25 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
         var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');
         var wc = API.geo.countries[wcc];
-        if (wc && wdigits.length < wc.len) {
-          return fieldError('wPhone', 'Enter your ' + wc.len + '-digit number');
+        var world = window.NexCountries && window.NexCountries.get(wcc);
+        var wdial = wc ? wc.dial : (world && world.dial);
+
+        if (wc) {
+          /* A country we take deposits from: we know the length. */
+          if (wdigits.length < wc.len) {
+            return fieldError('wPhone', 'Enter your ' + wc.len + '-digit number');
+          }
+        } else if (wdigits.length < 6 || wdigits.length > 14) {
+          /* Everywhere else we do not, so this is the only check worth
+             making: long enough to be a phone number, short enough to
+             fit one. The person paying it out reads the rest. */
+          return fieldError('wPhone', 'Enter the number without the country code');
         }
+
         /* Sent in full, with the code the customer picked, so the server
            is not left guessing the country from a profile that may say
            something else. */
-        dest.phone = wc ? ('+' + wc.dial + wdigits) : (wdigits || undefined);
+        dest.phone = wdial ? ('+' + wdial + wdigits) : (wdigits || undefined);
         dest.country = wcc;
       }
 

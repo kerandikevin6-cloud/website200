@@ -655,15 +655,21 @@
         var hidden = document.getElementById(fieldId + 'Country');
         var input = document.getElementById(fieldId);
         var pay = API.geo.countries;
+        /* Narrow to the deposit rails, unless the field asked for
+           everything — see phoneField(). */
+        var all = host.hasAttribute('data-cc-all');
 
         host.__sel = window.NexCountries.mountPicker(host, {
           value: host.getAttribute('data-cc') || 'KE',
-          only: Object.keys(pay),
+          only: all ? null : Object.keys(pay),
           onChange: function (chosen) {
             if (hidden) hidden.value = chosen.cc;
             var local = pay[chosen.cc];
-            if (input && local) {
-              input.placeholder = local.sample;
+            if (input) {
+              /* A local format to copy where we have one; a plain prompt
+                 where we do not, rather than holding up a Kenyan number
+                 as the example of a Portuguese one. */
+              input.placeholder = local ? local.sample : 'Phone number';
               /* The number was typed for a different country, and the
                  length rules differ. Clearing is kinder than sending it
                  and being told it is the wrong length. */
@@ -1721,13 +1727,25 @@
         var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
         var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');
         var wc = API.geo.countries[wcc];
-        if (wc && wdigits.length < wc.len) {
-          return fieldError('wPhone', 'Enter your ' + wc.len + '-digit number');
+        var world = window.NexCountries && window.NexCountries.get(wcc);
+        var wdial = wc ? wc.dial : (world && world.dial);
+
+        if (wc) {
+          /* A country we take deposits from: we know the length. */
+          if (wdigits.length < wc.len) {
+            return fieldError('wPhone', 'Enter your ' + wc.len + '-digit number');
+          }
+        } else if (wdigits.length < 6 || wdigits.length > 14) {
+          /* Everywhere else we do not, so this is the only check worth
+             making: long enough to be a phone number, short enough to
+             fit one. The person paying it out reads the rest. */
+          return fieldError('wPhone', 'Enter the number without the country code');
         }
+
         /* Sent in full, with the code the customer picked, so the server
            is not left guessing the country from a profile that may say
            something else. */
-        dest.phone = wc ? ('+' + wc.dial + wdigits) : (wdigits || undefined);
+        dest.phone = wdial ? ('+' + wdial + wdigits) : (wdigits || undefined);
         dest.country = wcc;
       }
 

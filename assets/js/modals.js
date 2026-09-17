@@ -32,7 +32,11 @@
      standing in until it answers. The dialling code is a fixed prefix,
      never part of the value, so the box itself starts empty and takes
      nothing but the local number. */
-  function phoneField(id, label, hint) {
+  /* `all` opens the list to every dialling code rather than the seven
+     we collect deposits from. A deposit can only be taken where the rail
+     reaches, so that field stays narrow. A payout is sent by hand, so
+     that one does not have to. */
+  function phoneField(id, label, hint, all) {
     var cc = API().geo.code();
     var c = API().geo.country();
     /* The country is chosen here, not assumed. It used to be whatever
@@ -43,10 +47,11 @@
        The list is the countries we can actually send mobile money to,
        not all 195: offering Germany on an M-Pesa payout is offering
        something that cannot happen. */
-    if (!API().geo.countries[cc]) cc = 'KE';
+    if (!all && !API().geo.countries[cc]) cc = 'KE';
     return '<div class="field"><label for="' + id + '">' + label + '</label>' +
       '<div class="phone">' +
-        '<span class="phone-cc" data-cc-picker="' + id + '" data-cc="' + cc + '"></span>' +
+        '<span class="phone-cc" data-cc-picker="' + id + '" data-cc="' + cc + '"' +
+          (all ? ' data-cc-all="1"' : '') + '></span>' +
         '<input type="hidden" id="' + id + 'Country" value="' + cc + '">' +
         '<input class="input num phone-input" id="' + id + '" type="tel" inputmode="numeric" ' +
           'autocomplete="tel-national" placeholder="' + c.sample + '">' +
@@ -952,8 +957,11 @@
                   'Payouts are sent to an account in your own name. A mismatch is the ' +
                   'one thing that delays a transfer.');
             } else {
-              inner = phoneField('wPhone', 'M-Pesa number',
-                'Must match the number registered to your verified name.');
+              /* Every code, not only the seven the deposit rails cover:
+                 a payout is sent by a person, so the country it is going
+                 to is not limited by what we can collect. */
+              inner = phoneField('wPhone', 'Mobile money number',
+                'Must match the number registered to your verified name.', true);
             }
 
             /* The sheet works in the viewer's own money from the first
