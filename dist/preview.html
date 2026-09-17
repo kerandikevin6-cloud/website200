@@ -338,9 +338,6 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .drawer-user span{color:var(--muted);font-size:12px}
 .drawer-sect{padding:15px 14px 6px}
 .dnav{padding:0 8px 10px;display:flex;flex-direction:column;gap:2px}
-/* The second group has no heading now, so it carries its own rule to
-   keep it from running into the first. */
-.dnav-rest{border-top:1px solid var(--line-soft);padding-top:10px;margin-top:4px}
 .ditem{
   display:flex;align-items:center;gap:12px;width:100%;
   padding:11px 10px;color:var(--text-2);text-align:left;border-radius:var(--r);
@@ -8032,15 +8029,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
             item('Update password', { icon: 'lock', modal: 'password' }),
             item('Verify identity', { icon: 'shield', modal: 'verify' })
           ], true) +
-          group('Funds', 'coin', [
-            item('Deposit', { icon: 'down', modal: 'deposit' }),
-            item('Withdraw', { icon: 'up', modal: 'withdraw' })
-          ], true) +
-        '</div>' +
-        /* No heading over this group. "Support" sat above a list whose
-           second item is also called Support, and a section named after
-           one of the things inside it explains nothing. */
-        '<div class="dnav dnav-rest">' +
+          /* Deposit and Withdraw stand on their own. They were behind a
+             "Funds" heading, which is a word to read and a caret to
+             reason about in front of the two most-used items in this
+             menu; and the group was open by default anyway, so the
+             heading only ever cost a row. */
+          item('Deposit', { icon: 'down', modal: 'deposit' }) +
+          item('Withdraw', { icon: 'up', modal: 'withdraw' }) +
           item('Trading history', { icon: 'clock', href: 'history' }) +
           item('Copy trading', { icon: 'copy', href: 'copy' }) +
           item('Support', { icon: 'headset', href: 'chat' }) +

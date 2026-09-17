@@ -333,9 +333,6 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .drawer-user span{color:var(--muted);font-size:12px}
 .drawer-sect{padding:15px 14px 6px}
 .dnav{padding:0 8px 10px;display:flex;flex-direction:column;gap:2px}
-/* The second group has no heading now, so it carries its own rule to
-   keep it from running into the first. */
-.dnav-rest{border-top:1px solid var(--line-soft);padding-top:10px;margin-top:4px}
 .ditem{
   display:flex;align-items:center;gap:12px;width:100%;
   padding:11px 10px;color:var(--text-2);text-align:left;border-radius:var(--r);

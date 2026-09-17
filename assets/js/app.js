@@ -432,15 +432,13 @@
             item('Update password', { icon: 'lock', modal: 'password' }),
             item('Verify identity', { icon: 'shield', modal: 'verify' })
           ], true) +
-          group('Funds', 'coin', [
-            item('Deposit', { icon: 'down', modal: 'deposit' }),
-            item('Withdraw', { icon: 'up', modal: 'withdraw' })
-          ], true) +
-        '</div>' +
-        /* No heading over this group. "Support" sat above a list whose
-           second item is also called Support, and a section named after
-           one of the things inside it explains nothing. */
-        '<div class="dnav dnav-rest">' +
+          /* Deposit and Withdraw stand on their own. They were behind a
+             "Funds" heading, which is a word to read and a caret to
+             reason about in front of the two most-used items in this
+             menu; and the group was open by default anyway, so the
+             heading only ever cost a row. */
+          item('Deposit', { icon: 'down', modal: 'deposit' }) +
+          item('Withdraw', { icon: 'up', modal: 'withdraw' }) +
           item('Trading history', { icon: 'clock', href: 'history' }) +
           item('Copy trading', { icon: 'copy', href: 'copy' }) +
           item('Support', { icon: 'headset', href: 'chat' }) +
