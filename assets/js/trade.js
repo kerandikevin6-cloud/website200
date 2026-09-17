@@ -179,8 +179,11 @@
     html(el.panel,
       scanRow +
       '<div class="seg" id="modeSeg">' +
-        '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '">Auto</button>' +
-        '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '">Manual</button>' +
+        /* The label is wrapped because the capsule behind it is an
+           absolutely positioned pseudo-element, which would otherwise
+           paint over a bare text node. */
+        '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '"><span>Auto</span></button>' +
+        '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '"><span>Manual</span></button>' +
       '</div>' +
       /* Stake first: it is the field that gets touched on every single
          trade, and it was below three that are set once and left. */

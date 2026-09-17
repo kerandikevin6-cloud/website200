@@ -476,19 +476,55 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .dcell.sel .dpct{color:var(--accent)}
 
 .panel{padding:2px 14px 12px;display:flex;flex-direction:column;gap:10px}
-.seg{display:flex;border-bottom:1px solid var(--line-soft)}
+/* Auto / Manual, built like the bottom bar: a rounded track with a
+   frosted capsule that slides under whichever one is chosen. It is the
+   same gesture in the same shape, so the two read as one idea used
+   twice rather than two different controls that happen to switch
+   between things.
+
+   The capsule is painted behind at the size of the slot, so choosing
+   one never changes a measurement and nothing reflows.
+
+   Curved here and square everywhere else is deliberate: the pill is the
+   shape this app uses for "which of these", and cards stay sharp. */
+.seg{
+  display:flex;align-items:center;gap:4px;padding:4px;margin:6px 0 2px;
+  border-radius:999px;
+  background:var(--seg-bg);border:1px solid var(--seg-line);
+  backdrop-filter:blur(14px) saturate(1.4);
+}
+:root{--seg-bg:rgba(255,255,255,.7);--seg-line:rgba(12,22,34,.08);--seg-on:rgba(255,255,255,.96)}
+:root[data-theme="dark"]{
+  --seg-bg:rgba(20,29,40,.7);--seg-line:rgba(255,255,255,.08);--seg-on:rgba(255,255,255,.1);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --seg-bg:rgba(20,29,40,.7);--seg-line:rgba(255,255,255,.08);--seg-on:rgba(255,255,255,.1);
+  }
+}
 .seg button{
   position:relative;
-  flex:1 1 0;width:0;min-width:0;text-align:center;padding:9px 0 16px;
-  font-size:12.5px;color:var(--muted);
+  flex:1 1 0;width:0;min-width:0;text-align:center;padding:9px 0;
+  font-size:12.5px;color:var(--muted);border-radius:999px;
 }
-.seg button::after{
-  content:"";position:absolute;left:50%;bottom:7px;
-  width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:transparent;
+/* The frosted capsule. Behind the label, never around it. */
+.seg button::before{
+  content:"";position:absolute;inset:0;border-radius:999px;
+  background:transparent;border:1px solid transparent;
+  transition:background .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
+.seg button > span{position:relative;z-index:1}
 .seg button:hover{color:var(--text-2)}
 .seg button.active{color:var(--text)}
-.seg button.active::after{background:var(--pos)}
+.seg button.active::before{
+  background:var(--seg-on);
+  border-color:var(--seg-line);
+  box-shadow:0 1px 2px rgba(12,22,34,.1), 0 6px 16px rgba(12,22,34,.08);
+}
+:root[data-theme="dark"] .seg button.active::before{
+  box-shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 16px rgba(0,0,0,.28);
+}
+@media (prefers-reduced-motion:reduce){ .seg button::before{transition:none} }
 .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .cell{
   background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r);
@@ -870,11 +906,11 @@ footer a:hover{color:var(--text-2)}
 }
 
 /* The active contract reads as the chosen one rather than as a dot. */
-.ctab.active::after,
-.seg button.active::after{
+.ctab.active::after{
   width:16px;height:2px;margin-left:-8px;border-radius:0;background:var(--accent);
 }
-.ctab.active,.seg button.active{font-weight:600}
+.ctab.active{font-weight:600}
+.seg button.active{font-weight:600}
 
 /* ---------------- desktop ---------------- */
 @media (min-width:900px){
@@ -6066,8 +6102,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     html(el.panel,
       scanRow +
       '<div class="seg" id="modeSeg">' +
-        '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '">Auto</button>' +
-        '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '">Manual</button>' +
+        /* The label is wrapped because the capsule behind it is an
+           absolutely positioned pseudo-element, which would otherwise
+           paint over a bare text node. */
+        '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '"><span>Auto</span></button>' +
+        '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '"><span>Manual</span></button>' +
       '</div>' +
       /* Stake first: it is the field that gets touched on every single
          trade, and it was below three that are set once and left. */
