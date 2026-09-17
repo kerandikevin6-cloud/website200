@@ -38,21 +38,25 @@
      white. Every surface above it is then a real step up, which is what
      was missing: a white card on a near-white page is not a card, and
      the whole screen read as one unlit sheet. */
-  --bg:#E9EEF5;
+  --bg:#DFE9F6;
   --surface:#FFFFFF;
-  --surface-2:#EDF2F9;
-  --surface-3:#DCE5F0;
-  --line:#C6D2E0;
-  --line-soft:#DDE5EF;
+  --surface-2:#E8F0FB;
+  --surface-3:#D2E1F4;
+  --line:#B6CBE6;
+  --line-soft:#D3E0F0;
   --text:#0C1622;
   --text-2:#3B4756;
-  --muted:#64717F;
+  /* Darker than it looks like it needs to be. The quiet text now sits
+     on a blue ground rather than on white, and #64717F against that is
+     3.9:1 — under the 4.5 small text wants. This clears it on every
+     surface in the theme. */
+  --muted:#566475;
 
   /* brand + semantic
      Deeper than the dark theme's. A blue that reads well on a dark
      ground is thin and toy-like on a white one. */
-  --accent:#0A66D6;
-  --accent-soft:#E7F0FD;
+  --accent:#0A5FCE;
+  --accent-soft:#D5E6FC;
   --pos:#0B7A4B;
   --pos-soft:#E3F2EA;
   --neg:#B32B22;
@@ -70,10 +74,10 @@
      of colour on the screen and it is what stops a light trading
      terminal looking like a spreadsheet. */
   --chart-line:#0C1622;
-  --chart-grid:#E2E9F2;
-  --chart-fill:rgba(10,102,214,.07);
+  --chart-grid:#D5E2F1;
+  --chart-fill:rgba(10,95,206,.11);
   --chart-axis:#7A8796;
-  --chart-bg:#F7FAFD;
+  --chart-bg:#F2F7FD;
 
   /* The ground a control sits on, and the slot inside it that is
      chosen. In light these carry blue, because a control drawn in white
@@ -81,8 +85,8 @@
      the tabs, the mode pill and the instrument chip disappear. In dark
      the surfaces already differ by value, so these resolve to what was
      there before. */
-  --ctl:#E6EEF9;
-  --ctl-line:#CCDCEF;
+  --ctl:#D8E6F8;
+  --ctl-line:#AFC8E6;
   --ctl-on:#FFFFFF;
 
   --shadow:0 1px 2px rgba(12,22,34,.06), 0 10px 28px rgba(12,22,34,.09);
