@@ -351,11 +351,117 @@
     return svg;
   }
 
+  /* ---------- the picker ----------
+     A native <select> hands the list to the operating system, which on a
+     laptop is a bare column of 195 names in the browser's own font, with
+     no flags, no dialling codes and no way to search except by typing
+     the first letters of a name somebody may not know in English. This
+     is the same control drawn properly: flags, codes, and a filter that
+     matches either the country or the number.
+
+     It is still a button and a list, so the keyboard works and a screen
+     reader is told what it is. */
+  function mountPicker(host, opts) {
+    opts = opts || {};
+    var value = (opts.value || 'KE').toUpperCase();
+    if (!BY_CC[value]) value = 'KE';
+    var open = false;
+
+    host.classList.add('cc');
+    host.innerHTML =
+      '<button type="button" class="cc-btn" aria-haspopup="listbox" aria-expanded="false">' +
+        '<i class="flag"></i><b class="num"></b>' +
+        (window.NexIcon ? window.NexIcon('chevD', 12) : '') +
+      '</button>' +
+      '<div class="cc-pop" hidden>' +
+        '<div class="cc-find">' +
+          '<input type="text" class="cc-search" placeholder="Search country or code" ' +
+            'autocomplete="off" spellcheck="false" aria-label="Search countries">' +
+        '</div>' +
+        '<div class="cc-list" role="listbox"></div>' +
+      '</div>';
+
+    var btn = host.querySelector('.cc-btn');
+    var pop = host.querySelector('.cc-pop');
+    var search = host.querySelector('.cc-search');
+    var list = host.querySelector('.cc-list');
+
+    function paintButton() {
+      btn.querySelector('.flag').innerHTML = flag(value, 20);
+      btn.querySelector('b').textContent = '+' + BY_CC[value].dial;
+      btn.setAttribute('aria-label', BY_CC[value].name + ', +' + BY_CC[value].dial);
+    }
+
+    function paintList(q) {
+      q = (q || '').trim().toLowerCase().replace(/^\+/, '');
+      var rows = COUNTRIES.filter(function (c) {
+        if (!q) return true;
+        return c.name.toLowerCase().indexOf(q) > -1 || c.dial.indexOf(q) === 0;
+      });
+      list.innerHTML = rows.length
+        ? rows.map(function (c) {
+            return '<button type="button" class="cc-row' + (c.cc === value ? ' on' : '') +
+                '" role="option" aria-selected="' + (c.cc === value) + '" data-cc="' + c.cc + '">' +
+              flag(c.cc, 20) +
+              '<span class="cc-name">' + c.name + '</span>' +
+              '<span class="cc-dial num">+' + c.dial + '</span>' +
+            '</button>';
+          }).join('')
+        : '<div class="cc-none">No country matches that</div>';
+    }
+
+    function setOpen(next) {
+      open = next;
+      pop.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+      host.classList.toggle('open', open);
+      if (open) {
+        paintList('');
+        search.value = '';
+        /* Not on a touch keyboard: opening the list and throwing a
+           keyboard over two thirds of it helps nobody. */
+        if (!matchMedia('(pointer:coarse)').matches) search.focus();
+        var on = list.querySelector('.cc-row.on');
+        if (on) list.scrollTop = Math.max(0, on.offsetTop - 60);
+      }
+    }
+
+    function choose(cc) {
+      if (!BY_CC[cc]) return;
+      value = cc;
+      paintButton();
+      setOpen(false);
+      if (opts.onChange) opts.onChange(BY_CC[cc]);
+    }
+
+    btn.addEventListener('click', function (e) { e.preventDefault(); setOpen(!open); });
+    search.addEventListener('input', function () { paintList(search.value); });
+    list.addEventListener('click', function (e) {
+      var row = e.target.closest('[data-cc]');
+      if (row) choose(row.getAttribute('data-cc'));
+    });
+    host.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && open) { setOpen(false); btn.focus(); }
+    });
+    document.addEventListener('click', function (e) {
+      if (open && !host.contains(e.target)) setOpen(false);
+    });
+
+    paintButton();
+    if (opts.onChange) opts.onChange(BY_CC[value]);
+
+    return {
+      value: function () { return value; },
+      set: choose
+    };
+  }
+
   window.NexCountries = {
     all: COUNTRIES,
     get: function (cc) { return BY_CC[(cc || '').toUpperCase()] || null; },
     dial: function (cc) { var c = BY_CC[(cc || '').toUpperCase()]; return c ? c.dial : null; },
     flag: flag,
+    mountPicker: mountPicker,
     /* Whether this one is drawn or lettered, so a caller that cares can
        ask rather than inspect the markup. */
     drawn: function (cc) { return !!SPEC[(cc || '').toUpperCase()]; }

@@ -258,6 +258,8 @@
        it, the two pages are separate documents, so it has to live
        somewhere they both see. */
     symbol: (saved.symbol && BY_ID[saved.symbol]) ? saved.symbol : 'R_10',
+    /* Set by the scanner, consumed by the terminal, see prefs.ticket. */
+    ticket: saved.ticket || null,
     /* Demo until an account exists. A visitor who has never signed up
        must never be looking at a screen that says "real", not even at
        zero, because the number is not the point: the word is. */
@@ -284,6 +286,7 @@
     try {
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
+        ticket: S.ticket,
         verified: S.verified, kycStatus: S.kycStatus, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
@@ -915,6 +918,18 @@
       auto: function () { return S.auto; },
       setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); },
       symbol: function () { return BY_ID[S.symbol] ? S.symbol : 'R_10'; },
+      /* A ticket handed from the scanner to the terminal. Written on
+         one page and read on the next, which are separate documents, so
+         it has to survive the navigation: it goes to storage, is read
+         once, and is cleared by the reader. */
+      ticket: function () { return S.ticket || null; },
+      setTicket: function (t) { S.ticket = t || null; persistNow(); },
+      takeTicket: function () {
+        var t = S.ticket || null;
+        if (t) { S.ticket = null; persistNow(); }
+        return t;
+      },
+
       setSymbol: function (id) {
         if (!BY_ID[id]) return false;
         S.symbol = id;

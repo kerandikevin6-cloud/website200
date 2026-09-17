@@ -20,8 +20,20 @@
 
   var WINDOW = 180;          /* ticks per instrument in the sample */
 
+  /* The three contract families, which is what somebody actually means
+     when they say what they want to trade. The scanner used to rank all
+     of them against each other and answer a question nobody asked: the
+     best edge on the board is no use to a trader who has decided they
+     are trading over/under today. */
+  var FAMILIES = {
+    even_odd: { label: 'Even / Odd', note: 'Is the last digit even or odd', types: ['even_odd'] },
+    matches:  { label: 'Matches / Differs', note: 'Does the last digit hit one number', types: ['matches', 'differs'] },
+    over_under: { label: 'Over / Under', note: 'Is the last digit above or below a barrier', types: ['over', 'under'] }
+  };
+
   var S = {
     phase: 'idle',           /* idle | scanning | done */
+    family: 'even_odd',      /* which of the three is being scanned */
     step: 0,                 /* instrument index while scanning */
     signals: [],
     pick: null,              /* symbol id of the selected signal */
@@ -89,6 +101,11 @@
     add('matches', 'matches', hottest, freq[hottest], 'Matches ' + hottest);
     add('differs', 'differs', coldest, n - freq[coldest], 'Differs ' + coldest);
 
+    /* Only the family that was asked for. */
+    var want = FAMILIES[S.family].types;
+    out = out.filter(function (c) { return want.indexOf(c.type) > -1; });
+    if (!out.length) return null;
+
     out.sort(function (a, b) { return b.edge - a.edge; });
     var best = out[0];
     best.symbol = symbol;
@@ -113,6 +130,24 @@
     return null;
   }
 
+  /* ---------- what to scan for ----------
+     Asked before the scan, not after: which of the three contracts
+     somebody wants is a decision they have usually already made, and a
+     scanner that answers a different question is noise. */
+  function askFamily() {
+    if (!window.NexModal) { startScan(); return; }
+    window.NexModal.open('scan', null, { family: S.family });
+  }
+
+  function chooseFamily(id) {
+    if (!FAMILIES[id]) return;
+    S.family = id;
+    S.signals = [];
+    S.pick = null;
+    if (window.NexModal) window.NexModal.close();
+    startScan();
+  }
+
   /* ---------- scan animation ---------- */
   function startScan() {
     if (S.phase === 'scanning') return;
@@ -128,33 +163,44 @@
         rescan();
         S.phase = 'done';
         render();
-        if (S.auto) place(true);
         return;
       }
       render();
     }, 260);
   }
 
-  /* ---------- placing ---------- */
-  function place(fromAuto) {
+  /* ---------- handing it to the terminal ----------
+     The scanner does not place trades any more. It found something; the
+     decision to stake money on it belongs on the screen built for that,
+     with the chart, the balance and the two buttons in view. Pressing
+     buy from a list of statistics is how somebody ends up in a position
+     they never really looked at.
+
+     What crosses over is the whole ticket: instrument, contract, digit,
+     duration and stake, so the terminal opens on exactly what was found
+     and the only thing left is to agree with it. */
+  var TAB_FOR = {
+    even_odd: 'even_odd', matches: 'matches', differs: 'matches',
+    over: 'over_under', under: 'over_under'
+  };
+
+  function handOff() {
     var sig = current();
-    if (!sig || S.placing) return;
+    if (!sig) return;
 
-    var err = API.contracts.validate({ stake: S.stake, ticks: S.ticks, symbol: sig.symbol });
-    if (err) { S.error = err; render(); window.NexToast(err); return; }
-
-    S.placing = true;
-    var res = API.contracts.buy({
-      symbol: sig.symbol, type: sig.type, side: sig.side,
+    API.prefs.setSymbol(sig.symbol);
+    API.prefs.setTicket({
+      symbol: sig.symbol,
+      tab: TAB_FOR[sig.type] || 'even_odd',
+      side: sig.side,
       barrier: sig.type === 'even_odd' ? null : sig.barrier,
-      stake: S.stake, ticks: S.ticks, run: 'AI'
+      ticks: S.ticks,
+      stake: S.stake,
+      label: sig.label,
+      symbolName: sig.symbolName,
+      at: Date.now()
     });
-    S.placing = false;
-
-    if (!res.ok) { S.error = res.error; render(); window.NexToast(res.error); return; }
-    S.error = null;
-    window.NexToast((fromAuto ? 'AI placed ' : 'Placed ') + sig.label + ' on ' + sig.symbolName);
-    render();
+    window.NexGo('/');
   }
 
   /* Same as the terminal: the stake is USD in the field as well as in
@@ -196,9 +242,19 @@
       '</div>';
     }
 
+    if (!S.signals.length) {
+      return '<div class="ai-hero done">' +
+        '<span class="label">' + FAMILIES[S.family].label + '</span>' +
+        '<b class="ai-headline">Nothing to report</b>' +
+        '<span class="ai-sub">Not enough history on any instrument yet. ' +
+          'Leave it a minute and scan again.</span>' +
+        '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Scan again</button>' +
+      '</div>';
+    }
+
     var best = S.signals[0];
     return '<div class="ai-hero done">' +
-      '<span class="label">Strongest edge found</span>' +
+      '<span class="label">' + FAMILIES[S.family].label + ' · strongest edge</span>' +
       '<b class="ai-headline">' + best.label + '</b>' +
       '<span class="ai-sub">' + best.symbolName + ' · ' + F.pct(best.prob * 100, 1) +
         ' of the last ' + best.sample + ' ticks</span>' +
@@ -256,18 +312,17 @@
         (S.error ? '<div class="field-error" role="alert">' + S.error + '</div>' : '') +
         '<div class="session"><span>Payout if it lands</span><span class="num">' +
           F.usd(API.contracts.payoutFor(sig.type, S.stake)) + '</span></div>' +
-        '<label class="ai-auto">' +
-          '<span><b>Let the engine place it</b>' +
-          '<span>Every scan writes its top signal automatically.</span></span>' +
-          '<i class="switch" id="aiAuto" role="switch" aria-checked="' + S.auto + '"></i>' +
-        '</label>' +
       '</div>' +
+      /* Two ways on from here, and neither of them takes money. */
       '<div class="ai-dock">' +
-        '<button class="tbtn even" id="aiPlace">' +
-          '<div class="t">Place ' + sig.label + '</div>' +
-          '<div class="s">' + F.money(S.stake) + ' · ' + F.ticks(S.ticks) + '</div>' +
-        '</button>' +
-      '</div>';
+        '<button class="btn btn-fill" id="aiTake">' +
+          I('candles', 16) + 'Take it to the terminal</button>' +
+        '<button class="btn btn-ghost" id="aiScanAgain">' +
+          I('radar', 16) + 'Scan again</button>' +
+      '</div>' +
+      '<p class="ai-note">The terminal opens on this contract with the digit, ' +
+        'duration and stake already set. Nothing is placed until you press buy ' +
+        'there.</p>';
   }
 
   function tradeLog() {
@@ -308,7 +363,8 @@
       var t = e.target;
       if (!t.closest) return;
 
-      if (t.closest('#aiScan')) { startScan(); return; }
+      if (t.closest('#aiScan') || t.closest('#aiScanAgain')) { askFamily(); return; }
+      if (t.closest('#aiTake')) { handOff(); return; }
 
       var pick = t.closest('[data-pick]');
       if (pick) { S.pick = pick.getAttribute('data-pick'); S.error = null; render(); return; }
@@ -327,19 +383,20 @@
         return;
       }
 
-      if (t.closest('#aiAuto')) {
-        S.auto = !S.auto;
-        render();
-        window.NexToast(S.auto ? 'The engine will place its top signal' : 'Automatic placing is off');
-        return;
-      }
 
-      if (t.closest('#aiPlace')) { place(false); return; }
     });
 
     root.addEventListener('input', function (e) {
       if (e.target.id !== 'aiStake') return;
       setStakeShown(e.target.value);
+    });
+
+    /* The chooser is a dialog, which is mounted at the end of the body
+       rather than inside this page, so it cannot be caught by the
+       listener above. */
+    document.addEventListener('click', function (e) {
+      var pickFam = e.target.closest && e.target.closest('[data-scanfamily]');
+      if (pickFam) chooseFamily(pickFam.getAttribute('data-scanfamily'));
     });
   }
 

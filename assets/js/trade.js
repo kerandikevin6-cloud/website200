@@ -15,7 +15,8 @@
 
   var S = {
     symbol: 'R_10',
-    tab: 'even_odd',        /* even_odd | matches | over_under */
+    tab: 'even_odd',           /* even_odd | matches | over_under */
+    fromScan: null,            /* the scanner's ticket, while it is shown */
     side: 'even',
     barrier: 5,
     stake: 10,               /* USD; replaced at init with a round local figure */
@@ -135,13 +136,17 @@
     var pnl = today.reduce(function (a, c) { return a + (c.status === 'open' ? 0 : c.profit); }, 0);
     var auto = API.prefs.auto();
 
+    /* A number line, not a stepper. Picking 7 was six presses of a
+       chevron, and the digit is not a quantity to nudge up and down: it
+       is one of ten choices, all of which fit on one row. */
     var barrierRow = S.tab === 'even_odd' ? '' :
-      '<div class="stack-row">' +
+      '<div class="barrier">' +
         '<span class="label">' + (S.tab === 'matches' ? 'Digit to match' : 'Barrier digit') + '</span>' +
-        '<div class="pickline">' +
-          '<button class="stepbtn" data-barrier="-1" aria-label="Lower digit">' + I('minus', 14) + '</button>' +
-          '<b class="num">' + S.barrier + '</b>' +
-          '<button class="stepbtn" data-barrier="1" aria-label="Raise digit">' + I('plus', 14) + '</button>' +
+        '<div class="numline">' +
+          [0,1,2,3,4,5,6,7,8,9].map(function (n) {
+            return '<button class="nb' + (n === S.barrier ? ' on' : '') +
+              '" data-digit="' + n + '" aria-pressed="' + (n === S.barrier) + '">' + n + '</button>';
+          }).join('') +
         '</div>' +
       '</div>';
 
@@ -163,7 +168,18 @@
        that did nothing sitting above the one control that does. */
     var targets = S.mode === 'auto' ? targetsRow(auto) : '';
 
+    /* Where the numbers in this panel came from, said once. A panel that
+       silently differs from how it was left is worse than one that
+       explains itself. */
+    var scanRow = !S.fromScan ? '' :
+      '<div class="scan-note">' + I('radar', 15) +
+        '<span><b>' + S.fromScan.label + '</b> on ' + S.fromScan.symbolName +
+        ', from the scanner. Nothing is placed until you press buy.</span>' +
+        '<button class="scan-x" id="scanClear" aria-label="Dismiss">' + I('close', 14) + '</button>' +
+      '</div>';
+
     html(el.panel,
+      scanRow +
       '<div class="seg" id="modeSeg">' +
         '<button data-mode="auto" class="' + (S.mode === 'auto' ? 'active' : '') + '">Auto</button>' +
         '<button data-mode="manual" class="' + (S.mode === 'manual' ? 'active' : '') + '">Manual</button>' +
@@ -379,6 +395,8 @@
         return;
       }
 
+      if (t.closest('#scanClear')) { S.fromScan = null; renderPanel(); return; }
+
       var mode = t.closest('[data-mode]');
       if (mode) {
         S.mode = mode.getAttribute('data-mode');
@@ -536,6 +554,19 @@
        arrives. Read every mount, not just the first, coming back from
        Markets is a fresh document. */
     S.symbol = API.prefs.symbol();
+
+    /* And a ticket from the scanner, if one is waiting. Taken, not read:
+       it applies once and is gone, so coming back to this page tomorrow
+       does not silently reset the panel to a signal from yesterday. */
+    var ticket = API.prefs.takeTicket();
+    if (ticket) {
+      S.symbol = ticket.symbol || S.symbol;
+      S.tab = ticket.tab || S.tab;
+      if (ticket.barrier != null) S.barrier = ticket.barrier;
+      if (ticket.ticks) S.ticks = ticket.ticks;
+      if (ticket.stake) S.stake = ticket.stake;
+      S.fromScan = ticket;
+    }
 
     unsub.forEach(function (f) { f(); });
     unsub = [];

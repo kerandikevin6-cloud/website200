@@ -129,9 +129,9 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
      field; conflating them meant a customer in Lagos or London could not
      enter their own number.
 
-     The flag and the code are drawn by us; the list itself is a real
-     <select> sitting invisibly on top, so a phone opens its own picker
-     and the keyboard reaches it for nothing. */
+     The list is ours, not the operating system's: a native <select> on a
+     laptop is 195 bare names with no flags, no codes and no way to
+     search except by guessing how we spell the country in English. */
   function init() {
     var API = window.NexAPI, C = window.NexCountries;
     var row = document.getElementById('sPhoneRow');
@@ -141,37 +141,27 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
     if (!C.get(cc)) cc = 'KE';
 
     row.innerHTML =
-      '<span class="phone-cc" id="sCC">' +
-        '<i class="flag"></i><b class="num"></b>' +
-        window.NexIcon('chevD', 12) +
-        '<select id="sCountry" aria-label="Country">' +
-          C.all.map(function (c) {
-            return '<option value="' + c.cc + '">' + c.name + ' (+' + c.dial + ')</option>';
-          }).join('') +
-        '</select>' +
-      '</span>' +
+      '<span class="phone-cc" id="sCC"></span>' +
       '<input class="input num phone-input" id="sPhone" type="tel" inputmode="numeric" ' +
-        'autocomplete="tel-national" placeholder="Phone number">';
+        'autocomplete="tel-national" placeholder="Phone number">' +
+      '<input type="hidden" id="sCountry" value="' + cc + '">';
 
-    var sel = document.getElementById('sCountry');
-    var flag = row.querySelector('.flag');
-    var dial = row.querySelector('b');
     var input = document.getElementById('sPhone');
+    var hidden = document.getElementById('sCountry');
 
-    function paint() {
-      var c = C.get(sel.value);
-      flag.innerHTML = C.flag(sel.value, 20);
-      dial.textContent = '+' + c.dial;
-      /* A local format to copy, for the countries we have one for.
-         Everyone else gets a plain prompt rather than a Kenyan number
-         held up as the example. */
-      var pay = API.geo.countries[sel.value];
-      input.placeholder = pay ? pay.sample : 'Phone number';
-    }
-
-    sel.value = cc;
-    paint();
-    sel.addEventListener('change', paint);
+    C.mountPicker(document.getElementById('sCC'), {
+      value: cc,
+      onChange: function (c) {
+        /* The chosen country is what gets sent, and it decides the
+           dialling code the number is read against. */
+        hidden.value = c.cc;
+        /* A local format to copy, for the countries we have one for.
+           Everyone else gets a plain prompt rather than a Kenyan number
+           held up as the example. */
+        var pay = API.geo.countries[c.cc];
+        input.placeholder = pay ? pay.sample : 'Phone number';
+      }
+    });
   }
 
   if (window.NexAPI) init();

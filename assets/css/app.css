@@ -35,8 +35,8 @@
      the whole screen read as one unlit sheet. */
   --bg:#E9EEF5;
   --surface:#FFFFFF;
-  --surface-2:#F1F5FA;
-  --surface-3:#DFE7F1;
+  --surface-2:#EDF2F9;
+  --surface-3:#DCE5F0;
   --line:#C6D2E0;
   --line-soft:#DDE5EF;
   --text:#0C1622;
@@ -846,6 +846,54 @@ footer a:hover{color:var(--text-2)}
 .copy-step span{display:block;color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:3px}
 .copy-foot{display:flex;flex-direction:column;gap:10px;padding:0 16px}
 
+/* ---------------- light: depth ----------------
+   Dark mode separates surfaces by value: a panel is lighter than the
+   page and that is enough. Light mode has almost no value range to work
+   with, so it separates them the way paper does, with a shadow. Without
+   this every card was an outline on a flat sheet, which is what "looks
+   unplanned" actually means.
+
+   Scoped to the light theme on purpose: the same shadows under a dark
+   panel are invisible at best and grubby at worst. */
+:root:not([data-theme="dark"]) .panel,
+:root:not([data-theme="dark"]) .chart-card,
+:root:not([data-theme="dark"]) .auth-card,
+:root:not([data-theme="dark"]) .card,
+:root:not([data-theme="dark"]) .modal-box,
+:root:not([data-theme="dark"]) .drawer{
+  box-shadow:0 1px 2px rgba(12,22,34,.05), 0 8px 22px rgba(12,22,34,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .panel,
+  :root:not([data-theme="light"]) .chart-card,
+  :root:not([data-theme="light"]) .auth-card,
+  :root:not([data-theme="light"]) .card,
+  :root:not([data-theme="light"]) .modal-box,
+  :root:not([data-theme="light"]) .drawer{box-shadow:none}
+}
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .chart-card,
+:root[data-theme="dark"] .auth-card,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .modal-box{box-shadow:none}
+
+/* The bar is a surface, not the page. In light it was the same colour as
+   the ground behind it, so it floated with nothing under it. */
+:root:not([data-theme="dark"]) .topbar{
+  background:var(--surface);
+  box-shadow:0 1px 0 rgba(12,22,34,.06), 0 6px 18px rgba(12,22,34,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .topbar{background:var(--bg);box-shadow:none}
+}
+
+/* The active contract reads as the chosen one rather than as a dot. */
+.ctab.active::after,
+.seg button.active::after{
+  width:16px;height:2px;margin-left:-8px;border-radius:0;background:var(--accent);
+}
+.ctab.active,.seg button.active{font-weight:600}
+
 /* ---------------- desktop ---------------- */
 @media (min-width:900px){
   .only-desk{display:flex}
@@ -1093,6 +1141,37 @@ footer a:hover{color:var(--text-2)}
 
 /* ---------------- panel rows ---------------- */
 .stack-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+/* Where the panel's numbers came from, when they came from the
+   scanner rather than from the person looking at it. */
+.scan-note{
+  display:flex;align-items:flex-start;gap:9px;padding:10px 11px;
+  border:1px solid var(--accent);background:var(--accent-soft);
+  font-size:12px;line-height:1.5;color:var(--text-2);
+}
+.scan-note > svg{flex:none;color:var(--accent);margin-top:1px}
+.scan-note span{flex:1;min-width:0}
+.scan-note b{color:var(--text);font-weight:600}
+.scan-x{flex:none;color:var(--muted);padding:0 2px}
+.scan-x:hover{color:var(--text)}
+
+/* The barrier digit, as ten choices rather than a spinner. */
+.barrier{display:flex;flex-direction:column;gap:8px}
+.numline{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.nb{
+  height:34px;display:grid;place-items:center;min-width:0;
+  border:1px solid var(--line-soft);background:var(--surface-2);
+  font-family:var(--mono);font-size:12.5px;color:var(--text-2);
+}
+:root[data-theme="dark"] .nb{background:var(--surface)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .nb{background:var(--surface)}
+}
+.nb:hover{color:var(--text);border-color:var(--line)}
+.nb.on{
+  border-color:var(--accent);color:var(--accent);
+  background:var(--accent-soft);font-weight:600;
+}
 .pickline{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:3px}
 .pickline b{min-width:22px;text-align:center;font-size:15px;font-weight:500}
 .pickline .unit{font-size:11px;color:var(--muted);margin-left:-4px}
@@ -1307,8 +1386,13 @@ body.locked{overflow:hidden}
 .ai-auto{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer}
 .ai-auto b{display:block;font-size:13px;font-weight:500}
 .ai-auto span span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
-.ai-dock{margin:12px 14px 0}
-.ai-dock .tbtn{width:100%;padding:15px 12px}
+/* Two ways on from a scan, and neither of them takes money. */
+.ai-dock{display:flex;flex-direction:column;gap:9px;margin:12px 14px 0}
+.ai-dock .btn{width:100%}
+.ai-note{
+  margin:10px 16px 0;font-size:11.5px;line-height:1.55;
+  color:var(--muted);text-align:center;
+}
 
 @media (min-width:900px){
   .ai-hero,.ai-ticket,.ai-dock{margin-left:0;margin-right:0}
@@ -1359,7 +1443,9 @@ body.locked{overflow:hidden}
    the local number. */
 .phone{
   display:flex;align-items:stretch;border:1px solid var(--line);
-  background:var(--surface-2);overflow:hidden;
+  background:var(--surface-2);
+  /* Not hidden: the country list hangs out of the bottom of this row. */
+  overflow:visible;
 }
 :root[data-theme="dark"] .phone{background:var(--surface)}
 @media (prefers-color-scheme:dark){
@@ -1373,14 +1459,44 @@ body.locked{overflow:hidden}
 .phone-cc .flag{display:flex;flex:none}
 .flagsvg{display:block;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.14) inset}
 .phone-cc b{font-size:13.5px;font-weight:500;color:var(--text-2)}
-/* The country list: a real <select> laid over the chip we drew, so the
-   flag and the code are ours and the menu is the operating system's. */
 .phone-cc{position:relative}
-.phone-cc select{
-  position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;
-  appearance:none;-webkit-appearance:none;border:0;
-}
 .phone-cc svg{color:var(--muted);flex:none;margin-left:-2px}
+
+/* ---------------- the country picker ----------------
+   Ours, not the operating system's: flags, dialling codes, and a filter
+   that matches either the name or the number. */
+.cc{padding:0;position:relative}
+.cc-btn{
+  display:flex;align-items:center;gap:7px;height:100%;padding:0 12px;
+  color:var(--text-2);cursor:pointer;
+}
+.cc-btn:hover{color:var(--text)}
+.cc-btn b{font-size:13.5px;font-weight:500}
+.cc.open .cc-btn{color:var(--text)}
+.cc-pop{
+  position:absolute;z-index:60;top:calc(100% + 6px);left:0;width:min(88vw,320px);
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* `display:flex` above outranks the browser's [hidden] rule, so the
+   popover has to be told to stay shut. */
+.cc-pop[hidden]{display:none}
+.cc-find{padding:8px;border-bottom:1px solid var(--line-soft)}
+.cc-search{
+  width:100%;padding:9px 10px;border:1px solid var(--line);background:var(--surface-2);
+  color:var(--text);outline:none;font-size:13px;
+}
+.cc-search:focus{border-color:var(--accent)}
+.cc-list{max-height:278px;overflow-y:auto;overscroll-behavior:contain}
+.cc-row{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:9px 11px;color:var(--text-2);
+}
+.cc-row:hover{background:var(--surface-2);color:var(--text)}
+.cc-row.on{background:var(--accent-soft);color:var(--text)}
+.cc-name{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-dial{font-size:12px;color:var(--muted);flex:none}
+.cc-none{padding:16px 12px;font-size:12.5px;color:var(--muted);text-align:center}
 .phone .input{
   flex:1;min-width:0;border:none;background:none;border-radius:0;
   letter-spacing:.06em;font-size:15px;

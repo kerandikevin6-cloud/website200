@@ -265,6 +265,33 @@
       }
     },
 
+    /* ---------------- what the scanner should look for ----------------
+       Three contracts, three questions. Asking first is the difference
+       between a scanner and a slot machine: the answer is only useful to
+       somebody who had already decided what they were trading. */
+    scan: {
+      steps: {
+        list: {
+          title: 'Scan for',
+          sub: 'Pick the contract, and the engine ranks every instrument for it.',
+          body: function (s) {
+            function row(id, name, note) {
+              return '<button class="choice' + (s.family === id ? ' selected' : '') +
+                  '" data-scanfamily="' + id + '">' +
+                '<span class="dot"></span>' +
+                '<span class="c-t"><b>' + name + '</b><span>' + note + '</span></span>' +
+                I('chev', 16) + '</button>';
+            }
+            return '<div class="choices">' +
+              row('even_odd', 'Even / Odd', 'Is the last digit even or odd') +
+              row('matches', 'Matches / Differs', 'Does the last digit hit one number') +
+              row('over_under', 'Over / Under', 'Is the last digit above or below a barrier') +
+            '</div>';
+          }
+        }
+      }
+    },
+
     /* ---------------- notifications ---------------- */
     alerts: {
       steps: {
