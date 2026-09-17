@@ -219,9 +219,14 @@
           }).join('') +
         '</div>' +
       '</div>' +
-      barrierRow +
       targets +
       runRow +
+      /* Last, under the automated run box, and in the same place in both
+         modes. It used to sit directly under the stake in manual and
+         above two boxes in auto, so the digit moved down the panel when
+         the mode changed — on the one control somebody reaches for
+         without looking. */
+      barrierRow +
       /* one line, not two: the trade screen is short on height and this
          is the least load-bearing thing on it */
       '<div class="session">' +
