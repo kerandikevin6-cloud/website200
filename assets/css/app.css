@@ -509,7 +509,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .chart-tools button:hover{color:var(--text);background:var(--surface-2)}
 
 /* all ten digits share one row - never a horizontal scroll */
-.digits{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:10px 10px 12px}
+.digits{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:13px 10px 12px}
 /* A cell is the circle plus the share under it. The share used to live
    inside the circle at 7.5px, which is smaller than anything is meant to
    be read at; outside, it has room to be legible. */
@@ -524,8 +524,19 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .dcell.hot .digit{border-color:var(--accent)}
 .dcell.hot .dpct{color:var(--accent)}
 .dcell.cur .digit{background:var(--surface-3)}
-.dcell.sel .digit{border-color:var(--accent);background:var(--accent-soft)}
-.dcell.sel .dpct{color:var(--accent)}
+/* The same amber in the statistics strip, so the barrier is one thing
+   in two places rather than two states that happen to be related. */
+.dcell{transition:transform .14s ease}
+.dcell.sel{transform:translateY(-3px)}
+.dcell.sel .digit{
+  border-color:var(--warn);background:var(--warn-soft);color:var(--warn);
+  box-shadow:0 4px 12px color-mix(in srgb, var(--warn) 24%, transparent);
+}
+.dcell.sel .dpct{color:var(--warn);font-weight:600}
+@media (prefers-reduced-motion:reduce){
+  .dcell{transition:none}
+  .dcell.sel{transform:none}
+}
 
 .panel{padding:2px 14px 12px;display:flex;flex-direction:column;gap:10px}
 /* Auto / Manual, built like the bottom bar: a rounded track with a
@@ -1286,16 +1297,35 @@ footer a:hover{color:var(--text-2)}
 
 /* The barrier digit, as ten choices rather than a spinner. */
 .barrier{display:flex;flex-direction:column;gap:8px}
-.numline{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+/* Room above the row for the chosen digit to stand up into. */
+.numline{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:5px 0 9px}
 .nb{
+  position:relative;
   height:34px;display:grid;place-items:center;min-width:0;
   border:1px solid var(--ctl-line);background:var(--ctl);
   font-family:var(--mono);font-size:12.5px;color:var(--text-2);
+  transition:transform .14s ease, background .14s ease, border-color .14s ease, color .14s ease;
 }
-.nb:hover{color:var(--text);border-color:var(--line)}
+.nb:hover{color:var(--text);border-color:var(--accent);transform:translateY(-2px)}
+
+/* The chosen digit stands out of the row rather than being tinted in
+   place. Amber, not the accent: every other selected thing on this
+   screen is blue, and the barrier is the one number that decides
+   whether a contract wins, so it gets a colour of its own. */
 .nb.on{
-  border-color:var(--accent);color:var(--accent);
-  background:var(--accent-soft);font-weight:600;
+  border-color:var(--warn);color:var(--warn);background:var(--warn-soft);
+  font-weight:600;transform:translateY(-4px);
+  box-shadow:0 4px 12px color-mix(in srgb, var(--warn) 26%, transparent);
+}
+/* The marker under it, which is what keeps the lift readable when two
+   of these sit side by side. */
+.nb.on::after{
+  content:"";position:absolute;left:50%;bottom:-7px;translate:-50% 0;
+  width:14px;height:2px;background:var(--warn);
+}
+@media (prefers-reduced-motion:reduce){
+  .nb{transition:none}
+  .nb:hover,.nb.on{transform:none}
 }
 .pickline{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:3px}
 .pickline b{min-width:22px;text-align:center;font-size:15px;font-weight:500}
