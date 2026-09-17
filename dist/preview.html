@@ -75,6 +75,16 @@
   --chart-axis:#7A8796;
   --chart-bg:#F7FAFD;
 
+  /* The ground a control sits on, and the slot inside it that is
+     chosen. In light these carry blue, because a control drawn in white
+     on a white card is an outline and nothing else — which is what made
+     the tabs, the mode pill and the instrument chip disappear. In dark
+     the surfaces already differ by value, so these resolve to what was
+     there before. */
+  --ctl:#E6EEF9;
+  --ctl-line:#CCDCEF;
+  --ctl-on:#FFFFFF;
+
   --shadow:0 1px 2px rgba(12,22,34,.06), 0 10px 28px rgba(12,22,34,.09);
   --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
@@ -143,9 +153,13 @@
 
     --chart-line:#E6EDF5;
     --chart-grid:#17293C;
-    --chart-fill:rgba(230,237,245,.05);
+    --chart-fill:rgba(61,155,255,.09);
     --chart-axis:#6B809A;
     --chart-bg:#0A1420;
+
+    --ctl:#132437;
+    --ctl-line:#1F3550;
+    --ctl-on:#1C3047;
 
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
     --shadow-lg:0 24px 64px rgba(0,0,0,.6);
@@ -180,6 +194,10 @@
   --chart-fill:rgba(61,155,255,.09);
   --chart-axis:#6B809A;
   --chart-bg:#0A1420;
+
+  --ctl:#132437;
+  --ctl-line:#1F3550;
+  --ctl-on:#1C3047;
 
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
   --shadow-lg:0 24px 64px rgba(0,0,0,.6);
@@ -411,7 +429,13 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 }
 
 /* ---------------- terminal ---------------- */
-.ctabs{display:flex;border-bottom:1px solid var(--line-soft);overflow:hidden}
+/* The three contracts sit on the control ground rather than on the
+   card, which in light mode is the difference between a row of buttons
+   and a line of text. The chosen one lifts out of it. */
+.ctabs{
+  display:flex;overflow:hidden;
+  background:var(--ctl);border-bottom:1px solid var(--ctl-line);
+}
 .ctabs::-webkit-scrollbar{display:none}
 /* width:0 + flex-basis:0 + min-width:0 forces mathematically equal
    slices whatever the label length, and selecting one only changes
@@ -438,7 +462,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:transparent;
 }
 .ctab:hover{color:var(--text-2)}
-.ctab.active{color:var(--text)}
+.ctab.active{color:var(--accent);background:var(--ctl-on)}
 .ctab.active::after{background:var(--pos)}
 
 .instrument{display:flex;align-items:center;gap:10px;padding:8px 14px 10px}
@@ -498,7 +522,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .digit{
   width:100%;max-width:38px;aspect-ratio:1;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--line-soft);background:var(--surface);
+  border:1px solid var(--ctl-line);background:var(--ctl);
   font-family:var(--mono);font-size:12.5px;font-weight:500;line-height:1;
 }
 .dpct{font-style:normal;font-size:9.5px;color:var(--muted);font-family:var(--mono);line-height:1}
@@ -526,15 +550,9 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   background:var(--seg-bg);border:1px solid var(--seg-line);
   backdrop-filter:blur(14px) saturate(1.4);
 }
-:root{--seg-bg:rgba(255,255,255,.7);--seg-line:rgba(12,22,34,.08);--seg-on:rgba(255,255,255,.96)}
-:root[data-theme="dark"]{
-  --seg-bg:rgba(20,29,40,.7);--seg-line:rgba(255,255,255,.08);--seg-on:rgba(255,255,255,.1);
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --seg-bg:rgba(20,29,40,.7);--seg-line:rgba(255,255,255,.08);--seg-on:rgba(255,255,255,.1);
-  }
-}
+/* The pill reads off the shared control tokens, so the mode switch, the
+   contract tabs and the instrument chip all sit on one ground. */
+:root{--seg-bg:var(--ctl);--seg-line:var(--ctl-line);--seg-on:var(--ctl-on)}
 .seg button{
   position:relative;
   flex:1 1 0;width:0;min-width:0;text-align:center;padding:9px 0;
@@ -548,7 +566,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 }
 .seg button > span{position:relative;z-index:1}
 .seg button:hover{color:var(--text-2)}
-.seg button.active{color:var(--text)}
+.seg button.active{color:var(--accent)}
 .seg button.active::before{
   background:var(--seg-on);
   border-color:var(--seg-line);
@@ -588,8 +606,8 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .stake .cur{color:var(--muted);font-size:11px;letter-spacing:.1em}
 .quick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .quick button{
-  padding:8px 0;border:1px solid var(--line-soft);border-radius:0;
-  background:var(--surface);color:var(--text-2);font-family:var(--mono);font-size:12px;
+  padding:8px 0;border:1px solid var(--ctl-line);border-radius:0;
+  background:var(--ctl);color:var(--text-2);font-family:var(--mono);font-size:12px;
 }
 .quick button:hover{border-color:var(--line);color:var(--text)}
 .session{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding:0 2px}
@@ -1098,6 +1116,12 @@ footer a:hover{color:var(--text-2)}
    gaps close, the name loses its wide tracking, and Deposit keeps its
    word but not its generous padding. Measured at 360, 390 and 414. */
 @media (max-width:899px){
+  /* Three labels and three icons across a phone. A few tenths off the
+     type and the gap is the difference between "Matches / Differs" and
+     "Matches / Diff...". */
+  .ctab{gap:5px;padding:9px 4px 15px;font-size:11px}
+  .ctab-ico svg{width:15px;height:15px}
+
   .topbar{gap:5px;padding:0 7px}
   .topbar .wordmark{gap:5px;padding-right:0;margin-left:-2px}
   .topbar .wm-mark{width:22px;height:22px;font-size:9.5px}
@@ -1270,12 +1294,8 @@ footer a:hover{color:var(--text-2)}
 .numline{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
 .nb{
   height:34px;display:grid;place-items:center;min-width:0;
-  border:1px solid var(--line-soft);background:var(--surface-2);
+  border:1px solid var(--ctl-line);background:var(--ctl);
   font-family:var(--mono);font-size:12.5px;color:var(--text-2);
-}
-:root[data-theme="dark"] .nb{background:var(--surface)}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .nb{background:var(--surface)}
 }
 .nb:hover{color:var(--text);border-color:var(--line)}
 .nb.on{
@@ -1431,9 +1451,9 @@ body.locked{overflow:hidden}
    folded back to its resting value, leaving the press itself clean. */
 @media (hover:none){
   .ctab:hover{color:var(--muted)}
-  .ctab.active:hover{color:var(--text)}
+  .ctab.active:hover{color:var(--accent)}
   .seg button:hover{color:var(--muted)}
-  .seg button.active:hover{color:var(--text)}
+  .seg button.active:hover{color:var(--accent)}
   .row:hover,button.trow:hover,.mkt:hover,.ditem:hover{background:none;color:inherit}
   .stake button:hover{background:none;color:var(--text-2)}
   .stepbtn:hover{background:var(--surface-2);color:var(--text-2)}
@@ -2498,14 +2518,20 @@ body[data-chrome="app"] main{background:var(--bg)}
 .chart-inst .sel{flex:1;min-width:0}
 .chart-inst .sel-btn{
   flex:1;justify-content:space-between;
-  font-size:11.5px;letter-spacing:.04em;color:var(--muted);
+  font-size:11.5px;letter-spacing:.04em;color:var(--text-2);
+  /* A ground and a border. Over a light chart it was grey text floating
+     on the trace, which reads as a caption rather than something to
+     press. */
+  background:var(--ctl);border-color:var(--ctl-line);
 }
 /* The list is the width of the control that opened it. It was up to
    320px wide hanging off an chip half that size, which reads as a panel
    that has escaped rather than a menu belonging to the thing above it. */
 .chart-inst .sel-pop{left:0;right:0;width:auto;min-width:0;max-width:none}
 .chart-inst .sel-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chart-inst .sel-btn:hover,.chart-inst.open .sel-btn{color:var(--text)}
+.chart-inst .sel-btn:hover,.chart-inst.open .sel-btn{
+  color:var(--text);background:var(--ctl-on);border-color:var(--accent);
+}
 
 /* ---------------- learn: one idea per screen ----------------
    The page was a single long column that asked to be read all at once.
