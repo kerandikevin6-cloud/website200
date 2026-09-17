@@ -518,7 +518,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .chart-tools button:hover{color:var(--text);background:var(--surface-2)}
 
 /* all ten digits share one row - never a horizontal scroll */
-.digits{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:13px 10px 12px}
+.digits{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:14px 10px 16px}
 /* A cell is the circle plus the share under it. The share used to live
    inside the circle at 7.5px, which is smaller than anything is meant to
    be read at; outside, it has room to be legible. */
@@ -532,19 +532,47 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .dpct{font-style:normal;font-size:9.5px;color:var(--muted);font-family:var(--mono);line-height:1}
 .dcell.hot .digit{border-color:var(--accent)}
 .dcell.hot .dpct{color:var(--accent)}
-.dcell.cur .digit{background:var(--surface-3)}
-/* The same amber in the statistics strip, so the barrier is one thing
-   in two places rather than two states that happen to be related. */
-.dcell{transition:transform .14s ease}
-.dcell.sel{transform:translateY(-3px)}
-.dcell.sel .digit{
-  border-color:var(--warn);background:var(--warn-soft);color:var(--warn);
-  box-shadow:0 4px 12px color-mix(in srgb, var(--warn) 24%, transparent);
+/* ---- where the tick just landed ----
+   This moves every second, and a tint was the wrong way to show
+   something that only sits still for a moment: by the time the eye finds
+   the shade it has gone. It lifts instead, filled amber, with a
+   triangle underneath pointing up at it — the arrow reads as the thing
+   that pushed the digit up, which is exactly what happened.
+
+   Amber is the moving one. Blue stays what the trader chose, so the two
+   never have to be told apart by position. */
+.dcell{position:relative;transition:transform .12s ease}
+.dcell.cur{transform:translateY(-5px)}
+.dcell.cur .digit{
+  border-color:var(--warn);background:var(--warn);color:#fff;font-weight:600;
+  box-shadow:0 5px 14px color-mix(in srgb, var(--warn) 42%, transparent);
 }
-.dcell.sel .dpct{color:var(--warn);font-weight:600}
+:root[data-theme="dark"] .dcell.cur .digit{color:#1B1206}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .dcell.cur .digit{color:#1B1206}
+}
+.dcell.cur .dpct{color:var(--warn);font-weight:600}
+.dcell.cur::after{
+  content:"";position:absolute;left:50%;translate:-50% 0;bottom:-9px;
+  width:0;height:0;
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-bottom:6px solid var(--warn);
+}
+
+/* What the trader picked, which does not move on its own. */
+.dcell.sel .digit{
+  border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
+}
+.dcell.sel .dpct{color:var(--accent);font-weight:600}
+/* Both at once: the tick has landed on the barrier, which is the moment
+   a matches contract is won. The amber wins, because that is the news. */
+.dcell.cur.sel .digit{
+  border-color:var(--warn);background:var(--warn);color:#fff;
+}
+
 @media (prefers-reduced-motion:reduce){
   .dcell{transition:none}
-  .dcell.sel{transform:none}
+  .dcell.cur{transform:none}
 }
 
 .panel{padding:2px 14px 12px;display:flex;flex-direction:column;gap:10px}
@@ -1318,19 +1346,16 @@ footer a:hover{color:var(--text-2)}
 .nb:hover{color:var(--text);border-color:var(--accent);transform:translateY(-2px)}
 
 /* The chosen digit stands out of the row rather than being tinted in
-   place. Amber, not the accent: every other selected thing on this
-   screen is blue, and the barrier is the one number that decides
-   whether a contract wins, so it gets a colour of its own. */
+   place — but in blue, because amber is now the tick landing and one
+   colour has to mean one thing. */
 .nb.on{
-  border-color:var(--warn);color:var(--warn);background:var(--warn-soft);
+  border-color:var(--accent);color:var(--accent);background:var(--accent-soft);
   font-weight:600;transform:translateY(-4px);
-  box-shadow:0 4px 12px color-mix(in srgb, var(--warn) 26%, transparent);
+  box-shadow:0 4px 12px color-mix(in srgb, var(--accent) 24%, transparent);
 }
-/* The marker under it, which is what keeps the lift readable when two
-   of these sit side by side. */
 .nb.on::after{
   content:"";position:absolute;left:50%;bottom:-7px;translate:-50% 0;
-  width:14px;height:2px;background:var(--warn);
+  width:14px;height:2px;background:var(--accent);
 }
 @media (prefers-reduced-motion:reduce){
   .nb{transition:none}
