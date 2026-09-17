@@ -1052,20 +1052,78 @@ footer a:hover{color:var(--text-2)}
 .topbar-title{
   flex:1;text-align:center;font-size:15px;font-weight:600;letter-spacing:-.01em;
 }
-.wordmark{
-  font-size:14px;letter-spacing:.24em;text-transform:uppercase;font-weight:600;
-  padding-right:6px;flex:none;
+/* The name is two words and reads as two: NOVI over BINARY, at the
+   height of one line of ordinary text, with the monogram beside it. A
+   single line of "NOVIBINARY" is a word nobody can parse at a glance,
+   and the two-line lockup is what makes the second word readable at the
+   size a top bar allows. */
+.wordmark{display:inline-flex;align-items:center;gap:8px;flex:none;padding-right:6px}
+.wm-mark{
+  display:grid;place-items:center;flex:none;width:28px;height:28px;
+  font-size:11px;font-weight:700;letter-spacing:.04em;line-height:1;
+  color:#fff;background:var(--accent);
 }
+:root[data-theme="dark"] .wm-mark{color:#06182B}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .wm-mark{color:#06182B}
+}
+.wm-name{display:flex;flex-direction:column;justify-content:center;line-height:1}
+.wm-name b,.wm-name i{
+  display:block;font-style:normal;text-transform:uppercase;
+  font-weight:700;letter-spacing:.2em;
+}
+.wm-name b{font-size:12px;color:var(--text)}
+/* The second word is the quieter half of the lockup: same weight, less
+   size, so the pair reads as one mark rather than two words stacked. */
+.wm-name i{font-size:8.5px;color:var(--muted);letter-spacing:.34em;margin-top:2px}
+
 /* On a phone the bar carries the menu, the name, the balance, Deposit
-   and the bell. The name is the first thing to give ground: it shrinks
-   and the gaps tighten rather than the balance wrapping. */
+   and the bell. The name is the first thing to give ground: the
+   monogram stays, the words shrink, and the balance never wraps. */
+/* The bar on a phone carries the menu, the mark, the balance, Deposit
+   and the bell, and at 390px that is 412px of content in 375px of room.
+   Every item gives a little rather than one of them being dropped: the
+   gaps close, the name loses its wide tracking, and Deposit keeps its
+   word but not its generous padding. Measured at 360, 390 and 414. */
 @media (max-width:899px){
-  .topbar{gap:8px;padding:0 10px}
-  .wordmark{font-size:12px;letter-spacing:.16em;padding-right:0;margin-left:-2px}
+  .topbar{gap:5px;padding:0 7px}
+  .topbar .wordmark{gap:5px;padding-right:0;margin-left:-2px}
+  .topbar .wm-mark{width:22px;height:22px;font-size:9.5px}
+  .topbar .wm-name b{font-size:10px;letter-spacing:.06em}
+  .topbar .wm-name i{font-size:7px;letter-spacing:.12em;margin-top:1px}
+  .topbar .btn-primary{padding:9px 11px}
+  .topbar .acct{padding:5px 6px;gap:5px}
+  .topbar .iconbtn{width:30px}
 }
+/* Narrower than this the top bar gives up the words and keeps the
+   monogram, which is still the mark rather than nothing. Only in the
+   bar: a sign-in page has a whole column to itself and no reason to
+   drop half its own name. */
+/* Below this the sums stop working however hard everything is squeezed,
+   and the monogram stands in for the whole lockup — which is what a
+   monogram is for. 375px is the narrowest phone still in common use;
+   everything from there up carries the name. */
+@media (max-width:383px){
+  .topbar .wm-name{display:none}
+}
+/* Narrower still and the bar was already over its width before any of
+   this, so the balance gives up a point of type rather than the row
+   scrolling sideways. */
+/* Under 360 the bar was over its width before any mark was put in it,
+   so the mark is the thing that goes rather than being the reason the
+   row scrolls. */
 @media (max-width:359px){
-  .wordmark{display:none}
+  .topbar .wordmark{display:none}
 }
+@media (max-width:374px){
+  .topbar .acct .bal{font-size:11.5px}
+  .topbar .acct-kind{font-size:7.5px}
+  .topbar .acct-flag{width:18px;height:12px}
+  .topbar .btn-primary{padding:9px 9px;font-size:13px}
+}
+/* Centred on the sign-in pages, where it is the heading rather than an
+   item in a row. */
+.auth-head .wordmark,.auth .wordmark{justify-content:center;margin:0 auto 18px;padding:0}
 .topbar .acct{flex:none}
 .topbar .iconbtn[aria-hidden="true"]{pointer-events:none}
 
@@ -1524,7 +1582,11 @@ body.locked{overflow:hidden}
 .sel-btn:hover{color:var(--text);border-color:var(--line-soft);background:var(--surface-2)}
 .sel.open .sel-btn{color:var(--text);border-color:var(--line);background:var(--surface-2)}
 .sel-btn svg{flex:none;color:var(--muted)}
-.sel-now{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-now{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.sel-now span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-ico{display:flex;flex:none;color:var(--accent)}
+.sel-row .sel-ico{color:var(--muted)}
+.sel-row.on .sel-ico,.sel-row:hover .sel-ico{color:var(--accent)}
 .sel-pop{
   position:absolute;z-index:70;top:calc(100% + 6px);left:0;min-width:236px;
   max-width:min(92vw,320px);max-height:300px;overflow-y:auto;overscroll-behavior:contain;

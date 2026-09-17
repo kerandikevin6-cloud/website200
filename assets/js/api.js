@@ -58,8 +58,33 @@
     { id: 'R_100', name: 'Volatility 100 Index',      group: 'Volatility', start: 7788.92,  vol: 3.2,  digits: 2, rate: 2000 },
     { id: 'BOOM',  name: 'Boom 500 Index',            group: 'Boom & Crash', start: 6114.50, vol: 2.0, digits: 2, rate: 1000 },
     { id: 'CRASH', name: 'Crash 1000 Index',          group: 'Boom & Crash', start: 3902.18, vol: 1.7, digits: 2, rate: 1000 },
-    { id: 'STEP',  name: 'Step Index',                group: 'Step',       start: 9143.60,  vol: 0.5,  digits: 2, rate: 2000 }
+    { id: 'STEP',  name: 'Step Index',                group: 'Step',       start: 9143.60,  vol: 0.5,  digits: 2, rate: 2000 },
+
+    /* Commodity-shaped synthetics. The names say gold and silver because
+       that is the shape of the series — a slower drift with heavier
+       jumps than the volatility indices — and they are indices, not the
+       metal. Nothing here is a spot price and nothing here is quoted
+       from a market: every series in this table is generated, which the
+       picker says on every row and the Learn pages say at length.
+
+       Named "Index" for the same reason the others are. If these are
+       ever wired to a real feed the names stop being the honest part and
+       the note under them has to go. */
+    { id: 'GOLD',  name: 'Gold Index',   group: 'Commodities', start: 2412.60, vol: 2.4, digits: 2, rate: 1500 },
+    { id: 'SILVER', name: 'Silver Index', group: 'Commodities', start: 3114.85, vol: 3.1, digits: 2, rate: 1500 },
+    { id: 'OIL',   name: 'Crude Index',  group: 'Commodities', start: 7840.20, vol: 2.8, digits: 2, rate: 1500 }
   ];
+  /* One glyph per family, so a row in the instrument list is recognised
+     rather than read. Kept here beside the table it describes, so adding
+     an instrument and forgetting its icon is one edit, not two files. */
+  var GROUP_ICON = {
+    'Volatility': 'wave',
+    'Boom & Crash': 'spike',
+    'Step': 'steps',
+    'Commodities': 'bar'
+  };
+  function symbolIcon(sym) { return GROUP_ICON[sym && sym.group] || 'wave'; }
+
   var BY_ID = {};
   SYMBOLS.forEach(function (s) { BY_ID[s.id] = s; });
 
@@ -732,6 +757,7 @@
     payouts: PAYOUT,
     symbols: SYMBOLS,
     symbol: function (id) { return BY_ID[id] || SYMBOLS[0]; },
+    symbolIcon: symbolIcon,
     ready: function (fn) { booted ? fn() : readyFns.push(fn); },
     isReady: function () { return booted; },
     on: B.on,

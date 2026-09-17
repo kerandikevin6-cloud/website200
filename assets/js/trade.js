@@ -63,7 +63,14 @@
     if (instEl && !instEl.__sel) {
       instEl.__sel = window.NexSelect(instEl, {
         options: API.symbols.map(function (sym) {
-          return { value: sym.id, label: sym.name, group: sym.group };
+          return {
+            value: sym.id, label: sym.name, group: sym.group,
+            icon: API.symbolIcon(sym),
+            /* Said on every row, because it is the thing somebody is
+               most likely to assume wrongly about a list that now has
+               Gold in it. */
+            note: 'Generated series'
+          };
         }),
         value: S.symbol,
         onChange: function (o) { switchSymbol(o.value); }

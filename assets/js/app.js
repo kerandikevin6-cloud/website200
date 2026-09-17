@@ -50,7 +50,15 @@
        letter, because the words beside them are already the label and a
        glyph that repeats the word is decoration. */
     parity: '',
-    overunder: 'M7 9.5l5-4 5 4|M7 14.5l5 4 5-4'
+    overunder: 'M7 9.5l5-4 5 4|M7 14.5l5 4 5-4',
+    /* The instrument families. A volatility series is a jagged line, a
+       boom and crash is one with a spike in it, a step index is a
+       staircase, and a commodity is a bar. Four shapes that are the
+       thing they name, which is all an icon at 16px can be. */
+    wave: 'M3 15.5l3.2-6 2.6 4.4 2.6-8 2.8 9.4 2.4-5 3 5.2|M21 15.5h.2',
+    spike: 'M3 17.5l4.5-2.5 3.5 1.5 3-11 3 8 4-3',
+    steps: 'M3 18h4v-4h4.5v-4H16V6h5',
+    bar: 'M6 20V9.5|M12 20V4.5|M18 20V13.5'
   };
   /* ---------- solid icons ----------
      Material Symbols (Apache 2.0), drawn on Google's 0 -960 960 960 grid
@@ -216,7 +224,7 @@
      container and keeps the returned handle.
 
        NexSelect(host, {
-         options: [{ value, label, note, group }],
+         options: [{ value, label, note, group, icon }],
          value, onChange, align: 'left' | 'right'
        })
   */
@@ -244,7 +252,9 @@
     var now = host.querySelector('.sel-now');
 
     function paint() {
-      now.textContent = find(value).label;
+      var cur = find(value);
+      now.innerHTML = (cur.icon ? '<i class="sel-ico">' + icon(cur.icon, 15) + '</i>' : '') +
+        '<span>' + cur.label + '</span>';
       var lastGroup = null;
       pop.innerHTML = options.map(function (o) {
         var head = '';
@@ -255,6 +265,7 @@
         return head +
           '<button type="button" class="sel-row' + (o.value === value ? ' on' : '') +
             '" role="option" aria-selected="' + (o.value === value) + '" data-val="' + o.value + '">' +
+            (o.icon ? '<i class="sel-ico">' + icon(o.icon, 16) + '</i>' : '') +
             '<span class="sel-t"><b>' + o.label + '</b>' +
               (o.note ? '<span>' + o.note + '</span>' : '') + '</span>' +
             (o.value === value ? icon('check', 15) : '') +
@@ -332,6 +343,19 @@
       '</span>' + icon('chevD', 12);
   }
 
+  /* The name, in two lines, with a monogram beside it. One place, so
+     the bar and the sign-in pages cannot drift apart.
+
+     aria-label carries the whole name: a screen reader reading "NB NOVI
+     BINARY" off three separate elements is not the name of anything. */
+  function wordmark(to) {
+    return '<a class="wordmark" href="' + to + '" aria-label="Novi Binary">' +
+      '<span class="wm-mark" aria-hidden="true">NB</span>' +
+      '<span class="wm-name" aria-hidden="true"><b>NOVI</b><i>BINARY</i></span>' +
+    '</a>';
+  }
+  window.NexWordmark = wordmark;
+
   function topbar(page) {
     var back = document.body.getAttribute('data-back');
     var title = document.body.getAttribute('data-title');
@@ -351,7 +375,7 @@
 
     return '<header class="topbar">' +
       '<button class="iconbtn only-mob" id="menuBtn" aria-label="Open menu">' + icon('menu', 19) + '</button>' +
-      '<a class="wordmark" href="' + href('/') + '">Novi</a>' +
+      wordmark(href('/')) +
       menu +
       '<span class="spacer"></span>' +
       '<button class="acct ' + API.account.kind() + '" data-open="switch" id="acctBtn" ' +
