@@ -100,9 +100,20 @@
 
   /* ---------- contract tabs ---------- */
   function renderTabs() {
-    var tabs = [['even_odd', 'Even / Odd'], ['matches', 'Matches / Differs'], ['over_under', 'Over / Under']];
+    /* An icon each, so the three are told apart at a glance rather than
+       by reading three similar pairs of words. The glyph says what the
+       contract asks: a split for parity, a bullseye for hitting one
+       digit, arrows for above and below. */
+    var tabs = [
+      ['even_odd', 'Even / Odd', 'parity'],
+      ['matches', 'Matches / Differs', 'target'],
+      ['over_under', 'Over / Under', 'overunder']
+    ];
     html(el.tabs, tabs.map(function (t) {
-      return '<button class="ctab' + (S.tab === t[0] ? ' active' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
+      return '<button class="ctab' + (S.tab === t[0] ? ' active' : '') + '" data-tab="' + t[0] + '">' +
+        '<i class="ctab-ico">' + I(t[2], 16) + '</i>' +
+        '<span>' + t[1] + '</span>' +
+      '</button>';
     }).join(''));
   }
 

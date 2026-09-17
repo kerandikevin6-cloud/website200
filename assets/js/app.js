@@ -45,7 +45,12 @@
     spark: 'M12 3.1l1.86 4.93 4.93 1.86-4.93 1.86L12 16.68l-1.86-4.93L5.21 9.89l4.93-1.86z|M18.5 15.2l.66 1.74 1.74.66-1.74.66-.66 1.74-.66-1.74-1.74-.66 1.74-.66z',
     radar: 'M12 12l4.6-4.6|M4.6 16.9a8.5 8.5 0 1114.8 0',
     target: 'M12 2v3M12 19v3M2 12h3M19 12h3',
-    alert: 'M12 8v5M12 16.2v.1'
+    alert: 'M12 8v5M12 16.2v.1',
+    /* The three contract families. Drawn rather than labelled with a
+       letter, because the words beside them are already the label and a
+       glyph that repeats the word is decoration. */
+    parity: '',
+    overunder: 'M7 9.5l5-4 5 4|M7 14.5l5 4 5-4'
   };
   /* ---------- solid icons ----------
      Material Symbols (Apache 2.0), drawn on Google's 0 -960 960 960 grid
@@ -94,6 +99,10 @@
     if (name === 'radar') body = '<circle cx="12" cy="12" r="1.5"></circle>' + body;
     if (name === 'alert') body = '<circle cx="12" cy="12" r="9"></circle>' + body;
     if (name === 'gift') body = '<rect x="4.4" y="8.5" width="15.2" height="12.5" rx="1.8"></rect>' + body;
+    /* Even / odd: one circle filled, one not — the split itself. */
+    if (name === 'parity') body =
+      '<circle cx="8" cy="12" r="4.2" fill="currentColor" stroke="none"></circle>' +
+      '<circle cx="16.4" cy="12" r="4.2"></circle>';
     if (name === 'copy') body =
       '<rect x="9" y="9" width="11" height="11" rx="2"></rect>' +
       '<path d="M5.5 15H5a1 1 0 01-1-1V5a1 1 0 011-1h9a1 1 0 011 1v.5"></path>';
@@ -404,8 +413,10 @@
             item('Withdraw', { icon: 'up', modal: 'withdraw' })
           ], true) +
         '</div>' +
-        '<div class="drawer-sect label">Support</div>' +
-        '<div class="dnav">' +
+        /* No heading over this group. "Support" sat above a list whose
+           second item is also called Support, and a section named after
+           one of the things inside it explains nothing. */
+        '<div class="dnav dnav-rest">' +
           item('Trading history', { icon: 'clock', href: 'history' }) +
           item('Copy trading', { icon: 'copy', href: 'copy' }) +
           item('Support', { icon: 'headset', href: 'chat' }) +

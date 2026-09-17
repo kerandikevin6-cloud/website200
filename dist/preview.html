@@ -1,7 +1,7 @@
 <title>Novi Terminal</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAADbUlEQVR42u1WO4wcRRCtV909s7tzPziMDAc6AoyFZBNYAhMhRIJIkJATEkRCQg6ZcURmiQiBREgEERKZA0sESASIDGRhiwAuMLJYe7nbz8x0dxVB78zO7e1hXWAR4NEEM9P1+lV1vX7T+PTV3+hBXkwP+HpI8N8T2OMGlFRVmjcwllMRFSKdD4NBOAGBklpkme01c8UqTpdi+naNYdJzHWdB/UoOe8zsblju/XHwM4NFZeA2zmy93CmIAP5l+N007AOsKrvr5x/t7azksMuTE4nG3G7eHP3w5Y0P0tcni+euXLxea8kEIhLSDO7rm1duT2+lgHef/+SVnXdqf9fMa8IKAhAInPoOgoVjGMsuiM9tQUQMkxJkUiLKbcEwhl0Ub+BAYBgkAlVt2rMgCOpFYqogmEKJRKMoi0ZVUdI6zhKBkhq7piqiEcqiMcHrOEtdYRgDuyAQjYXb+urXyz/e+dZx5qV+fff97d7TizI5+7u6c/Wnt6J6IrLsPrzwjWXXBgzs+vW9L679/nmCv/j4m2+f/XjiRwxjm/XhsR+Oqj9BUNKJHz3W2+30BqJhWO51NBq6Cw3wxI9a+NgP0eywhboZDgTHOQiMo+qCRQZCiqEjamHYDtytVJFqcy8pIUmgHVLSI3Kc96aJ0UNWAULU4KVqlVrH6Szst0FRw9jf66Yy9veihvZ9Fvbr+U5UIvJSRQ2N5JIqYB3nbS6Z6fXtGhHSbWAHbrOb78BtGtg2oG/XMtNr4Y5zA5vKPc7sElKVYlo6rFqxNqCJP4nZAWw5s+xA3iJbgURmOTPsInmAT+amszA+v/3aRy9dYzhV6dn1MkwAtO4ZNLx37rMyHAAs6k8Pzty4+/19CABmWIZJGs1tcar/DMMmZ70dbjEsQ5IiifSR/ImQbYMgGhovmcO7BbUbDVUYi4YqBiKqZKqqXkqGUxIwqUqjE6pjUJKotZcSxKJeVSuZLuBh3PbMptxrmV08femp9XMMIxp3N16o4zTtHZARlcJtXXr2crIdhhnYLVFhSs5j6zi9cOqN7XwnwXeKs7XMUh1I5yIlzU3hOFNVAD5WlUxx2Az6ZgOYe+UsHnR/D0qa88CZfA6XuoqTBD+0RCVJUieIl4ShKmP/V+cPapZUW8VJGQ+Owg81Gf96BlhlUHRf+MNz0f+A4B+tJL14xgpcYQAAAABJRU5ErkJggg==">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 /* ============================================================
    Nexas — design system
@@ -87,8 +87,27 @@
   --r:0px;
   --r-sm:0px;
 
-  --sans:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  /* ---------------- type ----------------
+     IBM Plex Sans, which is the same family as the IBM Plex Mono the
+     figures are already set in. One family for the words and the numbers
+     reads as engineered rather than assembled, which is what a terminal
+     should look like.
+
+     What it replaces: Instrument Sans, a light editorial face, paired
+     with Instrument Serif for the headings. That pairing belongs on a
+     magazine. A serif at weight 400 over a price chart is the single
+     thing that made this look like a brochure about trading rather than
+     a place to do it.
+
+     `--display` is what the headings use now. It is the same family at a
+     heavier weight with the tracking pulled in, which is where the
+     weight people mean by "a trading font" actually comes from: not a
+     different typeface, a heavier one, set tighter. */
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --display:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  /* Kept pointing at the same stack so nothing that still asks for it
+     falls back to Times. */
+  --serif:var(--display);
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 
   --topbar-h:58px;
@@ -227,7 +246,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .brand-mark{
   width:28px;height:28px;border:1px solid var(--accent);border-radius:0;
   display:grid;place-items:center;color:var(--accent);
-  font-family:var(--serif);font-size:16px;line-height:1;padding-bottom:2px;
+  font-family:var(--display);font-weight:600;font-size:15px;line-height:1;padding-bottom:2px;
 }
 .brand-name{font-size:13px;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
 /* Two short lines instead of one long one: the kind sits over the
@@ -291,12 +310,15 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .avatar{
   width:42px;height:42px;border-radius:50%;background:var(--accent-soft);
   border:1px solid var(--line);display:grid;place-items:center;
-  color:var(--accent);font-family:var(--serif);font-size:18px;
+  color:var(--accent);font-family:var(--display);font-weight:600;font-size:17px;
 }
 .drawer-user b{display:block;font-weight:600;font-size:14px}
 .drawer-user span{color:var(--muted);font-size:12px}
 .drawer-sect{padding:15px 14px 6px}
 .dnav{padding:0 8px 10px;display:flex;flex-direction:column;gap:2px}
+/* The second group has no heading now, so it carries its own rule to
+   keep it from running into the first. */
+.dnav-rest{border-top:1px solid var(--line-soft);padding-top:10px;margin-top:4px}
 .ditem{
   display:flex;align-items:center;gap:12px;width:100%;
   padding:11px 10px;color:var(--text-2);text-align:left;border-radius:var(--r);
@@ -396,10 +418,14 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
    colour, so the three never resize or shuffle */
 .ctab{
   position:relative;
-  flex:1 1 0;width:0;min-width:0;text-align:center;padding:11px 6px 16px;
+  flex:1 1 0;width:0;min-width:0;padding:9px 6px 15px;
+  display:flex;align-items:center;justify-content:center;gap:7px;
   font-size:11.5px;line-height:1.3;color:var(--muted);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;
+  white-space:nowrap;overflow:hidden;background:none;
 }
+.ctab span{overflow:hidden;text-overflow:ellipsis}
+.ctab-ico{display:flex;flex:none;color:var(--muted)}
+.ctab.active .ctab-ico{color:var(--accent)}
 .ctab::after{
   content:"";position:absolute;left:50%;bottom:7px;
   width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:transparent;
@@ -637,7 +663,7 @@ body.scrolling .tbtn{
 .page{padding:28px 20px 44px;width:100%;max-width:760px;margin:0 auto}
 .page-kicker{color:var(--accent);margin-bottom:14px;display:block}
 .page h1{
-  font-family:var(--serif);font-weight:400;font-size:33px;line-height:1.16;
+  font-family:var(--display);font-weight:600;font-size:31px;line-height:1.15;letter-spacing:-.022em;
   margin:0 0 16px;letter-spacing:-.01em;text-wrap:balance;
 }
 /* A section heading needs air above it far more than below: the gap is
@@ -688,7 +714,7 @@ body.scrolling .tbtn{
 /* Centred. A page title pinned to the left edge reads as the first item
    in the list below it; centred, it reads as the name of the screen. */
 .page-head{padding:20px 18px 12px;text-align:center}
-.page-head h1{font-family:var(--serif);font-weight:400;font-size:28px;margin:0 0 5px;letter-spacing:-.01em}
+.page-head h1{font-family:var(--display);font-weight:600;font-size:25px;margin:0 0 5px;letter-spacing:-.022em}
 .page-head p{color:var(--muted);font-size:13px;margin:0 auto;max-width:44ch}
 
 /* ---------------- forms / auth ---------------- */
@@ -731,7 +757,7 @@ body.scrolling .tbtn{
   padding:32px 20px 40px;max-width:420px;margin:0 auto;width:100%;
 }
 .auth .brand{margin:0 0 26px;justify-content:flex-start}
-.auth h1{font-family:var(--serif);font-weight:400;font-size:30px;margin:0 0 8px;letter-spacing:-.01em}
+.auth h1{font-family:var(--display);font-weight:600;font-size:27px;margin:0 0 8px;letter-spacing:-.022em}
 .auth > p{color:var(--muted);margin:0 0 24px;font-size:13.5px}
 .auth form{display:flex;flex-direction:column;gap:16px}
 .auth-card{
@@ -1085,7 +1111,7 @@ footer a:hover{color:var(--text-2)}
 .auth-head .wordmark{
   display:inline-block;font-size:15px;letter-spacing:.34em;padding-left:.34em;margin-bottom:20px;
 }
-.auth-head h1{font-family:var(--serif);font-weight:400;font-size:31px;margin:0 0 8px;letter-spacing:-.01em}
+.auth-head h1{font-family:var(--display);font-weight:600;font-size:28px;margin:0 0 8px;letter-spacing:-.022em}
 .auth-head p{color:var(--muted);margin:0;font-size:13.5px}
 .auth .auth-foot{margin-top:20px}
 
@@ -1814,7 +1840,7 @@ body.locked{overflow:hidden}
 .lkicker{display:block;color:var(--accent);margin-bottom:18px}
 .lsec.tint .lkicker{color:inherit;opacity:.58}
 .lsec h2,.lhero h1{
-  font-family:var(--serif);font-weight:400;letter-spacing:-.015em;
+  font-family:var(--display);font-weight:600;letter-spacing:-.024em;
   margin:0 0 18px;text-wrap:balance;
 }
 .lsec h2{font-size:31px;line-height:1.16}
@@ -2208,7 +2234,7 @@ body[data-chrome="app"] main{background:var(--bg)}
 }
 .boot.gone{opacity:0;pointer-events:none}
 .boot-word{
-  font-family:var(--serif);font-size:26px;letter-spacing:.02em;color:var(--text);
+  font-family:var(--display);font-weight:600;font-size:23px;letter-spacing:.14em;color:var(--text);
 }
 .boot span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
 
@@ -2439,7 +2465,7 @@ body[data-page="learn"] main.lrn-flow{background:var(--bg)}
 .lrn-center .lede,.lrn-center p{margin-left:auto;margin-right:auto}
 .lrn-center .page-kicker{display:block;margin-bottom:16px}
 .lrn-center h1{
-  font-family:var(--serif);font-weight:400;font-size:clamp(30px,8vw,44px);
+  font-family:var(--display);font-weight:600;font-size:clamp(28px,7.4vw,40px);
   line-height:1.12;letter-spacing:-.015em;margin:0 0 18px;text-wrap:balance;
 }
 .lrn-center h2{margin-top:0}
@@ -6154,9 +6180,20 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   /* ---------- contract tabs ---------- */
   function renderTabs() {
-    var tabs = [['even_odd', 'Even / Odd'], ['matches', 'Matches / Differs'], ['over_under', 'Over / Under']];
+    /* An icon each, so the three are told apart at a glance rather than
+       by reading three similar pairs of words. The glyph says what the
+       contract asks: a split for parity, a bullseye for hitting one
+       digit, arrows for above and below. */
+    var tabs = [
+      ['even_odd', 'Even / Odd', 'parity'],
+      ['matches', 'Matches / Differs', 'target'],
+      ['over_under', 'Over / Under', 'overunder']
+    ];
     html(el.tabs, tabs.map(function (t) {
-      return '<button class="ctab' + (S.tab === t[0] ? ' active' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>';
+      return '<button class="ctab' + (S.tab === t[0] ? ' active' : '') + '" data-tab="' + t[0] + '">' +
+        '<i class="ctab-ico">' + I(t[2], 16) + '</i>' +
+        '<span>' + t[1] + '</span>' +
+      '</button>';
     }).join(''));
   }
 
@@ -7405,7 +7442,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     spark: 'M12 3.1l1.86 4.93 4.93 1.86-4.93 1.86L12 16.68l-1.86-4.93L5.21 9.89l4.93-1.86z|M18.5 15.2l.66 1.74 1.74.66-1.74.66-.66 1.74-.66-1.74-1.74-.66 1.74-.66z',
     radar: 'M12 12l4.6-4.6|M4.6 16.9a8.5 8.5 0 1114.8 0',
     target: 'M12 2v3M12 19v3M2 12h3M19 12h3',
-    alert: 'M12 8v5M12 16.2v.1'
+    alert: 'M12 8v5M12 16.2v.1',
+    /* The three contract families. Drawn rather than labelled with a
+       letter, because the words beside them are already the label and a
+       glyph that repeats the word is decoration. */
+    parity: '',
+    overunder: 'M7 9.5l5-4 5 4|M7 14.5l5 4 5-4'
   };
   /* ---------- solid icons ----------
      Material Symbols (Apache 2.0), drawn on Google's 0 -960 960 960 grid
@@ -7454,6 +7496,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (name === 'radar') body = '<circle cx="12" cy="12" r="1.5"></circle>' + body;
     if (name === 'alert') body = '<circle cx="12" cy="12" r="9"></circle>' + body;
     if (name === 'gift') body = '<rect x="4.4" y="8.5" width="15.2" height="12.5" rx="1.8"></rect>' + body;
+    /* Even / odd: one circle filled, one not — the split itself. */
+    if (name === 'parity') body =
+      '<circle cx="8" cy="12" r="4.2" fill="currentColor" stroke="none"></circle>' +
+      '<circle cx="16.4" cy="12" r="4.2"></circle>';
     if (name === 'copy') body =
       '<rect x="9" y="9" width="11" height="11" rx="2"></rect>' +
       '<path d="M5.5 15H5a1 1 0 01-1-1V5a1 1 0 011-1h9a1 1 0 011 1v.5"></path>';
@@ -7764,8 +7810,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
             item('Withdraw', { icon: 'up', modal: 'withdraw' })
           ], true) +
         '</div>' +
-        '<div class="drawer-sect label">Support</div>' +
-        '<div class="dnav">' +
+        /* No heading over this group. "Support" sat above a list whose
+           second item is also called Support, and a section named after
+           one of the things inside it explains nothing. */
+        '<div class="dnav dnav-rest">' +
           item('Trading history', { icon: 'clock', href: 'history' }) +
           item('Copy trading', { icon: 'copy', href: 'copy' }) +
           item('Support', { icon: 'headset', href: 'chat' }) +
