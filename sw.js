@@ -5,7 +5,7 @@
    served forever and a fix to app.css never reached the page. Network-first
    costs nothing on a fast connection, still works fully offline, and can
    never pin the UI to a stale build. */
-var CACHE = 'nexas-v15';
+var CACHE = 'nexas-v16';
 var SHELL = [
   'landing.html', 'index.html', 'ai.html', 'markets.html', 'positions.html', 'learn.html', 'responsible.html', 'account.html',
   'chat.html', 'history.html', 'copy.html', 'terms.html', 'privacy.html', 'risk.html',
@@ -15,7 +15,7 @@ var SHELL = [
   'assets/js/modals.js', 'assets/js/trade.js', 'assets/js/positions.js',
   'assets/js/ai.js', 'assets/js/app.js',
   'assets/mpesa.png', 'assets/cards.png', 'assets/cards-ink.png',
-  'assets/support-mark.png', 'assets/share-card.png',
+  'assets/share-card.png',
   'assets/favicon.ico', 'assets/favicon-32.png', 'assets/favicon-192.png',
   'assets/favicon-512.png', 'assets/apple-touch-icon.png',
   'manifest.webmanifest'

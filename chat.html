@@ -42,38 +42,18 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <div class="app">
   <main>
     <div class="shell">
-      <div class="chat-head">
-        <span class="chat-face" aria-hidden="true"></span>
-        <div>
-          <b>Lucy &middot; Novi support</b>
-          <span>Answers within 30 minutes</span>
-        </div>
+      <!-- No agent card. A photograph and a name at the top of a form
+           is a promise about who is reading it, and the answer comes
+           back as a ticket rather than as a person typing. The page is
+           the record; the asking happens in the dialog, which opens on
+           arrival because that is what somebody came here to do. -->
+      <div class="page-head">
+        <p>Tell us what happened and we will come back within 30 minutes.</p>
       </div>
 
-      <!-- A ticket, not a chat window. The chat here used to answer
-           itself: a message went into a div, a canned reply came back,
-           and nothing ever left the browser. This reaches a person. -->
-      <form class="ticket-form" id="ticketForm">
-        <div class="field">
-          <label for="tCat">What is this about</label>
-          <select class="input" id="tCat">
-            <option value="deposit">A deposit</option>
-            <option value="withdrawal">A withdrawal</option>
-            <option value="account">My account or verification</option>
-            <option value="trading">Trading and contracts</option>
-            <option value="other">Something else</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="tBody">What happened</label>
-          <textarea class="input ticket-text" id="tBody" rows="6" maxlength="2000"
-            placeholder="Dates, amounts and the number you used help us find it faster."></textarea>
-          <span class="hint" id="tCount">10 characters minimum</span>
-        </div>
-
-        <button class="btn btn-fill" type="submit" id="tSend">Send to support</button>
-      </form>
+      <div class="ticket-new">
+        <button class="btn btn-fill" type="button" id="tNew">Open a ticket</button>
+      </div>
 
       <div class="ticket-sect label">Your tickets</div>
       <div id="ticketList"><div class="sk sk-list"></div></div>

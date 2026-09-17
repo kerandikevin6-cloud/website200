@@ -265,6 +265,38 @@
       }
     },
 
+    /* ---------------- open a ticket ----------------
+       The asking happens here rather than on the page behind it, which
+       is the record of what has already been asked. */
+    ticket: {
+      steps: {
+        form: {
+          title: 'Open a ticket',
+          sub: 'We answer within 30 minutes.',
+          body: function () {
+            return '<div class="modal-form">' +
+              '<div class="field"><label for="tCat">What is this about</label>' +
+                '<div id="tCatSel"></div></div>' +
+              '<div class="field"><label for="tBody">What happened</label>' +
+                '<textarea class="input ticket-text" id="tBody" rows="6" maxlength="2000" ' +
+                  'placeholder="Dates, amounts and the number you used help us find it faster."></textarea>' +
+                '<span class="hint" id="tCount">10 characters minimum</span></div>' +
+              act('Send to support', 'sendTicket') +
+            '</div>';
+          }
+        },
+        done: okStep(
+          'Ticket opened',
+          'It is with the team.',
+          function () { return 'We have it'; },
+          function () {
+            return 'Somebody is reading it now. The answer appears on this ' +
+              'page, usually within half an hour.';
+          },
+          function () { return ''; })
+      }
+    },
+
     /* ---------------- what the scanner should look for ----------------
        Three contracts, three questions. Asking first is the difference
        between a scanner and a slot machine: the answer is only useful to

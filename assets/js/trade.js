@@ -55,23 +55,21 @@
        it cannot end up behind the canvas. Rebuilt only when the
        instrument changes, so opening it is not interrupted by the tick
        that repaints the digits underneath. */
+    /* Our own dropdown, not the browser's: the system menu is a white
+       rectangle in the system font landing on a dark chart. Built once
+       and left alone, so the tick that repaints the digits underneath
+       cannot close it mid-choice. */
     var instEl = $('chartInst');
-    if (instEl && instEl.getAttribute('data-for') !== S.symbol) {
-      instEl.setAttribute('data-for', S.symbol);
-      var groups = [], seen = {};
-      API.symbols.forEach(function (sym) {
-        if (!seen[sym.group]) { seen[sym.group] = []; groups.push(sym.group); }
-        seen[sym.group].push(sym);
+    if (instEl && !instEl.__sel) {
+      instEl.__sel = window.NexSelect(instEl, {
+        options: API.symbols.map(function (sym) {
+          return { value: sym.id, label: sym.name, group: sym.group };
+        }),
+        value: S.symbol,
+        onChange: function (o) { switchSymbol(o.value); }
       });
-      instEl.innerHTML =
-        '<select class="inst-pick" id="instPick" aria-label="Instrument">' +
-          groups.map(function (g) {
-            return '<optgroup label="' + g + '">' + seen[g].map(function (sym) {
-              return '<option value="' + sym.id + '"' +
-                (sym.id === S.symbol ? ' selected' : '') + '>' + sym.name + '</option>';
-            }).join('') + '</optgroup>';
-          }).join('') +
-        '</select>' + I('chevD', 13);
+    } else if (instEl && instEl.__sel && instEl.__sel.value() !== S.symbol) {
+      instEl.__sel.set(S.symbol);
     }
     var h = API.feed.history(S.symbol).slice(-120);
     var counts = [0,0,0,0,0,0,0,0,0,0];
@@ -465,10 +463,6 @@
         z === 'in' ? chart.zoom(0.8) : z === 'out' ? chart.zoom(1.25) : chart.reset();
         return;
       }
-    });
-
-    root.addEventListener('change', function (e) {
-      if (e.target.id === 'instPick') switchSymbol(e.target.value);
     });
 
     root.addEventListener('input', function (e) {

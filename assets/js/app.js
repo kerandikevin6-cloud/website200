@@ -195,6 +195,103 @@
   }
   applyTheme(storedTheme());
 
+  /* ---------- a dropdown we drew ourselves ----------
+     A native <select> hands its menu to the operating system, which
+     styles it in the browser's own font on the browser's own white, and
+     on a dark trading screen that is a rectangle of somebody else's
+     design dropped into the middle of ours. It also cannot carry a
+     second line, which several of these want.
+
+     Same contract as a <select>: a value, an onChange, and the keyboard
+     works. The host element is replaced, so the caller passes an empty
+     container and keeps the returned handle.
+
+       NexSelect(host, {
+         options: [{ value, label, note, group }],
+         value, onChange, align: 'left' | 'right'
+       })
+  */
+  function NexSelect(host, opts) {
+    opts = opts || {};
+    var options = opts.options || [];
+    var value = opts.value != null ? opts.value : (options[0] || {}).value;
+    var open = false;
+
+    function find(v) {
+      for (var i = 0; i < options.length; i++) if (options[i].value === v) return options[i];
+      return options[0] || { label: '' };
+    }
+
+    host.classList.add('sel');
+    if (opts.align === 'right') host.classList.add('sel-right');
+    host.innerHTML =
+      '<button type="button" class="sel-btn" aria-haspopup="listbox" aria-expanded="false">' +
+        '<span class="sel-now"></span>' + icon('chevD', 12) +
+      '</button>' +
+      '<div class="sel-pop" role="listbox" hidden></div>';
+
+    var btn = host.querySelector('.sel-btn');
+    var pop = host.querySelector('.sel-pop');
+    var now = host.querySelector('.sel-now');
+
+    function paint() {
+      now.textContent = find(value).label;
+      var lastGroup = null;
+      pop.innerHTML = options.map(function (o) {
+        var head = '';
+        if (o.group && o.group !== lastGroup) {
+          lastGroup = o.group;
+          head = '<div class="sel-group">' + o.group + '</div>';
+        }
+        return head +
+          '<button type="button" class="sel-row' + (o.value === value ? ' on' : '') +
+            '" role="option" aria-selected="' + (o.value === value) + '" data-val="' + o.value + '">' +
+            '<span class="sel-t"><b>' + o.label + '</b>' +
+              (o.note ? '<span>' + o.note + '</span>' : '') + '</span>' +
+            (o.value === value ? icon('check', 15) : '') +
+          '</button>';
+      }).join('');
+    }
+
+    function setOpen(next) {
+      open = next;
+      pop.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+      host.classList.toggle('open', open);
+    }
+
+    function choose(v) {
+      value = v;
+      paint();
+      setOpen(false);
+      if (opts.onChange) opts.onChange(find(v));
+    }
+
+    btn.addEventListener('click', function (e) { e.preventDefault(); setOpen(!open); });
+    pop.addEventListener('click', function (e) {
+      var row = e.target.closest('[data-val]');
+      if (row) choose(row.getAttribute('data-val'));
+    });
+    host.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && open) { setOpen(false); btn.focus(); }
+    });
+    document.addEventListener('click', function (e) {
+      if (open && !host.contains(e.target)) setOpen(false);
+    });
+
+    paint();
+    return {
+      value: function () { return value; },
+      set: choose,
+      setOptions: function (next, keep) {
+        options = next || [];
+        if (!keep) value = (options[0] || {}).value;
+        paint();
+      }
+    };
+  }
+  window.NexSelect = NexSelect;
+
   /* ---------- chrome ---------- */
   var TABS = [
     { id: 'trade', label: 'Trade', file: '/', icon: 'candles' },
@@ -442,6 +539,8 @@
     }
     var pw = host().querySelector('#newPassword');
     if (pw) paintMeter(pw);
+    /* Steps that need real elements wired once they are on screen. */
+    if (state.key === 'ticket' && state.step === 'form') mountTicketForm();
   }
   function closeModals(fromPop) {
     payToken++;                               /* nothing pending may land now */
@@ -1050,6 +1149,23 @@
     if (sub) document.body.classList.add('no-tabs');
     root.insertAdjacentHTML('afterbegin', topbar(page));
     root.insertAdjacentHTML('beforeend', drawer() + (sub ? '' : tabbar(page)));
+    watchScroll();
+  }
+
+  /* A class while the page is moving, cleared a moment after it stops.
+     The floating dock uses it to lift slightly, which is what makes it
+     read as sitting above the page rather than being part of it.
+     Passive, and it sets one class: the listener itself must never be
+     the reason a scroll stutters. */
+  function watchScroll() {
+    var idle = null;
+    addEventListener('scroll', function () {
+      document.body.classList.add('scrolling');
+      clearTimeout(idle);
+      idle = setTimeout(function () {
+        document.body.classList.remove('scrolling');
+      }, 260);
+    }, { passive: true });
   }
 
   function setDrawer(open, fromPop) {
@@ -1590,6 +1706,34 @@
       gotoStep('done');
       return;
     }
+    if (name === 'sendTicket') {
+      if (node && node.disabled) return;
+      var catHost = document.getElementById('tCatSel');
+      var textEl = document.getElementById('tBody');
+      var text = ((textEl || {}).value || '').trim();
+
+      if (text.length < 10) {
+        window.NexToast('Tell us a little more, so we can find it.');
+        if (textEl) textEl.focus();
+        return;
+      }
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        window.NexToast('Sign in first, so the reply reaches you.');
+        return;
+      }
+
+      var category = (catHost && catHost.__sel) ? catHost.__sel.value() : 'other';
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
+
+      window.NexNet.openTicket(category, text).then(function () {
+        gotoStep('done');
+        if (window.NexTickets) window.NexTickets();
+      }).catch(function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Send to support'; }
+        window.NexToast(err.message);
+      });
+      return;
+    }
     if (name === 'verify') {
       if (node && node.disabled) return;
 
@@ -1719,37 +1863,31 @@
      deposit typed the whole story into a box that threw it away.
 
      A ticket is smaller and real. One question, one answer, a status
-     they can see, and it lands in a queue a person works through. */
+     they can see, and it lands in a queue a person works through. The
+     page is the record of what has been asked; the asking is a dialog,
+     which opens on arrival because it is what somebody came here for. */
+  var TICKET_CATS = [
+    { value: 'deposit', label: 'A deposit', note: 'Money you sent that has not arrived' },
+    { value: 'withdrawal', label: 'A withdrawal', note: 'A payout you are waiting on' },
+    { value: 'account', label: 'My account', note: 'Sign in, details or verification' },
+    { value: 'trading', label: 'Trading and contracts', note: 'A trade that did not settle as expected' },
+    { value: 'other', label: 'Something else', note: '' }
+  ];
+
   function initChat() {
-    var form = document.getElementById('ticketForm');
-    if (!form) return;
-
     var listHost = document.getElementById('ticketList');
-    var cat = document.getElementById('tCat');
-    var body = document.getElementById('tBody');
-    var count = document.getElementById('tCount');
-    var send = document.getElementById('tSend');
+    if (!listHost) return;
 
-    var LABEL = {
-      deposit: 'A deposit', withdrawal: 'A withdrawal',
-      account: 'Account or verification', trading: 'Trading and contracts',
-      other: 'Something else'
-    };
+    var LABEL = {};
+    TICKET_CATS.forEach(function (c) { LABEL[c.value] = c.label; });
     var MIN = 10;
 
     function live() {
       return !!(window.NexNet && window.NexNet.live && window.NexNet.signedIn());
     }
 
-    function countdown() {
-      var n = (body.value || '').trim().length;
-      count.textContent = n < MIN
-        ? (MIN - n) + ' more character' + (MIN - n === 1 ? '' : 's')
-        : n + ' of 2,000';
-    }
-
     function card(t) {
-      var when = F.dateTime ? F.dateTime(t.at) : new Date(t.at).toLocaleString();
+      var when = F.dateTime(t.at);
       return '<div class="ticket">' +
         '<div class="ticket-top">' +
           '<b>' + (LABEL[t.category] || t.category) + '</b>' +
@@ -1759,20 +1897,10 @@
         '</div>' +
         '<p class="ticket-said">' + escapeHtml(t.body) + '</p>' +
         (t.reply
-          ? '<div class="ticket-reply"><b>Lucy</b><p>' + escapeHtml(t.reply) + '</p></div>'
-          : '<div class="ticket-wait">Lucy usually comes back within 30 minutes.</div>') +
+          ? '<div class="ticket-reply"><b>Novi support</b><p>' + escapeHtml(t.reply) + '</p></div>'
+          : '<div class="ticket-wait">We usually come back within 30 minutes.</div>') +
         '<div class="ticket-when">' + when + '</div>' +
       '</div>';
-    }
-
-    function paint(tickets) {
-      if (!tickets.length) {
-        listHost.innerHTML = '<div class="empty" style="padding:30px 16px">' +
-          icon('headset', 24) + '<b>Nothing open</b>' +
-          '<span>Anything you send appears here with its answer.</span></div>';
-        return;
-      }
-      listHost.innerHTML = tickets.map(card).join('');
     }
 
     async function refresh() {
@@ -1784,43 +1912,52 @@
         return;
       }
       try {
-        paint(await window.NexNet.tickets());
+        var tickets = await window.NexNet.tickets();
+        listHost.innerHTML = tickets.length
+          ? tickets.map(card).join('')
+          : '<div class="empty" style="padding:30px 16px">' +
+              icon('headset', 24) + '<b>Nothing open</b>' +
+              '<span>Anything you send appears here with its answer.</span></div>';
       } catch (err) {
         listHost.innerHTML = '<div class="empty" style="padding:30px 16px">' +
           icon('alert', 24) + '<b>Could not load your tickets</b>' +
           '<span>' + escapeHtml(err.message) + '</span></div>';
       }
     }
+    window.NexTickets = refresh;
 
-    body.addEventListener('input', countdown);
-    countdown();
-
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      var text = (body.value || '').trim();
-      if (text.length < MIN) { countdown(); body.focus(); return; }
-
-      if (!live()) {
-        window.NexToast('Sign in first, so the reply reaches you.');
-        return;
-      }
-
-      send.disabled = true;
-      send.innerHTML = loader('sm') + 'Sending';
-      try {
-        await window.NexNet.openTicket(cat.value, text);
-        body.value = '';
-        countdown();
-        window.NexToast('Sent. Lucy replies within 30 minutes.');
-        await refresh();
-      } catch (err) {
-        window.NexToast(err.message);
-      }
-      send.disabled = false;
-      send.textContent = 'Send to support';
-    });
+    var newBtn = document.getElementById('tNew');
+    if (newBtn) newBtn.addEventListener('click', function () { openModal('ticket'); });
 
     refresh();
+
+    /* Opened on arrival, once: this page has one purpose and making
+       somebody press a button to reach it is a step for its own sake.
+       Not when they have come back to read an answer, though. */
+    if (!sessionStorage.getItem('nexas.ticketAsked')) {
+      try { sessionStorage.setItem('nexas.ticketAsked', '1'); } catch (e) {}
+      setTimeout(function () { openModal('ticket'); }, 260);
+    }
+  }
+
+  /* The dialog's own wiring: the category dropdown and the counter under
+     the box, both of which only exist once the step is on screen. */
+  function mountTicketForm() {
+    var host = document.getElementById('tCatSel');
+    var body = document.getElementById('tBody');
+    var count = document.getElementById('tCount');
+    if (!host || !body || host.__sel) return;
+
+    host.__sel = NexSelect(host, { options: TICKET_CATS, value: 'deposit' });
+
+    function countdown() {
+      var n = (body.value || '').trim().length;
+      count.textContent = n < 10
+        ? (10 - n) + ' more character' + (10 - n === 1 ? '' : 's')
+        : n + ' of 2,000';
+    }
+    body.addEventListener('input', countdown);
+    countdown();
   }
 
   /* ---------- markets ---------- */

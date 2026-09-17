@@ -522,18 +522,39 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .session .num{color:var(--text-2)}
 
 /* sticky trade CTAs, above the tab bar */
-.trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:0}
+/* Inset, with air between them. Edge to edge they read as one striped
+   bar cut in half — a single control with two colours — when they are
+   two opposite decisions, and at desktop width a full-bleed slab of
+   saturated green is a lot of colour for a button. The gap is what says
+   these are two things. */
+.trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tbtn{
-  padding:13px 10px;border-radius:0;text-align:center;color:#fff;
+  padding:14px 10px;border-radius:0;text-align:center;color:#fff;
+  box-shadow:0 1px 2px rgba(6,20,14,.18), 0 6px 16px rgba(6,20,14,.14);
+  transition:transform .16s ease, box-shadow .16s ease;
 }
 .tbtn .t{font-size:14.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .tbtn .s{font-size:10px;margin-top:2px;font-family:var(--mono);opacity:.88}
 .tbtn.even{background:var(--pos-deep)}
 .tbtn.odd{background:var(--neg-deep)}
-.tbtn:active{filter:brightness(1.08)}
+.tbtn:active{filter:brightness(1.08);transform:translateY(1px)}
+
+/* The dock floats rather than sitting welded to the bottom edge, and it
+   lifts a little while the page is moving: enough to read as a layer
+   above the page, not enough to be an animation anybody watches. The
+   class is set by app.js from the scroll listener it already runs. */
 .trade-dock{
   position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  z-index:44;padding:0;background:var(--bg);
+  z-index:44;padding:0 12px 10px;background:none;
+  transition:transform .18s ease;
+}
+body.scrolling .trade-dock{transform:translateY(-3px)}
+body.scrolling .tbtn{
+  box-shadow:0 2px 4px rgba(6,20,14,.2), 0 12px 26px rgba(6,20,14,.2);
+}
+@media (prefers-reduced-motion:reduce){
+  .trade-dock,.tbtn{transition:none}
+  body.scrolling .trade-dock{transform:none}
 }
 
 /* ---------------- lists / settings rows ---------------- */
@@ -730,57 +751,12 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .method .t b{display:block;font-size:13.5px;font-weight:600}
 .method .t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
 
-/* ---------------- chat ---------------- */
-.chat{display:flex;flex-direction:column;flex:1;min-height:0}
-/* Centred, like every other page heading: this names the screen rather
-   than labelling the first thing in it. */
-.chat-head{
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  padding:16px 16px 14px;text-align:center;
-  border-bottom:1px solid var(--line-soft);background:var(--bg);
-}
-/* The supplied file was black line art on an opaque white square, which
-   no amount of CSS can sit on a dark ground — it renders as a white
-   tile. assets/support-mark.png is the same artwork rebuilt with a real
-   alpha channel and trimmed to the ink.
-
-   It is used as a mask rather than an image, so the glyph takes a colour
-   from the palette instead of being black in one theme and a stark white
-   silhouette in the other. One file, both themes, no filter. */
-.chat-face{
-  width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
-  background:var(--surface-2);border:1px solid var(--line-soft);
-}
-.chat-face::after{
-  content:"";width:24px;height:24px;background:var(--text-2);
-  -webkit-mask:url(../support-mark.png) center/contain no-repeat;
-  mask:url(../support-mark.png) center/contain no-repeat;
-}
-.chat-head b{display:block;font-size:14px;font-weight:600}
-.chat-head span{
-  font-size:11.5px;color:var(--pos);display:inline-flex;align-items:center;gap:6px;
-}
-.chat-head span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--pos)}
-.chat-log{flex:1;padding:18px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
-.msg{max-width:78%;padding:11px 14px;border-radius:var(--r-lg);font-size:13.5px;line-height:1.6}
-.msg.them{background:var(--surface);border:1px solid var(--line-soft);border-bottom-left-radius:4px;align-self:flex-start}
-.msg.me{background:var(--accent);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
-:root[data-theme="dark"] .msg.me{color:#06182B}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .msg.me{color:#06182B}}
-.msg .time{display:block;font-size:10px;opacity:.6;margin-top:5px;font-family:var(--mono)}
-.chat-day{text-align:center;font-size:11px;color:var(--muted);margin:4px 0}
-.chat-bar{
-  position:sticky;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 14px;
-  padding-bottom:calc(10px + env(safe-area-inset-bottom));
-  border-top:1px solid var(--line-soft);background:var(--bg);
-}
-.chat-bar .input{border-radius:999px}
-.chat-send{
-  width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;
-  display:grid;place-items:center;flex:none;
-}
-:root[data-theme="dark"] .chat-send{color:#06182B}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chat-send{color:#06182B}}
+/* ---------------- support ----------------
+   The chat window that used to live here is gone, and so is everything
+   that dressed it: the agent's face, the speech bubbles, the composer.
+   A photograph and a name at the top of a form is a promise about who is
+   reading it, and what comes back is a ticket rather than a person
+   typing. See the note in app.js. */
 
 /* ---------------- misc ---------------- */
 .summary{
@@ -806,7 +782,8 @@ footer .fl{display:flex;flex-wrap:wrap;gap:14px 20px;margin-bottom:16px}
 footer a:hover{color:var(--text-2)}
 
 /* ---------------- support tickets ---------------- */
-.ticket-form{display:flex;flex-direction:column;gap:14px;padding:16px}
+.ticket-new{padding:4px 16px 16px}
+.ticket-new .btn{width:100%}
 .ticket-text{resize:vertical;min-height:120px;line-height:1.55;font-family:inherit}
 .ticket-sect{padding:6px 18px 8px}
 .ticket{border-top:1px solid var(--line-soft);padding:15px 16px}
@@ -901,7 +878,9 @@ footer a:hover{color:var(--text-2)}
   body[data-chrome="app"] main,
   body[data-chrome="app"].has-sticky main{padding-bottom:0}
   .tabbar{display:none}
-  .trade-dock{position:static;padding:0;border:none;background:none;margin-top:14px}
+  /* In the rail the column already provides the inset, so the dock only
+     needs the gap between the two buttons. */
+  .trade-dock{position:static;padding:0;border:none;background:none;margin-top:14px;transform:none}
   .topbar{padding:0 22px;height:64px;gap:20px}
   .deskmenu{display:flex;gap:2px;margin-right:auto}
   .deskmenu a{padding:8px 13px;border-radius:999px;color:var(--text-2);font-size:13px}
@@ -962,7 +941,6 @@ footer a:hover{color:var(--text-2)}
   .modal{align-items:center;padding:20px}
   .modal-box{border-radius:var(--r-xl);padding-bottom:20px}
   .grabber{display:none}
-  .chat-log{padding:24px}
 }
 
 /* ---------------- drawer disclosure groups ---------------- */
@@ -1461,6 +1439,55 @@ body.locked{overflow:hidden}
 .phone-cc b{font-size:13.5px;font-weight:500;color:var(--text-2)}
 .phone-cc{position:relative}
 .phone-cc svg{color:var(--muted);flex:none;margin-left:-2px}
+
+/* ---------------- dropdowns we drew ourselves ----------------
+   A native select menu is the operating system's rectangle in the
+   operating system's colours, dropped into the middle of a dark trading
+   screen. This is the same control in ours, and it can carry a second
+   line, which a native option cannot. */
+.sel{position:relative;display:inline-flex}
+.sel-btn{
+  display:inline-flex;align-items:center;gap:5px;padding:6px 8px;
+  color:var(--text-2);font-size:12.5px;cursor:pointer;
+  border:1px solid transparent;background:none;max-width:100%;
+}
+.sel-btn:hover{color:var(--text);border-color:var(--line-soft);background:var(--surface-2)}
+.sel.open .sel-btn{color:var(--text);border-color:var(--line);background:var(--surface-2)}
+.sel-btn svg{flex:none;color:var(--muted)}
+.sel-now{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-pop{
+  position:absolute;z-index:70;top:calc(100% + 6px);left:0;min-width:236px;
+  max-width:min(92vw,320px);max-height:300px;overflow-y:auto;overscroll-behavior:contain;
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);
+}
+.sel-right .sel-pop{left:auto;right:0}
+.sel-pop[hidden]{display:none}
+.sel-group{
+  padding:9px 12px 5px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);
+}
+.sel-row{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 12px;color:var(--text-2);
+}
+.sel-row:hover{background:var(--surface-2);color:var(--text)}
+.sel-row.on{background:var(--accent-soft);color:var(--text)}
+.sel-row svg{flex:none;color:var(--accent)}
+.sel-t{flex:1;min-width:0}
+.sel-t b{display:block;font-size:13px;font-weight:500}
+.sel-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+
+/* A dropdown used as a form field fills the row and looks like one. */
+.field .sel{display:flex;width:100%}
+.field .sel-btn{
+  flex:1;justify-content:space-between;padding:13px 14px;font-size:14px;
+  border-color:var(--line);background:var(--surface-2);color:var(--text);
+}
+:root[data-theme="dark"] .field .sel-btn{background:var(--surface)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .field .sel-btn{background:var(--surface)}
+}
+.field .sel-pop{width:100%;min-width:0}
 
 /* ---------------- the country picker ----------------
    Ours, not the operating system's: flags, dialling codes, and a filter
@@ -2314,22 +2341,16 @@ body[data-chrome="app"] main{background:var(--bg)}
 /* The instrument name is the control that changes it. It reads as a
    label until you go near it, which is the right weight for something
    that sits on top of the chart. */
+/* The instrument name is the control that changes it. It reads as a
+   label until you go near it, which is the right weight for something
+   sitting on top of a chart. */
 .chart-inst{
-  position:absolute;top:6px;left:8px;z-index:2;
-  display:flex;align-items:center;gap:2px;max-width:70%;
-  color:var(--muted);border:1px solid transparent;
+  position:absolute;top:6px;left:8px;z-index:3;max-width:74%;
 }
-.chart-inst:hover{color:var(--text);border-color:var(--line-soft);background:var(--surface-2)}
-.chart-inst svg{flex:none;pointer-events:none;margin-right:5px}
-.inst-pick{
-  appearance:none;-webkit-appearance:none;border:0;background:none;color:inherit;
-  font-family:var(--sans);font-size:11.5px;letter-spacing:.04em;
-  padding:5px 2px 5px 5px;max-width:100%;cursor:pointer;
+.chart-inst .sel-btn{
+  font-size:11.5px;letter-spacing:.04em;color:var(--muted);
 }
-.inst-pick:focus-visible{outline:1px solid var(--accent);outline-offset:1px}
-/* The menu itself is drawn by the OS, so it needs a readable pair of
-   colours rather than the chart's. */
-.inst-pick option,.inst-pick optgroup{background:var(--surface);color:var(--text)}
+.chart-inst .sel-btn:hover,.chart-inst.open .sel-btn{color:var(--text)}
 
 /* ---------------- learn: one idea per screen ----------------
    The page was a single long column that asked to be read all at once.
