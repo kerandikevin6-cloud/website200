@@ -38,6 +38,7 @@
   }
 
   var refreshing = null;
+  var serverSettings = null, settingsAsked = false;
 
   async function refresh() {
     var t = tokens();
@@ -261,12 +262,35 @@
     /* ---------- money ---------- */
     config: function () { return call('/config', { anon: true }); },
 
+    /* The server's limits and the deposit wallet, fetched once and kept,
+       because the deposit sheet renders synchronously and cannot wait
+       for a request. Anything that needs it asks for the cached copy and
+       gets null until the first answer lands. */
+    settings: function () { return serverSettings; },
+    loadSettings: function () {
+      if (settingsAsked) return Promise.resolve(serverSettings);
+      settingsAsked = true;
+      return call('/config', { anon: true }).then(function (out) {
+        serverSettings = out || null;
+        return serverSettings;
+      }).catch(function () { return null; });
+    },
+
     depositMpesa: async function (amountMinor, phone) {
       /* Wait for a sleeping instance rather than reporting its cold
          start as a failed deposit. */
       await ensureAwake();
       return call('/deposits/mpesa', {
         method: 'POST', body: { amountMinor: amountMinor, phone: phone }
+      });
+    },
+
+    /* USDT has no callback: this reports a transfer that has already
+       been made, and a person credits it. See deposits.routes.js. */
+    depositUsdt: async function (amountMinor, txHash) {
+      await ensureAwake();
+      return call('/deposits/usdt', {
+        method: 'POST', body: { amountMinor: amountMinor, txHash: txHash }
       });
     },
 

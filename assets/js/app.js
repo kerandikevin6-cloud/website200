@@ -1462,7 +1462,12 @@
 
     try {
       var started;
-      if (method === 'card') {
+      if (method === 'usdt') {
+        /* Reported, not collected: the transfer has already happened and
+           nothing here can confirm it. The row goes in pending and a
+           person credits it after looking at the chain. */
+        started = await window.NexNet.depositUsdt(Math.round(amount * 100), state.data.txHash);
+      } else if (method === 'card') {
         started = await window.NexNet.depositCard(Math.round(amount * 100));
         /* Paystack collects the card on its own page. Same tab, not a
            popup: this runs after an await, so the click that opened it is
@@ -1476,6 +1481,12 @@
       }
 
       state.data.ref = started.reference;
+
+      /* A chain transfer waits on a person, not on a callback, so there
+         is nothing to poll for. Spinning for two and a half minutes and
+         then saying "still pending" would be a worse way of telling
+         somebody the same thing. */
+      if (method === 'usdt') { gotoStep('reported'); return; }
 
       /* Some rails settle in the request itself rather than through a
          callback, and answer with the finished payment. Polling for
@@ -1582,6 +1593,18 @@
         var digits = ph ? ph.value.replace(/\D/g, '') : '';
         if (digits.length < pay.len) return fieldError('mpesaPhone', 'Enter your ' + pay.len + '-digit number');
         state.data.payTo = pay.dial + digits;
+      }
+
+      if (state.data.method === 'usdt') {
+        /* The hash is the only thing tying a transfer on a public chain
+           to this account, so it is checked here rather than being
+           discovered as missing by the person trying to credit it. */
+        var hash = ((document.getElementById('txHash') || {}).value || '').trim();
+        if (!hash) return fieldError('txHash', 'Paste the transaction hash from your wallet');
+        if (!/^[A-Fa-f0-9]{64}$/.test(hash)) {
+          return fieldError('txHash', 'A TRC-20 hash is 64 letters and numbers');
+        }
+        state.data.txHash = hash;
       }
 
       state.data.payLabel = F.count(amount) + ' ' + money;
@@ -2188,7 +2211,12 @@
     /* Wake the API early. An instance that has gone to sleep takes a few
        seconds to come back, and the request that wakes it is the one that
        fails, better that is this one than somebody's deposit. */
-    if (window.NexNet && window.NexNet.live) window.NexNet.warm();
+    if (window.NexNet && window.NexNet.live) {
+      window.NexNet.warm();
+      /* The deposit wallet and the server's limits, fetched once on
+         boot so the deposit sheet has them the moment it opens. */
+      window.NexNet.loadSettings();
+    }
     clearInterval(window.__nexMkt);
     if (!guard()) return;
     document.body.classList.add('loading');

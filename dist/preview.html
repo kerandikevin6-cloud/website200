@@ -2566,7 +2566,19 @@ window.NEXAS_CONFIG = {
      security and is safe to ship in a browser. The service-role key
      must never appear in a file like this. */
   supabaseUrl: 'https://avzuiwqkqyhsjanjwtrx.supabase.co',
-  supabaseKey: 'sb_publishable_aGZeOzRTqbvY2P6NgEVliQ_d_rh_pvn'
+  supabaseKey: 'sb_publishable_aGZeOzRTqbvY2P6NgEVliQ_d_rh_pvn',
+
+  /* The USDT deposit wallet. Public by nature — it is what people send
+     money to — and here as a fallback so the deposit sheet works before
+     /config answers, or if it does not. The server's copy wins when it
+     arrives, so changing wallets is one environment variable on the API
+     and this line is only the floor. TRC-20 is the only chain we take:
+     a customer choosing a network from a menu is a customer who can
+     choose the wrong one, and USDT sent over the wrong chain is gone. */
+  usdt: {
+    address: 'TXqLJrvZc9ouyVPai66WR55dvDVetR83BH',
+    network: 'TRC-20'
+  }
 };
 
 /* api.js reads this. Kept as a separate global so a host can override
@@ -3083,6 +3095,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   }
 
   var refreshing = null;
+  var serverSettings = null, settingsAsked = false;
 
   async function refresh() {
     var t = tokens();
@@ -3306,12 +3319,35 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     /* ---------- money ---------- */
     config: function () { return call('/config', { anon: true }); },
 
+    /* The server's limits and the deposit wallet, fetched once and kept,
+       because the deposit sheet renders synchronously and cannot wait
+       for a request. Anything that needs it asks for the cached copy and
+       gets null until the first answer lands. */
+    settings: function () { return serverSettings; },
+    loadSettings: function () {
+      if (settingsAsked) return Promise.resolve(serverSettings);
+      settingsAsked = true;
+      return call('/config', { anon: true }).then(function (out) {
+        serverSettings = out || null;
+        return serverSettings;
+      }).catch(function () { return null; });
+    },
+
     depositMpesa: async function (amountMinor, phone) {
       /* Wait for a sleeping instance rather than reporting its cold
          start as a failed deposit. */
       await ensureAwake();
       return call('/deposits/mpesa', {
         method: 'POST', body: { amountMinor: amountMinor, phone: phone }
+      });
+    },
+
+    /* USDT has no callback: this reports a transfer that has already
+       been made, and a person credits it. See deposits.routes.js. */
+    depositUsdt: async function (amountMinor, txHash) {
+      await ensureAwake();
+      return call('/deposits/usdt', {
+        method: 'POST', body: { amountMinor: amountMinor, txHash: txHash }
       });
     },
 
@@ -5513,7 +5549,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
             return method('mpesa', 'phone', 'M-Pesa',
                 'Instant · USD ' + F().count(lo) + ' - ' + F().count(1200)) +
               method('card', 'card', 'Card', 'Visa and Mastercard · secured by Paystack') +
-              methodOff('coin', 'USDT', 'Crypto deposits are not open yet');
+              method('usdt', 'coin', 'USDT', 'TRC-20 only · credited after one confirmation');
           }
         },
         form: {
@@ -5541,13 +5577,35 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                   '</div>' +
                 '</div>';
             } else {
-              inner = '<div class="field"><label for="network">Network</label>' +
-                '<select class="input" id="network"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
-                '<div class="field"><label>Deposit address</label>' +
-                '<div class="input num address"><span>TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu</span>' +
-                '<button type="button" data-copy-text="TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu" ' +
-                'data-copy-note="Deposit address copied">Copy</button></div>' +
-                '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
+              /* One network, no menu. A customer choosing a chain from a
+                 list is a customer who can choose the wrong one, and USDT
+                 sent over the wrong chain does not come back.
+
+                 The address comes from the server rather than being
+                 written into the page, so changing wallets is one
+                 environment variable and not a deploy. */
+              var served = (window.NexNet && window.NexNet.settings && window.NexNet.settings()) || {};
+              var w = served.usdt || (window.NEXAS_CONFIG || {}).usdt || {};
+              var addr = w.address || '';
+
+              inner = !addr
+                ? '<div class="notice">' + I('alert', 17) +
+                    '<span>The deposit address is not available just now. ' +
+                    'Try again in a moment.</span></div>'
+                : '<div class="field"><label>Network</label>' +
+                    '<div class="input" style="display:flex;align-items:center;gap:8px">' +
+                      I('link', 16) + '<b>' + (w.network || 'TRC-20') + ' (Tron)</b></div>' +
+                    '<span class="hint">The only network we accept. USDT sent on ' +
+                      'any other chain cannot be recovered.</span></div>' +
+                  '<div class="field"><label>Send USDT to</label>' +
+                    '<div class="input num address"><span>' + addr + '</span>' +
+                    '<button type="button" data-copy-text="' + addr + '" ' +
+                    'data-copy-note="Deposit address copied">Copy</button></div></div>' +
+                  '<div class="field"><label for="txHash">Transaction hash</label>' +
+                    '<input class="input num" id="txHash" autocomplete="off" spellcheck="false" ' +
+                      'placeholder="Paste it after you send">' +
+                    '<span class="hint">From your wallet, once the transfer is out. ' +
+                      'It is how we find your transfer and credit this account.</span></div>';
             }
 
             var pay = payCur();
@@ -5576,7 +5634,38 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                    this exact amount and hands back the checkout URL. */
                 ? act(I('lock', 16) + 'Continue to Paystack', 'deposit', 'btn-pos') +
                   '<span class="hint" style="text-align:center">Paystack collects the card details. Novi never sees them.</span>'
-                : act('Confirm deposit', 'deposit', 'btn-pos')) +
+                : m === 'usdt'
+                  /* Says what it does. This button does not move money,
+                     it tells us money has already moved, and a button
+                     labelled "confirm deposit" on a chain transfer is a
+                     promise the rail cannot keep. */
+                  ? act('I have sent it', 'deposit', 'btn-pos') +
+                    '<span class="hint" style="text-align:center">' +
+                      'Checked against the chain and credited, usually within the hour.</span>'
+                  : act('Confirm deposit', 'deposit', 'btn-pos')) +
+            '</div>';
+          }
+        },
+        /* A chain transfer has already left the customer's wallet by the
+           time we hear about it. There is nothing to wait for on this
+           screen and nothing for them to do, so it says so and lets them
+           go rather than holding them on a spinner. */
+        reported: {
+          title: 'Transfer received',
+          sub: 'We are checking it against the chain.',
+          noBack: true,
+          body: function (s) {
+            return '<div class="modal-form">' +
+              '<div class="empty" style="padding:22px 10px">' + I('check', 24) +
+                '<b>We have it</b>' +
+                '<span>Your transfer is with us. It is credited once it has a ' +
+                'confirmation, usually within the hour, and the balance moves ' +
+                'on its own.</span></div>' +
+              '<div class="totals">' +
+                kv('Amount', F().usd((s.credited || 0))) +
+                kv('Reference', s.ref || '') +
+              '</div>' +
+              '<button class="btn btn-ghost" type="button" data-close>Close</button>' +
             '</div>';
           }
         },
@@ -8691,7 +8780,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     try {
       var started;
-      if (method === 'card') {
+      if (method === 'usdt') {
+        /* Reported, not collected: the transfer has already happened and
+           nothing here can confirm it. The row goes in pending and a
+           person credits it after looking at the chain. */
+        started = await window.NexNet.depositUsdt(Math.round(amount * 100), state.data.txHash);
+      } else if (method === 'card') {
         started = await window.NexNet.depositCard(Math.round(amount * 100));
         /* Paystack collects the card on its own page. Same tab, not a
            popup: this runs after an await, so the click that opened it is
@@ -8705,6 +8799,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
 
       state.data.ref = started.reference;
+
+      /* A chain transfer waits on a person, not on a callback, so there
+         is nothing to poll for. Spinning for two and a half minutes and
+         then saying "still pending" would be a worse way of telling
+         somebody the same thing. */
+      if (method === 'usdt') { gotoStep('reported'); return; }
 
       /* Some rails settle in the request itself rather than through a
          callback, and answer with the finished payment. Polling for
@@ -8811,6 +8911,18 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         var digits = ph ? ph.value.replace(/\D/g, '') : '';
         if (digits.length < pay.len) return fieldError('mpesaPhone', 'Enter your ' + pay.len + '-digit number');
         state.data.payTo = pay.dial + digits;
+      }
+
+      if (state.data.method === 'usdt') {
+        /* The hash is the only thing tying a transfer on a public chain
+           to this account, so it is checked here rather than being
+           discovered as missing by the person trying to credit it. */
+        var hash = ((document.getElementById('txHash') || {}).value || '').trim();
+        if (!hash) return fieldError('txHash', 'Paste the transaction hash from your wallet');
+        if (!/^[A-Fa-f0-9]{64}$/.test(hash)) {
+          return fieldError('txHash', 'A TRC-20 hash is 64 letters and numbers');
+        }
+        state.data.txHash = hash;
       }
 
       state.data.payLabel = F.count(amount) + ' ' + money;
@@ -9417,7 +9529,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     /* Wake the API early. An instance that has gone to sleep takes a few
        seconds to come back, and the request that wakes it is the one that
        fails, better that is this one than somebody's deposit. */
-    if (window.NexNet && window.NexNet.live) window.NexNet.warm();
+    if (window.NexNet && window.NexNet.live) {
+      window.NexNet.warm();
+      /* The deposit wallet and the server's limits, fetched once on
+         boot so the deposit sheet has them the moment it opens. */
+      window.NexNet.loadSettings();
+    }
     clearInterval(window.__nexMkt);
     if (!guard()) return;
     document.body.classList.add('loading');

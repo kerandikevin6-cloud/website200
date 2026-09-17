@@ -578,7 +578,7 @@
             return method('mpesa', 'phone', 'M-Pesa',
                 'Instant · USD ' + F().count(lo) + ' - ' + F().count(1200)) +
               method('card', 'card', 'Card', 'Visa and Mastercard · secured by Paystack') +
-              methodOff('coin', 'USDT', 'Crypto deposits are not open yet');
+              method('usdt', 'coin', 'USDT', 'TRC-20 only · credited after one confirmation');
           }
         },
         form: {
@@ -606,13 +606,35 @@
                   '</div>' +
                 '</div>';
             } else {
-              inner = '<div class="field"><label for="network">Network</label>' +
-                '<select class="input" id="network"><option>TRC-20 (Tron)</option><option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
-                '<div class="field"><label>Deposit address</label>' +
-                '<div class="input num address"><span>TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu</span>' +
-                '<button type="button" data-copy-text="TQ7xNv9k2Hm4Lp8rYd3Wc6Ze1Bs5Fa0Gu" ' +
-                'data-copy-note="Deposit address copied">Copy</button></div>' +
-                '<span class="hint">Send only USDT on the selected network. Other assets are unrecoverable.</span></div>';
+              /* One network, no menu. A customer choosing a chain from a
+                 list is a customer who can choose the wrong one, and USDT
+                 sent over the wrong chain does not come back.
+
+                 The address comes from the server rather than being
+                 written into the page, so changing wallets is one
+                 environment variable and not a deploy. */
+              var served = (window.NexNet && window.NexNet.settings && window.NexNet.settings()) || {};
+              var w = served.usdt || (window.NEXAS_CONFIG || {}).usdt || {};
+              var addr = w.address || '';
+
+              inner = !addr
+                ? '<div class="notice">' + I('alert', 17) +
+                    '<span>The deposit address is not available just now. ' +
+                    'Try again in a moment.</span></div>'
+                : '<div class="field"><label>Network</label>' +
+                    '<div class="input" style="display:flex;align-items:center;gap:8px">' +
+                      I('link', 16) + '<b>' + (w.network || 'TRC-20') + ' (Tron)</b></div>' +
+                    '<span class="hint">The only network we accept. USDT sent on ' +
+                      'any other chain cannot be recovered.</span></div>' +
+                  '<div class="field"><label>Send USDT to</label>' +
+                    '<div class="input num address"><span>' + addr + '</span>' +
+                    '<button type="button" data-copy-text="' + addr + '" ' +
+                    'data-copy-note="Deposit address copied">Copy</button></div></div>' +
+                  '<div class="field"><label for="txHash">Transaction hash</label>' +
+                    '<input class="input num" id="txHash" autocomplete="off" spellcheck="false" ' +
+                      'placeholder="Paste it after you send">' +
+                    '<span class="hint">From your wallet, once the transfer is out. ' +
+                      'It is how we find your transfer and credit this account.</span></div>';
             }
 
             var pay = payCur();
@@ -641,7 +663,38 @@
                    this exact amount and hands back the checkout URL. */
                 ? act(I('lock', 16) + 'Continue to Paystack', 'deposit', 'btn-pos') +
                   '<span class="hint" style="text-align:center">Paystack collects the card details. Novi never sees them.</span>'
-                : act('Confirm deposit', 'deposit', 'btn-pos')) +
+                : m === 'usdt'
+                  /* Says what it does. This button does not move money,
+                     it tells us money has already moved, and a button
+                     labelled "confirm deposit" on a chain transfer is a
+                     promise the rail cannot keep. */
+                  ? act('I have sent it', 'deposit', 'btn-pos') +
+                    '<span class="hint" style="text-align:center">' +
+                      'Checked against the chain and credited, usually within the hour.</span>'
+                  : act('Confirm deposit', 'deposit', 'btn-pos')) +
+            '</div>';
+          }
+        },
+        /* A chain transfer has already left the customer's wallet by the
+           time we hear about it. There is nothing to wait for on this
+           screen and nothing for them to do, so it says so and lets them
+           go rather than holding them on a spinner. */
+        reported: {
+          title: 'Transfer received',
+          sub: 'We are checking it against the chain.',
+          noBack: true,
+          body: function (s) {
+            return '<div class="modal-form">' +
+              '<div class="empty" style="padding:22px 10px">' + I('check', 24) +
+                '<b>We have it</b>' +
+                '<span>Your transfer is with us. It is credited once it has a ' +
+                'confirmation, usually within the hour, and the balance moves ' +
+                'on its own.</span></div>' +
+              '<div class="totals">' +
+                kv('Amount', F().usd((s.credited || 0))) +
+                kv('Reference', s.ref || '') +
+              '</div>' +
+              '<button class="btn btn-ghost" type="button" data-close>Close</button>' +
             '</div>';
           }
         },
