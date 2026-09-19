@@ -70,6 +70,20 @@
   --neg-deep:#8C1710;
   --warn:#9C5A0B;
   --warn-soft:#FBF0DF;
+  /* ---- the tick marker ----
+     Its own colour, not --warn. Amber is the colour of a warning in this
+     palette and it is used as one: a running contract, a practice
+     account. The digit the tick just landed on is not a warning, it is
+     the live figure, and orange was reading as "something is wrong with
+     this number". Yellow, with near-black on top of it, because white
+     on yellow is not a thing anyone can read. */
+  --tick:#F5C518;
+  --tick-line:#D8AC06;
+  --tick-ink:#241A00;
+  /* The same yellow is illegible as small text on white, so text uses
+     the dark end of it. 5.6:1 on the page ground. */
+  --tick-text:#7A5C00;
+  --tick-soft:#FDF3D2;
 
   /* chart
      Its own ground, a shade off the white panels around it, so the
@@ -161,6 +175,11 @@
     --neg-deep:#93180F;
     --warn:#E0912F;
     --warn-soft:#2E2113;
+    --tick:#FFD426;
+    --tick-line:#E0B400;
+    --tick-ink:#241A00;
+    --tick-text:#F0CB4B;
+    --tick-soft:#2E2610;
 
     --chart-line:#E6EDF5;
     --chart-grid:#17293C;
@@ -202,6 +221,11 @@
   --neg-deep:#93180F;
   --warn:#E0912F;
   --warn-soft:#2E2113;
+  --tick:#FFD426;
+  --tick-line:#E0B400;
+  --tick-ink:#241A00;
+  --tick-text:#F0CB4B;
+  --tick-soft:#2E2610;
 
   --chart-line:#E6EDF5;
   --chart-grid:#17293C;
@@ -558,24 +582,20 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
    triangle underneath pointing up at it — the arrow reads as the thing
    that pushed the digit up, which is exactly what happened.
 
-   Amber is the moving one. Blue stays what the trader chose, so the two
+   Yellow is the moving one. Blue stays what the trader chose, so the two
    never have to be told apart by position. */
 .dcell{position:relative;transition:transform .12s ease}
 .dcell.cur{transform:translateY(-5px)}
 .dcell.cur .digit{
-  border-color:var(--warn);background:var(--warn);color:#fff;font-weight:600;
-  box-shadow:0 5px 14px color-mix(in srgb, var(--warn) 42%, transparent);
+  border-color:var(--tick-line);background:var(--tick);color:var(--tick-ink);font-weight:600;
+  box-shadow:0 5px 14px color-mix(in srgb, var(--tick) 45%, transparent);
 }
-:root[data-theme="dark"] .dcell.cur .digit{color:#1B1206}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .dcell.cur .digit{color:#1B1206}
-}
-.dcell.cur .dpct{color:var(--warn);font-weight:600}
+.dcell.cur .dpct{color:var(--tick-text);font-weight:600}
 .dcell.cur::after{
   content:"";position:absolute;left:50%;translate:-50% 0;bottom:-9px;
   width:0;height:0;
   border-left:5px solid transparent;border-right:5px solid transparent;
-  border-bottom:6px solid var(--warn);
+  border-bottom:6px solid var(--tick);
 }
 
 /* What the trader picked, which does not move on its own. */
@@ -586,7 +606,7 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 /* Both at once: the tick has landed on the barrier, which is the moment
    a matches contract is won. The amber wins, because that is the news. */
 .dcell.cur.sel .digit{
-  border-color:var(--warn);background:var(--warn);color:#fff;
+  border-color:var(--tick-line);background:var(--tick);color:var(--tick-ink);
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -670,9 +690,14 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   text-align:right;font-family:var(--mono);font-size:17px;
 }
 .stake .cur{color:var(--muted);font-size:11px;letter-spacing:.1em}
-.quick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+/* The stake and the five top-ups are one control in two parts, and they
+   were welded: the chip row started on the pixel the field ended on, so
+   the whole thing read as one tall box with a number trapped at the top
+   of it. A gap here, and a wider one between the chips. */
+.stake-block{display:flex;flex-direction:column;gap:9px}
+.quick{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .quick button{
-  padding:8px 0;border:1px solid var(--ctl-line);border-radius:0;
+  padding:9px 0;border:1px solid var(--ctl-line);border-radius:0;
   background:var(--ctl);color:var(--text-2);font-family:var(--mono);font-size:12px;
 }
 .quick button:hover{border-color:var(--line);color:var(--text)}
@@ -687,7 +712,10 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
    these are two things. */
 .trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tbtn{
-  padding:14px 10px;border-radius:0;text-align:center;color:#fff;
+  /* The one other curved thing in a square system, with the bottom bar
+     and the mode pill. These are pressed more than anything else on the
+     screen and a softened corner reads as a key rather than a panel. */
+  padding:11px 10px;border-radius:10px;text-align:center;color:#fff;
   box-shadow:0 1px 2px rgba(6,20,14,.18), 0 6px 16px rgba(6,20,14,.14);
   transition:transform .16s ease, box-shadow .16s ease;
 }
@@ -1220,9 +1248,9 @@ footer a:hover{color:var(--text-2)}
   /* One button per line, and taller. The column has the room, and a
      trade button is the last thing that should be sharing space. */
   .terminal .col-right .trade-actions{grid-template-columns:1fr;gap:10px}
-  .terminal .col-right .tbtn{padding:17px 12px}
-  .terminal .col-right .tbtn .t{font-size:15.5px}
-  .terminal .col-right .tbtn .s{font-size:11px;margin-top:3px}
+  .terminal .col-right .tbtn{padding:13px 12px}
+  .terminal .col-right .tbtn .t{font-size:15px}
+  .terminal .col-right .tbtn .s{font-size:11px;margin-top:2px}
 
   /* The four facts, above the day's tally. */
   .terminal .col-right .tdetail{
@@ -1786,9 +1814,18 @@ body.locked{overflow:hidden}
   width:100%;min-width:0;background:none;border:none;outline:none;padding:0;
   color:var(--text);text-align:center;font-size:14.5px;font-weight:600;
 }
-.tgt.pos .tgt-l,.tgt.pos .tgt-v i{color:var(--pos)}
-.tgt.neg .tgt-l,.tgt.neg .tgt-v i{color:var(--neg)}
-.tgt.warn .tgt-l,.tgt.warn .tgt-v i{color:var(--warn)}
+/* Each cell is the colour of what it does: green stops a run because it
+   made money, red because it lost it, yellow is the multiplier in
+   between. The label and the currency mark carried the colour and the
+   figure — the only part anybody reads — was plain text on white, which
+   is three-quarters of a colour-coded control. Now the cell has a
+   ground and the number has the colour. */
+.tgt.pos{background:var(--pos-soft)}
+.tgt.neg{background:var(--neg-soft)}
+.tgt.warn{background:var(--tick-soft)}
+.tgt.pos .tgt-l,.tgt.pos .tgt-v i,.tgt.pos .tgt-v input{color:var(--pos)}
+.tgt.neg .tgt-l,.tgt.neg .tgt-v i,.tgt.neg .tgt-v input{color:var(--neg)}
+.tgt.warn .tgt-l,.tgt.warn .tgt-v i,.tgt.warn .tgt-v input{color:var(--tick-text)}
 
 
 /* ---------------- phone number field ----------------
@@ -2800,13 +2837,27 @@ body[data-chrome="app"] main{background:var(--bg)}
 /* The instrument name is the control that changes it. It reads as a
    label until you go near it, which is the right weight for something
    sitting on top of a chart. */
-.chart-inst{
-  position:absolute;top:6px;left:8px;z-index:3;display:flex;
-  /* Wide enough that the longest instrument name fits without being
-     cut, since the list below it is now this same width and a picker
-     that truncates the thing being picked is no use. */
-  width:min(244px,66%);
+/* The card in the corner of the chart: the instrument on top, what it is
+   doing right now underneath. The name alone said which series you were
+   watching and nothing about it — the price was only ever on the axis,
+   and how far it had moved was nowhere at all. The figure moves on every
+   tick, which is the point: it is the one number on the screen that
+   proves the feed is live.
+
+   Wide enough that the longest instrument name fits without being cut,
+   since the list below it is this same width and a picker that truncates
+   the thing being picked is no use. */
+.chart-head{position:absolute;top:6px;left:8px;z-index:3;width:min(244px,66%)}
+.chart-inst{position:relative;display:flex;width:100%}
+.inst-live{
+  display:flex;align-items:baseline;gap:8px;padding:5px 9px;
+  background:var(--ctl);border:1px solid var(--ctl-line);border-top:none;
+  font-family:var(--mono);font-size:11.5px;line-height:1.25;
 }
+.inst-live .p{color:var(--text);font-weight:500}
+.inst-live .c{margin-left:auto;font-size:10.5px;color:var(--muted)}
+.inst-live .c.pos{color:var(--pos)}
+.inst-live .c.neg{color:var(--neg)}
 .chart-inst .sel{flex:1;min-width:0}
 .chart-inst .sel-btn{
   flex:1;justify-content:space-between;

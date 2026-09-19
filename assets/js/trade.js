@@ -79,6 +79,7 @@
       instEl.__sel.set(S.symbol);
     }
     var h = API.feed.history(S.symbol).slice(-120);
+    renderInstLive(h, meta);
     var counts = [0,0,0,0,0,0,0,0,0,0];
     h.forEach(function (p) {
       var dg = p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;
@@ -103,6 +104,30 @@
         '<i class="dpct">' + pctArr[i].toFixed(1) + '%</i></button>';
     }
     html(el.digits, out);
+  }
+
+  /* ---------- the live figure on the instrument card ----------
+     The price and how far it has moved, over the same last 120 ticks the
+     digit shares below are counted across. One window for everything on
+     this screen: two different "recently"s on one card is a question
+     nobody should have to ask.
+
+     Repainted from renderDigits, which already runs on every tick, so
+     this costs a tick handler rather than a timer of its own. */
+  function renderInstLive(h, meta) {
+    var node = $('instLive');
+    if (!node || !h.length) return;
+    var first = h[0].price, last = h[h.length - 1].price;
+    var chg = last - first;
+    var pct = first ? chg / first * 100 : 0;
+    var tone = chg > 0 ? 'pos' : chg < 0 ? 'neg' : '';
+    var sign = chg > 0 ? '+' : '';
+
+    node.innerHTML =
+      '<span class="p">' + last.toFixed(meta.digits) + '</span>' +
+      '<span class="c ' + tone + '">' + sign + chg.toFixed(meta.digits) +
+        ' (' + sign + pct.toFixed(2) + '%)</span>';
+    node.title = 'Change over the last ' + h.length + ' ticks';
   }
 
   /* ---------- contract tabs ---------- */
@@ -275,7 +300,7 @@
       '</div>' +
       /* Stake first: it is the field that gets touched on every single
          trade, and it was below three that are set once and left. */
-      '<div>' +
+      '<div class="stake-block">' +
         '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
           '<button id="minus" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
           '<div class="f"><input id="stake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
