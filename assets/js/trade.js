@@ -96,13 +96,22 @@
     var curDigit = cur.digit == null ? lastDigitOf(cur.price, meta.digits) : cur.digit;
 
     var picking = S.tab !== 'even_odd';
+    /* While a contract is running, the digit that just landed is either
+       on its side or it is not, and that is the only thing anybody is
+       reading this row for. Green for a tick the contract wants, red for
+       one it does not — so a trader on Even watches the live circle go
+       green on 2 and red on 3 without doing the parity themselves. */
+    var live = liveContract();
     var out = '';
     for (var i = 0; i < 10; i++) {
       /* The circle holds the digit and nothing else. The share sat
          inside it at 7.5px, which is under the size anything is meant to
          be read at, and it was competing with the number it describes. */
       var cls = 'dcell' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
-        (picking && i === S.barrier ? ' sel' : '');
+        (picking && i === S.barrier ? ' sel' : '') +
+        (live && i === curDigit
+          ? (API.contracts.winning(live, i) ? ' hit' : ' miss')
+          : '');
       out += '<button class="' + cls + '" data-digit="' + i + '"' + (picking ? '' : ' tabindex="-1"') + '>' +
         '<span class="digit">' + i + '</span>' +
         '<i class="dpct">' + pctArr[i].toFixed(1) + '%</i></button>';
@@ -397,6 +406,17 @@
       : [['over', 'Over ' + S.barrier], ['under', 'Under ' + S.barrier]];
   }
 
+  /* Any open contract on the instrument on screen. Used to tint the
+     live digit; when two are running the first is enough, since the
+     circle can only say one thing. */
+  function liveContract() {
+    var open = API.contracts.open();
+    for (var i = 0; i < open.length; i++) {
+      if (open[i].symbol === S.symbol) return open[i];
+    }
+    return null;
+  }
+
   /* the live contract for a side on this instrument, if any */
   function runningOn(side) {
     var open = API.contracts.open();
@@ -499,7 +519,9 @@
       return null;
     }
     S.error = null;
-    renderPanel(); renderActive(); renderDock();
+    /* The live circle tints against the open contract, so the row has to
+       be repainted the moment there is one rather than on the next tick. */
+    renderPanel(); renderActive(); renderDock(); renderDigits();
     return res.contract;
   }
 
@@ -528,17 +550,29 @@
     if (window.NexModal) window.NexModal.open('result', null, { contract: c });
   }
 
+  /* Every settled contract says so across the top, green won and red
+     lost, whether it was placed by hand or by a run. The dialog only
+     comes up for a hand-placed one; inside a run the banner is the whole
+     report per contract and the run sums up at the end. */
+  function flashResult(c) {
+    if (!window.NexFlash) return;
+    if (c.status === 'won') {
+      window.NexFlash('win', 'Won · ' + API.contracts.label(c), F.signedMoney(c.profit));
+    } else if (c.status === 'sold') {
+      window.NexFlash(c.profit >= 0 ? 'win' : 'loss',
+        'Sold · ' + API.contracts.label(c), F.signedMoney(c.profit));
+    } else {
+      window.NexFlash('loss', 'Lost · ' + API.contracts.label(c), F.signedMoney(c.profit));
+    }
+  }
+
   function onSettled(c) {
     /* A hand-placed contract gets the full result dialog. Contracts
        inside an automated run would throw a dialog every few seconds,
-       so those stay as toasts and the run reports once at the end. */
+       so those report with the banner alone and the run sums up at the
+       end. */
+    if (c.status !== 'open') flashResult(c);
     if (c.status !== 'open' && !c.run) showResult(c);
-    else if (c.status !== 'open') {
-      window.NexToast(c.status === 'won'
-        ? 'Won ' + F.money(c.payout)
-        : c.status === 'sold' ? 'Sold at ' + F.money(c.value)
-        : 'Lost ' + F.money(c.stake));
-    }
     if (!S.run || c.run !== S.run.id) { renderAll(); return; }
 
     var r = S.run;

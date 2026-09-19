@@ -305,6 +305,11 @@
     try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
   }
   var saved = load();
+
+  var AUTO_V = 2;
+  function AUTO_DEFAULTS() {
+    return { runs: 10, multiplier: 2, takeProfit: 200, stopLoss: 999 };
+  }
   var S = {
     geo: saved.geo || null,
     referrals: saved.referrals || null,
@@ -338,7 +343,14 @@
     riskAck: !!saved.riskAck,
     contracts: saved.contracts || [],
     transactions: saved.transactions || [],
-    auto: saved.auto || { runs: 10, multiplier: 2, takeProfit: 200, stopLoss: 100 }
+    /* The two stop rules a run ends on. They were 200 and 100; the stop
+       loss is now 999, which is far enough out that a run ends on the
+       target or on its run count rather than on a figure nobody chose.
+       `autoV` carries the change into browsers that already hold the old
+       pair, otherwise the new default would only ever be seen by someone
+       opening the app for the first time. */
+    auto: (saved.autoV === AUTO_V && saved.auto) || AUTO_DEFAULTS(),
+    autoV: AUTO_V
   };
   var saveTimer;
   function writeNow() {
@@ -349,7 +361,7 @@
         verified: S.verified, kycStatus: S.kycStatus, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
-        auto: S.auto
+        auto: S.auto, autoV: S.autoV
       }));
     } catch (e) {}
   }
@@ -847,6 +859,9 @@
 
     contracts: {
       buy: buy, sell: sell, validate: validate, label: label,
+      /* Exposed so the terminal can say, while a contract runs, whether
+         the digit that just landed is the one it needed. */
+      winning: winning,
       payoutFor: payoutFor, payoutRate: payoutRate,
       open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
       /* Drop settled contracts from this browser. Open ones stay: they

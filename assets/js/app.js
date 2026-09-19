@@ -1022,6 +1022,35 @@
     toastEl._t = setTimeout(function () { toastEl.classList.remove('open'); }, 2600);
   };
 
+  /* ---------- outcome flash ----------
+     A contract settling is news, and the toast at the foot of the screen
+     is where the app says quiet things. This lands across the top, green
+     when it was won and red when it was lost, so a run reports every
+     result without a dialog per contract getting in the way.
+
+     One element, reused: a second result inside the three seconds
+     replaces the first rather than stacking, because two banners over
+     each other is worse than missing one. */
+  var flashEl;
+  window.NexFlash = function (kind, title, sub) {
+    if (!flashEl) {
+      flashEl = document.createElement('div');
+      flashEl.className = 'flash';
+      flashEl.setAttribute('role', 'status');
+      flashEl.setAttribute('aria-live', 'polite');
+      document.body.appendChild(flashEl);
+    }
+    flashEl.className = 'flash ' + (kind || '');
+    flashEl.innerHTML = '<b></b><span></span>';
+    flashEl.querySelector('b').textContent = title || '';
+    flashEl.querySelector('span').textContent = sub || '';
+    /* Restart the entry transition even when one is already up. */
+    void flashEl.offsetWidth;
+    flashEl.classList.add('open');
+    clearTimeout(flashEl._t);
+    flashEl._t = setTimeout(function () { flashEl.classList.remove('open'); }, 3000);
+  };
+
   /* ---------- connection banner ---------- */
   function connectionBanner() {
     var b = document.getElementById('connBanner');

@@ -583,19 +583,22 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 /* ---- where the tick just landed ----
    This moves every second, and a tint was the wrong way to show
    something that only sits still for a moment: by the time the eye finds
-   the shade it has gone. It lifts instead, filled amber, with a
-   triangle underneath pointing up at it — the arrow reads as the thing
-   that pushed the digit up, which is exactly what happened.
+   the shade it has gone. It lifts instead, with a triangle underneath
+   pointing up at it — the arrow reads as the thing that pushed the
+   digit up, which is exactly what happened.
 
-   Yellow is the moving one. Blue stays what the trader chose, so the two
-   never have to be told apart by position. */
+   The amber is the arrow and the ring around the circle, nothing more.
+   Filling the circle amber painted a tenth of the row a colour that
+   means nothing about the trade, and it moved every second, so the row
+   never settled. A border says the same thing and leaves the grid the
+   one colour it should be — which also leaves green and red free to
+   mean won and lost while a contract is running. */
 .dcell{position:relative;transition:transform .12s ease}
 .dcell.cur{transform:translateY(-5px)}
 .dcell.cur .digit{
-  border-color:var(--tick-line);background:var(--tick);color:var(--tick-ink);font-weight:600;
-  box-shadow:0 5px 14px color-mix(in srgb, var(--tick) 45%, transparent);
+  border-color:var(--tick-line);border-width:2px;color:var(--text);font-weight:600;
 }
-.dcell.cur .dpct{color:var(--tick-text);font-weight:600}
+.dcell.cur .dpct{color:var(--text);font-weight:600}
 .dcell.cur::after{
   content:"";position:absolute;left:50%;translate:-50% 0;bottom:-9px;
   width:0;height:0;
@@ -608,11 +611,28 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
 }
 .dcell.sel .dpct{color:var(--accent);font-weight:600}
-/* Both at once: the tick has landed on the barrier, which is the moment
-   a matches contract is won. The amber wins, because that is the news. */
+/* Both at once: the tick has landed on the barrier. The amber ring goes
+   round the blue, rather than replacing it — two facts, two marks. */
 .dcell.cur.sel .digit{
-  border-color:var(--tick-line);background:var(--tick);color:var(--tick-ink);
+  border-color:var(--tick-line);border-width:2px;background:var(--accent-soft);color:var(--accent);
 }
+
+/* ---- while a contract is running ----
+   The digit that just landed, said in the only terms that matter for
+   the next few seconds: green if this tick is on the winning side of
+   the open contract, red if it is not. Only ever on the live cell, and
+   only while something is actually running, so the row is not a
+   traffic light the rest of the time. The arrow stays amber throughout:
+   it marks where the tick landed, which is true whatever the contract
+   makes of it. */
+.dcell.cur.hit .digit{
+  border-color:var(--pos);border-width:2px;background:var(--pos-soft);color:var(--pos);
+}
+.dcell.cur.hit .dpct{color:var(--pos)}
+.dcell.cur.miss .digit{
+  border-color:var(--neg);border-width:2px;background:var(--neg-soft);color:var(--neg);
+}
+.dcell.cur.miss .dpct{color:var(--neg)}
 
 @media (prefers-reduced-motion:reduce){
   .dcell{transition:none}
@@ -968,6 +988,29 @@ body.scrolling .tbtn{
   font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;
 }
 .toast.open{opacity:1;transform:translate(-50%,0)}
+
+/* ---- outcome flash ----
+   Across the top, not the foot: a contract settling is the thing the
+   trader is waiting for, and the toast rail at the bottom is where the
+   app puts asides. Green won, red lost, and it clears itself. */
+.flash{
+  position:fixed;left:50%;top:calc(var(--topbar-h) + 12px);transform:translate(-50%,-12px);
+  z-index:95;display:flex;align-items:baseline;gap:10px;
+  padding:10px 18px;border-radius:999px;border:1px solid transparent;
+  font-size:13px;opacity:0;pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);
+  max-width:calc(100vw - 32px);
+}
+.flash.open{opacity:1;transform:translate(-50%,0)}
+.flash b{font-weight:600;white-space:nowrap}
+.flash span{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.flash.win{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
+.flash.loss{background:var(--neg-soft);border-color:var(--neg);color:var(--neg)}
+@media (prefers-reduced-motion:reduce){
+  .flash{transition:opacity .2s ease}
+  .flash,.flash.open{transform:translate(-50%,0)}
+}
 footer{border-top:1px solid var(--line-soft);padding:24px 18px 32px;color:var(--muted);font-size:11.5px}
 footer .fl{display:flex;flex-wrap:wrap;gap:14px 20px;margin-bottom:16px}
 footer a:hover{color:var(--text-2)}
@@ -4582,6 +4625,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
   }
   var saved = load();
+
+  var AUTO_V = 2;
+  function AUTO_DEFAULTS() {
+    return { runs: 10, multiplier: 2, takeProfit: 200, stopLoss: 999 };
+  }
   var S = {
     geo: saved.geo || null,
     referrals: saved.referrals || null,
@@ -4615,7 +4663,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     riskAck: !!saved.riskAck,
     contracts: saved.contracts || [],
     transactions: saved.transactions || [],
-    auto: saved.auto || { runs: 10, multiplier: 2, takeProfit: 200, stopLoss: 100 }
+    /* The two stop rules a run ends on. They were 200 and 100; the stop
+       loss is now 999, which is far enough out that a run ends on the
+       target or on its run count rather than on a figure nobody chose.
+       `autoV` carries the change into browsers that already hold the old
+       pair, otherwise the new default would only ever be seen by someone
+       opening the app for the first time. */
+    auto: (saved.autoV === AUTO_V && saved.auto) || AUTO_DEFAULTS(),
+    autoV: AUTO_V
   };
   var saveTimer;
   function writeNow() {
@@ -4626,7 +4681,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         verified: S.verified, kycStatus: S.kycStatus, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
-        auto: S.auto
+        auto: S.auto, autoV: S.autoV
       }));
     } catch (e) {}
   }
@@ -5124,6 +5179,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     contracts: {
       buy: buy, sell: sell, validate: validate, label: label,
+      /* Exposed so the terminal can say, while a contract runs, whether
+         the digit that just landed is the one it needed. */
+      winning: winning,
       payoutFor: payoutFor, payoutRate: payoutRate,
       open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
       /* Drop settled contracts from this browser. Open ones stay: they
@@ -6366,8 +6424,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                 '<div class="totals">' +
                   kv('Stake', F().money(c.stake)) +
                   kv('Duration', F().ticks(c.ticks)) +
-                  kv('Entry', '<span class="num">' + F().price(c.entrySpot) + '</span>') +
-                  kv('Exit', '<span class="num">' + F().price(c.exitSpot) + '</span>') +
+                  /* The two spots are why a contract lost — they are the
+                     working. On a win nobody is auditing the price: what
+                     was paid and what the balance is now is the whole
+                     news, and two more rows only push it down. */
+                  (won ? '' :
+                    kv('Entry', '<span class="num">' + F().price(c.entrySpot) + '</span>') +
+                    kv('Exit', '<span class="num">' + F().price(c.exitSpot) + '</span>')) +
                   kv('Balance', F().money(API().account.balance())) +
                 '</div>' +
                 '<button class="btn btn-fill" type="button" data-close>Done</button>' +
@@ -6746,13 +6809,22 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var curDigit = cur.digit == null ? lastDigitOf(cur.price, meta.digits) : cur.digit;
 
     var picking = S.tab !== 'even_odd';
+    /* While a contract is running, the digit that just landed is either
+       on its side or it is not, and that is the only thing anybody is
+       reading this row for. Green for a tick the contract wants, red for
+       one it does not — so a trader on Even watches the live circle go
+       green on 2 and red on 3 without doing the parity themselves. */
+    var live = liveContract();
     var out = '';
     for (var i = 0; i < 10; i++) {
       /* The circle holds the digit and nothing else. The share sat
          inside it at 7.5px, which is under the size anything is meant to
          be read at, and it was competing with the number it describes. */
       var cls = 'dcell' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
-        (picking && i === S.barrier ? ' sel' : '');
+        (picking && i === S.barrier ? ' sel' : '') +
+        (live && i === curDigit
+          ? (API.contracts.winning(live, i) ? ' hit' : ' miss')
+          : '');
       out += '<button class="' + cls + '" data-digit="' + i + '"' + (picking ? '' : ' tabindex="-1"') + '>' +
         '<span class="digit">' + i + '</span>' +
         '<i class="dpct">' + pctArr[i].toFixed(1) + '%</i></button>';
@@ -7047,6 +7119,17 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       : [['over', 'Over ' + S.barrier], ['under', 'Under ' + S.barrier]];
   }
 
+  /* Any open contract on the instrument on screen. Used to tint the
+     live digit; when two are running the first is enough, since the
+     circle can only say one thing. */
+  function liveContract() {
+    var open = API.contracts.open();
+    for (var i = 0; i < open.length; i++) {
+      if (open[i].symbol === S.symbol) return open[i];
+    }
+    return null;
+  }
+
   /* the live contract for a side on this instrument, if any */
   function runningOn(side) {
     var open = API.contracts.open();
@@ -7149,7 +7232,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       return null;
     }
     S.error = null;
-    renderPanel(); renderActive(); renderDock();
+    /* The live circle tints against the open contract, so the row has to
+       be repainted the moment there is one rather than on the next tick. */
+    renderPanel(); renderActive(); renderDock(); renderDigits();
     return res.contract;
   }
 
@@ -7178,17 +7263,29 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (window.NexModal) window.NexModal.open('result', null, { contract: c });
   }
 
+  /* Every settled contract says so across the top, green won and red
+     lost, whether it was placed by hand or by a run. The dialog only
+     comes up for a hand-placed one; inside a run the banner is the whole
+     report per contract and the run sums up at the end. */
+  function flashResult(c) {
+    if (!window.NexFlash) return;
+    if (c.status === 'won') {
+      window.NexFlash('win', 'Won · ' + API.contracts.label(c), F.signedMoney(c.profit));
+    } else if (c.status === 'sold') {
+      window.NexFlash(c.profit >= 0 ? 'win' : 'loss',
+        'Sold · ' + API.contracts.label(c), F.signedMoney(c.profit));
+    } else {
+      window.NexFlash('loss', 'Lost · ' + API.contracts.label(c), F.signedMoney(c.profit));
+    }
+  }
+
   function onSettled(c) {
     /* A hand-placed contract gets the full result dialog. Contracts
        inside an automated run would throw a dialog every few seconds,
-       so those stay as toasts and the run reports once at the end. */
+       so those report with the banner alone and the run sums up at the
+       end. */
+    if (c.status !== 'open') flashResult(c);
     if (c.status !== 'open' && !c.run) showResult(c);
-    else if (c.status !== 'open') {
-      window.NexToast(c.status === 'won'
-        ? 'Won ' + F.money(c.payout)
-        : c.status === 'sold' ? 'Sold at ' + F.money(c.value)
-        : 'Lost ' + F.money(c.stake));
-    }
     if (!S.run || c.run !== S.run.id) { renderAll(); return; }
 
     var r = S.run;
@@ -7929,7 +8026,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         '<b class="ai-headline">Nothing to report</b>' +
         '<span class="ai-sub">Not enough history on any instrument yet. ' +
           'Leave it a minute and scan again.</span>' +
-        '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Scan again</button>' +
+        '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>';
     }
 
@@ -7939,7 +8036,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       '<b class="ai-headline">' + best.label + '</b>' +
       '<span class="ai-sub">' + best.symbolName + ' · ' + F.pct(best.prob * 100, 1) +
         ' of the last ' + best.sample + ' ticks</span>' +
-      '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Scan again</button>' +
+      '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Rescan for the best market</button>' +
     '</div>';
   }
 
@@ -7999,7 +8096,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         '<button class="btn btn-fill" id="aiTake">' +
           I('candles', 16) + 'Take it to the terminal</button>' +
         '<button class="btn btn-ghost" id="aiScanAgain">' +
-          I('radar', 16) + 'Scan again</button>' +
+          I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>' +
       '<p class="ai-note">The terminal opens on this contract with the digit, ' +
         'duration and stake already set. Nothing is placed until you press buy ' +
@@ -8118,9 +8215,19 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }));
       unsub.push(API.on('settled', function (c) {
         if (c.run !== 'AI') return;
-        window.NexToast(c.status === 'won'
-          ? 'AI trade won ' + F.money(c.payout)
-          : 'AI trade lost ' + F.money(c.stake));
+        /* Same banner the terminal uses, so a result reads the same way
+           whichever screen placed it: green won, red lost, across the
+           top. */
+        if (window.NexFlash) {
+          window.NexFlash(c.status === 'won' ? 'win' : 'loss',
+            c.status === 'won' ? 'Won · ' + API.contracts.label(c)
+              : 'Lost · ' + API.contracts.label(c),
+            F.signedMoney(c.profit));
+        } else {
+          window.NexToast(c.status === 'won'
+            ? 'AI trade won ' + F.money(c.payout)
+            : 'AI trade lost ' + F.money(c.stake));
+        }
         render();
       }));
       unsub.push(API.on('balance', render));
@@ -9152,6 +9259,35 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     toastEl.classList.add('open');
     clearTimeout(toastEl._t);
     toastEl._t = setTimeout(function () { toastEl.classList.remove('open'); }, 2600);
+  };
+
+  /* ---------- outcome flash ----------
+     A contract settling is news, and the toast at the foot of the screen
+     is where the app says quiet things. This lands across the top, green
+     when it was won and red when it was lost, so a run reports every
+     result without a dialog per contract getting in the way.
+
+     One element, reused: a second result inside the three seconds
+     replaces the first rather than stacking, because two banners over
+     each other is worse than missing one. */
+  var flashEl;
+  window.NexFlash = function (kind, title, sub) {
+    if (!flashEl) {
+      flashEl = document.createElement('div');
+      flashEl.className = 'flash';
+      flashEl.setAttribute('role', 'status');
+      flashEl.setAttribute('aria-live', 'polite');
+      document.body.appendChild(flashEl);
+    }
+    flashEl.className = 'flash ' + (kind || '');
+    flashEl.innerHTML = '<b></b><span></span>';
+    flashEl.querySelector('b').textContent = title || '';
+    flashEl.querySelector('span').textContent = sub || '';
+    /* Restart the entry transition even when one is already up. */
+    void flashEl.offsetWidth;
+    flashEl.classList.add('open');
+    clearTimeout(flashEl._t);
+    flashEl._t = setTimeout(function () { flashEl.classList.remove('open'); }, 3000);
   };
 
   /* ---------- connection banner ---------- */

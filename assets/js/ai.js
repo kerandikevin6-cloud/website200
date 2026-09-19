@@ -249,7 +249,7 @@
         '<b class="ai-headline">Nothing to report</b>' +
         '<span class="ai-sub">Not enough history on any instrument yet. ' +
           'Leave it a minute and scan again.</span>' +
-        '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Scan again</button>' +
+        '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>';
     }
 
@@ -259,7 +259,7 @@
       '<b class="ai-headline">' + best.label + '</b>' +
       '<span class="ai-sub">' + best.symbolName + ' · ' + F.pct(best.prob * 100, 1) +
         ' of the last ' + best.sample + ' ticks</span>' +
-      '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Scan again</button>' +
+      '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Rescan for the best market</button>' +
     '</div>';
   }
 
@@ -319,7 +319,7 @@
         '<button class="btn btn-fill" id="aiTake">' +
           I('candles', 16) + 'Take it to the terminal</button>' +
         '<button class="btn btn-ghost" id="aiScanAgain">' +
-          I('radar', 16) + 'Scan again</button>' +
+          I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>' +
       '<p class="ai-note">The terminal opens on this contract with the digit, ' +
         'duration and stake already set. Nothing is placed until you press buy ' +
@@ -438,9 +438,19 @@
       }));
       unsub.push(API.on('settled', function (c) {
         if (c.run !== 'AI') return;
-        window.NexToast(c.status === 'won'
-          ? 'AI trade won ' + F.money(c.payout)
-          : 'AI trade lost ' + F.money(c.stake));
+        /* Same banner the terminal uses, so a result reads the same way
+           whichever screen placed it: green won, red lost, across the
+           top. */
+        if (window.NexFlash) {
+          window.NexFlash(c.status === 'won' ? 'win' : 'loss',
+            c.status === 'won' ? 'Won · ' + API.contracts.label(c)
+              : 'Lost · ' + API.contracts.label(c),
+            F.signedMoney(c.profit));
+        } else {
+          window.NexToast(c.status === 'won'
+            ? 'AI trade won ' + F.money(c.payout)
+            : 'AI trade lost ' + F.money(c.stake));
+        }
         render();
       }));
       unsub.push(API.on('balance', render));
