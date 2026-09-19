@@ -1040,17 +1040,20 @@ footer a:hover{color:var(--text-2)}
      needs the gap between the two buttons. */
   .trade-dock{position:static;padding:0;border:none;background:none;margin-top:14px;transform:none}
   .topbar{padding:0 22px;height:64px;gap:20px}
-  .deskmenu{display:flex;gap:2px;margin-right:auto}
-  .deskmenu a{padding:8px 13px;border-radius:999px;color:var(--text-2);font-size:13px}
-  .deskmenu a:hover{background:var(--surface-2);color:var(--text)}
-  .deskmenu a.active{background:var(--surface-3);color:var(--text)}
   .brand{margin-right:0}
-  /* The controls are a rail down the left, the chart takes the rest.
-     A trader's hand rests on the stake and the two buttons, so they sit
-     on one side, at a fixed width, in the same place on every tab,
-     rather than moving with whatever the middle column is doing. */
+  /* Everything sits to the right of the rail. The rail is fixed, so the
+     shell has to leave its width clear; it widens over the page on
+     hover rather than pushing, which is why this is the collapsed width
+     and not the open one. */
+  body[data-chrome="app"] main{padding-left:var(--rail-w)}
+  /* Two panels, one either side of the chart: the links on the left, the
+     stake and the two buttons on the right. The trade side is where a
+     hand rests, and on a right-handed desk that is the right edge — it
+     was on the left only because there was nothing else to put there.
+     Fixed width, same place on every tab, so it never moves with
+     whatever the middle column is doing. */
   .terminal{
-    display:grid;grid-template-columns:344px minmax(0,1fr);
+    display:grid;grid-template-columns:minmax(0,1fr) 344px;
     gap:16px;padding:16px;align-items:stretch;
     /* A height, not a minimum. As a minimum the row grew to whatever the
        digits needed and then the page scrolled, which on a laptop put
@@ -1065,10 +1068,11 @@ footer a:hover{color:var(--text-2)}
   .terminal .col-mid{min-width:0;min-height:0;display:flex;flex-direction:column}
   .terminal .col-mid .chart-card{flex:1;min-height:0;display:flex;flex-direction:column}
   .terminal .col-mid #chart{flex:1;height:auto;min-height:260px}
-  /* Source order keeps the chart first for a phone, where the rail is
-     just the panel under it. `order` moves it on desktop only. */
+  /* Source order already puts the chart first, which is what a phone
+     wants and what the second column wants here, so nothing is
+     reordered. */
   .terminal .col-right{
-    order:-1;display:flex;flex-direction:column;gap:14px;
+    display:flex;flex-direction:column;gap:14px;
     position:sticky;top:calc(64px + 16px);
     height:calc(100vh - 64px - 32px);
   }
@@ -1100,6 +1104,71 @@ footer a:hover{color:var(--text-2)}
   .modal-box{border-radius:var(--r-xl);padding-bottom:20px}
   .grabber{display:none}
 }
+
+/* ---------------- the desktop rail ----------------
+   A phone has a drawer for the long list of links and a bottom bar for
+   the four places you actually go. A desktop had neither: five links in
+   the top bar, and Deposit, Withdraw, Verify identity and the theme
+   reachable only by making the window narrow. So the rail, which is
+   both of those controls at once — thin enough to leave the work
+   surface alone, and complete.
+
+   It is 64px of icons, and it widens over the page on hover to put the
+   names beside them. Fixed, and the shell leaves its collapsed width
+   clear, so the widening overlays and nothing on the page reflows when
+   a cursor crosses it. `.only-desk` keeps it off phones entirely, where
+   the drawer and the bottom bar already do this job. */
+:root{--rail-w:64px}
+.rail{
+  position:fixed;left:0;top:64px;bottom:0;width:var(--rail-w);z-index:44;
+  flex-direction:column;
+  background:var(--surface);border-right:1px solid var(--line-soft);
+  padding:8px 0 6px;overflow:hidden;
+  transition:width .16s ease, box-shadow .16s ease;
+}
+.rail:hover,.rail:focus-within{width:224px;box-shadow:var(--shadow-lg)}
+/* The list scrolls inside the rail on a short window rather than
+   pushing the foot off the bottom. No visible bar: it is 64px wide. */
+.rail-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.rail-body::-webkit-scrollbar{display:none}
+.rail-foot{flex:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--line-soft)}
+.rnav{
+  display:flex;align-items:center;width:100%;height:40px;
+  color:var(--text-2);text-align:left;white-space:nowrap;
+}
+/* The glyph box is the rail's collapsed width, so the icons sit on one
+   axis whether the names are showing or not — opening the rail must not
+   move anything that was already on the screen. */
+.rnav-ico{
+  position:relative;flex:none;width:var(--rail-w);height:40px;
+  display:grid;place-items:center;
+}
+.rnav-ico svg{position:relative;z-index:1}
+.rnav-lab{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  font-size:13px;padding-right:12px;opacity:0;transition:opacity .14s ease;
+}
+.rail:hover .rnav-lab,.rail:focus-within .rnav-lab{opacity:1}
+.rnav:hover{background:var(--surface-2);color:var(--text)}
+/* Where you are is painted, like every other chosen thing in the app.
+   Behind the glyph rather than across the row, so it reads the same at
+   64px as it does open. */
+.rnav.on{color:var(--text)}
+.rnav.on .rnav-ico{color:var(--accent-ink)}
+.rnav.on .rnav-ico::before{
+  content:"";position:absolute;width:38px;height:38px;border-radius:var(--r);
+  background:var(--accent-fill);box-shadow:0 2px 8px rgba(0,105,219,.3);
+}
+.rnav.on .rnav-lab{font-weight:500}
+.rnav.danger{color:var(--neg)}
+.rnav.danger:hover{background:var(--neg-soft);color:var(--neg)}
+/* The switch only means anything once the names are up; collapsed, the
+   sun or the moon is the state. */
+.rnav .switch{flex:none;margin-right:14px;opacity:0;transition:opacity .14s ease}
+.rail:hover .rnav .switch,.rail:focus-within .rnav .switch{opacity:1}
+/* A hairline between the groups: pages, funds, records, account, help.
+   Short of the edges, so it separates rather than ruling the panel off. */
+.rail-sep{height:1px;margin:7px 14px;background:var(--line-soft)}
 
 /* ---------------- drawer disclosure groups ---------------- */
 .dgroup{display:flex;flex-direction:column}

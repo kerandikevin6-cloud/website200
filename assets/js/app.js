@@ -207,8 +207,18 @@
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
     try { localStorage.setItem(THEME_KEY, t === 'light' ? 'light' : 'dark'); } catch (e) {}
-    var sw = document.getElementById('themeSwitch');
-    if (sw) sw.setAttribute('aria-checked', String(isDark()));
+    paintThemeToggles();
+  }
+  /* There are two of these now, the drawer's and the rail's, and a theme
+     changed from one has to show in the other. */
+  function paintThemeToggles() {
+    var all = document.querySelectorAll('.theme-toggle');
+    for (var i = 0; i < all.length; i++) {
+      var sw = all[i].querySelector('.switch');
+      if (sw) sw.setAttribute('aria-checked', String(isDark()));
+      var ic = all[i].querySelector('svg');
+      if (ic) ic.outerHTML = icon(isDark() ? 'moon' : 'sun', 17);
+    }
   }
   applyTheme(storedTheme());
 
@@ -319,8 +329,45 @@
     { id: 'positions', label: 'Positions', file: 'positions', icon: 'positions' },
     { id: 'markets', label: 'Markets', file: 'markets', icon: 'markets' }
   ];
-  /* the desktop bar carries one extra link the bottom bar has no room for */
-  var DESK = TABS.concat([{ id: 'learn', label: 'Learn', file: 'learn' }]);
+  /* ---------- the desktop rail ----------
+     Everything the phone can reach. A desktop had five links in the top
+     bar and no way at all to get to Deposit, Withdraw, Verify identity
+     or the theme: the button that opens the drawer is phone-only, so
+     two thirds of the menu simply did not exist on a laptop. The rail
+     carries the lot.
+
+     Thin by default, 64px, and it widens over the page on hover to show
+     the names. It overlays rather than pushes, so nothing reflows when
+     a cursor crosses it.
+
+     The four pages keep the solid glyphs the bottom bar uses, so the
+     same place is the same mark on both. Everything below them is the
+     stroke set, which is the drawer's: pages are solid, actions are
+     drawn. */
+  var RAIL = [
+    TABS.map(function (t) {
+      return { id: t.id, label: t.label, file: t.file, solid: t.icon };
+    }),
+    [
+      { label: 'Deposit', modal: 'deposit', icon: 'down' },
+      { label: 'Withdraw', modal: 'withdraw', icon: 'up' }
+    ],
+    [
+      { id: 'history', label: 'Trading history', file: 'history', icon: 'clock' },
+      { id: 'copy', label: 'Copy trading', file: 'copy', icon: 'copy' }
+    ],
+    [
+      { id: 'account', label: 'Account', file: 'account', icon: 'user' },
+      { label: 'Profile and name', modal: 'profile', icon: 'idcard' },
+      { label: 'Update password', modal: 'password', icon: 'lock' },
+      { label: 'Verify identity', modal: 'verify', icon: 'shield' }
+    ],
+    [
+      { id: 'chat', label: 'Support', file: 'chat', icon: 'headset' },
+      { id: 'learn', label: 'Learn', file: 'learn', icon: 'book' },
+      { label: 'Refer and earn', modal: 'refer', icon: 'gift' }
+    ]
+  ];
 
   /* Stacked: the account kind sits over the amount, which roughly halves
      how much of the top bar this button takes. */
@@ -368,15 +415,12 @@
       '</header>';
     }
 
-    var menu = '<nav class="deskmenu only-desk">' + DESK.map(function (t) {
-      return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
-        t.label + '</a>';
-    }).join('') + '</nav>';
-
+    /* No link row here any more. The rail below the bar holds every
+       link there is, and a second copy of five of them in the bar was
+       the same navigation said twice. */
     return '<header class="topbar">' +
       '<button class="iconbtn only-mob" id="menuBtn" aria-label="Open menu">' + icon('menu', 19) + '</button>' +
       wordmark(href('/')) +
-      menu +
       '<span class="spacer"></span>' +
       '<button class="acct ' + API.account.kind() + '" data-open="switch" id="acctBtn" ' +
         'aria-label="Switch account">' + balanceMarkup() + '</button>' +
@@ -446,12 +490,12 @@
           item('Refer and earn', { icon: 'gift', modal: 'refer' }) +
           item('Light / dark theme', {
             icon: isDark() ? 'moon' : 'sun',
-            tail: '<i class="switch" id="themeSwitch" role="switch" aria-checked="' + isDark() + '"></i>',
+            tail: '<i class="switch" role="switch" aria-checked="' + isDark() + '"></i>',
             cls: 'theme-toggle'
           }) +
         '</div>' +
         '<div class="drawer-foot">' +
-          '<button class="ditem danger" id="signOut">' + icon('out', 17) + '<span>Log out</span></button>' +
+          '<button class="ditem danger" data-signout>' + icon('out', 17) + '<span>Log out</span></button>' +
         '</div>' +
       '</aside>';
   }
@@ -462,6 +506,44 @@
         '<i class="tb-ico">' + micon(t.icon, 22) + '</i>' +
         '<i class="tb-lab">' + t.label + '</i></a>';
     }).join('') + '</nav>';
+  }
+
+  /* The rail. One row per link, the glyph in a fixed 64px box so the
+     icons line up whether or not the names are showing. */
+  function rail(page) {
+    function row(it) {
+      var on = it.id && it.id === page;
+      var tag = it.file ? 'a' : 'button';
+      var attrs = it.file ? ' href="' + href(it.file) + '"' : ' type="button"';
+      if (it.modal) attrs += ' data-open="' + it.modal + '"';
+      if (it.signout) attrs += ' data-signout';
+      if (on) attrs += ' aria-current="page"';
+      return '<' + tag + ' class="rnav' + (on ? ' on' : '') + (it.cls ? ' ' + it.cls : '') + '"' +
+        attrs + '>' +
+        '<i class="rnav-ico">' + (it.solid ? micon(it.solid, 20) : icon(it.icon, 17)) + '</i>' +
+        '<span class="rnav-lab">' + it.label + '</span>' +
+        (it.tail || '') +
+      '</' + tag + '>';
+    }
+
+    var body = RAIL.map(function (grp) {
+      return grp.map(row).join('');
+    }).join('<div class="rail-sep"></div>');
+
+    /* The theme sits at the foot with its switch, same control as the
+       drawer's — the switch is only visible once the rail is open, and
+       the sun or moon carries the state until then. */
+    var foot =
+      row({
+        label: 'Light / dark theme', icon: isDark() ? 'moon' : 'sun', cls: 'theme-toggle',
+        tail: '<i class="switch" role="switch" aria-checked="' + isDark() + '"></i>'
+      }) +
+      row({ label: 'Log out', icon: 'out', cls: 'danger', signout: true });
+
+    return '<nav class="rail only-desk" id="rail" aria-label="Sections">' +
+      '<div class="rail-body">' + body + '</div>' +
+      '<div class="rail-foot">' + foot + '</div>' +
+    '</nav>';
   }
 
   /* ---------- modal engine ---------- */
@@ -1229,7 +1311,9 @@
     var sub = !!document.body.getAttribute('data-back');
     if (sub) document.body.classList.add('no-tabs');
     root.insertAdjacentHTML('afterbegin', topbar(page));
-    root.insertAdjacentHTML('beforeend', drawer() + (sub ? '' : tabbar(page)));
+    /* The rail is fixed, so where it lands in the document does not
+       matter to the layout — only that it is inside the app shell. */
+    root.insertAdjacentHTML('beforeend', rail(page) + drawer() + (sub ? '' : tabbar(page)));
     watchScroll();
   }
 
@@ -1268,12 +1352,9 @@
       if (t.closest('#menuBtn')) { setDrawer(true); return; }
       if (t.closest('#scrim')) { setDrawer(false); return; }
 
-      var themeBtn = t.closest('.theme-toggle');
-      if (themeBtn) {
+      if (t.closest('.theme-toggle')) {
         e.preventDefault();
         applyTheme(isDark() ? 'light' : 'dark');
-        var ic = themeBtn.querySelector('svg');
-        if (ic) ic.outerHTML = icon(isDark() ? 'moon' : 'sun', 17);
         return;
       }
 
@@ -1284,7 +1365,7 @@
         return;
       }
 
-      if (t.closest('#signOut')) {
+      if (t.closest('[data-signout]')) {
         if (window.NexNet && window.NexNet.live) window.NexNet.logout();
         API.session.signOut();
         splash('Signing you out', 'landing');
