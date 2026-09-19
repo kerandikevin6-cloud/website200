@@ -70,6 +70,14 @@
     return window.NexAPI.feed.history(this.symbol);
   };
 
+  /* How many places this series is quoted to. Two was hardcoded on the
+     axis and on both price tags, which is right for an index at 9601.01
+     and useless for a pair at 1.08522: every gridline read 1.09. */
+  Chart.prototype.dp = function () {
+    var meta = window.NexAPI.symbol(this.symbol);
+    return meta && meta.digits != null ? meta.digits : 2;
+  };
+
   Chart.prototype.setSymbol = function (s) { this.symbol = s; this.offset = 0; this.dirty = true; };
   Chart.prototype.setType = function (t) { this.type = t; this.dirty = true; };
   Chart.prototype.setAgg = function (n) { this.agg = n; this.dirty = true; };
@@ -158,7 +166,7 @@
       ctx.strokeStyle = css('--chart-grid'); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, Math.round(gy) + 0.5); ctx.lineTo(w, Math.round(gy) + 0.5); ctx.stroke();
       ctx.fillStyle = css('--chart-axis');
-      ctx.fillText((max - span * g / 4).toFixed(2), w + 9, gy);
+      ctx.fillText((max - span * g / 4).toFixed(this.dp()), w + 9, gy);
     }
 
     /* time axis */
@@ -240,7 +248,7 @@
     ctx.setLineDash([]);
     ctx.beginPath(); ctx.arc(X(points.length - 1), ly, 2.8, 0, Math.PI * 2);
     ctx.fillStyle = css('--chart-line'); ctx.fill();
-    this._tag(lastPt.price.toFixed(2), ly, css('--surface'), css('--text'), css('--line'));
+    this._tag(lastPt.price.toFixed(this.dp()), ly, css('--surface'), css('--text'), css('--line'));
 
     /* crosshair readout */
     if (this.cross && this.cross.x < w && !this.drag) {
@@ -256,7 +264,7 @@
 
       ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2);
       ctx.fillStyle = css('--accent'); ctx.fill();
-      this._tag(p.price.toFixed(2), py, css('--accent'), '#fff', css('--accent'));
+      this._tag(p.price.toFixed(this.dp()), py, css('--accent'), '#fff', css('--accent'));
 
       /* time chip under the crosshair */
       var tl = fmt.time(p.t);

@@ -45,6 +45,13 @@
   }
 
   /* ---------- digits ---------- */
+  /* Only for a point old enough to predate the digit being stored on it.
+     Two decimal places was hardcoded here, which is wrong the moment a
+     series is quoted to five. */
+  function lastDigitOf(price, digits) {
+    return Math.abs(Math.round(price * Math.pow(10, digits))) % 10;
+  }
+
   function renderDigits() {
     var meta = API.symbol(S.symbol);
     /* Markets is where this is chosen, so the terminal has to say which
@@ -62,34 +69,31 @@
     var instEl = $('chartInst');
     if (instEl && !instEl.__sel) {
       instEl.__sel = window.NexSelect(instEl, {
-        options: API.symbols.map(function (sym) {
-          return {
-            value: sym.id, label: sym.name, group: sym.group,
-            icon: API.symbolIcon(sym),
-            /* Said on every row, because it is the thing somebody is
-               most likely to assume wrongly about a list that now has
-               Gold in it. */
-            note: 'Generated series'
-          };
-        }),
+        options: API.symbols.map(instOption),
         value: S.symbol,
         onChange: function (o) { switchSymbol(o.value); }
       });
+      /* The figures in the list are whatever they were on the last tick
+         of the selected series, which on a two-second instrument is up
+         to two seconds stale at the moment the list opens. Refresh once
+         on the way in, after the click has done the opening. */
+      instEl.addEventListener('click', function () { setTimeout(refreshPicker, 0); });
     } else if (instEl && instEl.__sel && instEl.__sel.value() !== S.symbol) {
       instEl.__sel.set(S.symbol);
     }
+    refreshPicker();
     var h = API.feed.history(S.symbol).slice(-120);
     renderInstLive(h, meta);
     var counts = [0,0,0,0,0,0,0,0,0,0];
     h.forEach(function (p) {
-      var dg = p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;
+      var dg = p.digit == null ? lastDigitOf(p.price, meta.digits) : p.digit;
       counts[dg]++;
     });
     var total = h.length || 1;
     var pctArr = counts.map(function (c) { return c / total * 100; });
     var max = Math.max.apply(null, pctArr);
     var cur = h[h.length - 1];
-    var curDigit = cur.digit == null ? Math.abs(Math.round(cur.price * 100)) % 10 : cur.digit;
+    var curDigit = cur.digit == null ? lastDigitOf(cur.price, meta.digits) : cur.digit;
 
     var picking = S.tab !== 'even_odd';
     var out = '';
@@ -104,6 +108,56 @@
         '<i class="dpct">' + pctArr[i].toFixed(1) + '%</i></button>';
     }
     html(el.digits, out);
+  }
+
+  /* ---------- a row in the instrument picker ----------
+     The mark, the short name, the long one, and on the right what the
+     series is doing: the price and how far it has moved over the last
+     120 ticks, which is the same window the digit shares are counted
+     across and the same one the card over the chart reports.
+
+     "Generated series" stays on every row, including the ones with
+     flags on them. The flags are the shape of the instrument — a pair
+     moving in its fifth decimal — and not a claim that the number came
+     from a market, because it did not: every series in this app is the
+     same random walk with different numbers in front of it. */
+  function instOption(sym) {
+    return {
+      value: sym.id,
+      label: sym.short || sym.name,
+      group: sym.group,
+      iconHtml: window.NexMark(sym),
+      note: (sym.short ? sym.name + ' · ' : '') + 'Generated series',
+      tail: instTail(sym)
+    };
+  }
+
+  /* The window each figure is measured over: one number, used by the
+     card, the picker and the digit shares alike. */
+  var WINDOW = 120;
+
+  function instTail(sym) {
+    var h = API.feed.history(sym.id);
+    if (!h || !h.length) return '';
+    h = h.slice(-WINDOW);
+    var first = h[0].price, last = h[h.length - 1].price;
+    var pct = first ? (last - first) / first * 100 : 0;
+    var tone = pct > 0 ? 'pos' : pct < 0 ? 'neg' : '';
+    return '<b class="p num">' + last.toFixed(sym.digits) + '</b>' +
+      '<span class="c num ' + tone + '">' + (pct > 0 ? '+' : '') + pct.toFixed(2) + '%</span>';
+  }
+
+  /* Only while the list is open, and only the figures: rebuilding the
+     rows under a finger would lose the scroll position every second. */
+  function refreshPicker() {
+    var host = $('chartInst');
+    if (!host || !host.classList.contains('open')) return;
+    var rows = host.querySelectorAll('.sel-row');
+    for (var i = 0; i < rows.length; i++) {
+      var tail = rows[i].querySelector('.sel-tail');
+      var sym = API.symbol(rows[i].getAttribute('data-val'));
+      if (tail && sym) tail.innerHTML = instTail(sym);
+    }
   }
 
   /* ---------- the live figure on the instrument card ----------

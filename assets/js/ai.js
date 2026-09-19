@@ -50,8 +50,9 @@
   /* ---------- sampling ---------- */
   function digitsOf(symbol) {
     var h = API.feed.history(symbol).slice(-WINDOW);
+    var dp = (API.symbol(symbol) || {}).digits || 2;
     return h.map(function (p) {
-      return p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;
+      return p.digit == null ? Math.abs(Math.round(p.price * Math.pow(10, dp))) % 10 : p.digit;
     });
   }
 

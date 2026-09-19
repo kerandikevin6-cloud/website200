@@ -1902,6 +1902,43 @@ body.locked{overflow:hidden}
 .sel-t b{display:block;font-size:13px;font-weight:500}
 .sel-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
 
+/* ---------------- the instrument marks ----------------
+   A pair wears both its flags, the second tucked behind the first and
+   shifted left. Overlapping rather than side by side is what makes two
+   flags read as one mark: set apart they are two countries, set into
+   each other they are a rate between them. */
+.pairflags{display:inline-flex;align-items:center;flex:none;padding-right:4px}
+/* A round window with an oversized flag behind it. The drawing is 24x16
+   and the window is square, so the flag is scaled to the window's height
+   and the sides are cropped — object-fit does nothing to an inline SVG,
+   and this is the one way to get a round flag without a second asset. */
+.pairflags i{
+  display:grid;place-items:center;overflow:hidden;flex:none;
+  width:19px;height:19px;border-radius:50%;
+  background:var(--surface);box-shadow:0 0 0 1.5px var(--surface);
+}
+.pairflags i + i{margin-left:-7px}
+.pairflags .flagsvg{width:29px;height:19px;max-width:none;flex:none}
+/* A coin is its own disc with its own colour, so BTC is orange and ETH
+   is indigo without a picture file for either. */
+.coin{
+  display:grid;place-items:center;flex:none;
+  width:22px;height:22px;border-radius:50%;
+  color:#fff;font-size:12px;font-weight:700;line-height:1;
+}
+
+/* What the series is doing, on the right of its row. */
+.sel-tail{
+  flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  font-family:var(--mono);line-height:1.1;
+}
+.sel-tail .p{font-size:12px;font-weight:500;color:var(--text)}
+.sel-tail .c{font-size:10.5px;color:var(--muted)}
+.sel-tail .c.pos{color:var(--pos)}
+.sel-tail .c.neg{color:var(--neg)}
+/* The tick is the last thing in the row, after the figures. */
+.sel-row.on svg{margin-left:2px}
+
 /* A dropdown used as a form field fills the row and looks like one. */
 .field .sel{display:flex;width:100%}
 .field .sel-btn{
@@ -2798,6 +2835,12 @@ body[data-chrome="app"] main{background:var(--bg)}
   border-bottom:1px solid var(--line-soft);border-radius:0;background:none;
 }
 .mkt-pick .n{flex:1;min-width:0;font-size:14px;font-weight:500}
+/* A pair carries its long name under its short one, the way it does in
+   the terminal's picker. */
+.mkt-pick .n i{
+  display:block;font-style:normal;font-size:11.5px;font-weight:400;
+  color:var(--muted);margin-top:2px;
+}
 .mkt-pick.on{color:var(--text)}
 /* The one in play is named, not just tinted: colour alone is not a label. */
 .mkt-on{

@@ -1907,6 +1907,43 @@ body.locked{overflow:hidden}
 .sel-t b{display:block;font-size:13px;font-weight:500}
 .sel-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
 
+/* ---------------- the instrument marks ----------------
+   A pair wears both its flags, the second tucked behind the first and
+   shifted left. Overlapping rather than side by side is what makes two
+   flags read as one mark: set apart they are two countries, set into
+   each other they are a rate between them. */
+.pairflags{display:inline-flex;align-items:center;flex:none;padding-right:4px}
+/* A round window with an oversized flag behind it. The drawing is 24x16
+   and the window is square, so the flag is scaled to the window's height
+   and the sides are cropped — object-fit does nothing to an inline SVG,
+   and this is the one way to get a round flag without a second asset. */
+.pairflags i{
+  display:grid;place-items:center;overflow:hidden;flex:none;
+  width:19px;height:19px;border-radius:50%;
+  background:var(--surface);box-shadow:0 0 0 1.5px var(--surface);
+}
+.pairflags i + i{margin-left:-7px}
+.pairflags .flagsvg{width:29px;height:19px;max-width:none;flex:none}
+/* A coin is its own disc with its own colour, so BTC is orange and ETH
+   is indigo without a picture file for either. */
+.coin{
+  display:grid;place-items:center;flex:none;
+  width:22px;height:22px;border-radius:50%;
+  color:#fff;font-size:12px;font-weight:700;line-height:1;
+}
+
+/* What the series is doing, on the right of its row. */
+.sel-tail{
+  flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  font-family:var(--mono);line-height:1.1;
+}
+.sel-tail .p{font-size:12px;font-weight:500;color:var(--text)}
+.sel-tail .c{font-size:10.5px;color:var(--muted)}
+.sel-tail .c.pos{color:var(--pos)}
+.sel-tail .c.neg{color:var(--neg)}
+/* The tick is the last thing in the row, after the figures. */
+.sel-row.on svg{margin-left:2px}
+
 /* A dropdown used as a form field fills the row and looks like one. */
 .field .sel{display:flex;width:100%}
 .field .sel-btn{
@@ -2803,6 +2840,12 @@ body[data-chrome="app"] main{background:var(--bg)}
   border-bottom:1px solid var(--line-soft);border-radius:0;background:none;
 }
 .mkt-pick .n{flex:1;min-width:0;font-size:14px;font-weight:500}
+/* A pair carries its long name under its short one, the way it does in
+   the terminal's picker. */
+.mkt-pick .n i{
+  display:block;font-style:normal;font-size:11.5px;font-weight:400;
+  color:var(--muted);margin-top:2px;
+}
 .mkt-pick.on{color:var(--text)}
 /* The one in play is named, not just tinted: colour alone is not a label. */
 .mkt-on{
@@ -4306,7 +4349,37 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        the note under them has to go. */
     { id: 'GOLD',  name: 'Gold Index',   group: 'Commodities', start: 2412.60, vol: 2.4, digits: 2, rate: 1500 },
     { id: 'SILVER', name: 'Silver Index', group: 'Commodities', start: 3114.85, vol: 3.1, digits: 2, rate: 1500 },
-    { id: 'OIL',   name: 'Crude Index',  group: 'Commodities', start: 7840.20, vol: 2.8, digits: 2, rate: 1500 }
+    { id: 'OIL',   name: 'Crude Index',  group: 'Commodities', start: 7840.20, vol: 2.8, digits: 2, rate: 1500 },
+
+    /* ---- pair-shaped series ----
+       These are the same generated random walk as everything above them.
+       What is different is their shape: a series that opens at 1.08522
+       and moves in the fifth decimal behaves like a currency pair, and
+       the digit contracts read its last digit exactly as they read a
+       volatility index's.
+
+       They are NOT quoted from any market. Nothing here is wired to a
+       feed, the number is not the euro and the row says "Generated
+       series" like every other row in the picker, which is the line this
+       table has to keep holding: the names and the flags are the shape
+       of the instrument, not a claim about where the price came from.
+
+       `short` is what the picker and the chart card show; `name` is the
+       long form under it; `pair` is the two flags; `coin` is a disc and
+       the glyph on it. */
+    { id: 'EURUSD', short: 'EUR/USD', name: 'Euro / US Dollar',        group: 'Forex', pair: ['EU','US'], start: 1.08522, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'GBPUSD', short: 'GBP/USD', name: 'British Pound / US Dollar', group: 'Forex', pair: ['GB','US'], start: 1.29438, vol: 0.0005, digits: 5, rate: 1000 },
+    { id: 'USDJPY', short: 'USD/JPY', name: 'US Dollar / Japanese Yen', group: 'Forex', pair: ['US','JP'], start: 154.566, vol: 0.05,   digits: 3, rate: 1000 },
+    { id: 'AUDUSD', short: 'AUD/USD', name: 'Australian Dollar / US Dollar', group: 'Forex', pair: ['AU','US'], start: 0.65389, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'USDCAD', short: 'USD/CAD', name: 'US Dollar / Canadian Dollar', group: 'Forex', pair: ['US','CA'], start: 1.36754, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'USDCHF', short: 'USD/CHF', name: 'US Dollar / Swiss Franc',  group: 'Forex', pair: ['US','CH'], start: 0.89367, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'NZDUSD', short: 'NZD/USD', name: 'New Zealand Dollar / US Dollar', group: 'Forex', pair: ['NZ','US'], start: 0.60328, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'EURGBP', short: 'EUR/GBP', name: 'Euro / British Pound',    group: 'Forex', pair: ['EU','GB'], start: 0.83842, vol: 0.0003, digits: 5, rate: 1000 },
+
+    { id: 'BTCUSD', short: 'BTC/USD', name: 'Bitcoin',  group: 'Crypto', coin: ['₿', '#F7931A'], start: 68304.73, vol: 60,    digits: 2, rate: 1000 },
+    { id: 'ETHUSD', short: 'ETH/USD', name: 'Ethereum', group: 'Crypto', coin: ['Ξ', '#627EEA'], start: 3828.95,  vol: 6,     digits: 2, rate: 1000 },
+    { id: 'SOLUSD', short: 'SOL/USD', name: 'Solana',   group: 'Crypto', coin: ['S', '#14F195'],      start: 188.57,   vol: 0.9,   digits: 2, rate: 1000 },
+    { id: 'XRPUSD', short: 'XRP/USD', name: 'Ripple XRP', group: 'Crypto', coin: ['X', '#23292F'],    start: 0.6407,   vol: 0.004, digits: 4, rate: 1000 }
   ];
   /* One glyph per family, so a row in the instrument list is recognised
      rather than read. Kept here beside the table it describes, so adding
@@ -4315,7 +4388,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     'Volatility': 'wave',
     'Boom & Crash': 'spike',
     'Step': 'steps',
-    'Commodities': 'bar'
+    'Commodities': 'bar',
+    /* The pairs draw their own mark — two flags or a coin — so these are
+       only what a row falls back to if one ever arrives without one. */
+    'Forex': 'globe',
+    'Crypto': 'coin'
   };
   function symbolIcon(sym) { return GROUP_ICON[sym && sym.group] || 'wave'; }
 
@@ -4586,7 +4663,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var meta = BY_ID[sym], price = meta.start, now = Date.now(), out = [];
     for (var i = HIST; i > 0; i--) {
       price += (Math.random() - 0.5) * meta.vol;
-      out.push({ t: now - i * meta.rate, price: round(price, meta.digits) });
+      /* The digit travels with the point. It used to be left off the
+         seeded history and worked out again by whoever read it, from a
+         hardcoded two decimal places — which was right only because
+         every series had two. A pair quoted to five does not. */
+      price = round(price, meta.digits);
+      out.push({ t: now - i * meta.rate, price: price, digit: lastDigit(price, meta.digits) });
     }
     history[sym] = out;
   }
@@ -5286,6 +5368,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return window.NexAPI.feed.history(this.symbol);
   };
 
+  /* How many places this series is quoted to. Two was hardcoded on the
+     axis and on both price tags, which is right for an index at 9601.01
+     and useless for a pair at 1.08522: every gridline read 1.09. */
+  Chart.prototype.dp = function () {
+    var meta = window.NexAPI.symbol(this.symbol);
+    return meta && meta.digits != null ? meta.digits : 2;
+  };
+
   Chart.prototype.setSymbol = function (s) { this.symbol = s; this.offset = 0; this.dirty = true; };
   Chart.prototype.setType = function (t) { this.type = t; this.dirty = true; };
   Chart.prototype.setAgg = function (n) { this.agg = n; this.dirty = true; };
@@ -5374,7 +5464,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       ctx.strokeStyle = css('--chart-grid'); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, Math.round(gy) + 0.5); ctx.lineTo(w, Math.round(gy) + 0.5); ctx.stroke();
       ctx.fillStyle = css('--chart-axis');
-      ctx.fillText((max - span * g / 4).toFixed(2), w + 9, gy);
+      ctx.fillText((max - span * g / 4).toFixed(this.dp()), w + 9, gy);
     }
 
     /* time axis */
@@ -5456,7 +5546,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     ctx.setLineDash([]);
     ctx.beginPath(); ctx.arc(X(points.length - 1), ly, 2.8, 0, Math.PI * 2);
     ctx.fillStyle = css('--chart-line'); ctx.fill();
-    this._tag(lastPt.price.toFixed(2), ly, css('--surface'), css('--text'), css('--line'));
+    this._tag(lastPt.price.toFixed(this.dp()), ly, css('--surface'), css('--text'), css('--line'));
 
     /* crosshair readout */
     if (this.cross && this.cross.x < w && !this.drag) {
@@ -5472,7 +5562,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
       ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2);
       ctx.fillStyle = css('--accent'); ctx.fill();
-      this._tag(p.price.toFixed(2), py, css('--accent'), '#fff', css('--accent'));
+      this._tag(p.price.toFixed(this.dp()), py, css('--accent'), '#fff', css('--accent'));
 
       /* time chip under the crosshair */
       var tl = fmt.time(p.t);
@@ -6605,6 +6695,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   }
 
   /* ---------- digits ---------- */
+  /* Only for a point old enough to predate the digit being stored on it.
+     Two decimal places was hardcoded here, which is wrong the moment a
+     series is quoted to five. */
+  function lastDigitOf(price, digits) {
+    return Math.abs(Math.round(price * Math.pow(10, digits))) % 10;
+  }
+
   function renderDigits() {
     var meta = API.symbol(S.symbol);
     /* Markets is where this is chosen, so the terminal has to say which
@@ -6622,34 +6719,31 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var instEl = $('chartInst');
     if (instEl && !instEl.__sel) {
       instEl.__sel = window.NexSelect(instEl, {
-        options: API.symbols.map(function (sym) {
-          return {
-            value: sym.id, label: sym.name, group: sym.group,
-            icon: API.symbolIcon(sym),
-            /* Said on every row, because it is the thing somebody is
-               most likely to assume wrongly about a list that now has
-               Gold in it. */
-            note: 'Generated series'
-          };
-        }),
+        options: API.symbols.map(instOption),
         value: S.symbol,
         onChange: function (o) { switchSymbol(o.value); }
       });
+      /* The figures in the list are whatever they were on the last tick
+         of the selected series, which on a two-second instrument is up
+         to two seconds stale at the moment the list opens. Refresh once
+         on the way in, after the click has done the opening. */
+      instEl.addEventListener('click', function () { setTimeout(refreshPicker, 0); });
     } else if (instEl && instEl.__sel && instEl.__sel.value() !== S.symbol) {
       instEl.__sel.set(S.symbol);
     }
+    refreshPicker();
     var h = API.feed.history(S.symbol).slice(-120);
     renderInstLive(h, meta);
     var counts = [0,0,0,0,0,0,0,0,0,0];
     h.forEach(function (p) {
-      var dg = p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;
+      var dg = p.digit == null ? lastDigitOf(p.price, meta.digits) : p.digit;
       counts[dg]++;
     });
     var total = h.length || 1;
     var pctArr = counts.map(function (c) { return c / total * 100; });
     var max = Math.max.apply(null, pctArr);
     var cur = h[h.length - 1];
-    var curDigit = cur.digit == null ? Math.abs(Math.round(cur.price * 100)) % 10 : cur.digit;
+    var curDigit = cur.digit == null ? lastDigitOf(cur.price, meta.digits) : cur.digit;
 
     var picking = S.tab !== 'even_odd';
     var out = '';
@@ -6664,6 +6758,56 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         '<i class="dpct">' + pctArr[i].toFixed(1) + '%</i></button>';
     }
     html(el.digits, out);
+  }
+
+  /* ---------- a row in the instrument picker ----------
+     The mark, the short name, the long one, and on the right what the
+     series is doing: the price and how far it has moved over the last
+     120 ticks, which is the same window the digit shares are counted
+     across and the same one the card over the chart reports.
+
+     "Generated series" stays on every row, including the ones with
+     flags on them. The flags are the shape of the instrument — a pair
+     moving in its fifth decimal — and not a claim that the number came
+     from a market, because it did not: every series in this app is the
+     same random walk with different numbers in front of it. */
+  function instOption(sym) {
+    return {
+      value: sym.id,
+      label: sym.short || sym.name,
+      group: sym.group,
+      iconHtml: window.NexMark(sym),
+      note: (sym.short ? sym.name + ' · ' : '') + 'Generated series',
+      tail: instTail(sym)
+    };
+  }
+
+  /* The window each figure is measured over: one number, used by the
+     card, the picker and the digit shares alike. */
+  var WINDOW = 120;
+
+  function instTail(sym) {
+    var h = API.feed.history(sym.id);
+    if (!h || !h.length) return '';
+    h = h.slice(-WINDOW);
+    var first = h[0].price, last = h[h.length - 1].price;
+    var pct = first ? (last - first) / first * 100 : 0;
+    var tone = pct > 0 ? 'pos' : pct < 0 ? 'neg' : '';
+    return '<b class="p num">' + last.toFixed(sym.digits) + '</b>' +
+      '<span class="c num ' + tone + '">' + (pct > 0 ? '+' : '') + pct.toFixed(2) + '%</span>';
+  }
+
+  /* Only while the list is open, and only the figures: rebuilding the
+     rows under a finger would lose the scroll position every second. */
+  function refreshPicker() {
+    var host = $('chartInst');
+    if (!host || !host.classList.contains('open')) return;
+    var rows = host.querySelectorAll('.sel-row');
+    for (var i = 0; i < rows.length; i++) {
+      var tail = rows[i].querySelector('.sel-tail');
+      var sym = API.symbol(rows[i].getAttribute('data-val'));
+      if (tail && sym) tail.innerHTML = instTail(sym);
+    }
   }
 
   /* ---------- the live figure on the instrument card ----------
@@ -7586,8 +7730,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   /* ---------- sampling ---------- */
   function digitsOf(symbol) {
     var h = API.feed.history(symbol).slice(-WINDOW);
+    var dp = (API.symbol(symbol) || {}).digits || 2;
     return h.map(function (p) {
-      return p.digit == null ? Math.abs(Math.round(p.price * 100)) % 10 : p.digit;
+      return p.digit == null ? Math.abs(Math.round(p.price * Math.pow(10, dp))) % 10 : p.digit;
     });
   }
 
@@ -8150,7 +8295,51 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     ZA: '<rect width="24" height="16" fill="#002395"/>' +
         '<rect width="24" height="8" fill="#DE3831"/>' +
         '<path d="M0 0l10 8-10 8z" fill="#000"/>' +
-        '<path d="M0 6.2h24v3.6H0z" fill="#007A4D"/>'
+        '<path d="M0 6.2h24v3.6H0z" fill="#007A4D"/>',
+
+    /* ---- the pairs ----
+       Drawn to the same 24x16 box as the rest and simplified the same
+       way the American one is: at 19px wide a faithful Union Jack is
+       four grey smudges, so these keep the two or three shapes the eye
+       actually uses to name a flag and drop everything else. */
+    EU: '<rect width="24" height="16" fill="#039"/>' +
+        '<g fill="#FC0">' +
+        '<circle cx="12" cy="3.4" r=".85"/><circle cx="15" cy="4.2" r=".85"/>' +
+        '<circle cx="17.2" cy="6.4" r=".85"/><circle cx="18" cy="9.4" r=".85"/>' +
+        '<circle cx="17.2" cy="12.4" r=".85"/><circle cx="15" cy="14.6" r=".85"/>' +
+        '<circle cx="12" cy="15.4" r=".85"/><circle cx="9" cy="14.6" r=".85"/>' +
+        '<circle cx="6.8" cy="12.4" r=".85"/><circle cx="6" cy="9.4" r=".85"/>' +
+        '<circle cx="6.8" cy="6.4" r=".85"/><circle cx="9" cy="4.2" r=".85"/>' +
+        '</g>',
+    GB: '<rect width="24" height="16" fill="#012169"/>' +
+        '<path d="M0 0l24 16M24 0L0 16" stroke="#fff" stroke-width="3.2"/>' +
+        '<path d="M0 0l24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.9"/>' +
+        '<path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5.3"/>' +
+        '<path d="M12 0v16M0 8h24" stroke="#C8102E" stroke-width="3.2"/>',
+    JP: '<rect width="24" height="16" fill="#fff"/>' +
+        '<circle cx="12" cy="8" r="4.4" fill="#BC002D"/>',
+    AU: '<rect width="24" height="16" fill="#012169"/>' +
+        '<path d="M0 0h12v8H0z" fill="#012169"/>' +
+        '<path d="M0 0l12 8M12 0L0 8" stroke="#fff" stroke-width="1.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#fff" stroke-width="2.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#C8102E" stroke-width="1.5"/>' +
+        '<g fill="#fff"><circle cx="6" cy="12.6" r="1.5"/>' +
+        '<circle cx="17" cy="4" r=".8"/><circle cx="20" cy="7.4" r=".8"/>' +
+        '<circle cx="17.4" cy="11" r=".8"/><circle cx="21" cy="12.4" r=".8"/></g>',
+    CA: '<rect width="24" height="16" fill="#fff"/>' +
+        '<rect width="6" height="16" fill="#D80621"/>' +
+        '<rect x="18" width="6" height="16" fill="#D80621"/>' +
+        '<path d="M12 3.4l1.5 3.2 2.4-.9-1.1 3.1 1.9.5-3 2.1.5 1.6-2.2-.5-2.2.5.5-1.6-3-2.1 1.9-.5-1.1-3.1 2.4.9z" fill="#D80621"/>',
+    CH: '<rect width="24" height="16" fill="#D52B1E"/>' +
+        '<path d="M10.4 3.6h3.2v3.2h3.2v3.2h-3.2v3.2h-3.2v-3.2H7.2V6.8h3.2z" fill="#fff"/>',
+    NZ: '<rect width="24" height="16" fill="#012169"/>' +
+        '<path d="M0 0l12 8M12 0L0 8" stroke="#fff" stroke-width="1.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#fff" stroke-width="2.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#C8102E" stroke-width="1.5"/>' +
+        '<g fill="#C8102E" stroke="#fff" stroke-width=".5">' +
+        '<circle cx="19.4" cy="4" r="1"/><circle cx="16.6" cy="8" r="1"/>' +
+        '<circle cx="21" cy="9.4" r="1"/><circle cx="18.6" cy="12.6" r="1"/>' +
+        '</g>'
   };
   function flag(cc) {
     var body = FLAGS[cc];
@@ -8159,6 +8348,28 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       'role="img" aria-label="' + cc + '">' + body + '</svg>';
   }
   window.NexFlag = flag;
+
+  /* ---------- the mark on an instrument row ----------
+     Three kinds, because the list has three kinds of thing in it. A
+     currency pair gets both its flags, overlapped, which is the one
+     mark that says "these two against each other" without words. A coin
+     gets its own disc. Everything else keeps the family glyph it had.
+
+     Kept here rather than in the feed, because the feed's table is
+     about how a series behaves and this is about how it is drawn. */
+  function mark(sym) {
+    if (!sym) return '';
+    if (sym.pair) {
+      return '<span class="pairflags">' +
+        '<i>' + flag(sym.pair[0]) + '</i><i>' + flag(sym.pair[1]) + '</i></span>';
+    }
+    if (sym.coin) {
+      return '<span class="coin" style="background:' + sym.coin[1] + '">' +
+        sym.coin[0] + '</span>';
+    }
+    return '<i class="sel-ico">' + icon(window.NexAPI.symbolIcon(sym), 16) + '</i>';
+  }
+  window.NexMark = mark;
 
   var API = window.NexAPI, F = window.NexFmt;
 
@@ -8248,10 +8459,16 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var pop = host.querySelector('.sel-pop');
     var now = host.querySelector('.sel-now');
 
+    /* An option can bring its own mark as markup — two flags, a coin —
+       rather than the name of a glyph in the icon set. */
+    function markup(o) {
+      if (o.iconHtml) return o.iconHtml;
+      return o.icon ? '<i class="sel-ico">' + icon(o.icon, 15) + '</i>' : '';
+    }
+
     function paint() {
       var cur = find(value);
-      now.innerHTML = (cur.icon ? '<i class="sel-ico">' + icon(cur.icon, 15) + '</i>' : '') +
-        '<span>' + cur.label + '</span>';
+      now.innerHTML = markup(cur) + '<span>' + cur.label + '</span>';
       var lastGroup = null;
       pop.innerHTML = options.map(function (o) {
         var head = '';
@@ -8262,9 +8479,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         return head +
           '<button type="button" class="sel-row' + (o.value === value ? ' on' : '') +
             '" role="option" aria-selected="' + (o.value === value) + '" data-val="' + o.value + '">' +
-            (o.icon ? '<i class="sel-ico">' + icon(o.icon, 16) + '</i>' : '') +
+            markup(o) +
             '<span class="sel-t"><b>' + o.label + '</b>' +
               (o.note ? '<span>' + o.note + '</span>' : '') + '</span>' +
+            /* Whatever the caller wants on the right of the row. The
+               terminal puts the price and how far it has moved there,
+               and repaints it in place while the list is open. */
+            (o.tail ? '<span class="sel-tail">' + o.tail + '</span>' : '') +
             (o.value === value ? icon('check', 15) : '') +
           '</button>';
       }).join('');
@@ -10209,8 +10430,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           '<div class="mkt-group-label">' + g + '</div>' +
           byGroup[g].map(function (sym) {
             var on = sym.id === current;
+            /* The same mark the terminal's picker uses, so a pair is
+               recognised in both places by the same pair of flags. */
             return '<button class="mkt-pick' + (on ? ' on' : '') + '" data-symbol="' + sym.id + '">' +
-              '<span class="n">' + sym.name + '</span>' +
+              mark(sym) +
+              '<span class="n">' + (sym.short || sym.name) +
+                (sym.short ? '<i>' + sym.name + '</i>' : '') + '</span>' +
               (on ? '<span class="mkt-on">Trading</span>' : '') +
             '</button>';
           }).join('') +

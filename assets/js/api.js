@@ -72,7 +72,37 @@
        the note under them has to go. */
     { id: 'GOLD',  name: 'Gold Index',   group: 'Commodities', start: 2412.60, vol: 2.4, digits: 2, rate: 1500 },
     { id: 'SILVER', name: 'Silver Index', group: 'Commodities', start: 3114.85, vol: 3.1, digits: 2, rate: 1500 },
-    { id: 'OIL',   name: 'Crude Index',  group: 'Commodities', start: 7840.20, vol: 2.8, digits: 2, rate: 1500 }
+    { id: 'OIL',   name: 'Crude Index',  group: 'Commodities', start: 7840.20, vol: 2.8, digits: 2, rate: 1500 },
+
+    /* ---- pair-shaped series ----
+       These are the same generated random walk as everything above them.
+       What is different is their shape: a series that opens at 1.08522
+       and moves in the fifth decimal behaves like a currency pair, and
+       the digit contracts read its last digit exactly as they read a
+       volatility index's.
+
+       They are NOT quoted from any market. Nothing here is wired to a
+       feed, the number is not the euro and the row says "Generated
+       series" like every other row in the picker, which is the line this
+       table has to keep holding: the names and the flags are the shape
+       of the instrument, not a claim about where the price came from.
+
+       `short` is what the picker and the chart card show; `name` is the
+       long form under it; `pair` is the two flags; `coin` is a disc and
+       the glyph on it. */
+    { id: 'EURUSD', short: 'EUR/USD', name: 'Euro / US Dollar',        group: 'Forex', pair: ['EU','US'], start: 1.08522, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'GBPUSD', short: 'GBP/USD', name: 'British Pound / US Dollar', group: 'Forex', pair: ['GB','US'], start: 1.29438, vol: 0.0005, digits: 5, rate: 1000 },
+    { id: 'USDJPY', short: 'USD/JPY', name: 'US Dollar / Japanese Yen', group: 'Forex', pair: ['US','JP'], start: 154.566, vol: 0.05,   digits: 3, rate: 1000 },
+    { id: 'AUDUSD', short: 'AUD/USD', name: 'Australian Dollar / US Dollar', group: 'Forex', pair: ['AU','US'], start: 0.65389, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'USDCAD', short: 'USD/CAD', name: 'US Dollar / Canadian Dollar', group: 'Forex', pair: ['US','CA'], start: 1.36754, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'USDCHF', short: 'USD/CHF', name: 'US Dollar / Swiss Franc',  group: 'Forex', pair: ['US','CH'], start: 0.89367, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'NZDUSD', short: 'NZD/USD', name: 'New Zealand Dollar / US Dollar', group: 'Forex', pair: ['NZ','US'], start: 0.60328, vol: 0.0004, digits: 5, rate: 1000 },
+    { id: 'EURGBP', short: 'EUR/GBP', name: 'Euro / British Pound',    group: 'Forex', pair: ['EU','GB'], start: 0.83842, vol: 0.0003, digits: 5, rate: 1000 },
+
+    { id: 'BTCUSD', short: 'BTC/USD', name: 'Bitcoin',  group: 'Crypto', coin: ['₿', '#F7931A'], start: 68304.73, vol: 60,    digits: 2, rate: 1000 },
+    { id: 'ETHUSD', short: 'ETH/USD', name: 'Ethereum', group: 'Crypto', coin: ['Ξ', '#627EEA'], start: 3828.95,  vol: 6,     digits: 2, rate: 1000 },
+    { id: 'SOLUSD', short: 'SOL/USD', name: 'Solana',   group: 'Crypto', coin: ['S', '#14F195'],      start: 188.57,   vol: 0.9,   digits: 2, rate: 1000 },
+    { id: 'XRPUSD', short: 'XRP/USD', name: 'Ripple XRP', group: 'Crypto', coin: ['X', '#23292F'],    start: 0.6407,   vol: 0.004, digits: 4, rate: 1000 }
   ];
   /* One glyph per family, so a row in the instrument list is recognised
      rather than read. Kept here beside the table it describes, so adding
@@ -81,7 +111,11 @@
     'Volatility': 'wave',
     'Boom & Crash': 'spike',
     'Step': 'steps',
-    'Commodities': 'bar'
+    'Commodities': 'bar',
+    /* The pairs draw their own mark — two flags or a coin — so these are
+       only what a row falls back to if one ever arrives without one. */
+    'Forex': 'globe',
+    'Crypto': 'coin'
   };
   function symbolIcon(sym) { return GROUP_ICON[sym && sym.group] || 'wave'; }
 
@@ -352,7 +386,12 @@
     var meta = BY_ID[sym], price = meta.start, now = Date.now(), out = [];
     for (var i = HIST; i > 0; i--) {
       price += (Math.random() - 0.5) * meta.vol;
-      out.push({ t: now - i * meta.rate, price: round(price, meta.digits) });
+      /* The digit travels with the point. It used to be left off the
+         seeded history and worked out again by whoever read it, from a
+         hardcoded two decimal places — which was right only because
+         every series had two. A pair quoted to five does not. */
+      price = round(price, meta.digits);
+      out.push({ t: now - i * meta.rate, price: price, digit: lastDigit(price, meta.digits) });
     }
     history[sym] = out;
   }

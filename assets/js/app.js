@@ -163,7 +163,51 @@
     ZA: '<rect width="24" height="16" fill="#002395"/>' +
         '<rect width="24" height="8" fill="#DE3831"/>' +
         '<path d="M0 0l10 8-10 8z" fill="#000"/>' +
-        '<path d="M0 6.2h24v3.6H0z" fill="#007A4D"/>'
+        '<path d="M0 6.2h24v3.6H0z" fill="#007A4D"/>',
+
+    /* ---- the pairs ----
+       Drawn to the same 24x16 box as the rest and simplified the same
+       way the American one is: at 19px wide a faithful Union Jack is
+       four grey smudges, so these keep the two or three shapes the eye
+       actually uses to name a flag and drop everything else. */
+    EU: '<rect width="24" height="16" fill="#039"/>' +
+        '<g fill="#FC0">' +
+        '<circle cx="12" cy="3.4" r=".85"/><circle cx="15" cy="4.2" r=".85"/>' +
+        '<circle cx="17.2" cy="6.4" r=".85"/><circle cx="18" cy="9.4" r=".85"/>' +
+        '<circle cx="17.2" cy="12.4" r=".85"/><circle cx="15" cy="14.6" r=".85"/>' +
+        '<circle cx="12" cy="15.4" r=".85"/><circle cx="9" cy="14.6" r=".85"/>' +
+        '<circle cx="6.8" cy="12.4" r=".85"/><circle cx="6" cy="9.4" r=".85"/>' +
+        '<circle cx="6.8" cy="6.4" r=".85"/><circle cx="9" cy="4.2" r=".85"/>' +
+        '</g>',
+    GB: '<rect width="24" height="16" fill="#012169"/>' +
+        '<path d="M0 0l24 16M24 0L0 16" stroke="#fff" stroke-width="3.2"/>' +
+        '<path d="M0 0l24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.9"/>' +
+        '<path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5.3"/>' +
+        '<path d="M12 0v16M0 8h24" stroke="#C8102E" stroke-width="3.2"/>',
+    JP: '<rect width="24" height="16" fill="#fff"/>' +
+        '<circle cx="12" cy="8" r="4.4" fill="#BC002D"/>',
+    AU: '<rect width="24" height="16" fill="#012169"/>' +
+        '<path d="M0 0h12v8H0z" fill="#012169"/>' +
+        '<path d="M0 0l12 8M12 0L0 8" stroke="#fff" stroke-width="1.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#fff" stroke-width="2.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#C8102E" stroke-width="1.5"/>' +
+        '<g fill="#fff"><circle cx="6" cy="12.6" r="1.5"/>' +
+        '<circle cx="17" cy="4" r=".8"/><circle cx="20" cy="7.4" r=".8"/>' +
+        '<circle cx="17.4" cy="11" r=".8"/><circle cx="21" cy="12.4" r=".8"/></g>',
+    CA: '<rect width="24" height="16" fill="#fff"/>' +
+        '<rect width="6" height="16" fill="#D80621"/>' +
+        '<rect x="18" width="6" height="16" fill="#D80621"/>' +
+        '<path d="M12 3.4l1.5 3.2 2.4-.9-1.1 3.1 1.9.5-3 2.1.5 1.6-2.2-.5-2.2.5.5-1.6-3-2.1 1.9-.5-1.1-3.1 2.4.9z" fill="#D80621"/>',
+    CH: '<rect width="24" height="16" fill="#D52B1E"/>' +
+        '<path d="M10.4 3.6h3.2v3.2h3.2v3.2h-3.2v3.2h-3.2v-3.2H7.2V6.8h3.2z" fill="#fff"/>',
+    NZ: '<rect width="24" height="16" fill="#012169"/>' +
+        '<path d="M0 0l12 8M12 0L0 8" stroke="#fff" stroke-width="1.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#fff" stroke-width="2.7"/>' +
+        '<path d="M6 0v8M0 4h12" stroke="#C8102E" stroke-width="1.5"/>' +
+        '<g fill="#C8102E" stroke="#fff" stroke-width=".5">' +
+        '<circle cx="19.4" cy="4" r="1"/><circle cx="16.6" cy="8" r="1"/>' +
+        '<circle cx="21" cy="9.4" r="1"/><circle cx="18.6" cy="12.6" r="1"/>' +
+        '</g>'
   };
   function flag(cc) {
     var body = FLAGS[cc];
@@ -172,6 +216,28 @@
       'role="img" aria-label="' + cc + '">' + body + '</svg>';
   }
   window.NexFlag = flag;
+
+  /* ---------- the mark on an instrument row ----------
+     Three kinds, because the list has three kinds of thing in it. A
+     currency pair gets both its flags, overlapped, which is the one
+     mark that says "these two against each other" without words. A coin
+     gets its own disc. Everything else keeps the family glyph it had.
+
+     Kept here rather than in the feed, because the feed's table is
+     about how a series behaves and this is about how it is drawn. */
+  function mark(sym) {
+    if (!sym) return '';
+    if (sym.pair) {
+      return '<span class="pairflags">' +
+        '<i>' + flag(sym.pair[0]) + '</i><i>' + flag(sym.pair[1]) + '</i></span>';
+    }
+    if (sym.coin) {
+      return '<span class="coin" style="background:' + sym.coin[1] + '">' +
+        sym.coin[0] + '</span>';
+    }
+    return '<i class="sel-ico">' + icon(window.NexAPI.symbolIcon(sym), 16) + '</i>';
+  }
+  window.NexMark = mark;
 
   var API = window.NexAPI, F = window.NexFmt;
 
@@ -261,10 +327,16 @@
     var pop = host.querySelector('.sel-pop');
     var now = host.querySelector('.sel-now');
 
+    /* An option can bring its own mark as markup — two flags, a coin —
+       rather than the name of a glyph in the icon set. */
+    function markup(o) {
+      if (o.iconHtml) return o.iconHtml;
+      return o.icon ? '<i class="sel-ico">' + icon(o.icon, 15) + '</i>' : '';
+    }
+
     function paint() {
       var cur = find(value);
-      now.innerHTML = (cur.icon ? '<i class="sel-ico">' + icon(cur.icon, 15) + '</i>' : '') +
-        '<span>' + cur.label + '</span>';
+      now.innerHTML = markup(cur) + '<span>' + cur.label + '</span>';
       var lastGroup = null;
       pop.innerHTML = options.map(function (o) {
         var head = '';
@@ -275,9 +347,13 @@
         return head +
           '<button type="button" class="sel-row' + (o.value === value ? ' on' : '') +
             '" role="option" aria-selected="' + (o.value === value) + '" data-val="' + o.value + '">' +
-            (o.icon ? '<i class="sel-ico">' + icon(o.icon, 16) + '</i>' : '') +
+            markup(o) +
             '<span class="sel-t"><b>' + o.label + '</b>' +
               (o.note ? '<span>' + o.note + '</span>' : '') + '</span>' +
+            /* Whatever the caller wants on the right of the row. The
+               terminal puts the price and how far it has moved there,
+               and repaints it in place while the list is open. */
+            (o.tail ? '<span class="sel-tail">' + o.tail + '</span>' : '') +
             (o.value === value ? icon('check', 15) : '') +
           '</button>';
       }).join('');
@@ -2222,8 +2298,12 @@
           '<div class="mkt-group-label">' + g + '</div>' +
           byGroup[g].map(function (sym) {
             var on = sym.id === current;
+            /* The same mark the terminal's picker uses, so a pair is
+               recognised in both places by the same pair of flags. */
             return '<button class="mkt-pick' + (on ? ' on' : '') + '" data-symbol="' + sym.id + '">' +
-              '<span class="n">' + sym.name + '</span>' +
+              mark(sym) +
+              '<span class="n">' + (sym.short || sym.name) +
+                (sym.short ? '<i>' + sym.name + '</i>' : '') + '</span>' +
               (on ? '<span class="mkt-on">Trading</span>' : '') +
             '</button>';
           }).join('') +
