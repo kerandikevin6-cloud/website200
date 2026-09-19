@@ -57,6 +57,15 @@
      ground is thin and toy-like on a white one. */
   --accent:#0A5FCE;
   --accent-soft:#D5E6FC;
+  /* The blue a *filled* control is painted in, and the ink that goes on
+     top of it. Separate from --accent because that one has to stay
+     legible as text on white and so is pulled deliberately dark; this
+     one never carries anything but white, so it can be the brand blue
+     at full strength. A chosen toggle is the one thing on a light
+     screen that should read as lit rather than merely outlined. */
+  --accent-fill:#007FFA;
+  --accent-fill-2:#0069DB;
+  --accent-ink:#FFFFFF;
   --pos:#0B7A4B;
   --pos-soft:#E3F2EA;
   --neg:#B32B22;
@@ -146,6 +155,9 @@
 
     --accent:#3D9BFF;
     --accent-soft:#122C45;
+    --accent-fill:#007FFA;
+    --accent-fill-2:#0069DB;
+    --accent-ink:#FFFFFF;
     --pos:#17A06A;
     --pos-soft:#0E2B26;
     --neg:#D9483F;
@@ -184,6 +196,9 @@
 
   --accent:#3D9BFF;
   --accent-soft:#122C45;
+  --accent-fill:#007FFA;
+  --accent-fill-2:#0069DB;
+  --accent-ink:#FFFFFF;
   --pos:#17A06A;
   --pos-soft:#0E2B26;
   --neg:#D9483F;
@@ -358,8 +373,14 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
   background:var(--muted);transition:transform .18s ease,background .18s ease;
 }
-.switch[aria-checked="true"]{background:var(--accent-soft);border-color:var(--accent)}
-.switch[aria-checked="true"]::after{transform:translateX(16px);background:var(--accent)}
+/* On means filled. The old on-state was a tinted track with a blue dot,
+   which at this size is two pale shapes and a squint; solid blue with a
+   white knob is the difference between reading it and checking it. */
+.switch[aria-checked="true"]{
+  background:var(--accent-fill);border-color:var(--accent-fill-2);
+  box-shadow:0 1px 3px rgba(0,105,219,.35);
+}
+.switch[aria-checked="true"]::after{transform:translateX(16px);background:#fff}
 .drawer-foot{margin-top:auto;padding:10px;border-top:1px solid var(--line-soft)}
 
 /* ---------------- bottom tab bar ---------------- */
@@ -420,9 +441,15 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   background:transparent;transition:background .18s ease;
 }
 .tabbar a > *{position:relative;z-index:1}
-.tabbar a.active{color:var(--text)}
-.tabbar a.active::before{background:var(--accent-soft)}
-.tabbar a.active .tb-ico{color:var(--accent)}
+/* The lit slot is filled, same as the mode toggle and the switch: on a
+   near-white bar a tinted capsule is barely a state. One rule for the
+   whole app — chosen things are painted blue and carry white. */
+.tabbar a.active{color:var(--accent-ink)}
+.tabbar a.active::before{
+  background:var(--accent-fill);
+  box-shadow:0 2px 8px rgba(0,105,219,.35);
+}
+.tabbar a.active .tb-ico{color:var(--accent-ink)}
 .tabbar a:active{transform:scale(.94)}
 @media (prefers-reduced-motion:reduce){
   .tabbar a::before{transition:none}
@@ -592,7 +619,12 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 }
 /* The pill reads off the shared control tokens, so the mode switch, the
    contract tabs and the instrument chip all sit on one ground. */
-:root{--seg-bg:var(--ctl);--seg-line:var(--ctl-line);--seg-on:var(--ctl-on)}
+/* The chosen slot is filled, not frosted. A white capsule on a pale
+   blue track is legible but inert — on a light screen it reads as a
+   raised edge and nothing more, and "which mode am I in" is the one
+   question this control exists to answer. Filled in the brand blue with
+   white ink, it answers it from across the room. */
+:root{--seg-bg:var(--ctl);--seg-line:var(--ctl-line);--seg-on:var(--accent-fill);--seg-ink:var(--accent-ink)}
 .seg button{
   position:relative;
   flex:1 1 0;width:0;min-width:0;text-align:center;padding:9px 0;
@@ -606,14 +638,13 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 }
 .seg button > span{position:relative;z-index:1}
 .seg button:hover{color:var(--text-2)}
-.seg button.active{color:var(--accent)}
+.seg button.active{color:var(--seg-ink);font-weight:500}
 .seg button.active::before{
   background:var(--seg-on);
-  border-color:var(--seg-line);
-  box-shadow:0 1px 2px rgba(12,22,34,.1), 0 6px 16px rgba(12,22,34,.08);
-}
-:root[data-theme="dark"] .seg button.active::before{
-  box-shadow:0 1px 2px rgba(0,0,0,.35), 0 6px 16px rgba(0,0,0,.28);
+  border-color:var(--accent-fill-2);
+  /* The glow is the blue's own colour, so the capsule looks lit rather
+     than dropped on top of the track. */
+  box-shadow:0 1px 2px rgba(0,58,122,.24), 0 6px 16px rgba(0,105,219,.28);
 }
 @media (prefers-reduced-motion:reduce){ .seg button::before{transition:none} }
 .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -1131,11 +1162,13 @@ footer a:hover{color:var(--text-2)}
 .wm-mark{
   display:grid;place-items:center;flex:none;width:28px;height:28px;
   font-size:11px;font-weight:700;letter-spacing:.04em;line-height:1;
-  color:#fff;background:var(--accent);
+  color:#fff;background:var(--accent-fill);
 }
-:root[data-theme="dark"] .wm-mark{color:#06182B}
+/* Dark keeps the lighter blue with dark ink: a saturated tile on a dark
+   page is a hole, and the pale one reads as the lit mark it is. */
+:root[data-theme="dark"] .wm-mark{color:#06182B;background:var(--accent)}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .wm-mark{color:#06182B}
+  :root:not([data-theme="light"]) .wm-mark{color:#06182B;background:var(--accent)}
 }
 .wm-name{display:flex;flex-direction:column;justify-content:center;line-height:1}
 .wm-name b,.wm-name i{
@@ -1428,7 +1461,13 @@ footer a:hover{color:var(--text-2)}
   .filter-tail #exportBtn{margin-left:auto;flex:none}
 }
 .fchip{padding:6px 11px;font-size:12px;border:1px solid var(--line-soft);color:var(--muted);background:var(--surface)}
-.fchip.on{border-color:var(--text);color:var(--text)}
+/* The chosen filter is filled, like every other chosen thing. It used to
+   be a dark outline on white, which on a row of white chips is a border
+   weight and not a state. */
+.fchip.on{
+  background:var(--accent-fill);border-color:var(--accent-fill-2);
+  color:var(--accent-ink);font-weight:500;
+}
 .input.sm{width:auto;padding:7px 10px;font-size:12.5px}
 .trow{display:flex;align-items:center;gap:13px;padding:13px 14px;width:100%;text-align:left;color:inherit}
 .trow + .trow{border-top:1px solid var(--line-soft)}
@@ -2297,41 +2336,104 @@ body[data-chrome="app"] main{background:var(--bg)}
 .outcome-sub{font-size:12.5px;color:var(--muted)}
 
 
-/* ---------------- the drawer is always dark ----------------
-   A dark rail against a light page is the point: it separates
-   navigation from the work surface instead of being another white
-   sheet next to a white sheet. These are fixed values, not tokens,
-   because the panel does not follow the theme. */
+/* ---------------- the rail ----------------
+   The drawer keeps its own small palette rather than reading the page
+   tokens, because it is a different kind of surface: navigation, not
+   work. But it does follow the theme now. It used to be pinned dark in
+   both, and a black rail against a light app is not premium, it is two
+   products in one window.
+
+   In light it is white with blue kept in it — the ground is the palest
+   step and the header and hovers step up from there in the same hue, so
+   the panel has colour without having a tint laid over it. */
 .drawer{
-  --d-bg:#111A24;
-  --d-surface:#1A2632;
-  --d-line:rgba(255,255,255,.09);
-  --d-text:#E9EFF6;
-  --d-text-2:#B3C1D0;
-  --d-muted:#7F8FA1;
+  --d-bg:#F6FAFF;
+  --d-surface:#E4EEFB;
+  --d-line:#CFDFF2;
+  --d-line-soft:#DCE8F7;
+  --d-text:#0B1420;
+  --d-text-2:#384554;
+  --d-muted:#5A6878;
+  --d-accent:#0A5FCE;
+  --d-accent-bg:#D8E8FD;
+  --d-accent-line:#A9CCF7;
+  --d-danger:#B32B22;
+  --d-danger-2:#8C1710;
+  --d-danger-bg:#FBE7E5;
   background:var(--d-bg);color:var(--d-text);
   border-right:1px solid var(--d-line);
 }
+:root[data-theme="dark"] .drawer{
+  --d-bg:#111A24;
+  --d-surface:#1A2632;
+  --d-line:rgba(255,255,255,.09);
+  --d-line-soft:rgba(255,255,255,.07);
+  --d-text:#E9EFF6;
+  --d-text-2:#B3C1D0;
+  --d-muted:#7F8FA1;
+  --d-accent:#6FB6FF;
+  --d-accent-bg:rgba(61,155,255,.16);
+  --d-accent-line:rgba(61,155,255,.32);
+  --d-danger:#FF8478;
+  --d-danger-2:#FF9B90;
+  --d-danger-bg:rgba(255,132,120,.12);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .drawer{
+    --d-bg:#111A24;
+    --d-surface:#1A2632;
+    --d-line:rgba(255,255,255,.09);
+    --d-line-soft:rgba(255,255,255,.07);
+    --d-text:#E9EFF6;
+    --d-text-2:#B3C1D0;
+    --d-muted:#7F8FA1;
+    --d-accent:#6FB6FF;
+    --d-accent-bg:rgba(61,155,255,.16);
+    --d-accent-line:rgba(61,155,255,.32);
+    --d-danger:#FF8478;
+    --d-danger-2:#FF9B90;
+    --d-danger-bg:rgba(255,132,120,.12);
+  }
+}
+/* The person's own row sits on the one raised band in the panel, which
+   gives the rail a head instead of starting cold with a list. */
+.drawer .drawer-user{
+  background:var(--d-surface);border-bottom:1px solid var(--d-line-soft);
+  margin-bottom:6px;
+}
 .drawer .drawer-user b{color:var(--d-text)}
 .drawer .drawer-user span{color:var(--d-muted)}
+.drawer .drawer-user > svg{color:var(--d-muted)}
 .drawer .avatar{
-  background:rgba(61,155,255,.16);border-color:rgba(61,155,255,.32);color:#6FB6FF;
+  background:var(--d-accent-bg);border-color:var(--d-accent-line);color:var(--d-accent);
 }
 .drawer .drawer-sect{color:var(--d-muted)}
 .drawer .ditem{color:var(--d-text-2)}
 .drawer .ditem:hover{background:var(--d-surface);color:var(--d-text)}
-.drawer .ditem.active{background:var(--d-surface);color:var(--d-text)}
+/* Where you are, marked: the accent ground plus a blue edge on the
+   left. A change of background alone reads as a hover on a pale panel,
+   and the bar is what makes it a position. */
+.drawer .ditem.active{
+  background:var(--d-accent-bg);color:var(--d-text);
+  box-shadow:inset 2px 0 0 var(--d-accent);
+}
+.drawer .ditem.active svg{color:var(--d-accent);opacity:1}
 .drawer .dgroup.open > .dgroup-head{color:var(--d-text)}
 .drawer .dgroup-body{border-left-color:var(--d-line)}
-.drawer .drawer-foot{border-top-color:var(--d-line)}
-.drawer .ditem.danger{color:#FF8478}
-.drawer .ditem.danger:hover{background:rgba(255,132,120,.12);color:#FF9B90}
+.drawer .drawer-foot{border-top-color:var(--d-line-soft)}
+.drawer .ditem.danger{color:var(--d-danger)}
+.drawer .ditem.danger:hover{background:var(--d-danger-bg);color:var(--d-danger-2)}
 .drawer .switch{background:var(--d-surface);border-color:var(--d-line)}
 .drawer .switch::after{background:var(--d-muted)}
-.drawer .switch[aria-checked="true"]{background:rgba(61,155,255,.2);border-color:#3D9BFF}
-.drawer .switch[aria-checked="true"]::after{background:#6FB6FF}
+/* Same lit blue as everywhere else — the rail's palette is its own, but
+   "on" is not something it should say differently. */
+.drawer .switch[aria-checked="true"]{
+  background:var(--accent-fill);border-color:var(--accent-fill-2);
+}
+.drawer .switch[aria-checked="true"]::after{background:#fff}
 @media (hover:none){
   .drawer .ditem:hover{background:none;color:var(--d-text-2)}
+  .drawer .ditem.active:hover{background:var(--d-accent-bg);color:var(--d-text)}
 }
 
 
