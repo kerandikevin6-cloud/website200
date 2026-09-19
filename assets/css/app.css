@@ -1113,22 +1113,21 @@ footer a:hover{color:var(--text-2)}
    both of those controls at once — thin enough to leave the work
    surface alone, and complete.
 
-   It is 64px of icons, and it widens over the page on hover to put the
-   names beside them. Fixed, and the shell leaves its collapsed width
-   clear, so the widening overlays and nothing on the page reflows when
-   a cursor crosses it. `.only-desk` keeps it off phones entirely, where
-   the drawer and the bottom bar already do this job. */
-:root{--rail-w:64px}
+   It is open, always, with the names beside the glyphs. It started out
+   64px of icons that widened on hover, and a menu you have to touch to
+   read is a menu you have to learn: on a laptop there is room for the
+   words, so the words are there. `.only-desk` keeps it off phones
+   entirely, where the drawer and the bottom bar already do this job. */
+:root{--rail-w:212px}
 .rail{
   position:fixed;left:0;top:64px;bottom:0;width:var(--rail-w);z-index:44;
   flex-direction:column;
   background:var(--surface);border-right:1px solid var(--line-soft);
   padding:8px 0 6px;overflow:hidden;
-  transition:width .16s ease, box-shadow .16s ease;
 }
-.rail:hover,.rail:focus-within{width:224px;box-shadow:var(--shadow-lg)}
 /* The list scrolls inside the rail on a short window rather than
-   pushing the foot off the bottom. No visible bar: it is 64px wide. */
+   pushing the foot off the bottom. No visible bar: it is a narrow
+   column and a scrollbar in it is most of a glyph wide. */
 .rail-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
 .rail-body::-webkit-scrollbar{display:none}
 .rail-foot{flex:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--line-soft)}
@@ -1136,19 +1135,17 @@ footer a:hover{color:var(--text-2)}
   display:flex;align-items:center;width:100%;height:40px;
   color:var(--text-2);text-align:left;white-space:nowrap;
 }
-/* The glyph box is the rail's collapsed width, so the icons sit on one
-   axis whether the names are showing or not — opening the rail must not
-   move anything that was already on the screen. */
+/* A fixed glyph box, so the icons sit on one axis down the rail however
+   long the names beside them are. */
 .rnav-ico{
-  position:relative;flex:none;width:var(--rail-w);height:40px;
+  position:relative;flex:none;width:50px;height:40px;
   display:grid;place-items:center;
 }
 .rnav-ico svg{position:relative;z-index:1}
 .rnav-lab{
   flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
-  font-size:13px;padding-right:12px;opacity:0;transition:opacity .14s ease;
+  font-size:13px;padding-right:12px;
 }
-.rail:hover .rnav-lab,.rail:focus-within .rnav-lab{opacity:1}
 .rnav:hover{background:var(--surface-2);color:var(--text)}
 /* Where you are is painted, like every other chosen thing in the app.
    Behind the glyph rather than across the row, so it reads the same at
@@ -1156,19 +1153,82 @@ footer a:hover{color:var(--text-2)}
 .rnav.on{color:var(--text)}
 .rnav.on .rnav-ico{color:var(--accent-ink)}
 .rnav.on .rnav-ico::before{
-  content:"";position:absolute;width:38px;height:38px;border-radius:var(--r);
+  content:"";position:absolute;width:36px;height:36px;border-radius:var(--r);
   background:var(--accent-fill);box-shadow:0 2px 8px rgba(0,105,219,.3);
 }
 .rnav.on .rnav-lab{font-weight:500}
 .rnav.danger{color:var(--neg)}
 .rnav.danger:hover{background:var(--neg-soft);color:var(--neg)}
-/* The switch only means anything once the names are up; collapsed, the
-   sun or the moon is the state. */
-.rnav .switch{flex:none;margin-right:14px;opacity:0;transition:opacity .14s ease}
-.rail:hover .rnav .switch,.rail:focus-within .rnav .switch{opacity:1}
+.rnav .switch{flex:none;margin-right:14px}
 /* A hairline between the groups: pages, funds, records, account, help.
    Short of the edges, so it separates rather than ruling the panel off. */
-.rail-sep{height:1px;margin:7px 14px;background:var(--line-soft)}
+.rail-sep{height:1px;margin:7px 16px;background:var(--line-soft)}
+
+/* ---------------- the ticket, on a laptop ----------------
+   Three changes, all of them about the right-hand card being the place a
+   trade is set up rather than a strip of controls.
+
+   The contract chooser moves into it (trade.js does the moving) and
+   becomes a list of three rather than three tabs squeezed across the top
+   of the chart. The two trade buttons stop sharing a line: there is a
+   whole column of height here and a pair of half-width buttons was the
+   phone layout surviving into a place it did not have to. And the card
+   says what the ticket actually is.
+
+   The heading on the chooser only exists in this arrangement, which is
+   why it is hidden by default rather than shown by it. */
+.ctabs-h{display:none}
+.tdetail{display:none}
+.td-row{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:7px 0;font-size:12px;
+}
+.td-row + .td-row{border-top:1px solid var(--line-soft)}
+.td-row span{color:var(--muted);flex:none}
+.td-row b{
+  font-weight:500;color:var(--text-2);text-align:right;
+  font-family:var(--mono);font-size:11.5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+@media (min-width:900px){
+  /* The chooser, in the card: a list, left-aligned, with the chosen one
+     marked down its left edge. Three labels side by side in a 344px
+     column is how "Matches / Differs" becomes "Matches / Di…". */
+  .terminal .col-right .ctabs{
+    flex-direction:column;flex:none;
+    background:var(--surface);border:1px solid var(--line-soft);
+    padding:10px 0 2px;
+  }
+  .terminal .col-right .ctabs-h{display:block;padding:0 14px 8px}
+  .terminal .col-right .ctab{
+    flex:none;width:100%;justify-content:flex-start;gap:11px;
+    padding:11px 14px;font-size:13px;
+  }
+  /* A hairline between the rows, not down the side of them. */
+  .terminal .col-right .ctab + .ctab::before{
+    left:14px;right:14px;top:0;bottom:auto;width:auto;height:1px;
+  }
+  /* And the mark moves with the list: a bar down the left edge of the
+     chosen row instead of an underline beneath a tab. */
+  .terminal .col-right .ctab::after{
+    left:0;top:0;bottom:0;width:3px;height:auto;margin:0;border-radius:0;
+  }
+  .terminal .col-right .ctab.active::after{width:3px;height:auto;margin:0}
+  .terminal .col-right .ctab.active{background:var(--accent-soft)}
+
+  /* One button per line, and taller. The column has the room, and a
+     trade button is the last thing that should be sharing space. */
+  .terminal .col-right .trade-actions{grid-template-columns:1fr;gap:10px}
+  .terminal .col-right .tbtn{padding:17px 12px}
+  .terminal .col-right .tbtn .t{font-size:15.5px}
+  .terminal .col-right .tbtn .s{font-size:11px;margin-top:3px}
+
+  /* The four facts, above the day's tally. */
+  .terminal .col-right .tdetail{
+    display:block;margin-top:4px;padding-top:6px;border-top:1px solid var(--line-soft);
+  }
+}
 
 /* ---------------- drawer disclosure groups ---------------- */
 .dgroup{display:flex;flex-direction:column}
@@ -2367,7 +2427,12 @@ body.locked{overflow:hidden}
    With an off-white ground these need to be explicitly white, or they
    read as a hole in the page rather than a surface on it. */
 .chart-card{background:var(--surface)}
-.digits,.panel,.trade-dock,.instrument,.ctabs{background:var(--surface)}
+.digits,.panel,.trade-dock,.instrument{background:var(--surface)}
+/* Not .ctabs. It is painted on the control ground a few hundred lines up
+   so that the chosen contract, which is white, lifts out of it — and
+   this rule was quietly repainting the ground white too, which left the
+   selected tab white on white. In light mode the only thing saying which
+   contract you were on was the colour of the label. */
 .topbar{background:var(--surface)}
 
 body[data-chrome="app"] main{background:var(--bg)}

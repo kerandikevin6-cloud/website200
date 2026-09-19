@@ -116,12 +116,44 @@
       ['matches', 'Matches / Differs', 'target'],
       ['over_under', 'Over / Under', 'overunder']
     ];
-    html(el.tabs, tabs.map(function (t) {
+    /* The heading only shows where the tabs are a list inside the
+       ticket. Across the top of the chart they are plainly three tabs
+       and a word over them is a word to read. */
+    html(el.tabs, '<span class="label ctabs-h">Contract</span>' + tabs.map(function (t) {
       return '<button class="ctab' + (S.tab === t[0] ? ' active' : '') + '" data-tab="' + t[0] + '">' +
         '<i class="ctab-ico">' + I(t[2], 16) + '</i>' +
         '<span>' + t[1] + '</span>' +
       '</button>';
     }).join(''));
+  }
+
+  /* ---------- which column the chooser lives in ----------
+     On a laptop the contract type belongs to the ticket. It was a row of
+     three tabs in the top corner of the chart column, which is the one
+     place on the screen nobody looks while setting up a trade — "I
+     cannot see where you choose Even / Odd" is the whole report. In the
+     right-hand card it is a list of three, above the stake, with the
+     rest of the ticket under it.
+
+     Moved rather than copied: one chooser, one active state. On a phone
+     it goes back where it was, above the chart, because there is only
+     one column there and it is the first thing the page should say. */
+  var wide = null;
+  function placeTabs() {
+    if (!el.tabs) return;
+    var mid = document.querySelector('.terminal .col-mid');
+    var right = document.querySelector('.terminal .col-right');
+    if (!mid || !right) return;
+    var want = window.matchMedia('(min-width:900px)').matches ? right : mid;
+    if (el.tabs.parentElement === want) return;
+    want.insertBefore(el.tabs, want.firstChild);
+  }
+  function watchWidth() {
+    if (!window.matchMedia) return;
+    wide = window.matchMedia('(min-width:900px)');
+    var onChange = function () { placeTabs(); };
+    if (wide.addEventListener) wide.addEventListener('change', onChange);
+    else if (wide.addListener) wide.addListener(onChange);
   }
 
   /* ---------- run targets ----------
@@ -142,6 +174,44 @@
       targetCell('tgtSL', 'Stop loss', '$', auto.stopLoss, 'neg') +
       targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier, 'warn') +
     '</div>';
+  }
+
+  /* ---------- what this ticket is ----------
+     Four lines under the controls: the instrument, the contract, how long
+     it runs and what it pays. Every one of these was already decided
+     somewhere on the screen — on Markets, in the chooser, in code — and
+     none of them was written down in the one card you read before
+     pressing a side.
+
+     Desktop only. The right-hand card has the height for it and the
+     phone does not; there the same four facts are two thumb-lengths of
+     scrolling away from the buttons, which is worse than not saying
+     them. */
+  function detailRow(k, v) {
+    return '<div class="td-row"><span>' + k + '</span><b>' + v + '</b></div>';
+  }
+  function ticketDetail() {
+    var meta = API.symbol(S.symbol);
+    var sides = sidesFor();
+    var r0 = API.contracts.payoutRate(typeFor(sides[0][0]));
+    var r1 = API.contracts.payoutRate(typeFor(sides[1][0]));
+    function rate(r) { return '+' + ((r - 1) * 100).toFixed(2) + '%'; }
+
+    return '<div class="tdetail">' +
+      detailRow('Instrument', meta.name) +
+      detailRow('Contract', tabLabel()) +
+      detailRow('Duration', S.ticks + ' ticks') +
+      /* The two sides of a contract do not always pay the same — Matches
+         and Differs are nowhere near each other — so this says one rate
+         only when it is honestly one rate. */
+      (r0 === r1
+        ? detailRow('Payout', rate(r0))
+        : detailRow(sides[0][1], rate(r0)) + detailRow(sides[1][1], rate(r1))) +
+    '</div>';
+  }
+  function tabLabel() {
+    return S.tab === 'even_odd' ? 'Even / Odd'
+      : S.tab === 'matches' ? 'Matches / Differs' : 'Over / Under';
   }
 
   /* ---------- panel ---------- */
@@ -227,6 +297,7 @@
          the mode changed — on the one control somebody reaches for
          without looking. */
       barrierRow +
+      ticketDetail() +
       /* one line, not two: the trade screen is short on height and this
          is the least load-bearing thing on it */
       '<div class="session">' +
@@ -591,8 +662,10 @@
     unsub.forEach(function (f) { f(); });
     unsub = [];
     if (chart) { chart.destroy(); chart = null; }
+    placeTabs();
     if (root.__wired) { mounted(); return; }
     root.__wired = true;
+    watchWidth();
     wire(root);
 
     mounted();
