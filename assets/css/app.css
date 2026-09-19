@@ -1591,11 +1591,6 @@ footer a:hover{color:var(--text-2)}
   .nb{transition:none}
   .nb:hover,.nb.on{transform:none}
 }
-.pickline{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:3px}
-.pickline b{min-width:22px;text-align:center;font-size:15px;font-weight:500}
-.pickline .unit{font-size:11px;color:var(--muted);margin-left:-4px}
-.stepbtn{width:30px;height:30px;display:grid;place-items:center;color:var(--text-2);background:var(--surface-2)}
-.stepbtn:hover{background:var(--surface-3);color:var(--text)}
 .field-error{color:var(--neg);font-size:12px;margin-top:7px}
 .stake.invalid{border-color:var(--neg)}
 .tbtn[disabled]{opacity:.45;cursor:not-allowed}
@@ -1751,7 +1746,6 @@ body.locked{overflow:hidden}
   .seg button.active:hover{color:var(--accent)}
   .row:hover,button.trow:hover,.mkt:hover,.ditem:hover{background:none;color:inherit}
   .stake button:hover{background:none;color:var(--text-2)}
-  .stepbtn:hover{background:var(--surface-2);color:var(--text-2)}
   .quick button:hover{border-color:var(--line-soft);color:var(--text-2)}
   .chart-tools button:hover{background:none;color:var(--muted)}
   .btn-mini:hover{color:var(--text-2);border-color:var(--line)}
@@ -1802,15 +1796,6 @@ body.locked{overflow:hidden}
 .ai-p b{display:block;font-size:13.5px;font-weight:500}
 .ai-p span{display:block;font-size:10.5px;margin-top:2px}
 
-.ai-ticket{
-  margin:0 14px;padding:14px;display:flex;flex-direction:column;gap:12px;
-  border:1px solid var(--line-soft);background:var(--surface);
-}
-.ai-tline{display:flex;flex-direction:column;gap:4px}
-.ai-tline b{font-size:14px;font-weight:500}
-.ai-auto{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer}
-.ai-auto b{display:block;font-size:13px;font-weight:500}
-.ai-auto span span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
 /* Two ways on from a scan, and neither of them takes money. */
 .ai-dock{display:flex;flex-direction:column;gap:9px;margin:12px 14px 0}
 .ai-dock .btn{width:100%}
@@ -1820,7 +1805,7 @@ body.locked{overflow:hidden}
 }
 
 @media (min-width:900px){
-  .ai-hero,.ai-ticket,.ai-dock{margin-left:0;margin-right:0}
+  .ai-hero,.ai-dock{margin-left:0;margin-right:0}
   .ai-sect{margin-left:0;margin-right:0}
 }
 

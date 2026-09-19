@@ -762,15 +762,15 @@
               '</div>' +
               '<div class="modal-form">' +
                 '<div class="totals">' +
+                  /* Three rows: what was risked, how long it ran, where
+                     the balance stands now. The entry and exit spots
+                     used to sit between them — five decimal places of
+                     working that nobody reads after the fact, pushing
+                     the one figure that matters down the card. They are
+                     still on the contract, and History still shows
+                     them. */
                   kv('Stake', F().money(c.stake)) +
                   kv('Duration', F().ticks(c.ticks)) +
-                  /* The two spots are why a contract lost — they are the
-                     working. On a win nobody is auditing the price: what
-                     was paid and what the balance is now is the whole
-                     news, and two more rows only push it down. */
-                  (won ? '' :
-                    kv('Entry', '<span class="num">' + F().price(c.entrySpot) + '</span>') +
-                    kv('Exit', '<span class="num">' + F().price(c.exitSpot) + '</span>')) +
                   kv('Balance', F().money(API().account.balance())) +
                 '</div>' +
                 '<button class="btn btn-fill" type="button" data-close>Done</button>' +

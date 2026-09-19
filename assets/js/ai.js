@@ -269,40 +269,25 @@
       }).join('') + '</div>';
   }
 
+  /* ---------- the two ways on ----------
+     The ticket card that used to sit here restated the contract, the
+     instrument and the duration — all three of which are already on the
+     headline above and on the ranked row that is highlighted. Three
+     copies of one fact is not a summary, it is furniture, and it stood
+     between the result and the only two things there are to do with it:
+     take it to the terminal, or look again. */
   function ticketCard() {
-    var sig = current();
-    if (S.phase !== 'done' || !sig) return '';
+    if (S.phase !== 'done' || !current()) return '';
 
-    return '<div class="ai-sect label">Trade ticket</div>' +
-      '<div class="ai-ticket">' +
-        '<div class="ai-tline">' +
-          '<span class="label">Contract</span>' +
-          '<b>' + sig.label + ' · ' + sig.symbolName + '</b>' +
-        '</div>' +
-        '<div class="stack-row">' +
-          '<span class="label">Duration</span>' +
-          '<div class="pickline">' +
-            '<button class="stepbtn" data-aiticks="-1" aria-label="Fewer ticks">' + I('minus', 14) + '</button>' +
-            '<b class="num">' + S.ticks + '</b><span class="unit">ticks</span>' +
-            '<button class="stepbtn" data-aiticks="1" aria-label="More ticks">' + I('plus', 14) + '</button>' +
-          '</div>' +
-        '</div>' +
-        /* What it pays, as a rate rather than an amount: there is no
-           stake on this page to turn it into one, and the rate is the
-           part that belongs to the contract anyway. */
-        '<div class="session"><span>Payout if it lands</span><span class="num pos">+' +
-          ((API.contracts.payoutRate(sig.type) - 1) * 100).toFixed(2) + '%</span></div>' +
-      '</div>' +
-      /* Two ways on from here, and neither of them takes money. */
-      '<div class="ai-dock">' +
+    return '<div class="ai-dock">' +
         '<button class="btn btn-fill" id="aiTake">' +
-          I('candles', 16) + 'Take it to the terminal</button>' +
+          I('candles', 16) + 'Load volatility</button>' +
         '<button class="btn btn-ghost" id="aiScanAgain">' +
           I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>' +
       '<p class="ai-note">The terminal opens on this contract with the digit ' +
-        'and duration already set. You choose the stake there, and nothing is ' +
-        'placed until you press buy.</p>';
+        'already set. You choose the stake there, and nothing is placed until ' +
+        'you press buy.</p>';
   }
 
   function tradeLog() {
@@ -340,13 +325,6 @@
 
       var pick = t.closest('[data-pick]');
       if (pick) { S.pick = pick.getAttribute('data-pick'); render(); return; }
-
-      var tk = t.closest('[data-aiticks]');
-      if (tk) {
-        S.ticks = Math.max(1, Math.min(10, S.ticks + (+tk.getAttribute('data-aiticks'))));
-        render();
-        return;
-      }
 
 
     });
