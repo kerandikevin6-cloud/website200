@@ -397,8 +397,7 @@
      BINARY" off three separate elements is not the name of anything. */
   function wordmark(to) {
     return '<a class="wordmark" href="' + to + '" aria-label="Novi Binary">' +
-      '<span class="wm-mark" aria-hidden="true">NB</span>' +
-      '<span class="wm-name" aria-hidden="true"><b>NOVI</b><i>BINARY</i></span>' +
+      '<span class="wm-name" aria-hidden="true"><b>Novi</b><i>Binary</i></span>' +
     '</a>';
   }
   window.NexWordmark = wordmark;
@@ -604,8 +603,7 @@
     var def = window.NexModals && window.NexModals[key];
     if (!def) return;
     if (NEEDS_ACCOUNT[key] && !API.account.realAvailable()) {
-      closeModals();
-      go('signup');
+      leaveTo('signup');
       return;
     }
     closeToken++;
@@ -661,6 +659,24 @@
   /* Exported so a page that renders a phone field outside a dialog can
      bring its picker to life the same way. */
   window.NexPhonePickers = function () { mountPhonePickers(); };
+  /* ---------- leaving for another page ----------
+     Closing an overlay rewinds the history entry it pushed, and that
+     rewind is queued on a timer. Set location straight after it and the
+     rewind lands on top of the navigation: the dialog shuts and the page
+     never changes. That is what left somebody who pressed "Sign up" on
+     the real account still sitting in the demo one.
+
+     So when the next thing is a page and not a closed dialog, forget the
+     entry instead of asking history to move, then go. The stray entry is
+     the same URL we are leaving, so Back still comes back here. */
+  function leaveTo(file) {
+    overlayDepth = 0;
+    clearTimeout(syncTimer);
+    if (drawerOpen) setDrawer(false, true);
+    closeModals(true);
+    go(file);
+  }
+
   function closeModals(fromPop) {
     payToken++;                               /* nothing pending may land now */
     var m = host().querySelector('.modal');
@@ -2011,8 +2027,7 @@
          not an error to report, it is the moment to offer the thing
          they were reaching for. */
       if (!API.account.use(kind)) {
-        closeModals();
-        go('signup');
+        leaveTo('signup');
         return;
       }
       gotoStep('done');

@@ -1222,27 +1222,36 @@ footer a:hover{color:var(--text-2)}
    single line of "NOVIBINARY" is a word nobody can parse at a glance,
    and the two-line lockup is what makes the second word readable at the
    size a top bar allows. */
-.wordmark{display:inline-flex;align-items:center;gap:8px;flex:none;padding-right:6px}
-.wm-mark{
-  display:grid;place-items:center;flex:none;width:28px;height:28px;
-  font-size:11px;font-weight:700;letter-spacing:.04em;line-height:1;
-  color:#fff;background:var(--accent-fill);
+/* The name is the logo. There was a blue "NB" tile in front of it, which
+   is a monogram standing in for a name written immediately next to it —
+   the same thing said twice, and the tile was doing the work the type
+   should be doing.
+
+   So one line, mixed case, and the split carries the mark: Novi heavy in
+   the text colour, Binary light in the brand blue. Weight and colour are
+   what make two words read as one lockup; the old one used size and
+   stacked them, which is a bar of small caps and not a logo. Mixed case
+   on purpose, too — every label in this app is tracked uppercase, and a
+   logo set the same way is just another label.
+
+   Sized in em off the anchor, so the landing nav, the footer and the
+   sign-in pages scale the whole thing with one font-size. */
+.wordmark{
+  display:inline-flex;align-items:baseline;flex:none;
+  font-family:var(--display);font-size:16.5px;line-height:1;
+  padding-right:6px;white-space:nowrap;
 }
-/* Dark keeps the lighter blue with dark ink: a saturated tile on a dark
-   page is a hole, and the pale one reads as the lit mark it is. */
-:root[data-theme="dark"] .wm-mark{color:#06182B;background:var(--accent)}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .wm-mark{color:#06182B;background:var(--accent)}
-}
-.wm-name{display:flex;flex-direction:column;justify-content:center;line-height:1}
+.wm-name{display:inline-flex;align-items:baseline;gap:.2em}
 .wm-name b,.wm-name i{
-  display:block;font-style:normal;text-transform:uppercase;
-  font-weight:700;letter-spacing:.2em;
+  font-style:normal;font-size:1em;line-height:1;letter-spacing:-.018em;
 }
-.wm-name b{font-size:12px;color:var(--text)}
-/* The second word is the quieter half of the lockup: same weight, less
-   size, so the pair reads as one mark rather than two words stacked. */
-.wm-name i{font-size:8.5px;color:var(--muted);letter-spacing:.34em;margin-top:2px}
+.wm-name b{font-weight:700;color:currentColor}
+/* The second word is the quiet half: the same size, two steps lighter,
+   in the accent. It is the only place the brand blue is used as type. */
+.wm-name i{font-weight:400;color:var(--accent)}
+/* The landing footer is dark in both themes, so the light theme's blue —
+   which is pulled dark to work on white — would disappear into it. */
+.lfoot .wm-name i{color:#6FB6FF}
 
 /* On a phone the bar carries the menu, the name, the balance, Deposit
    and the bell. The name is the first thing to give ground: the
@@ -1260,24 +1269,20 @@ footer a:hover{color:var(--text-2)}
   .ctab-ico svg{width:15px;height:15px}
 
   .topbar{gap:5px;padding:0 7px}
-  .topbar .wordmark{gap:5px;padding-right:0;margin-left:-2px}
-  .topbar .wm-mark{width:22px;height:22px;font-size:9.5px}
-  .topbar .wm-name b{font-size:10px;letter-spacing:.06em}
-  .topbar .wm-name i{font-size:7px;letter-spacing:.12em;margin-top:1px}
+  .topbar .wordmark{padding-right:0;margin-left:-1px;font-size:15px}
   .topbar .btn-primary{padding:9px 11px}
   .topbar .acct{padding:5px 6px;gap:5px}
   .topbar .iconbtn{width:30px}
 }
-/* Narrower than this the top bar gives up the words and keeps the
-   monogram, which is still the mark rather than nothing. Only in the
-   bar: a sign-in page has a whole column to itself and no reason to
-   drop half its own name. */
 /* Below this the sums stop working however hard everything is squeezed,
-   and the monogram stands in for the whole lockup — which is what a
-   monogram is for. 375px is the narrowest phone still in common use;
-   everything from there up carries the name. */
+   so the bar keeps the first word and drops the second. There is no
+   monogram to fall back on any more, and "Novi" is still the name —
+   half a lockup reads better than a pair of initials did. Only in the
+   bar: a sign-in page has a whole column to itself and no reason to
+   drop any of its own name. */
 @media (max-width:383px){
-  .topbar .wm-name{display:none}
+  .topbar .wm-name i{display:none}
+  .topbar .wordmark{font-size:14.5px}
 }
 /* Narrower still and the bar was already over its width before any of
    this, so the balance gives up a point of type rather than the row
@@ -1335,7 +1340,7 @@ footer a:hover{color:var(--text-2)}
 /* ---------------- auth header ---------------- */
 .auth-head{text-align:center;margin-bottom:26px}
 .auth-head .wordmark{
-  display:inline-block;font-size:15px;letter-spacing:.34em;padding-left:.34em;margin-bottom:20px;
+  display:inline-flex;font-size:20px;padding-right:0;margin-bottom:20px;
 }
 .auth-head h1{font-family:var(--display);font-weight:600;font-size:28px;margin:0 0 8px;letter-spacing:-.022em}
 .auth-head p{color:var(--muted);margin:0;font-size:13.5px}
