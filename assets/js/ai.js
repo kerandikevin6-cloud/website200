@@ -37,10 +37,8 @@
     step: 0,                 /* instrument index while scanning */
     signals: [],
     pick: null,              /* symbol id of the selected signal */
-    stake: 10,              /* USD; set to a round local figure on mount */
     ticks: 5,
     auto: false,
-    error: null,
     placing: false
   };
 
@@ -154,7 +152,6 @@
     if (S.phase === 'scanning') return;
     S.phase = 'scanning';
     S.step = 0;
-    S.error = null;
     render();
     clearInterval(timer);
     timer = setInterval(function () {
@@ -177,9 +174,12 @@
      buy from a list of statistics is how somebody ends up in a position
      they never really looked at.
 
-     What crosses over is the whole ticket: instrument, contract, digit,
-     duration and stake, so the terminal opens on exactly what was found
-     and the only thing left is to agree with it. */
+     What crosses over is what the scanner found: instrument, contract,
+     digit and duration. Not the stake — that is the one number on a
+     ticket that is about the trader rather than the signal, it is asked
+     for on the terminal directly above the buy button, and asking for it
+     twice meant typing a figure here that a second field over there could
+     silently disagree with. */
   var TAB_FOR = {
     even_odd: 'even_odd', matches: 'matches', differs: 'matches',
     over: 'over_under', under: 'over_under'
@@ -196,28 +196,11 @@
       side: sig.side,
       barrier: sig.type === 'even_odd' ? null : sig.barrier,
       ticks: S.ticks,
-      stake: S.stake,
       label: sig.label,
       symbolName: sig.symbolName,
       at: Date.now()
     });
     window.NexGo('/');
-  }
-
-  /* Same as the terminal: the stake is USD in the field as well as in
-     the contract, so there is nothing to convert either way. */
-  function stakeShown() {
-    return Math.round(S.stake * 100) / 100;
-  }
-  function setStakeShown(shown) {
-    S.stake = Math.max(0, Math.round((+shown || 0) * 100) / 100);
-  }
-
-  /* v is in display units. */
-  function setStake(v) {
-    setStakeShown(v);
-    S.error = null;
-    render();
   }
 
   /* ---------- markup ---------- */
@@ -304,15 +287,11 @@
             '<button class="stepbtn" data-aiticks="1" aria-label="More ticks">' + I('plus', 14) + '</button>' +
           '</div>' +
         '</div>' +
-        '<div class="stake' + (S.error ? ' invalid' : '') + '">' +
-          '<button data-aistake="-1" aria-label="Decrease stake">' + I('minus', 15) + '</button>' +
-          '<div class="f"><input id="aiStake" value="' + stakeShown() + '" inputmode="decimal" aria-label="Stake">' +
-            '<span class="cur">' + API.money.stakeCurrency() + '</span></div>' +
-          '<button data-aistake="1" aria-label="Increase stake">' + I('plus', 15) + '</button>' +
-        '</div>' +
-        (S.error ? '<div class="field-error" role="alert">' + S.error + '</div>' : '') +
-        '<div class="session"><span>Payout if it lands</span><span class="num">' +
-          F.usd(API.contracts.payoutFor(sig.type, S.stake)) + '</span></div>' +
+        /* What it pays, as a rate rather than an amount: there is no
+           stake on this page to turn it into one, and the rate is the
+           part that belongs to the contract anyway. */
+        '<div class="session"><span>Payout if it lands</span><span class="num pos">+' +
+          ((API.contracts.payoutRate(sig.type) - 1) * 100).toFixed(2) + '%</span></div>' +
       '</div>' +
       /* Two ways on from here, and neither of them takes money. */
       '<div class="ai-dock">' +
@@ -321,9 +300,9 @@
         '<button class="btn btn-ghost" id="aiScanAgain">' +
           I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>' +
-      '<p class="ai-note">The terminal opens on this contract with the digit, ' +
-        'duration and stake already set. Nothing is placed until you press buy ' +
-        'there.</p>';
+      '<p class="ai-note">The terminal opens on this contract with the digit ' +
+        'and duration already set. You choose the stake there, and nothing is ' +
+        'placed until you press buy.</p>';
   }
 
   function tradeLog() {
@@ -346,16 +325,8 @@
 
   function render() {
     if (!el.root) return;
-    var focused = document.activeElement && document.activeElement.id === 'aiStake';
-    var caret = focused ? document.activeElement.selectionStart : null;
-
     html(el.root, scanCard() + signalRows() + ticketCard() + tradeLog() +
       '<div style="height:18px"></div>');
-
-    if (focused) {
-      var box = $('aiStake');
-      if (box) { box.focus(); try { box.setSelectionRange(caret, caret); } catch (e) {} }
-    }
   }
 
   /* ---------- events ---------- */
@@ -368,7 +339,7 @@
       if (t.closest('#aiTake')) { handOff(); return; }
 
       var pick = t.closest('[data-pick]');
-      if (pick) { S.pick = pick.getAttribute('data-pick'); S.error = null; render(); return; }
+      if (pick) { S.pick = pick.getAttribute('data-pick'); render(); return; }
 
       var tk = t.closest('[data-aiticks]');
       if (tk) {
@@ -377,19 +348,7 @@
         return;
       }
 
-      var st = t.closest('[data-aistake]');
-      if (st) {
-        var step = API.money.stakeChips().step;
-        setStake(stakeShown() + (+st.getAttribute('data-aistake')) * step);
-        return;
-      }
 
-
-    });
-
-    root.addEventListener('input', function (e) {
-      if (e.target.id !== 'aiStake') return;
-      setStakeShown(e.target.value);
     });
 
     /* The chooser is a dialog, which is mounted at the end of the body
@@ -408,11 +367,6 @@
     if (!root) return;
     el.root = root;
 
-    if (!root.__stakeSet) {
-      root.__stakeSet = true;
-      S.stake = API.money.stakeChips().start;
-    }
-
     unsub.forEach(function (f) { f(); });
     unsub = [];
     clearInterval(timer);
@@ -430,7 +384,6 @@
       var lastRefresh = 0;
       unsub.push(API.on('tick', function () {
         if (S.phase !== 'done') return;
-        if (document.activeElement && document.activeElement.id === 'aiStake') return;
         if (Date.now() - lastRefresh < 1200) return;
         lastRefresh = Date.now();
         rescan();

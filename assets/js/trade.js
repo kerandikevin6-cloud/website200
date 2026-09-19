@@ -768,7 +768,8 @@
       S.tab = ticket.tab || S.tab;
       if (ticket.barrier != null) S.barrier = ticket.barrier;
       if (ticket.ticks) S.ticks = ticket.ticks;
-      if (ticket.stake) S.stake = ticket.stake;
+      /* No stake rides along any more: the scanner found a contract, not
+         a position size. Whatever is in the field here stays. */
       S.fromScan = ticket;
     }
 
