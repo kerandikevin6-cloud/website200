@@ -526,8 +526,49 @@
     return a.id === 'stake' || !!(a.closest && a.closest('.targets'));
   }
 
+  /* ---------- calling the ticks ----------
+     Every tick a contract lives through is called as it lands: the
+     digit, and whether it is on your side. Ten seconds of a contract is
+     five to ten of these depending on how fast the instrument runs, and
+     that is the point — a contract that reports once at the end is ten
+     seconds of nothing followed by a verdict, and the ten seconds are
+     the part somebody is actually watching.
+
+     It says where the contract stands, not what it has won. The last
+     tick is the one that decides, and every call before it is "this is
+     what it would be if it stopped here" — which is exactly what the
+     resale value above the button is already saying in money. */
+  function callTick(d) {
+    var open = API.contracts.open();
+    var mine = null;
+    for (var i = 0; i < open.length; i++) {
+      if (open[i].symbol === d.symbol) { mine = open[i]; break; }
+    }
+    if (!mine || !window.NexTick) return;
+
+    /* The contract is settled by the tick that ends it, and that one
+       gets the full banner a moment later. Calling it twice, once small
+       and once large, reads as two results. */
+    if (mine.elapsed >= mine.ticks) return;
+
+    var digit = d.point.digit;
+    var good = API.contracts.favours(mine, digit);
+    window.NexTick(good ? 'win' : 'loss', tickLabel(mine, digit), digit);
+  }
+
+  /* "Even" when the digit is even, whatever side was taken: the call is
+     about the tick, and the colour is about the contract. Saying "Odd"
+     in green because you are on odd is two facts in one word. */
+  function tickLabel(c, digit) {
+    if (c.type === 'even_odd') return digit % 2 === 0 ? 'Even' : 'Odd';
+    if (c.type === 'matches' || c.type === 'differs') {
+      return digit === c.barrier ? 'Matches ' + c.barrier : 'Differs ' + c.barrier;
+    }
+    return digit > c.barrier ? 'Over ' + c.barrier : 'Under ' + c.barrier;
+  }
+
   /* ---------- how long a contract runs ----------
-     Five seconds, and it is not asked for.
+     Ten seconds, and it is not asked for.
 
      It used to be five ticks, which is not the same thing: these
      instruments tick at different speeds, one a second and one every
@@ -537,8 +578,12 @@
 
      So the duration is stated in time and the ticks are worked out from
      whatever the instrument runs at. Clamped to what the contract rules
-     allow, so an unusually slow series cannot round down to nothing. */
-  var RUN_MS = 5000;
+     allow, so an unusually slow series cannot round down to nothing.
+
+     Ten seconds is also what makes the run watchable: every tick inside
+     it is called as it lands, which on these instruments is five to ten
+     calls per contract instead of one verdict at the end. */
+  var RUN_MS = 10000;
 
   function ticksFor(symbol) {
     var meta = API.symbol(symbol) || {};
@@ -856,6 +901,7 @@
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
+        callTick(d);
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
            under the finger once a second for no reason */

@@ -873,6 +873,11 @@
          the digit that just landed is the one it needed. */
       winning: winning,
       payoutFor: payoutFor, payoutRate: payoutRate,
+      /* Would this digit win the contract, if the contract ended on it?
+         The same function the settlement uses, exposed so the terminal
+         can say tick by tick where a contract stands rather than
+         re-deriving the rule and drifting from it. */
+      favours: function (c, digit) { return winning(c, digit); },
       open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
       /* Drop settled contracts from this browser. Open ones stay: they
          are still running, and forgetting one loses the stake. */

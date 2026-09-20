@@ -364,7 +364,13 @@
     /* Quiet on purpose: this plays over whatever else the phone is
        doing, and a trading app that announces itself is a trading app
        people mute at the operating system and never hear again. */
-    if (kind === 'win') {
+    if (kind === 'tick') {
+      /* One short, quiet blip per tick. A tenth of the loudness of a
+         result and a fifth of the length: this fires seven times a
+         contract, and anything with a shape to it becomes a rhythm
+         somebody has to listen to. */
+      note(a, 880, t, 0.035, 0.022);
+    } else if (kind === 'win') {
       note(a, 660, t, 0.10, 0.11);          /* E5 */
       note(a, 990, t + 0.09, 0.16, 0.10);   /* B5, up a fifth */
     } else {
@@ -1154,6 +1160,40 @@
     flashEl.classList.add('open');
     clearTimeout(flashEl._t);
     flashEl._t = setTimeout(function () { flashEl.classList.remove('open'); }, 3000);
+  };
+
+  /* ---------- calling a tick ----------
+     The small sibling of the flash above. A contract lives through five
+     to ten ticks and each one is called as it lands, so this had to be
+     something that can appear seven times in ten seconds without
+     becoming the screen: a short pill under the top bar, its own
+     element so a tick cannot cancel the result banner or be cancelled
+     by it, and gone in three quarters of a second.
+
+     It sits below the flash rather than over it, so the moment the
+     contract ends the verdict is on top and the last tick is still
+     underneath it — which is the one pairing where seeing both at once
+     is worth something. */
+  var tickEl = null;
+  window.NexTick = function (kind, label, digit) {
+    if (!tickEl) {
+      tickEl = document.createElement('div');
+      tickEl.className = 'tickpop';
+      /* Not announced. A screen reader reading seven of these in ten
+         seconds would drown out everything else on the page, and the
+         result banner above is already live. */
+      tickEl.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(tickEl);
+    }
+    tickEl.className = 'tickpop ' + (kind || '');
+    tickEl.innerHTML = '<b></b><span></span>';
+    tickEl.querySelector('b').textContent = label || '';
+    tickEl.querySelector('span').textContent = digit == null ? '' : String(digit);
+    void tickEl.offsetWidth;
+    tickEl.classList.add('open');
+    clearTimeout(tickEl._t);
+    tickEl._t = setTimeout(function () { tickEl.classList.remove('open'); }, 750);
+    play('tick');
   };
 
   /* ---------- connection banner ---------- */

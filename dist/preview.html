@@ -1080,6 +1080,26 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   .flash{transition:opacity .2s ease}
   .flash,.flash.open{transform:translate(-50%,0)}
 }
+/* The per-tick call. Smaller and flatter than the result banner, and
+   sitting just under it: seven of these in ten seconds has to read as
+   commentary rather than as seven verdicts. */
+.tickpop{
+  position:fixed;left:50%;top:calc(var(--topbar-h) + 58px);transform:translate(-50%,-6px) scale(.96);
+  z-index:94;display:flex;align-items:baseline;gap:8px;
+  padding:5px 12px;border-radius:999px;border:1px solid transparent;
+  font-size:12px;opacity:0;pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease;
+}
+.tickpop.open{opacity:1;transform:translate(-50%,0) scale(1)}
+.tickpop b{font-weight:600;white-space:nowrap}
+.tickpop span{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+.tickpop.win{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
+.tickpop.loss{background:var(--neg-soft);border-color:var(--neg);color:var(--neg)}
+@media (prefers-reduced-motion:reduce){
+  .tickpop{transition:opacity .14s ease}
+  .tickpop,.tickpop.open{transform:translate(-50%,0)}
+}
+
 footer{border-top:1px solid var(--line-soft);padding:24px 18px 32px;color:var(--muted);font-size:11.5px}
 footer .fl{display:flex;flex-wrap:wrap;gap:14px 20px;margin-bottom:16px}
 footer a:hover{color:var(--text-2)}
@@ -5308,6 +5328,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
          the digit that just landed is the one it needed. */
       winning: winning,
       payoutFor: payoutFor, payoutRate: payoutRate,
+      /* Would this digit win the contract, if the contract ended on it?
+         The same function the settlement uses, exposed so the terminal
+         can say tick by tick where a contract stands rather than
+         re-deriving the rule and drifting from it. */
+      favours: function (c, digit) { return winning(c, digit); },
       open: function () { return S.contracts.filter(function (c) { return c.status === 'open'; }); },
       /* Drop settled contracts from this browser. Open ones stay: they
          are still running, and forgetting one loses the stake. */
@@ -7486,8 +7511,49 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return a.id === 'stake' || !!(a.closest && a.closest('.targets'));
   }
 
+  /* ---------- calling the ticks ----------
+     Every tick a contract lives through is called as it lands: the
+     digit, and whether it is on your side. Ten seconds of a contract is
+     five to ten of these depending on how fast the instrument runs, and
+     that is the point — a contract that reports once at the end is ten
+     seconds of nothing followed by a verdict, and the ten seconds are
+     the part somebody is actually watching.
+
+     It says where the contract stands, not what it has won. The last
+     tick is the one that decides, and every call before it is "this is
+     what it would be if it stopped here" — which is exactly what the
+     resale value above the button is already saying in money. */
+  function callTick(d) {
+    var open = API.contracts.open();
+    var mine = null;
+    for (var i = 0; i < open.length; i++) {
+      if (open[i].symbol === d.symbol) { mine = open[i]; break; }
+    }
+    if (!mine || !window.NexTick) return;
+
+    /* The contract is settled by the tick that ends it, and that one
+       gets the full banner a moment later. Calling it twice, once small
+       and once large, reads as two results. */
+    if (mine.elapsed >= mine.ticks) return;
+
+    var digit = d.point.digit;
+    var good = API.contracts.favours(mine, digit);
+    window.NexTick(good ? 'win' : 'loss', tickLabel(mine, digit), digit);
+  }
+
+  /* "Even" when the digit is even, whatever side was taken: the call is
+     about the tick, and the colour is about the contract. Saying "Odd"
+     in green because you are on odd is two facts in one word. */
+  function tickLabel(c, digit) {
+    if (c.type === 'even_odd') return digit % 2 === 0 ? 'Even' : 'Odd';
+    if (c.type === 'matches' || c.type === 'differs') {
+      return digit === c.barrier ? 'Matches ' + c.barrier : 'Differs ' + c.barrier;
+    }
+    return digit > c.barrier ? 'Over ' + c.barrier : 'Under ' + c.barrier;
+  }
+
   /* ---------- how long a contract runs ----------
-     Five seconds, and it is not asked for.
+     Ten seconds, and it is not asked for.
 
      It used to be five ticks, which is not the same thing: these
      instruments tick at different speeds, one a second and one every
@@ -7497,8 +7563,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
      So the duration is stated in time and the ticks are worked out from
      whatever the instrument runs at. Clamped to what the contract rules
-     allow, so an unusually slow series cannot round down to nothing. */
-  var RUN_MS = 5000;
+     allow, so an unusually slow series cannot round down to nothing.
+
+     Ten seconds is also what makes the run watchable: every tick inside
+     it is called as it lands, which on these instruments is five to ten
+     calls per contract instead of one verdict at the end. */
+  var RUN_MS = 10000;
 
   function ticksFor(symbol) {
     var meta = API.symbol(symbol) || {};
@@ -7816,6 +7886,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
+        callTick(d);
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
            under the finger once a second for no reason */
@@ -8862,7 +8933,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     /* Quiet on purpose: this plays over whatever else the phone is
        doing, and a trading app that announces itself is a trading app
        people mute at the operating system and never hear again. */
-    if (kind === 'win') {
+    if (kind === 'tick') {
+      /* One short, quiet blip per tick. A tenth of the loudness of a
+         result and a fifth of the length: this fires seven times a
+         contract, and anything with a shape to it becomes a rhythm
+         somebody has to listen to. */
+      note(a, 880, t, 0.035, 0.022);
+    } else if (kind === 'win') {
       note(a, 660, t, 0.10, 0.11);          /* E5 */
       note(a, 990, t + 0.09, 0.16, 0.10);   /* B5, up a fifth */
     } else {
@@ -9652,6 +9729,40 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     flashEl.classList.add('open');
     clearTimeout(flashEl._t);
     flashEl._t = setTimeout(function () { flashEl.classList.remove('open'); }, 3000);
+  };
+
+  /* ---------- calling a tick ----------
+     The small sibling of the flash above. A contract lives through five
+     to ten ticks and each one is called as it lands, so this had to be
+     something that can appear seven times in ten seconds without
+     becoming the screen: a short pill under the top bar, its own
+     element so a tick cannot cancel the result banner or be cancelled
+     by it, and gone in three quarters of a second.
+
+     It sits below the flash rather than over it, so the moment the
+     contract ends the verdict is on top and the last tick is still
+     underneath it — which is the one pairing where seeing both at once
+     is worth something. */
+  var tickEl = null;
+  window.NexTick = function (kind, label, digit) {
+    if (!tickEl) {
+      tickEl = document.createElement('div');
+      tickEl.className = 'tickpop';
+      /* Not announced. A screen reader reading seven of these in ten
+         seconds would drown out everything else on the page, and the
+         result banner above is already live. */
+      tickEl.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(tickEl);
+    }
+    tickEl.className = 'tickpop ' + (kind || '');
+    tickEl.innerHTML = '<b></b><span></span>';
+    tickEl.querySelector('b').textContent = label || '';
+    tickEl.querySelector('span').textContent = digit == null ? '' : String(digit);
+    void tickEl.offsetWidth;
+    tickEl.classList.add('open');
+    clearTimeout(tickEl._t);
+    tickEl._t = setTimeout(function () { tickEl.classList.remove('open'); }, 750);
+    play('tick');
   };
 
   /* ---------- connection banner ---------- */
