@@ -8271,23 +8271,25 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       '</div>';
     }
 
-    /* No rescan button in here. The dock below carries the same one,
-       word for word, a few hundred pixels down — and now that the list
-       is five rows both are on the screen at once, which made the pair
-       read as two different things rather than one said twice. This card
-       states the finding; what to do about it lives in one place. */
-    var best = S.signals[0];
-    return '<div class="ai-hero done">' +
-      '<span class="label">' + FAMILIES[S.family].label + ' · strongest edge</span>' +
-      '<b class="ai-headline">' + best.label + '</b>' +
-      '<span class="ai-sub">' + best.symbolName + ' · ' + F.pct(best.prob * 100, 1) +
-        ' of the last ' + best.sample + ' ticks</span>' +
-    '</div>';
+    /* Nothing. The card that sat here announced the top signal — its
+       contract, its instrument and its hit rate — and then the first row
+       of the list underneath said the same three things again, only with
+       the expected return attached and in the same shape as the four
+       rows below it. Two of everything is not a summary, and the one
+       fact it had to itself, which family was scanned, has moved to the
+       heading over the list.
+
+       The idle and scanning cards above stay: those say what the screen
+       is about before there is anything to rank. */
+    return '';
   }
 
   function signalRows() {
     if (S.phase !== 'done') return '';
-    return '<div class="ai-sect label">Top ' + S.signals.length + ' signals</div>' +
+    /* The heading carries the family now, since the card that used to
+       say it is gone. */
+    return '<div class="ai-sect label">' + FAMILIES[S.family].label +
+        ' · top ' + S.signals.length + '</div>' +
       '<div class="list">' + S.signals.map(function (s) {
         var good = s.edge >= 0;
         var conf = Math.max(0, Math.min(100, s.prob * 100));
