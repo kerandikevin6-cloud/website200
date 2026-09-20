@@ -82,6 +82,14 @@
      the live figure, and orange was reading as "something is wrong with
      this number". Yellow, with near-black on top of it, because white
      on yellow is not a thing anyone can read. */
+  /* ---- the scanner's own colour ----
+     Rescan is not a warning, not a profit and not the primary action, so
+     it can be none of the three colours that already mean those things.
+     Violet is unused in this palette and reads as the machine rather
+     than as money — the engine looking again. Kept for that one button,
+     so it never becomes a fourth status colour by accident. */
+  --again:#5B45C9;
+  --again-soft:#EDEAFB;
   --tick:#F5C518;
   --tick-line:#D8AC06;
   --tick-ink:#241A00;
@@ -180,6 +188,8 @@
     --neg-deep:#93180F;
     --warn:#E0912F;
     --warn-soft:#2E2113;
+    --again:#A99BF0;
+    --again-soft:#1D1A38;
     --tick:#FFD426;
     --tick-line:#E0B400;
     --tick-ink:#241A00;
@@ -215,6 +225,8 @@
 
   --accent:#3D9BFF;
   --accent-soft:#122C45;
+  --again:#A99BF0;
+  --again-soft:#1D1A38;
   --accent-fill:#007FFA;
   --accent-fill-2:#0069DB;
   --accent-ink:#FFFFFF;
@@ -1824,6 +1836,15 @@ body.locked{overflow:hidden}
 .ai-hero b{font-size:17px;font-weight:600}
 .ai-hero .ai-headline{font-size:26px;font-family:var(--mono);letter-spacing:-.02em}
 .ai-hero .ai-sub{font-size:12.5px;color:var(--muted);line-height:1.5;max-width:44ch}
+/* The result card is smaller than the two that precede it, and
+   deliberately: "Scan the market" is an invitation and has a screen to
+   fill, while this is one line of answer with the ranked list and the
+   two buttons underneath it that somebody is on their way to. It was
+   taking a third of a phone to say four words. */
+.ai-hero.done{padding:14px 16px;gap:5px}
+.ai-hero.done .ai-headline{font-size:19px}
+.ai-hero.done .ai-sub{font-size:11.5px}
+.ai-hero.done .ai-go{margin-top:9px;padding:8px 14px;font-size:12.5px}
 .ai-orb{display:flex;align-items:center;gap:5px;height:22px}
 .ai-orb i{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.35}
 .ai-hero.scanning .ai-orb i{animation:aipulse 1s infinite}
@@ -1856,9 +1877,26 @@ body.locked{overflow:hidden}
 .ai-p b{display:block;font-size:13.5px;font-weight:500}
 .ai-p span{display:block;font-size:10.5px;margin-top:2px}
 
-/* Two ways on from a scan, and neither of them takes money. */
+/* Two ways on from a scan, and neither of them takes money.
+
+   Rounded like the tab bar, because these two are the same kind of
+   thing it is: the way off this screen. Everything square on the page
+   is something being read, and these are not. */
 .ai-dock{display:flex;flex-direction:column;gap:9px;margin:12px 14px 0}
-.ai-dock .btn{width:100%}
+.ai-dock .btn{width:100%;border-radius:999px}
+
+/* Looking again is not the primary action and not a warning either, so
+   it wears the scanner's own violet rather than borrowing the blue of
+   the button above it or the amber that means something is wrong. */
+.btn-again{
+  background:var(--again-soft);color:var(--again);
+  border:1px solid color-mix(in srgb, var(--again) 26%, transparent);
+}
+.btn-again:hover{background:color-mix(in srgb, var(--again) 16%, var(--again-soft))}
+/* No color-mix: the border still has to be there, just flatter. */
+@supports not (color: color-mix(in srgb, red 50%, blue)){
+  .btn-again{border-color:var(--again)}
+}
 .ai-note{
   margin:10px 16px 0;font-size:11.5px;line-height:1.55;
   color:var(--muted);text-align:center;
@@ -8041,10 +8079,20 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return best;
   }
 
+  /* Every instrument is scored, and the best five are kept.
+
+     The list used to be as long as the board, which meant the two
+     buttons under it — the only two things there are to do with a scan —
+     were most of a screen away, and nobody reads to the bottom of a
+     ranking they did not ask for. Five is enough to see that the top one
+     won on merit and short enough that the way out is in sight. */
+  var SHOWN = 5;
+
   function rescan() {
     S.signals = API.symbols.map(function (s) { return score(s.id); })
       .filter(Boolean)
-      .sort(function (a, b) { return b.edge - a.edge; });
+      .sort(function (a, b) { return b.edge - a.edge; })
+      .slice(0, SHOWN);
     if (!S.signals.length) return;
     if (!S.pick || !current()) S.pick = S.signals[0].symbol;
   }
@@ -8175,7 +8223,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   function signalRows() {
     if (S.phase !== 'done') return '';
-    return '<div class="ai-sect label">Ranked signals</div>' +
+    return '<div class="ai-sect label">Top ' + S.signals.length + ' signals</div>' +
       '<div class="list">' + S.signals.map(function (s) {
         var good = s.edge >= 0;
         var conf = Math.max(0, Math.min(100, s.prob * 100));
@@ -8209,7 +8257,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return '<div class="ai-dock">' +
         '<button class="btn btn-fill" id="aiTake">' +
           I('candles', 16) + 'Load volatility</button>' +
-        '<button class="btn btn-ghost" id="aiScanAgain">' +
+        '<button class="btn btn-again" id="aiScanAgain">' +
           I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>' +
       '<p class="ai-note">The terminal opens on this contract with the digit ' +

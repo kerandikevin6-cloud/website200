@@ -114,10 +114,20 @@
     return best;
   }
 
+  /* Every instrument is scored, and the best five are kept.
+
+     The list used to be as long as the board, which meant the two
+     buttons under it — the only two things there are to do with a scan —
+     were most of a screen away, and nobody reads to the bottom of a
+     ranking they did not ask for. Five is enough to see that the top one
+     won on merit and short enough that the way out is in sight. */
+  var SHOWN = 5;
+
   function rescan() {
     S.signals = API.symbols.map(function (s) { return score(s.id); })
       .filter(Boolean)
-      .sort(function (a, b) { return b.edge - a.edge; });
+      .sort(function (a, b) { return b.edge - a.edge; })
+      .slice(0, SHOWN);
     if (!S.signals.length) return;
     if (!S.pick || !current()) S.pick = S.signals[0].symbol;
   }
@@ -248,7 +258,7 @@
 
   function signalRows() {
     if (S.phase !== 'done') return '';
-    return '<div class="ai-sect label">Ranked signals</div>' +
+    return '<div class="ai-sect label">Top ' + S.signals.length + ' signals</div>' +
       '<div class="list">' + S.signals.map(function (s) {
         var good = s.edge >= 0;
         var conf = Math.max(0, Math.min(100, s.prob * 100));
@@ -282,7 +292,7 @@
     return '<div class="ai-dock">' +
         '<button class="btn btn-fill" id="aiTake">' +
           I('candles', 16) + 'Load volatility</button>' +
-        '<button class="btn btn-ghost" id="aiScanAgain">' +
+        '<button class="btn btn-again" id="aiScanAgain">' +
           I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>' +
       '<p class="ai-note">The terminal opens on this contract with the digit ' +
