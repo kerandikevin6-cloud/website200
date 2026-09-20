@@ -5882,9 +5882,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      anywhere else in the app, and unmasking it would serve nobody: the
      owner recognises their own number from the last three digits, and
      anybody else has no business reading the rest. */
-  function savedNumber(masked) {
+  function savedNumber(masked, label, hint) {
     return '<div class="field">' +
-      '<label>M-Pesa number</label>' +
+      '<label>' + (label || 'M-Pesa number') + '</label>' +
       '<div class="input saved-num">' +
         I('phone', 17) +
         '<b class="num">' + (masked || 'On your account') + '</b>' +
@@ -5892,8 +5892,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           'Use another' +
         '</button>' +
       '</div>' +
-      '<span class="hint">The prompt goes to this number. ' +
-        'Change it for good in Account.</span>' +
+      '<span class="hint">' + (hint || 'The prompt goes to this number. ' +
+        'Change it for good in Account.') + '</span>' +
     '</div>';
   }
 
@@ -6600,8 +6600,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
             return waitingBody(
               s.method === 'mpesa' ? 'Check your phone' : 'Authorising with your bank',
               s.method === 'mpesa'
-                ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to +' + s.payTo +
-                  '. Enter your PIN to approve it.'
+                ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to ' +
+                  (s.payToLabel || ('+' + s.payTo)) + '. Enter your PIN to approve it.'
                 : 'Confirming ' + s.payLabel + ' with the card issuer.');
           }
         },
@@ -6852,11 +6852,23 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                   'Payouts are sent to an account in your own name. A mismatch is the ' +
                   'one thing that delays a transfer.');
             } else {
-              /* Every code, not only the seven the deposit rails cover:
-                 a payout is sent by a person, so the country it is going
-                 to is not limited by what we can collect. */
-              inner = phoneField('wPhone', 'Mobile money number',
-                'Must match the number registered to your verified name.', true);
+              /* The number on the account, the same one the deposit
+                 sheet pays from, masked the same way. A payout to a
+                 number typed in a hurry is the mistake that cannot be
+                 taken back, and the number already on file is the one
+                 that funded the account.
+
+                 Every dialling code behind "Use another", not only the
+                 seven the deposit rails cover: a payout is sent by a
+                 person, so where it can go is not limited by what we can
+                 collect. */
+              var who = API().session.get() || {};
+              inner = (who.phoneSet && !s.newNumber)
+                ? savedNumber(who.phoneMasked, 'Mobile money number',
+                    'Where the payout is sent. It must be registered to your ' +
+                    'verified name. Change it for good in Account.')
+                : phoneField('wPhone', 'Mobile money number',
+                    'Must match the number registered to your verified name.', true);
             }
 
             /* The sheet works in the viewer's own money from the first
@@ -10433,8 +10445,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           /* Paying from the number on the account. There is nothing to
              read off the page and nothing to validate here: the browser
              has never held those digits, so the server is asked to use
-             the ones it holds. */
+             the ones it holds — and the waiting screen names the masked
+             form, since that is the only form there is. */
+          var me = API.session.get() || {};
           state.data.payTo = null;
+          state.data.payToLabel = me.phoneMasked || 'the number on your account';
           state.data.onFile = true;
         } else {
           /* The country on the field, not the one the IP lookup guessed. */
@@ -10443,6 +10458,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           var digits = ph.value.replace(/\D/g, '');
           if (digits.length < dc.len) return fieldError('mpesaPhone', 'Enter your ' + dc.len + '-digit number');
           state.data.payTo = dc.dial + digits;
+          state.data.payToLabel = '+' + dc.dial + digits;
           state.data.onFile = false;
         }
       }
@@ -10524,6 +10540,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (holder.length < 2) return fieldError('wCardName', 'Enter the name on the account');
         if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
         dest.card = { bank: bank, name: holder, account: account };
+      } else if (!document.getElementById('wPhone')) {
+        /* Paying out to the number on the account. Nothing is sent: the
+           server reads the digits it holds, which are the same ones the
+           deposit came off. */
+        dest.onFile = true;
       } else {
         var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
         var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');

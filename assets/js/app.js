@@ -2011,8 +2011,11 @@
           /* Paying from the number on the account. There is nothing to
              read off the page and nothing to validate here: the browser
              has never held those digits, so the server is asked to use
-             the ones it holds. */
+             the ones it holds — and the waiting screen names the masked
+             form, since that is the only form there is. */
+          var me = API.session.get() || {};
           state.data.payTo = null;
+          state.data.payToLabel = me.phoneMasked || 'the number on your account';
           state.data.onFile = true;
         } else {
           /* The country on the field, not the one the IP lookup guessed. */
@@ -2021,6 +2024,7 @@
           var digits = ph.value.replace(/\D/g, '');
           if (digits.length < dc.len) return fieldError('mpesaPhone', 'Enter your ' + dc.len + '-digit number');
           state.data.payTo = dc.dial + digits;
+          state.data.payToLabel = '+' + dc.dial + digits;
           state.data.onFile = false;
         }
       }
@@ -2102,6 +2106,11 @@
         if (holder.length < 2) return fieldError('wCardName', 'Enter the name on the account');
         if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
         dest.card = { bank: bank, name: holder, account: account };
+      } else if (!document.getElementById('wPhone')) {
+        /* Paying out to the number on the account. Nothing is sent: the
+           server reads the digits it holds, which are the same ones the
+           deposit came off. */
+        dest.onFile = true;
       } else {
         var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
         var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');

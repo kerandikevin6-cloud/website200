@@ -89,9 +89,9 @@
      anywhere else in the app, and unmasking it would serve nobody: the
      owner recognises their own number from the last three digits, and
      anybody else has no business reading the rest. */
-  function savedNumber(masked) {
+  function savedNumber(masked, label, hint) {
     return '<div class="field">' +
-      '<label>M-Pesa number</label>' +
+      '<label>' + (label || 'M-Pesa number') + '</label>' +
       '<div class="input saved-num">' +
         I('phone', 17) +
         '<b class="num">' + (masked || 'On your account') + '</b>' +
@@ -99,8 +99,8 @@
           'Use another' +
         '</button>' +
       '</div>' +
-      '<span class="hint">The prompt goes to this number. ' +
-        'Change it for good in Account.</span>' +
+      '<span class="hint">' + (hint || 'The prompt goes to this number. ' +
+        'Change it for good in Account.') + '</span>' +
     '</div>';
   }
 
@@ -807,8 +807,8 @@
             return waitingBody(
               s.method === 'mpesa' ? 'Check your phone' : 'Authorising with your bank',
               s.method === 'mpesa'
-                ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to +' + s.payTo +
-                  '. Enter your PIN to approve it.'
+                ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to ' +
+                  (s.payToLabel || ('+' + s.payTo)) + '. Enter your PIN to approve it.'
                 : 'Confirming ' + s.payLabel + ' with the card issuer.');
           }
         },
@@ -1059,11 +1059,23 @@
                   'Payouts are sent to an account in your own name. A mismatch is the ' +
                   'one thing that delays a transfer.');
             } else {
-              /* Every code, not only the seven the deposit rails cover:
-                 a payout is sent by a person, so the country it is going
-                 to is not limited by what we can collect. */
-              inner = phoneField('wPhone', 'Mobile money number',
-                'Must match the number registered to your verified name.', true);
+              /* The number on the account, the same one the deposit
+                 sheet pays from, masked the same way. A payout to a
+                 number typed in a hurry is the mistake that cannot be
+                 taken back, and the number already on file is the one
+                 that funded the account.
+
+                 Every dialling code behind "Use another", not only the
+                 seven the deposit rails cover: a payout is sent by a
+                 person, so where it can go is not limited by what we can
+                 collect. */
+              var who = API().session.get() || {};
+              inner = (who.phoneSet && !s.newNumber)
+                ? savedNumber(who.phoneMasked, 'Mobile money number',
+                    'Where the payout is sent. It must be registered to your ' +
+                    'verified name. Change it for good in Account.')
+                : phoneField('wPhone', 'Mobile money number',
+                    'Must match the number registered to your verified name.', true);
             }
 
             /* The sheet works in the viewer's own money from the first
