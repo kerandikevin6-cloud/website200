@@ -260,13 +260,13 @@
       return call('/auth/profile', { method: 'POST', body: patch });
     },
 
-    /* The deposit number. The password is asked for because this is the
-       number our messages go to, and a quietly changed one is how
-       somebody stops hearing from us without knowing why. */
-    updatePhone: function (phone, country, password) {
+    /* The deposit number. No password: it cannot be used to take
+       anything, and asking for one refused every account that signed in
+       with Google and has none. */
+    updatePhone: function (phone, country) {
       return call('/auth/phone', {
         method: 'POST',
-        body: { phone: phone, country: country, password: password }
+        body: { phone: phone, country: country }
       });
     },
 

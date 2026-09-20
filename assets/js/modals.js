@@ -510,7 +510,6 @@
                     'deposits will be one tap.</span></div>') +
               phoneField('newPhone', who.phoneSet ? 'New number' : 'Your M-Pesa number',
                 'Deposits are taken from this number, and it is where we reach you.') +
-              secret('phonePassword', 'Your password', 'To confirm it is you') +
               act('Save number', 'savePhone') +
             '</div>';
           }

@@ -440,6 +440,7 @@
     [
       { id: 'account', label: 'Account', file: 'account', icon: 'user' },
       { label: 'Profile and name', modal: 'profile', icon: 'idcard' },
+      { label: 'Deposit number', modal: 'phone', icon: 'phone' },
       { label: 'Update password', modal: 'password', icon: 'lock' },
       { label: 'Verify identity', modal: 'verify', icon: 'shield' }
     ],
@@ -553,6 +554,11 @@
         '<div class="dnav">' +
           group('Account', 'user', [
             item('Profile and name', { icon: 'idcard', modal: 'profile' }),
+            /* In the menu as well as on the account page: it is looked
+               for at the moment somebody is about to deposit, and that
+               is a moment spent in this menu rather than on a settings
+               screen two taps away. */
+            item('Deposit number', { icon: 'phone', modal: 'phone' }),
             item('Update password', { icon: 'lock', modal: 'password' }),
             item('Verify identity', { icon: 'shield', modal: 'verify' })
           ], true) +
@@ -2207,12 +2213,10 @@
       var pcc = ((document.getElementById('newPhoneCountry') || {}).value) || API.geo.code();
       var pc = API.geo.countries[pcc] || API.geo.country();
       var pDigits = (((document.getElementById('newPhone') || {}).value) || '').replace(/\D/g, '');
-      var pw = ((document.getElementById('phonePassword') || {}).value) || '';
 
       if (pDigits.length < pc.len) {
         return fieldError('newPhone', 'Enter your ' + pc.len + '-digit number');
       }
-      if (!pw) return fieldError('phonePassword', 'Enter your password to confirm');
 
       if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
         window.NexToast('Sign in first, so the change is saved to your account.');
@@ -2220,7 +2224,7 @@
       }
 
       if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Saving'; }
-      window.NexNet.updatePhone(pc.dial + pDigits, pcc, pw).then(function (out) {
+      window.NexNet.updatePhone(pc.dial + pDigits, pcc).then(function (out) {
         /* The server answers with the masked form, which is the only
            form anything on this side ever holds. */
         state.data.savedPhone = out.phoneMasked;
@@ -2235,7 +2239,6 @@
            somebody looking for what was wrong. */
         var fields = err.fields || {};
         if (fields.phone) return fieldError('newPhone', fields.phone);
-        if (fields.password) return fieldError('phonePassword', fields.password);
         window.NexToast(err.message || 'That did not save. Try again.');
       });
       return;

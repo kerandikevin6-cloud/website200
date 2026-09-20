@@ -488,12 +488,17 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 }
 
 /* ---------------- terminal ---------------- */
-/* The three contracts sit on the control ground rather than on the
-   card, which in light mode is the difference between a row of buttons
-   and a line of text. The chosen one lifts out of it. */
+/* The three contracts, and the app's own rule about chosen things:
+   painted blue, carrying white — the same treatment as the tab bar, the
+   mode toggle and the switch.
+
+   It used to be the other way round. The strip carried blue and the
+   chosen tab lifted out of it in white, which in light mode read as two
+   unchosen tabs and one washed-out one: white is the page's own colour,
+   so the selected tab was the one that looked least like a control. */
 .ctabs{
   display:flex;overflow:hidden;
-  background:var(--ctl);border-bottom:1px solid var(--ctl-line);
+  background:var(--surface);border-bottom:1px solid var(--line-soft);
 }
 .ctabs::-webkit-scrollbar{display:none}
 /* width:0 + flex-basis:0 + min-width:0 forces mathematically equal
@@ -513,6 +518,8 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   content:"";position:absolute;left:0;top:22%;bottom:22%;
   width:1px;background:var(--line-soft);
 }
+/* A separator drawn against a filled tab reads as a seam in it. */
+.ctab.active::before,.ctab.active + .ctab::before{background:transparent}
 .ctab span{overflow:hidden;text-overflow:ellipsis}
 .ctab-ico{display:flex;flex:none;color:var(--muted)}
 .ctab.active .ctab-ico{color:var(--accent)}
@@ -521,8 +528,13 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:transparent;
 }
 .ctab:hover{color:var(--text-2)}
-.ctab.active{color:var(--accent);background:var(--ctl-on)}
-.ctab.active::after{background:var(--pos)}
+/* The deep fill, not the text blue: --accent is pulled dark so it stays
+   legible as small text on white, and as a background it is muddy.
+   --accent-fill-2 is the brand blue at full strength and never carries
+   anything but white. */
+.ctab.active{color:var(--accent-ink);background:var(--accent-fill-2)}
+.ctab.active .ctab-ico{color:var(--accent-ink)}
+.ctab.active::after{background:var(--accent-ink);opacity:.75}
 
 .instrument{display:flex;align-items:center;gap:10px;padding:8px 14px 10px}
 .inst-mark{
@@ -1152,7 +1164,7 @@ footer a:hover{color:var(--text-2)}
 
 /* The active contract reads as the chosen one rather than as a dot. */
 .ctab.active::after{
-  width:16px;height:2px;margin-left:-8px;border-radius:0;background:var(--accent);
+  width:16px;height:2px;margin-left:-8px;border-radius:0;background:var(--accent-ink);
 }
 .ctab.active{font-weight:600}
 .seg button.active{font-weight:600}
@@ -1352,8 +1364,15 @@ footer a:hover{color:var(--text-2)}
   .terminal .col-right .ctab::after{
     left:0;top:0;bottom:0;width:3px;height:auto;margin:0;border-radius:0;
   }
-  .terminal .col-right .ctab.active::after{width:3px;height:auto;margin:0}
-  .terminal .col-right .ctab.active{background:var(--accent-soft)}
+  /* The rail keeps the tint-and-bar treatment: a filled row in a list of
+     three would read as a button among labels, and the bar down its edge
+     is what marks a chosen row in every other list in the app. So the
+     ink goes back to blue, since the ground here is pale. */
+  .terminal .col-right .ctab.active{background:var(--accent-soft);color:var(--accent)}
+  .terminal .col-right .ctab.active .ctab-ico{color:var(--accent)}
+  .terminal .col-right .ctab.active::after{
+    width:3px;height:auto;margin:0;background:var(--accent);opacity:1;
+  }
 
   /* One button per line, and taller. The column has the room, and a
      trade button is the last thing that should be sharing space. */
