@@ -5,15 +5,27 @@
    served forever and a fix to app.css never reached the page. Network-first
    costs nothing on a fast connection, still works fully offline, and can
    never pin the UI to a stale build. */
-var CACHE = 'nexas-v16';
+/* ---- the version on the asset urls ----
+   The scripts and the stylesheet are asked for as app.js?v=<date>, and
+   the pages ask for them the same way. That query is the only thing
+   that can reach a browser which already holds these files: they went
+   out for months under max-age of a year and "immutable", which is a
+   promise that the browser will not so much as ask again. Changing the
+   header fixes the next visitor; changing the url is what frees the
+   ones already carrying a copy.
+
+   It does not need bumping every deploy. The header says revalidate
+   now, so from here on a changed file is picked up by asking. This is
+   the one-time way out of the year that was already promised. */
+var CACHE = 'nexas-v17';
 var SHELL = [
   'landing.html', 'index.html', 'ai.html', 'markets.html', 'positions.html', 'learn.html', 'responsible.html', 'account.html',
   'chat.html', 'history.html', 'copy.html', 'terms.html', 'privacy.html', 'risk.html',
   'security.html', 'complaints.html', 'login.html', 'signup.html', 'forgot-password.html', 'reset-password.html',
-  'assets/css/app.css',
-  'assets/js/config.js', 'assets/js/countries.js', 'assets/js/net.js', 'assets/js/format.js', 'assets/js/api.js', 'assets/js/chart.js',
-  'assets/js/modals.js', 'assets/js/trade.js', 'assets/js/positions.js',
-  'assets/js/ai.js', 'assets/js/app.js',
+  'assets/css/app.css?v=20260921',
+  'assets/js/config.js?v=20260921', 'assets/js/countries.js?v=20260921', 'assets/js/net.js?v=20260921', 'assets/js/format.js?v=20260921', 'assets/js/api.js?v=20260921', 'assets/js/chart.js?v=20260921',
+  'assets/js/modals.js?v=20260921', 'assets/js/trade.js?v=20260921', 'assets/js/positions.js?v=20260921',
+  'assets/js/ai.js?v=20260921', 'assets/js/app.js?v=20260921',
   'assets/mpesa.png', 'assets/cards.png', 'assets/cards-ink.png',
   'assets/share-card.png',
   'assets/favicon.ico', 'assets/favicon-32.png', 'assets/favicon-192.png',
