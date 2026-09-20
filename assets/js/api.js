@@ -936,6 +936,12 @@
              sending one back. */
           phoneMasked: user.phoneMasked || null,
           phoneSet: !!user.phoneSet,
+          /* Two names, because they are two things: the one an ID check
+             is read against, and the one other traders see. `name` above
+             stays whichever is shown around the app. */
+          legalName: user.legalName || null,
+          displayName: user.displayName || null,
+          nameLocked: !!user.nameLocked,
           method: 'server',
           at: Date.now()
         };

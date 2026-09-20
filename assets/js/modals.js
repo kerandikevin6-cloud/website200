@@ -14,6 +14,14 @@
   var NAMES = { mpesa: 'M-Pesa', card: 'Card', usdt: 'USDT' };
 
   function I(n, s) { return window.NexIcon(n, s); }
+  /* A name goes into an attribute here, and a name is whatever somebody
+     typed. Quotes and angle brackets out, or a display name ending the
+     value early takes the rest of the field with it. */
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
   function F() { return window.NexFmt; }
   function API() { return window.NexAPI; }
 
@@ -437,16 +445,30 @@
           sub: 'Your name must match the ID you verify with.',
           body: function () {
             var who = API().session.get() || {};
-            var parts = (who.name || '').trim().split(/\s+/);
+            /* The legal name, not whatever is being shown around the app:
+               these two fields are read against a document. */
+            var parts = (who.legalName || who.name || '').trim().split(/\s+/);
             var first = parts[0] || '';
             var last = parts.slice(1).join(' ');
+            var locked = !!who.nameLocked;
+
+            /* Verified accounts cannot type over the name that was
+               verified. Shown as fixed rather than hidden: a field that
+               vanishes looks like a bug, and one that silently refuses to
+               save is worse. */
+            var lockNote = locked
+              ? 'Fixed by your identity check. Contact support if it is wrong.'
+              : '';
+            var lockAttr = locked ? ' disabled' : '';
+
             return '<div class="modal-form">' +
               field('firstName', 'First name',
-                'value="' + first + '" autocomplete="given-name" placeholder="First name"') +
+                'value="' + esc(first) + '" autocomplete="given-name" placeholder="First name"' + lockAttr) +
               field('lastName', 'Last name',
-                'value="' + last + '" autocomplete="family-name" placeholder="Last name"') +
+                'value="' + esc(last) + '" autocomplete="family-name" placeholder="Last name"' + lockAttr,
+                lockNote) +
               field('displayName', 'Display name',
-                'value="' + (who.displayName || '') + '" placeholder="How other traders see you"',
+                'value="' + esc(who.displayName || who.name || '') + '" placeholder="How other traders see you"',
                 'Shown in support chat and copy trading.') +
               act('Save changes', 'saveProfile') +
             '</div>';

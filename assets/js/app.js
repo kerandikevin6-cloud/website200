@@ -1271,6 +1271,9 @@
            the deposit sheet stopped needing them. */
         phoneMasked: out.profile && out.profile.phone_masked,
         phoneSet: !!(out.profile && out.profile.phone_set),
+        legalName: (out.profile && out.profile.legal_name) || (out.user && out.user.name),
+        displayName: out.profile && out.profile.display_name,
+        nameLocked: !!(out.profile && out.profile.name_locked),
         country: out.profile && out.profile.country,
         /* The presentation switch, as the server reports it. The browser
            never decides this. */
@@ -2159,17 +2162,44 @@
     }
     if (name === 'saveProfile') {
       clearErrors();
+      var who = API.session.get() || {};
+      var locked = !!who.nameLocked;
       var first = ((document.getElementById('firstName') || {}).value || '').trim();
       var last = ((document.getElementById('lastName') || {}).value || '').trim();
       var shown = ((document.getElementById('displayName') || {}).value || '').trim();
 
-      if (!first) return fieldError('firstName', 'Enter your first name');
-      if (!last) return fieldError('lastName', 'Enter your last name');
-      if (/\d/.test(first + last)) return fieldError('firstName', 'Names cannot contain numbers');
+      /* The legal name is only checked when it can still be edited. A
+         locked field has no value to validate and no value to send. */
+      if (!locked) {
+        if (!first) return fieldError('firstName', 'Enter your first name');
+        if (!last) return fieldError('lastName', 'Enter your last name');
+        if (/\d/.test(first + last)) return fieldError('firstName', 'Names cannot contain numbers');
+      }
       if (!shown) return fieldError('displayName', 'Pick a name to show other traders');
 
-      state.data.savedName = shown;
-      gotoStep('done');
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        /* Signed out, or running without a server: the screen still
+           works, but say plainly that nothing was kept rather than
+           showing a success step over a change that went nowhere. */
+        window.NexToast('Sign in first, so the change is saved to your account.');
+        return;
+      }
+
+      var patch = { displayName: shown };
+      if (!locked) { patch.firstName = first; patch.lastName = last; }
+
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Saving'; }
+      window.NexNet.saveAccount(patch).then(function (out) {
+        state.data.savedName = out.displayName || shown;
+        return hydrateSession().then(function () { gotoStep('done'); });
+      }, function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Save changes'; }
+        var f = err.fields || {};
+        if (f.firstName) return fieldError('firstName', f.firstName);
+        if (f.lastName) return fieldError('lastName', f.lastName);
+        if (f.displayName) return fieldError('displayName', f.displayName);
+        window.NexToast(err.message || 'That did not save. Try again.');
+      });
       return;
     }
     if (name === 'savePhone') {

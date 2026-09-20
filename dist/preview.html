@@ -1897,10 +1897,6 @@ body.locked{overflow:hidden}
 @supports not (color: color-mix(in srgb, red 50%, blue)){
   .btn-again{border-color:var(--again)}
 }
-.ai-note{
-  margin:10px 16px 0;font-size:11.5px;line-height:1.55;
-  color:var(--muted);text-align:center;
-}
 
 @media (min-width:900px){
   .ai-hero,.ai-dock{margin-left:0;margin-right:0}
@@ -3980,6 +3976,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     session: function () { return call('/auth/session'); },
 
+    /* Name and display name. Only the keys that are sent are changed, so
+       editing one cannot blank the other. */
+    saveAccount: function (patch) {
+      return call('/auth/profile', { method: 'POST', body: patch });
+    },
+
     /* The deposit number. The password is asked for because this is the
        number our messages go to, and a quietly changed one is how
        somebody stops hearing from us without knowing why. */
@@ -5355,6 +5357,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
              sending one back. */
           phoneMasked: user.phoneMasked || null,
           phoneSet: !!user.phoneSet,
+          /* Two names, because they are two things: the one an ID check
+             is read against, and the one other traders see. `name` above
+             stays whichever is shown around the app. */
+          legalName: user.legalName || null,
+          displayName: user.displayName || null,
+          nameLocked: !!user.nameLocked,
           method: 'server',
           at: Date.now()
         };
@@ -5780,6 +5788,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   var NAMES = { mpesa: 'M-Pesa', card: 'Card', usdt: 'USDT' };
 
   function I(n, s) { return window.NexIcon(n, s); }
+  /* A name goes into an attribute here, and a name is whatever somebody
+     typed. Quotes and angle brackets out, or a display name ending the
+     value early takes the rest of the field with it. */
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
   function F() { return window.NexFmt; }
   function API() { return window.NexAPI; }
 
@@ -6203,16 +6219,30 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           sub: 'Your name must match the ID you verify with.',
           body: function () {
             var who = API().session.get() || {};
-            var parts = (who.name || '').trim().split(/\s+/);
+            /* The legal name, not whatever is being shown around the app:
+               these two fields are read against a document. */
+            var parts = (who.legalName || who.name || '').trim().split(/\s+/);
             var first = parts[0] || '';
             var last = parts.slice(1).join(' ');
+            var locked = !!who.nameLocked;
+
+            /* Verified accounts cannot type over the name that was
+               verified. Shown as fixed rather than hidden: a field that
+               vanishes looks like a bug, and one that silently refuses to
+               save is worse. */
+            var lockNote = locked
+              ? 'Fixed by your identity check. Contact support if it is wrong.'
+              : '';
+            var lockAttr = locked ? ' disabled' : '';
+
             return '<div class="modal-form">' +
               field('firstName', 'First name',
-                'value="' + first + '" autocomplete="given-name" placeholder="First name"') +
+                'value="' + esc(first) + '" autocomplete="given-name" placeholder="First name"' + lockAttr) +
               field('lastName', 'Last name',
-                'value="' + last + '" autocomplete="family-name" placeholder="Last name"') +
+                'value="' + esc(last) + '" autocomplete="family-name" placeholder="Last name"' + lockAttr,
+                lockNote) +
               field('displayName', 'Display name',
-                'value="' + (who.displayName || '') + '" placeholder="How other traders see you"',
+                'value="' + esc(who.displayName || who.name || '') + '" placeholder="How other traders see you"',
                 'Shown in support chat and copy trading.') +
               act('Save changes', 'saveProfile') +
             '</div>';
@@ -8258,15 +8288,17 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   function ticketCard() {
     if (S.phase !== 'done' || !current()) return '';
 
+    /* The paragraph that used to sit under these said the terminal opens
+       with the digit already set and nothing is placed until you press
+       buy. Both are true, both are visible the second the terminal
+       opens, and on a short phone it was the one thing pushed below the
+       fold by the buttons it was explaining. */
     return '<div class="ai-dock">' +
         '<button class="btn btn-fill" id="aiTake">' +
           I('candles', 16) + 'Load volatility</button>' +
         '<button class="btn btn-again" id="aiScanAgain">' +
           I('radar', 16) + 'Rescan for the best market</button>' +
-      '</div>' +
-      '<p class="ai-note">The terminal opens on this contract with the digit ' +
-        'already set. You choose the stake there, and nothing is placed until ' +
-        'you press buy.</p>';
+      '</div>';
   }
 
   function tradeLog() {
@@ -9643,6 +9675,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
            the deposit sheet stopped needing them. */
         phoneMasked: out.profile && out.profile.phone_masked,
         phoneSet: !!(out.profile && out.profile.phone_set),
+        legalName: (out.profile && out.profile.legal_name) || (out.user && out.user.name),
+        displayName: out.profile && out.profile.display_name,
+        nameLocked: !!(out.profile && out.profile.name_locked),
         country: out.profile && out.profile.country,
         /* The presentation switch, as the server reports it. The browser
            never decides this. */
@@ -10531,17 +10566,44 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }
     if (name === 'saveProfile') {
       clearErrors();
+      var who = API.session.get() || {};
+      var locked = !!who.nameLocked;
       var first = ((document.getElementById('firstName') || {}).value || '').trim();
       var last = ((document.getElementById('lastName') || {}).value || '').trim();
       var shown = ((document.getElementById('displayName') || {}).value || '').trim();
 
-      if (!first) return fieldError('firstName', 'Enter your first name');
-      if (!last) return fieldError('lastName', 'Enter your last name');
-      if (/\d/.test(first + last)) return fieldError('firstName', 'Names cannot contain numbers');
+      /* The legal name is only checked when it can still be edited. A
+         locked field has no value to validate and no value to send. */
+      if (!locked) {
+        if (!first) return fieldError('firstName', 'Enter your first name');
+        if (!last) return fieldError('lastName', 'Enter your last name');
+        if (/\d/.test(first + last)) return fieldError('firstName', 'Names cannot contain numbers');
+      }
       if (!shown) return fieldError('displayName', 'Pick a name to show other traders');
 
-      state.data.savedName = shown;
-      gotoStep('done');
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        /* Signed out, or running without a server: the screen still
+           works, but say plainly that nothing was kept rather than
+           showing a success step over a change that went nowhere. */
+        window.NexToast('Sign in first, so the change is saved to your account.');
+        return;
+      }
+
+      var patch = { displayName: shown };
+      if (!locked) { patch.firstName = first; patch.lastName = last; }
+
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Saving'; }
+      window.NexNet.saveAccount(patch).then(function (out) {
+        state.data.savedName = out.displayName || shown;
+        return hydrateSession().then(function () { gotoStep('done'); });
+      }, function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Save changes'; }
+        var f = err.fields || {};
+        if (f.firstName) return fieldError('firstName', f.firstName);
+        if (f.lastName) return fieldError('lastName', f.lastName);
+        if (f.displayName) return fieldError('displayName', f.displayName);
+        window.NexToast(err.message || 'That did not save. Try again.');
+      });
       return;
     }
     if (name === 'savePhone') {

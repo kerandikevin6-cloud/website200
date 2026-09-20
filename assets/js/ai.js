@@ -293,15 +293,17 @@
   function ticketCard() {
     if (S.phase !== 'done' || !current()) return '';
 
+    /* The paragraph that used to sit under these said the terminal opens
+       with the digit already set and nothing is placed until you press
+       buy. Both are true, both are visible the second the terminal
+       opens, and on a short phone it was the one thing pushed below the
+       fold by the buttons it was explaining. */
     return '<div class="ai-dock">' +
         '<button class="btn btn-fill" id="aiTake">' +
           I('candles', 16) + 'Load volatility</button>' +
         '<button class="btn btn-again" id="aiScanAgain">' +
           I('radar', 16) + 'Rescan for the best market</button>' +
-      '</div>' +
-      '<p class="ai-note">The terminal opens on this contract with the digit ' +
-        'already set. You choose the stake there, and nothing is placed until ' +
-        'you press buy.</p>';
+      '</div>';
   }
 
   function tradeLog() {

@@ -254,6 +254,12 @@
 
     session: function () { return call('/auth/session'); },
 
+    /* Name and display name. Only the keys that are sent are changed, so
+       editing one cannot blank the other. */
+    saveAccount: function (patch) {
+      return call('/auth/profile', { method: 'POST', body: patch });
+    },
+
     /* The deposit number. The password is asked for because this is the
        number our messages go to, and a quietly changed one is how
        somebody stops hearing from us without knowing why. */
