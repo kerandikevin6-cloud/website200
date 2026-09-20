@@ -1681,20 +1681,15 @@ footer a:hover{color:var(--text-2)}
 .stake.invalid{border-color:var(--neg)}
 .tbtn[disabled]{opacity:.45;cursor:not-allowed}
 
-/* ---------------- automated run ---------------- */
-.runbar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:11px 12px;border:1px solid var(--line-soft);background:var(--surface-2);
-}
-.runbar.active{border-color:var(--pos);background:var(--pos-soft)}
-.runbar-t{font-size:13px;font-weight:500;margin-top:2px}
+/* The run bar that lived here is gone with the panel row it styled:
+   the trade button is the whole progress display now. .btn-mini stays,
+   it is used by the consent bar, positions and history. */
 .btn-mini{
   display:inline-flex;align-items:center;gap:6px;padding:7px 11px;font-size:12px;
   border:1px solid var(--line);background:var(--surface);color:var(--text-2);
 }
 .btn-mini:hover{color:var(--text);border-color:var(--muted)}
 .btn-mini.solid{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-stop{padding:7px 13px;font-size:12px;font-weight:600;background:var(--neg);color:#fff}
 
 /* ---------------- open positions ---------------- */
 .active-wrap{display:flex;gap:10px;padding:0 12px 14px;overflow-x:auto;scrollbar-width:none}

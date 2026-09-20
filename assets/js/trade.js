@@ -20,8 +20,14 @@
     side: 'even',
     barrier: 5,
     stake: 10,               /* USD; replaced at init with a round local figure */
-    ticks: 5,             /* fixed: the duration picker was removed */
-    mode: 'manual',         /* manual | auto */
+    /* Not a setting. See ticksFor(): a contract runs five seconds, and
+       how many ticks that is depends on the instrument. */
+    ticks: 5,
+    /* Auto is what this screen is for. Manual is still a tap away, but
+       somebody arriving at a scanner-driven terminal is there to let it
+       run, and defaulting to the mode that does nothing on its own made
+       them set it up twice. */
+    mode: 'auto',           /* auto | manual */
     error: null,
     run: null
   };
@@ -293,7 +299,7 @@
     return '<div class="tdetail">' +
       detailRow('Instrument', meta.name) +
       detailRow('Contract', tabLabel()) +
-      detailRow('Duration', S.ticks + ' ticks') +
+      detailRow('Duration', (RUN_MS / 1000) + ' seconds') +
       /* The two sides of a contract do not always pay the same — Matches
          and Differs are nowhere near each other — so this says one rate
          only when it is honestly one rate. */
@@ -329,18 +335,17 @@
         '</div>' +
       '</div>';
 
-    var runRow = S.mode !== 'auto' ? '' :
-      '<div class="runbar' + (S.run ? ' active' : '') + '">' +
-        '<div>' +
-          '<span class="label">Automated run</span>' +
-          '<div class="runbar-t">' + (S.run
-            ? S.run.done + ' of ' + S.run.total + ' · ' + F.signedUsd(S.run.pnl)
-            : auto.runs + ' runs · ×' + auto.multiplier + ' on loss') + '</div>' +
-        '</div>' +
-        (S.run
-          ? '<button class="btn-stop" id="runStop">Stop</button>'
-          : '<button class="btn-mini" data-open="autorun">Settings</button>') +
-      '</div>';
+    /* The run bar that sat here is gone, and with it the Settings
+       button. It showed "3 of 10 · +$4" and a Stop — both of which the
+       trade button already shows, in amber, with the progress drawn
+       along its own foot. Two of the same control is one to think
+       about, and this one sat between the targets and the buttons they
+       apply to.
+
+       What it also carried was a way into the run settings. The three
+       numbers a run stops on are still editable, in the row directly
+       above; how many contracts it places and the multiplier are not
+       something to be set before every session. */
 
     /* The three targets are the rules an automated run stops on. In
        manual mode there is no run to stop, so they were three fields
@@ -383,7 +388,6 @@
         '</div>' +
       '</div>' +
       targets +
-      runRow +
       /* Last, under the automated run box, and in the same place in both
          modes. It used to sit directly under the stake in manual and
          above two boxes in auto, so the digit moved down the panel when
@@ -504,9 +508,29 @@
     return a.id === 'stake' || !!(a.closest && a.closest('.targets'));
   }
 
+  /* ---------- how long a contract runs ----------
+     Five seconds, and it is not asked for.
+
+     It used to be five ticks, which is not the same thing: these
+     instruments tick at different speeds, one a second and one every
+     two, so the identical contract ran for five seconds on one series
+     and ten on another. The number nobody could see was changing while
+     the number on the ticket stayed at "5".
+
+     So the duration is stated in time and the ticks are worked out from
+     whatever the instrument runs at. Clamped to what the contract rules
+     allow, so an unusually slow series cannot round down to nothing. */
+  var RUN_MS = 5000;
+
+  function ticksFor(symbol) {
+    var meta = API.symbol(symbol) || {};
+    var rate = meta.rate || 1000;
+    return Math.max(1, Math.min(10, Math.round(RUN_MS / rate)));
+  }
+
   /* ---------- validation ---------- */
   function check() {
-    S.error = API.contracts.validate({ stake: S.stake, ticks: S.ticks, symbol: S.symbol });
+    S.error = API.contracts.validate({ stake: S.stake, ticks: ticksFor(S.symbol), symbol: S.symbol });
     return !S.error;
   }
 
@@ -515,7 +539,7 @@
     var res = API.contracts.buy({
       symbol: S.symbol, type: typeFor(side), side: side,
       barrier: S.tab === 'even_odd' ? null : S.barrier,
-      stake: S.stake, ticks: S.ticks, run: runId || null
+      stake: S.stake, ticks: ticksFor(S.symbol), run: runId || null
     });
     if (!res.ok) {
       S.error = res.error;
@@ -647,7 +671,8 @@
         return;
       }
 
-      if (t.closest('#runStop')) { stopRun('Run stopped'); return; }
+      /* #runStop went with the run bar. Stopping is the trade button
+         itself now, which is what [data-stop] below handles. */
 
       var stop = t.closest('[data-stop]');
       if (stop) {
@@ -772,7 +797,8 @@
       S.symbol = ticket.symbol || S.symbol;
       S.tab = ticket.tab || S.tab;
       if (ticket.barrier != null) S.barrier = ticket.barrier;
-      if (ticket.ticks) S.ticks = ticket.ticks;
+      /* A duration on the ticket is ignored: every contract here runs
+         five seconds, and the scanner ranks contracts, not durations. */
       /* No stake rides along any more: the scanner found a contract, not
          a position size. Whatever is in the field here stays. */
       S.fromScan = ticket;
