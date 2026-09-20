@@ -34,6 +34,11 @@
     send: 'M4 12l16-8-6 16-2.5-6z',
     check: 'M5 13l4 4L19 7',
     minus: 'M5 12h14',
+    /* Three quarters of a circle with a bend at the open end: the arrow
+       everything uses for "again". Drawn open at the top right so that,
+       when the pull-to-refresh dot turns it with the drag, the gap is
+       what the eye follows round. */
+    refresh: 'M20.5 12a8.5 8.5 0 11-2.49-6.01|M14.4 5.3l3.7.7.6-3.7',
     plus: 'M12 5v14M5 12h14',
     clock: 'M12 7v5l3 2',
     sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4',
@@ -1435,23 +1440,127 @@
     /* The rail is fixed, so where it lands in the document does not
        matter to the layout — only that it is inside the app shell. */
     root.insertAdjacentHTML('beforeend', rail(page) + drawer() + (sub ? '' : tabbar(page)));
-    watchScroll();
+    pullToRefresh();
   }
 
-  /* A class while the page is moving, cleared a moment after it stops.
-     The floating dock uses it to lift slightly, which is what makes it
-     read as sitting above the page rather than being part of it.
-     Passive, and it sets one class: the listener itself must never be
-     the reason a scroll stutters. */
-  function watchScroll() {
-    var idle = null;
-    addEventListener('scroll', function () {
-      document.body.classList.add('scrolling');
-      clearTimeout(idle);
-      idle = setTimeout(function () {
-        document.body.classList.remove('scrolling');
-      }, 260);
+  /* The scroll listener that lived here is gone with the floating dock:
+     it existed to lift the dock a few pixels while the page moved, and
+     the dock now moves with the page. Nothing else read the class. */
+
+  /* ---------- pull to refresh ----------
+     The service worker keeps the whole shell on the device, which is what
+     makes the app open instantly and also what makes a stale build so
+     hard to shift: the page looks fine, it is simply yesterday's. On a
+     phone there is no address bar to long-press for a hard reload, and
+     "clear your browser data" is not an instruction to give anybody.
+
+     So: drag down from the top and the app throws away every cached file
+     and comes back from the network. What it never touches is
+     localStorage — the session and the account live there, and a refresh
+     that signed somebody out would be a worse bug than the one it fixes.
+
+     Native pull-to-refresh does the same thing in a tab, but it is absent
+     the moment the app is installed to the home screen, which is where it
+     is wanted most. preventDefault on the move keeps the two from firing
+     together. */
+  var PTR_TRIGGER = 64;          /* how far down before it will fire */
+  var PTR_MAX = 104;             /* how far the indicator can travel */
+
+  function pullToRefresh() {
+    if (window.__nexPtr) return;
+    if (!('ontouchstart' in window)) return;      /* a mouse has F5 */
+    window.__nexPtr = true;
+
+    var dot = document.createElement('div');
+    dot.className = 'ptr';
+    dot.innerHTML = icon('refresh', 17);
+    document.body.appendChild(dot);
+
+    var startY = 0, startX = 0, pulling = null, dist = 0, busy = false;
+
+    function paint(d, animate) {
+      dot.style.transition = animate ? 'transform .22s ease, opacity .22s ease' : 'none';
+      dot.style.transform = 'translateY(' + d + 'px) rotate(' + (d * 3) + 'deg)';
+      dot.style.opacity = Math.min(1, d / (PTR_TRIGGER * 0.7));
+      dot.classList.toggle('ready', d >= PTR_TRIGGER);
+    }
+    function reset() {
+      pulling = null; dist = 0;
+      paint(0, true);
+      dot.classList.remove('spin', 'ready');
+    }
+
+    addEventListener('touchstart', function (e) {
+      if (busy || e.touches.length !== 1) return;
+      /* Not while something is over the page, and not part way down it:
+         a drag that begins mid-scroll is a scroll. */
+      if (modalOpen || drawerOpen) return;
+      if (window.scrollY > 0) return;
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+      pulling = null;
+      dist = 0;
     }, { passive: true });
+
+    addEventListener('touchmove', function (e) {
+      if (busy || !startY || e.touches.length !== 1) return;
+      var dy = e.touches[0].clientY - startY;
+      var dx = e.touches[0].clientX - startX;
+
+      /* Decided once per gesture, on the first few pixels. A drag across
+         the chart pans it and must not also drag the page, and anything
+         heading upwards is an ordinary scroll. */
+      if (pulling === null) {
+        if (dy > 6 && Math.abs(dy) > Math.abs(dx) * 1.6) pulling = true;
+        else if (Math.abs(dx) > 6 || dy < -4) pulling = false;
+        if (!pulling) return;
+      }
+      if (window.scrollY > 0) { reset(); return; }
+
+      /* Rubber band: the further it is dragged the less it gives, so the
+         gesture has an end rather than running off the screen. */
+      dist = Math.min(PTR_MAX, dy * 0.45);
+      paint(dist, false);
+      e.preventDefault();
+    }, { passive: false });
+
+    addEventListener('touchend', function () {
+      if (busy) return;
+      if (pulling && dist >= PTR_TRIGGER) run();
+      else reset();
+      startY = 0;
+    }, { passive: true });
+
+    function run() {
+      busy = true;
+      dot.classList.add('spin');
+      dot.classList.remove('ready');
+      paint(PTR_TRIGGER, true);
+
+      /* Empty the cache, then tell the worker to look for a new copy of
+         itself, then reload — and reload whatever happens, because a
+         refresh that silently does nothing when the cache API is missing
+         is the exact failure this is here to fix. */
+      var jobs = [];
+      if (window.caches && caches.keys) {
+        jobs.push(caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        }));
+      }
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        jobs.push(navigator.serviceWorker.getRegistration().then(function (reg) {
+          return reg ? reg.update() : null;
+        }));
+      }
+      try { sessionStorage.clear(); } catch (e) {}
+
+      var done = function () { location.reload(); };
+      Promise.all(jobs.map(function (j) { return j.catch(function () {}); }))
+        .then(done, done);
+      /* Whatever the browser is doing with those promises, the page comes
+         back: a spinner that never ends is worse than a slow reload. */
+      setTimeout(done, 3000);
+    }
   }
 
   function setDrawer(open, fromPop) {
@@ -2582,7 +2691,6 @@
     if (window.NexAI) window.NexAI.init();
     resumeDeposit();
     if (document.body.getAttribute('data-chrome') !== 'app') document.body.classList.remove('loading');
-    if (document.querySelector('.trade-dock')) document.body.classList.add('has-sticky');
   }
   window.NexBoot = boot;
 

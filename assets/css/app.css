@@ -273,7 +273,7 @@ svg{display:block}
 main{flex:1;display:flex;flex-direction:column;width:100%}
 body[data-chrome="app"] main{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom))}
 body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
-body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74px + env(safe-area-inset-bottom))}
+
 
 /* ---------------- top bar ---------------- */
 .topbar{
@@ -527,11 +527,27 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
   border-radius:999px;font-size:11px;color:var(--text-2);background:var(--surface)
 }
 
+/* ---- the pinned head ----
+   On a phone the chart and the contract tabs hold their place and the
+   whole of the rest of the terminal — digits, what is running, the
+   ticket, the two buttons — scrolls under them as one piece. A trader
+   watching a tick does not want the thing they are watching to leave
+   the screen because they reached for the stake.
+
+   Sticky rather than fixed: fixed would take it out of the flow and
+   leave a hole the exact height of the chart at the top of the page,
+   and every ancestor here would need a matching padding to fill it. */
+.chart-pin{
+  position:sticky;top:var(--topbar-h);z-index:30;background:var(--bg);
+}
+
 .chart-card{
   margin:0;border:none;border-top:1px solid var(--line-soft);
   border-bottom:1px solid var(--line-soft);border-radius:0;
   background:var(--chart-bg);overflow:hidden;position:relative;
 }
+/* The height here is the tall-phone case; the block near the foot of this
+   file, "fitting a short phone", is what actually decides it. */
 #chart{display:block;width:100%;height:288px;position:relative;z-index:1}
 
 /* A world map sits behind the trace, filled in the text colour at a very
@@ -745,23 +761,13 @@ body[data-chrome="app"].has-sticky main{padding-bottom:calc(var(--tabbar-h) + 74
 .tbtn.odd{background:var(--neg-deep)}
 .tbtn:active{filter:brightness(1.08);transform:translateY(1px)}
 
-/* The dock floats rather than sitting welded to the bottom edge, and it
-   lifts a little while the page is moving: enough to read as a layer
-   above the page, not enough to be an animation anybody watches. The
-   class is set by app.js from the scroll listener it already runs. */
-.trade-dock{
-  position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  z-index:44;padding:0 12px 10px;background:none;
-  transition:transform .18s ease;
-}
-body.scrolling .trade-dock{transform:translateY(-3px)}
-body.scrolling .tbtn{
-  box-shadow:0 2px 4px rgba(6,20,14,.2), 0 12px 26px rgba(6,20,14,.2);
-}
-@media (prefers-reduced-motion:reduce){
-  .trade-dock,.tbtn{transition:none}
-  body.scrolling .trade-dock{transform:none}
-}
+/* The two buttons sit at the foot of the ticket and travel with it.
+   They used to float above the tab bar, pinned, which meant the one
+   part of the screen that is always the same was also the part
+   covering whatever you had scrolled to. Now the top of the terminal
+   is what holds still and everything below it, these included, moves
+   together. */
+.trade-dock{padding:12px 12px 2px;background:none}
 
 /* ---------------- lists / settings rows ---------------- */
 .list{
@@ -977,6 +983,31 @@ body.scrolling .tbtn{
 .kv span{color:var(--muted)}
 .kv b{font-weight:500;font-family:var(--mono)}
 .stack{display:flex;flex-direction:column;gap:14px;padding:14px}
+/* ---------------- pull to refresh ----------------
+   A single dot under the top bar. It fades in with the drag, turns with
+   it, firms up when the gesture is far enough to fire, and spins while
+   the app is coming back. Inline styles from app.js do the moving; this
+   is only what it looks like.
+
+   pointer-events:none matters — it sits over the chart, and a control
+   that eats a tap on the thing behind it is worse than no indicator. */
+.ptr{
+  position:fixed;left:50%;top:calc(var(--topbar-h) - 20px);z-index:38;
+  width:36px;height:36px;margin-left:-18px;border-radius:50%;
+  display:grid;place-items:center;pointer-events:none;
+  color:var(--muted);background:var(--surface);
+  border:1px solid var(--line);box-shadow:var(--shadow);
+  opacity:0;
+}
+.ptr.ready{color:var(--accent);border-color:var(--accent)}
+.ptr.spin{color:var(--accent);border-color:var(--accent)}
+.ptr.spin svg{animation:ptr-turn .8s linear infinite}
+@keyframes ptr-turn{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){
+  .ptr.spin svg{animation-duration:2s}
+}
+@media (min-width:900px){.ptr{display:none}}
+
 .toast{
   position:fixed;left:50%;bottom:calc(var(--tabbar-h) + 26px);transform:translate(-50%,10px);
   z-index:90;background:var(--text);color:var(--bg);padding:11px 18px;border-radius:999px;
@@ -1104,8 +1135,7 @@ footer a:hover{color:var(--text-2)}
 @media (min-width:900px){
   .only-desk{display:flex}
   .only-mob{display:none!important}
-  body[data-chrome="app"] main,
-  body[data-chrome="app"].has-sticky main{padding-bottom:0}
+  body[data-chrome="app"] main{padding-bottom:0}
   .tabbar{display:none}
   /* In the rail the column already provides the inset, so the dock only
      needs the gap between the two buttons. */
@@ -1125,7 +1155,11 @@ footer a:hover{color:var(--text-2)}
      whatever the middle column is doing. */
   .terminal{
     display:grid;grid-template-columns:minmax(0,1fr) 344px;
-    gap:16px;padding:16px;align-items:stretch;
+    /* Two rows in the left column: the chart takes what is going, the
+       digits take what they need. No row gap, because the two are one
+       panel on this screen and a seam between them would say otherwise. */
+    grid-template-rows:minmax(0,1fr) auto;
+    gap:0 16px;padding:16px;align-items:stretch;
     /* A height, not a minimum. As a minimum the row grew to whatever the
        digits needed and then the page scrolled, which on a laptop put
        the two trade buttons below the fold. Fixed, the chart gives up
@@ -1136,13 +1170,20 @@ footer a:hover{color:var(--text-2)}
      and a band of empty page under it: the column is as tall as the
      rail beside it, the digits sit at its foot, and the canvas has the
      rest. */
-  .terminal .col-mid{min-width:0;min-height:0;display:flex;flex-direction:column}
-  .terminal .col-mid .chart-card{flex:1;min-height:0;display:flex;flex-direction:column}
-  .terminal .col-mid #chart{flex:1;height:auto;min-height:260px}
+  /* Nothing is pinned here — the rail beside it is already the height of
+     the screen — so the head is simply the top row of the left column. */
+  .terminal .chart-pin{
+    grid-column:1;grid-row:1;position:static;top:auto;background:none;
+    min-width:0;min-height:0;display:flex;flex-direction:column;
+  }
+  .terminal .col-mid{grid-column:1;grid-row:2;min-width:0}
+  .terminal .chart-pin .chart-card{flex:1;min-height:0;display:flex;flex-direction:column}
+  .terminal .chart-pin #chart{flex:1;height:auto;min-height:260px}
   /* Source order already puts the chart first, which is what a phone
      wants and what the second column wants here, so nothing is
      reordered. */
   .terminal .col-right{
+    grid-column:2;grid-row:1 / span 2;
     display:flex;flex-direction:column;gap:14px;
     position:sticky;top:calc(64px + 16px);
     height:calc(100vh - 64px - 32px);
@@ -2541,12 +2582,16 @@ body[data-chrome="app"] main{background:var(--bg)}
 .list,.summary,.pnl-head,.ltable,.lpanel,.lfaq{box-shadow:var(--shadow)}
 .lsec:not(.tint):not(.lhero){background:var(--surface)}
 
-/* the terminal column reads as one continuous panel */
+/* the terminal column reads as one continuous panel — two elements
+   since the chart was split out, so the border is drawn once around
+   the pair rather than twice, once around each */
 @media (min-width:900px){
+  .terminal .chart-pin,
   .terminal .col-mid{
-    background:var(--surface);border:1px solid var(--line-soft);
-    border-radius:var(--r-lg);overflow:hidden;
+    background:var(--surface);border:1px solid var(--line-soft);overflow:hidden;
   }
+  .terminal .chart-pin{border-bottom:none;border-radius:var(--r-lg) var(--r-lg) 0 0}
+  .terminal .col-mid{border-top:none;border-radius:0 0 var(--r-lg) var(--r-lg)}
 }
 
 
@@ -2827,15 +2872,16 @@ body[data-chrome="app"] main{background:var(--bg)}
 
 
 /* ---------------- fitting a short phone ----------------
-   On a tall handset the chart keeps its full height. On a short one it
-   gives height back so the stake box still lands above the fold —
-   scrolling to find the amount you are about to risk is the one thing
-   this screen must never make you do.
+   The chart is pinned now, so its height is height the page can never
+   scroll back: whatever it takes, the digits and the ticket share what
+   is left for the whole session. On a tall handset it keeps its full
+   288 and there is plenty under it. On a short one it gives height back,
+   or the scrolling half of the screen is a letterbox.
 
-   455px is what sits around the chart and must be accounted for: the
-   top bar and contract tabs above it, the digits, mode switch, targets
-   and stake row below it, and the fixed dock and tab bar at the foot. */
-#chart{height:clamp(150px, calc(100dvh - 455px), 288px)}
+   The sum: the pinned head is the top bar (58) and the contract tabs
+   (~40) plus the chart, and it is held to a little over half the
+   viewport so the other half is content that moves. */
+#chart{height:clamp(150px, calc(55dvh - 98px), 288px)}
 
 /* a little more air recovered from the panel itself */
 .panel{gap:9px;padding-top:0}

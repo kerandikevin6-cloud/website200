@@ -45,7 +45,12 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
   <main>
     <div class="terminal" id="terminal">
 
-      <div class="col-mid">
+      <!-- Pinned on a phone: the three contracts and the chart stay where
+           they are while everything under them scrolls. It is a child of
+           .terminal rather than of .col-mid on purpose — sticky only holds
+           for the height of its own parent, and inside .col-mid the chart
+           would slide away the moment the stake panel came up. -->
+      <div class="chart-pin" id="chartPin">
         <div class="ctabs" id="contractTabs"><div class="sk sk-tabs"></div></div>
         <div class="chart-card">
           <svg class="chart-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
@@ -68,7 +73,11 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
             </button>
           </div>
         </div>
+      </div>
 
+      <!-- Everything from here down is one run of scrolling content: the
+           digits, whatever is running, the ticket, and the two buttons. -->
+      <div class="col-mid">
         <div class="digits" id="digits"></div>
         <div id="activeList"></div>
       </div>

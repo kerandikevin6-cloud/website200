@@ -229,10 +229,15 @@
   var wide = null;
   function placeTabs() {
     if (!el.tabs) return;
-    var mid = document.querySelector('.terminal .col-mid');
+    /* On a phone they belong inside the pinned head, above the chart and
+       held there with it. Dropped back into .col-mid they would scroll
+       away with the digits, which is the one place they must not be:
+       the chooser has to stay reachable from anywhere in the ticket. */
+    var head = document.querySelector('.terminal .chart-pin') ||
+               document.querySelector('.terminal .col-mid');
     var right = document.querySelector('.terminal .col-right');
-    if (!mid || !right) return;
-    var want = window.matchMedia('(min-width:900px)').matches ? right : mid;
+    if (!head || !right) return;
+    var want = window.matchMedia('(min-width:900px)').matches ? right : head;
     if (el.tabs.parentElement === want) return;
     want.insertBefore(el.tabs, want.firstChild);
   }
