@@ -1035,15 +1035,24 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    pointer-events:none matters — it sits over the chart, and a control
    that eats a tap on the thing behind it is worse than no indicator. */
 .ptr{
-  position:fixed;left:50%;top:calc(var(--topbar-h) - 20px);z-index:38;
-  width:36px;height:36px;margin-left:-18px;border-radius:50%;
+  position:fixed;left:50%;top:calc(var(--topbar-h) - 22px);z-index:38;
+  width:40px;height:40px;margin-left:-20px;border-radius:50%;
   display:grid;place-items:center;pointer-events:none;
   color:var(--muted);background:var(--surface);
-  border:1px solid var(--line);box-shadow:var(--shadow);
+  border:1px solid var(--line);
+  box-shadow:0 2px 6px rgba(8,14,22,.10), 0 10px 24px rgba(8,14,22,.14);
   opacity:0;
 }
-.ptr.ready{color:var(--accent);border-color:var(--accent)}
-.ptr.spin{color:var(--accent);border-color:var(--accent)}
+/* Far enough to fire: the ring fills in, which is a state you can see
+   at arm's length without reading anything. */
+.ptr.ready{
+  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
+}
+.ptr.spin{
+  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
+}
+/* The glyph turns, not the dot: the dot is carrying the drag, and two
+   transforms on one element fight each other. */
 .ptr.spin svg{animation:ptr-turn .8s linear infinite}
 @keyframes ptr-turn{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){
@@ -1091,8 +1100,13 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   transition:opacity .14s ease,transform .14s ease;
 }
 .tickpop.open{opacity:1;transform:translate(-50%,0) scale(1)}
-.tickpop b{font-weight:600;white-space:nowrap}
-.tickpop span{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+/* One figure, so it is the figure that is sized: monospaced and
+   tabular, or the pill jumps sideways every time a digit changes
+   width, seven times in ten seconds. */
+.tickpop b{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-weight:600;font-size:13.5px;white-space:nowrap;
+}
 .tickpop.win{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
 .tickpop.loss{background:var(--neg-soft);border-color:var(--neg);color:var(--neg)}
 @media (prefers-reduced-motion:reduce){
@@ -7536,20 +7550,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        and once large, reads as two results. */
     if (mine.elapsed >= mine.ticks) return;
 
-    var digit = d.point.digit;
-    var good = API.contracts.favours(mine, digit);
-    window.NexTick(good ? 'win' : 'loss', tickLabel(mine, digit), digit);
-  }
-
-  /* "Even" when the digit is even, whatever side was taken: the call is
-     about the tick, and the colour is about the contract. Saying "Odd"
-     in green because you are on odd is two facts in one word. */
-  function tickLabel(c, digit) {
-    if (c.type === 'even_odd') return digit % 2 === 0 ? 'Even' : 'Odd';
-    if (c.type === 'matches' || c.type === 'differs') {
-      return digit === c.barrier ? 'Matches ' + c.barrier : 'Differs ' + c.barrier;
-    }
-    return digit > c.barrier ? 'Over ' + c.barrier : 'Under ' + c.barrier;
+    /* Money, not the digit. The digit was on the circle above and in
+       the pill and on the chart, three times over, and none of those
+       answers the question somebody has while a contract runs, which is
+       what it is worth right now. It climbs on a tick that lands the
+       right way and falls on one that does not — the same figure the
+       trade button is showing, said loudly enough to notice. */
+    var pnl = mine.value - mine.stake;
+    var good = API.contracts.favours(mine, d.point.digit);
+    window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl));
   }
 
   /* ---------- how long a contract runs ----------
@@ -8603,11 +8612,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     send: 'M4 12l16-8-6 16-2.5-6z',
     check: 'M5 13l4 4L19 7',
     minus: 'M5 12h14',
-    /* Three quarters of a circle with a bend at the open end: the arrow
-       everything uses for "again". Drawn open at the top right so that,
-       when the pull-to-refresh dot turns it with the drag, the gap is
-       what the eye follows round. */
-    refresh: 'M20.5 12a8.5 8.5 0 11-2.49-6.01|M14.4 5.3l3.7.7.6-3.7',
+    /* Feather's rotate-cw, which is a drawn glyph rather than the arc
+       and two line segments I had approximated one with — the join
+       between them never quite met, which at 17px is what "looks like a
+       bug" means. Arrowhead at the top right, so the gap is what the
+       eye follows round when the pull turns it. */
+    refresh: 'M23 4v6h-6|M20.49 15a9 9 0 11-2.12-9.36L23 10',
     /* A speaker, and the same speaker with the waves struck through.
        Drawn as one shape plus its arcs so the two states differ by
        exactly what is being turned off. */
@@ -9742,9 +9752,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      It sits below the flash rather than over it, so the moment the
      contract ends the verdict is on top and the last tick is still
      underneath it — which is the one pairing where seeing both at once
-     is worth something. */
+     is worth something.
+
+     What it carries is the money: what the contract is worth at this
+     tick, climbing on one that lands the right way and falling on one
+     that does not. The digit that caused it is already on the circle,
+     on the chart and in the price. */
   var tickEl = null;
-  window.NexTick = function (kind, label, digit) {
+  window.NexTick = function (kind, amount) {
     if (!tickEl) {
       tickEl = document.createElement('div');
       tickEl.className = 'tickpop';
@@ -9755,9 +9770,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       document.body.appendChild(tickEl);
     }
     tickEl.className = 'tickpop ' + (kind || '');
-    tickEl.innerHTML = '<b></b><span></span>';
-    tickEl.querySelector('b').textContent = label || '';
-    tickEl.querySelector('span').textContent = digit == null ? '' : String(digit);
+    tickEl.innerHTML = '<b></b>';
+    tickEl.querySelector('b').textContent = amount || '';
     void tickEl.offsetWidth;
     tickEl.classList.add('open');
     clearTimeout(tickEl._t);
@@ -10265,16 +10279,52 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       dot.classList.remove('ready');
       paint(PTR_TRIGGER, true);
 
-      /* Empty the cache, then tell the worker to look for a new copy of
-         itself, then reload — and reload whatever happens, because a
-         refresh that silently does nothing when the cache API is missing
-         is the exact failure this is here to fix. */
+      /* There are two caches, and emptying the wrong one is why this
+         used to do nothing you could see.
+
+         The service worker's Cache Storage is the one this cleared, and
+         it was never the stubborn one: that worker is network-first, so
+         online it hands back whatever the network just said. The one
+         that actually pins a stale build is the browser's own HTTP
+         cache, and the stylesheet and every script were being served
+         into it with max-age of a year and "immutable" — a word that
+         tells the browser not to bother asking. A plain reload re-reads
+         the document and then serves year-old code into it without a
+         single request leaving the phone.
+
+         So: empty Cache Storage, then re-fetch the document and every
+         same-origin script and stylesheet it references with
+         cache:'reload', which is the one thing that ignores an
+         immutable entry and replaces it. The reload afterwards then
+         finds fresh copies of everything already in place.
+
+         (The headers are fixed too — they now say revalidate rather
+         than immutable — but that only helps once a browser has been
+         past here again, and this is what gets it past.) */
       var jobs = [];
+
       if (window.caches && caches.keys) {
         jobs.push(caches.keys().then(function (keys) {
           return Promise.all(keys.map(function (k) { return caches.delete(k); }));
         }));
       }
+
+      var urls = [location.href];
+      var refs = document.querySelectorAll('link[rel="stylesheet"][href], script[src]');
+      for (var i = 0; i < refs.length; i++) {
+        var u = refs[i].href || refs[i].src;
+        /* Same origin only: a font from Google is not what went stale,
+           and a cross-origin re-fetch is a request somebody else pays
+           for. */
+        if (u && u.indexOf(location.origin) === 0) urls.push(u);
+      }
+      urls.push(location.origin + '/sw.js');
+
+      jobs.push(Promise.all(urls.map(function (u) {
+        return fetch(u, { cache: 'reload', credentials: 'same-origin' })
+          .catch(function () {});
+      })));
+
       if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
         jobs.push(navigator.serviceWorker.getRegistration().then(function (reg) {
           return reg ? reg.update() : null;
@@ -10286,8 +10336,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       Promise.all(jobs.map(function (j) { return j.catch(function () {}); }))
         .then(done, done);
       /* Whatever the browser is doing with those promises, the page comes
-         back: a spinner that never ends is worse than a slow reload. */
-      setTimeout(done, 3000);
+         back: a spinner that never ends is worse than a slow reload.
+         Long enough now that the re-fetches can finish on a phone. */
+      setTimeout(done, 6000);
     }
   }
 

@@ -551,20 +551,15 @@
        and once large, reads as two results. */
     if (mine.elapsed >= mine.ticks) return;
 
-    var digit = d.point.digit;
-    var good = API.contracts.favours(mine, digit);
-    window.NexTick(good ? 'win' : 'loss', tickLabel(mine, digit), digit);
-  }
-
-  /* "Even" when the digit is even, whatever side was taken: the call is
-     about the tick, and the colour is about the contract. Saying "Odd"
-     in green because you are on odd is two facts in one word. */
-  function tickLabel(c, digit) {
-    if (c.type === 'even_odd') return digit % 2 === 0 ? 'Even' : 'Odd';
-    if (c.type === 'matches' || c.type === 'differs') {
-      return digit === c.barrier ? 'Matches ' + c.barrier : 'Differs ' + c.barrier;
-    }
-    return digit > c.barrier ? 'Over ' + c.barrier : 'Under ' + c.barrier;
+    /* Money, not the digit. The digit was on the circle above and in
+       the pill and on the chart, three times over, and none of those
+       answers the question somebody has while a contract runs, which is
+       what it is worth right now. It climbs on a tick that lands the
+       right way and falls on one that does not — the same figure the
+       trade button is showing, said loudly enough to notice. */
+    var pnl = mine.value - mine.stake;
+    var good = API.contracts.favours(mine, d.point.digit);
+    window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl));
   }
 
   /* ---------- how long a contract runs ----------

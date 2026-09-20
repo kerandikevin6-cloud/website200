@@ -1030,15 +1030,24 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    pointer-events:none matters — it sits over the chart, and a control
    that eats a tap on the thing behind it is worse than no indicator. */
 .ptr{
-  position:fixed;left:50%;top:calc(var(--topbar-h) - 20px);z-index:38;
-  width:36px;height:36px;margin-left:-18px;border-radius:50%;
+  position:fixed;left:50%;top:calc(var(--topbar-h) - 22px);z-index:38;
+  width:40px;height:40px;margin-left:-20px;border-radius:50%;
   display:grid;place-items:center;pointer-events:none;
   color:var(--muted);background:var(--surface);
-  border:1px solid var(--line);box-shadow:var(--shadow);
+  border:1px solid var(--line);
+  box-shadow:0 2px 6px rgba(8,14,22,.10), 0 10px 24px rgba(8,14,22,.14);
   opacity:0;
 }
-.ptr.ready{color:var(--accent);border-color:var(--accent)}
-.ptr.spin{color:var(--accent);border-color:var(--accent)}
+/* Far enough to fire: the ring fills in, which is a state you can see
+   at arm's length without reading anything. */
+.ptr.ready{
+  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
+}
+.ptr.spin{
+  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
+}
+/* The glyph turns, not the dot: the dot is carrying the drag, and two
+   transforms on one element fight each other. */
 .ptr.spin svg{animation:ptr-turn .8s linear infinite}
 @keyframes ptr-turn{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){
@@ -1086,8 +1095,13 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   transition:opacity .14s ease,transform .14s ease;
 }
 .tickpop.open{opacity:1;transform:translate(-50%,0) scale(1)}
-.tickpop b{font-weight:600;white-space:nowrap}
-.tickpop span{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+/* One figure, so it is the figure that is sized: monospaced and
+   tabular, or the pill jumps sideways every time a digit changes
+   width, seven times in ten seconds. */
+.tickpop b{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-weight:600;font-size:13.5px;white-space:nowrap;
+}
 .tickpop.win{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
 .tickpop.loss{background:var(--neg-soft);border-color:var(--neg);color:var(--neg)}
 @media (prefers-reduced-motion:reduce){

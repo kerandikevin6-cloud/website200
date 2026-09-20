@@ -34,11 +34,12 @@
     send: 'M4 12l16-8-6 16-2.5-6z',
     check: 'M5 13l4 4L19 7',
     minus: 'M5 12h14',
-    /* Three quarters of a circle with a bend at the open end: the arrow
-       everything uses for "again". Drawn open at the top right so that,
-       when the pull-to-refresh dot turns it with the drag, the gap is
-       what the eye follows round. */
-    refresh: 'M20.5 12a8.5 8.5 0 11-2.49-6.01|M14.4 5.3l3.7.7.6-3.7',
+    /* Feather's rotate-cw, which is a drawn glyph rather than the arc
+       and two line segments I had approximated one with — the join
+       between them never quite met, which at 17px is what "looks like a
+       bug" means. Arrowhead at the top right, so the gap is what the
+       eye follows round when the pull turns it. */
+    refresh: 'M23 4v6h-6|M20.49 15a9 9 0 11-2.12-9.36L23 10',
     /* A speaker, and the same speaker with the waves struck through.
        Drawn as one shape plus its arcs so the two states differ by
        exactly what is being turned off. */
@@ -1173,9 +1174,14 @@
      It sits below the flash rather than over it, so the moment the
      contract ends the verdict is on top and the last tick is still
      underneath it — which is the one pairing where seeing both at once
-     is worth something. */
+     is worth something.
+
+     What it carries is the money: what the contract is worth at this
+     tick, climbing on one that lands the right way and falling on one
+     that does not. The digit that caused it is already on the circle,
+     on the chart and in the price. */
   var tickEl = null;
-  window.NexTick = function (kind, label, digit) {
+  window.NexTick = function (kind, amount) {
     if (!tickEl) {
       tickEl = document.createElement('div');
       tickEl.className = 'tickpop';
@@ -1186,9 +1192,8 @@
       document.body.appendChild(tickEl);
     }
     tickEl.className = 'tickpop ' + (kind || '');
-    tickEl.innerHTML = '<b></b><span></span>';
-    tickEl.querySelector('b').textContent = label || '';
-    tickEl.querySelector('span').textContent = digit == null ? '' : String(digit);
+    tickEl.innerHTML = '<b></b>';
+    tickEl.querySelector('b').textContent = amount || '';
     void tickEl.offsetWidth;
     tickEl.classList.add('open');
     clearTimeout(tickEl._t);
@@ -1696,16 +1701,52 @@
       dot.classList.remove('ready');
       paint(PTR_TRIGGER, true);
 
-      /* Empty the cache, then tell the worker to look for a new copy of
-         itself, then reload — and reload whatever happens, because a
-         refresh that silently does nothing when the cache API is missing
-         is the exact failure this is here to fix. */
+      /* There are two caches, and emptying the wrong one is why this
+         used to do nothing you could see.
+
+         The service worker's Cache Storage is the one this cleared, and
+         it was never the stubborn one: that worker is network-first, so
+         online it hands back whatever the network just said. The one
+         that actually pins a stale build is the browser's own HTTP
+         cache, and the stylesheet and every script were being served
+         into it with max-age of a year and "immutable" — a word that
+         tells the browser not to bother asking. A plain reload re-reads
+         the document and then serves year-old code into it without a
+         single request leaving the phone.
+
+         So: empty Cache Storage, then re-fetch the document and every
+         same-origin script and stylesheet it references with
+         cache:'reload', which is the one thing that ignores an
+         immutable entry and replaces it. The reload afterwards then
+         finds fresh copies of everything already in place.
+
+         (The headers are fixed too — they now say revalidate rather
+         than immutable — but that only helps once a browser has been
+         past here again, and this is what gets it past.) */
       var jobs = [];
+
       if (window.caches && caches.keys) {
         jobs.push(caches.keys().then(function (keys) {
           return Promise.all(keys.map(function (k) { return caches.delete(k); }));
         }));
       }
+
+      var urls = [location.href];
+      var refs = document.querySelectorAll('link[rel="stylesheet"][href], script[src]');
+      for (var i = 0; i < refs.length; i++) {
+        var u = refs[i].href || refs[i].src;
+        /* Same origin only: a font from Google is not what went stale,
+           and a cross-origin re-fetch is a request somebody else pays
+           for. */
+        if (u && u.indexOf(location.origin) === 0) urls.push(u);
+      }
+      urls.push(location.origin + '/sw.js');
+
+      jobs.push(Promise.all(urls.map(function (u) {
+        return fetch(u, { cache: 'reload', credentials: 'same-origin' })
+          .catch(function () {});
+      })));
+
       if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
         jobs.push(navigator.serviceWorker.getRegistration().then(function (reg) {
           return reg ? reg.update() : null;
@@ -1717,8 +1758,9 @@
       Promise.all(jobs.map(function (j) { return j.catch(function () {}); }))
         .then(done, done);
       /* Whatever the browser is doing with those promises, the page comes
-         back: a spinner that never ends is worse than a slow reload. */
-      setTimeout(done, 3000);
+         back: a spinner that never ends is worse than a slow reload.
+         Long enough now that the re-fetches can finish on a phone. */
+      setTimeout(done, 6000);
     }
   }
 
