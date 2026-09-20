@@ -306,9 +306,19 @@
   }
   var saved = load();
 
-  var AUTO_V = 2;
+  /* Bumped whenever a default below changes, because the old value is
+     sitting in somebody's localStorage and a stale one is worse than a
+     new one: a saved runs:10 would keep a run going for the best part
+     of a minute on a build where nothing else can. */
+  var AUTO_V = 3;
   function AUTO_DEFAULTS() {
-    return { runs: 10, multiplier: 2, takeProfit: 200, stopLoss: 999 };
+    /* One contract. A run of ten at five seconds each is fifty seconds
+       of watching a button, and nothing about the outcome is clearer at
+       the end of it than after the first. Press, six seconds, result —
+       and press again if you want another. The multiplier and the two
+       targets stay: they are what a longer run would stop on, and the
+       number of contracts is the one thing nobody should have to set. */
+    return { runs: 1, multiplier: 2, takeProfit: 200, stopLoss: 999 };
   }
   var S = {
     geo: saved.geo || null,

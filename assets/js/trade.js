@@ -435,6 +435,14 @@
     return null;
   }
 
+  /* "3s left", from ticks and the speed this instrument runs at. The
+     contract counts ticks; a person waiting counts seconds. */
+  function secondsLeft(c) {
+    var rate = (API.symbol(c.symbol) || {}).rate || 1000;
+    var left = Math.max(0, Math.ceil((c.ticks - c.elapsed) * rate / 1000));
+    return left + 's left';
+  }
+
   function renderDock() {
     var blocked = API.connection.status() !== 'live';
     var busy = false;
@@ -449,14 +457,24 @@
         var tone = i === 0 ? 'even' : 'odd';
 
         if (live || isRun) {
+          /* A run is one contract, so "1 of 1" says nothing and the bar
+             would jump from empty to full at the moment it ends. Both
+             follow the contract itself: how much of it is left, and the
+             same seconds drawn along the foot of the button.
+
+             The count comes back on its own if a run is ever more than
+             one again, which is the only reason it is still written. */
           var pcTicks = live ? Math.min(100, Math.round(live.elapsed / live.ticks * 100)) : 0;
-          var sub = isRun
+          var multi = isRun && S.run.total > 1;
+          var sub = multi
             ? S.run.done + ' of ' + S.run.total + ' · ' + F.signed(S.run.pnl)
-            : (live.ticks - live.elapsed) + ' left · ' + F.signed(live.value - live.stake);
+            : live
+              ? secondsLeft(live) + ' · ' + F.signed(live.value - live.stake)
+              : 'starting';
           return '<button class="tbtn stop" data-stop="' + sd[0] + '">' +
             '<div class="t">Stop</div>' +
             '<div class="s">' + sub + '</div>' +
-            '<i class="tbtn-bar" style="width:' + (isRun
+            '<i class="tbtn-bar" style="width:' + (multi
               ? Math.round(S.run.done / S.run.total * 100) : pcTicks) + '%"></i>' +
           '</button>';
         }
@@ -572,8 +590,21 @@
     S.stake = r.base;
     renderPanel();
     renderDock();
-    if (reason && window.NexModal) window.NexModal.open('runResult', null, { run: r, reason: reason });
-    else if (reason) window.NexToast(reason);
+    if (!reason) return;
+
+    /* The summary dialog is for a run worth summarising. One contract
+       is not: the banner across the top has already said won or lost
+       and by how much, and a dialog on top of it every six seconds is a
+       Done button between you and the next trade. It reappears the
+       moment a run is more than one contract again, which is when
+       "1 of 1" stops being the whole story. */
+    if (r.total > 1 && window.NexModal) {
+      window.NexModal.open('runResult', null, { run: r, reason: reason });
+      return;
+    }
+    /* Stopped by hand, mid-contract: nothing else will say so. A run
+       that finished on its own has already flashed its result. */
+    if (r.done < r.total) window.NexToast(reason);
   }
   function showResult(c) {
     if (window.NexModal) window.NexModal.open('result', null, { contract: c });

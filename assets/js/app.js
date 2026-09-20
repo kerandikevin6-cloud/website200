@@ -39,6 +39,11 @@
        when the pull-to-refresh dot turns it with the drag, the gap is
        what the eye follows round. */
     refresh: 'M20.5 12a8.5 8.5 0 11-2.49-6.01|M14.4 5.3l3.7.7.6-3.7',
+    /* A speaker, and the same speaker with the waves struck through.
+       Drawn as one shape plus its arcs so the two states differ by
+       exactly what is being turned off. */
+    sound: 'M4 9.5h3.2L12 5.5v13l-4.8-4H4z|M15.6 9.4a3.6 3.6 0 010 5.2|M18.2 6.9a7 7 0 010 10.2',
+    mute: 'M4 9.5h3.2L12 5.5v13l-4.8-4H4z|M16 10l4 4M20 10l-4 4',
     plus: 'M12 5v14M5 12h14',
     clock: 'M12 7v5l3 2',
     sliders: 'M4 6h16M4 12h16M4 18h16|M9 4v4M15 10v4M7 16v4',
@@ -292,6 +297,82 @@
     }
   }
   applyTheme(storedTheme());
+
+  /* ---------- sound ----------
+     Two short tones, synthesised rather than downloaded: the build
+     folds this whole app into one file, and a pair of .mp3s would be
+     the only thing left in it that needs the network. Nothing here is
+     a jingle — a win is two notes rising, a loss is one falling, both
+     under a third of a second, because this fires every few seconds
+     during a run and anything longer would be unbearable by the tenth.
+
+     Browsers refuse to make noise until the page has been interacted
+     with, which is fine: the first sound can only follow a trade, and
+     a trade is a tap. The context is created on that first tap and
+     resumed if the browser has since suspended it. */
+  var SOUND_KEY = 'nexas.sound';
+  var audio = null;
+
+  function soundOn() {
+    try { return localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) { return true; }
+  }
+  function setSound(on) {
+    try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch (e) {}
+    paintSoundToggles();
+    /* A confirmation you can hear. Switching it on silently is the one
+       case where nothing tells you whether it worked. */
+    if (on) play('win');
+  }
+  function paintSoundToggles() {
+    var all = document.querySelectorAll('.sound-toggle');
+    for (var i = 0; i < all.length; i++) {
+      var sw = all[i].querySelector('.switch');
+      if (sw) sw.setAttribute('aria-checked', String(soundOn()));
+      var ic = all[i].querySelector('svg');
+      if (ic) ic.outerHTML = icon(soundOn() ? 'sound' : 'mute', 17);
+    }
+  }
+
+  function ctx() {
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    if (!audio) { try { audio = new C(); } catch (e) { return null; } }
+    if (audio.state === 'suspended') audio.resume().catch(function () {});
+    return audio;
+  }
+
+  /* One note. The envelope matters more than the pitch: a tone that
+     starts and stops at full volume clicks, and the click is the part
+     people find cheap. */
+  function note(a, freq, start, len, peak) {
+    var osc = a.createOscillator();
+    var gain = a.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + len);
+    osc.connect(gain); gain.connect(a.destination);
+    osc.start(start); osc.stop(start + len + 0.02);
+  }
+
+  function play(kind) {
+    if (!soundOn()) return;
+    var a = ctx();
+    if (!a) return;
+    var t = a.currentTime;
+    /* Quiet on purpose: this plays over whatever else the phone is
+       doing, and a trading app that announces itself is a trading app
+       people mute at the operating system and never hear again. */
+    if (kind === 'win') {
+      note(a, 660, t, 0.10, 0.11);          /* E5 */
+      note(a, 990, t + 0.09, 0.16, 0.10);   /* B5, up a fifth */
+    } else {
+      note(a, 300, t, 0.14, 0.09);
+      note(a, 200, t + 0.10, 0.20, 0.08);
+    }
+  }
+  window.NexSound = { play: play, on: soundOn, set: setSound };
 
   /* ---------- a dropdown we drew ourselves ----------
      A native <select> hands its menu to the operating system, which
@@ -579,6 +660,11 @@
             tail: '<i class="switch" role="switch" aria-checked="' + isDark() + '"></i>',
             cls: 'theme-toggle'
           }) +
+          item('Trade sounds', {
+            icon: soundOn() ? 'sound' : 'mute',
+            tail: '<i class="switch" role="switch" aria-checked="' + soundOn() + '"></i>',
+            cls: 'sound-toggle'
+          }) +
         '</div>' +
         '<div class="drawer-foot">' +
           '<button class="ditem danger" data-signout>' + icon('out', 17) + '<span>Log out</span></button>' +
@@ -623,6 +709,10 @@
       row({
         label: 'Light / dark theme', icon: isDark() ? 'moon' : 'sun', cls: 'theme-toggle',
         tail: '<i class="switch" role="switch" aria-checked="' + isDark() + '"></i>'
+      }) +
+      row({
+        label: 'Trade sounds', icon: soundOn() ? 'sound' : 'mute', cls: 'sound-toggle',
+        tail: '<i class="switch" role="switch" aria-checked="' + soundOn() + '"></i>'
       }) +
       row({ label: 'Log out', icon: 'out', cls: 'danger', signout: true });
 
@@ -1051,6 +1141,10 @@
       flashEl.setAttribute('aria-live', 'polite');
       document.body.appendChild(flashEl);
     }
+    /* Sound rides with the banner rather than with the settlement, so
+       the two can never disagree: if it is on the screen it was heard,
+       and a result that is only logged stays silent. */
+    play(kind === 'win' ? 'win' : 'loss');
     flashEl.className = 'flash ' + (kind || '');
     flashEl.innerHTML = '<b></b><span></span>';
     flashEl.querySelector('b').textContent = title || '';
@@ -1610,6 +1704,12 @@
       if (t.closest('.theme-toggle')) {
         e.preventDefault();
         applyTheme(isDark() ? 'light' : 'dark');
+        return;
+      }
+
+      if (t.closest('.sound-toggle')) {
+        e.preventDefault();
+        setSound(!soundOn());
         return;
       }
 
