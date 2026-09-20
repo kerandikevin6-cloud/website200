@@ -8211,13 +8211,17 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       '</div>';
     }
 
+    /* No rescan button in here. The dock below carries the same one,
+       word for word, a few hundred pixels down — and now that the list
+       is five rows both are on the screen at once, which made the pair
+       read as two different things rather than one said twice. This card
+       states the finding; what to do about it lives in one place. */
     var best = S.signals[0];
     return '<div class="ai-hero done">' +
       '<span class="label">' + FAMILIES[S.family].label + ' · strongest edge</span>' +
       '<b class="ai-headline">' + best.label + '</b>' +
       '<span class="ai-sub">' + best.symbolName + ' · ' + F.pct(best.prob * 100, 1) +
         ' of the last ' + best.sample + ' ticks</span>' +
-      '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Rescan for the best market</button>' +
     '</div>';
   }
 
