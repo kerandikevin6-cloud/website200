@@ -929,6 +929,13 @@
           id: user.id,
           email: user.email,
           name: user.name || (user.email || '').split('@')[0],
+          /* The deposit number, as much of it as anybody gets: whether
+             there is one, and what it looks like with its middle taken
+             out. The digits stay on the server, which is why the deposit
+             sheet asks for "the number on my account" rather than
+             sending one back. */
+          phoneMasked: user.phoneMasked || null,
+          phoneSet: !!user.phoneSet,
           method: 'server',
           at: Date.now()
         };

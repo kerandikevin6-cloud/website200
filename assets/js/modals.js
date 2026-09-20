@@ -75,6 +75,27 @@
     '</div>';
   }
 
+  /* The number on the account, and a way past it.
+
+     Masked, because a deposit sheet is opened in public as often as
+     anywhere else in the app, and unmasking it would serve nobody: the
+     owner recognises their own number from the last three digits, and
+     anybody else has no business reading the rest. */
+  function savedNumber(masked) {
+    return '<div class="field">' +
+      '<label>M-Pesa number</label>' +
+      '<div class="input saved-num">' +
+        I('phone', 17) +
+        '<b class="num">' + (masked || 'On your account') + '</b>' +
+        '<button type="button" class="saved-swap" data-set="newNumber:1" data-goto="form">' +
+          'Use another' +
+        '</button>' +
+      '</div>' +
+      '<span class="hint">The prompt goes to this number. ' +
+        'Change it for good in Account.</span>' +
+    '</div>';
+  }
+
   /* A rail that is not live yet: shown, so people can see it is coming,
      but inert. */
   function methodOff(iconName, name, note) {
@@ -442,6 +463,48 @@
       }
     },
 
+    /* ---------------- the deposit number ----------------
+       Set at sign-up, changed here, and never shown in full again. The
+       owner recognises their own from the last three digits, which is
+       all this screen needs to do; anybody else reading over a shoulder
+       gets nothing worth having. */
+    phone: {
+      steps: {
+        form: {
+          title: 'Deposit number',
+          sub: 'Where the M-Pesa prompt is sent when you deposit.',
+          body: function () {
+            var who = API().session.get() || {};
+            return '<div class="modal-form">' +
+              (who.phoneSet
+                ? '<div class="field"><label>On your account now</label>' +
+                    '<div class="input saved-num">' + I('phone', 17) +
+                      '<b class="num">' + who.phoneMasked + '</b></div>' +
+                    '<span class="hint">Shown with the middle hidden. ' +
+                      'Nobody, here or anywhere else, needs to read it in full.</span>' +
+                  '</div>'
+                : '<div class="notice">' + I('alert', 17) +
+                    '<span>There is no number on your account yet. Add one and ' +
+                    'deposits will be one tap.</span></div>') +
+              phoneField('newPhone', who.phoneSet ? 'New number' : 'Your M-Pesa number',
+                'Deposits are taken from this number, and it is where we reach you.') +
+              secret('phonePassword', 'Your password', 'To confirm it is you') +
+              act('Save number', 'savePhone') +
+            '</div>';
+          }
+        },
+        done: okStep(
+          'Number saved',
+          'Your next deposit goes to it.',
+          'Deposit number updated',
+          'Your next deposit prompt goes to this number. We will only ever ' +
+          'show it back to you with the middle hidden.',
+          function (s) {
+            return kv('Now paying from', s.savedPhone || 'your new number');
+          })
+      }
+    },
+
     /* ---------------- password ---------------- */
     password: {
       steps: {
@@ -594,8 +657,21 @@
             var logo = '';
             if (m === 'mpesa') {
               logo = brandMark('assets/mpesa.png', 'M-Pesa');
-              inner = phoneField('mpesaPhone', 'M-Pesa number',
-                'You will receive an STK push on this number. Enter your PIN to confirm.');
+              /* The number the account was opened with, shown with its
+                 middle taken out. Nobody should have to type twelve
+                 digits at the one moment they are in a hurry, and a
+                 mistyped digit here is a prompt sent to a stranger's
+                 handset.
+
+                 What is rendered is the masked form and nothing else —
+                 the page has never been given the rest, and the deposit
+                 goes out saying "the number on my account" rather than
+                 carrying it. */
+              var who = API().session.get() || {};
+              inner = (who.phoneSet && !s.newNumber)
+                ? savedNumber(who.phoneMasked)
+                : phoneField('mpesaPhone', 'M-Pesa number',
+                    'You will receive an STK push on this number. Enter your PIN to confirm.');
             } else if (m === 'card') {
               /* No card fields here by design: taking a PAN on our own form
                  would drag this page into PCI scope for no benefit. One

@@ -1267,7 +1267,10 @@
         email: out.user.email,
         name: out.profile && out.profile.display_name,
         kyc: out.profile && out.profile.kyc_status,
-        phone: out.profile && out.profile.phone,
+        /* Masked, and a flag. The server stopped sending the digits when
+           the deposit sheet stopped needing them. */
+        phoneMasked: out.profile && out.profile.phone_masked,
+        phoneSet: !!(out.profile && out.profile.phone_set),
         country: out.profile && out.profile.country,
         /* The presentation switch, as the server reports it. The browser
            never decides this. */
@@ -1275,6 +1278,7 @@
         tier: (out.profile && out.profile.tier) || 'standard'
       }, out.accounts || []);
       paintDemoBadge();
+      paintDepositNumber();
       return out;
     } catch (err) {
       return null;
@@ -1446,6 +1450,18 @@
   /* The scroll listener that lived here is gone with the floating dock:
      it existed to lift the dock a few pixels while the page moved, and
      the dock now moves with the page. Nothing else read the class. */
+
+  /* The one row on the account page that knows something. It is painted
+     here rather than written into the page, because the masked number
+     arrives with the session and changes the moment somebody edits it. */
+  function paintDepositNumber() {
+    var val = document.getElementById('depositNumVal');
+    if (!val) return;
+    var who = API.session.get() || {};
+    val.textContent = who.phoneSet
+      ? who.phoneMasked
+      : 'Not set yet — add one for one-tap deposits';
+  }
 
   /* ---------- pull to refresh ----------
      The service worker keeps the whole shell on the device, which is what
@@ -1981,13 +1997,23 @@
       var amount = Math.round(usd * rate * 100) / 100;
 
       if (state.data.method === 'mpesa') {
-        /* The country on the field, not the one the IP lookup guessed. */
-        var dcc = ((document.getElementById('mpesaPhoneCountry') || {}).value) || API.geo.code();
-        var dc = API.geo.countries[dcc] || pay;
         var ph = document.getElementById('mpesaPhone');
-        var digits = ph ? ph.value.replace(/\D/g, '') : '';
-        if (digits.length < dc.len) return fieldError('mpesaPhone', 'Enter your ' + dc.len + '-digit number');
-        state.data.payTo = dc.dial + digits;
+        if (!ph) {
+          /* Paying from the number on the account. There is nothing to
+             read off the page and nothing to validate here: the browser
+             has never held those digits, so the server is asked to use
+             the ones it holds. */
+          state.data.payTo = null;
+          state.data.onFile = true;
+        } else {
+          /* The country on the field, not the one the IP lookup guessed. */
+          var dcc = ((document.getElementById('mpesaPhoneCountry') || {}).value) || API.geo.code();
+          var dc = API.geo.countries[dcc] || pay;
+          var digits = ph.value.replace(/\D/g, '');
+          if (digits.length < dc.len) return fieldError('mpesaPhone', 'Enter your ' + dc.len + '-digit number');
+          state.data.payTo = dc.dial + digits;
+          state.data.onFile = false;
+        }
       }
 
       if (state.data.method === 'usdt') {
@@ -2144,6 +2170,44 @@
 
       state.data.savedName = shown;
       gotoStep('done');
+      return;
+    }
+    if (name === 'savePhone') {
+      clearErrors();
+      var pcc = ((document.getElementById('newPhoneCountry') || {}).value) || API.geo.code();
+      var pc = API.geo.countries[pcc] || API.geo.country();
+      var pDigits = (((document.getElementById('newPhone') || {}).value) || '').replace(/\D/g, '');
+      var pw = ((document.getElementById('phonePassword') || {}).value) || '';
+
+      if (pDigits.length < pc.len) {
+        return fieldError('newPhone', 'Enter your ' + pc.len + '-digit number');
+      }
+      if (!pw) return fieldError('phonePassword', 'Enter your password to confirm');
+
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        window.NexToast('Sign in first, so the change is saved to your account.');
+        return;
+      }
+
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Saving'; }
+      window.NexNet.updatePhone(pc.dial + pDigits, pcc, pw).then(function (out) {
+        /* The server answers with the masked form, which is the only
+           form anything on this side ever holds. */
+        state.data.savedPhone = out.phoneMasked;
+        return hydrateSession().then(function () {
+          paintDepositNumber();
+          gotoStep('done');
+        });
+      }, function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Save number'; }
+        /* The server names the field it is complaining about; put the
+           message under that one rather than in a toast that leaves
+           somebody looking for what was wrong. */
+        var fields = err.fields || {};
+        if (fields.phone) return fieldError('newPhone', fields.phone);
+        if (fields.password) return fieldError('phonePassword', fields.password);
+        window.NexToast(err.message || 'That did not save. Try again.');
+      });
       return;
     }
     if (name === 'sendTicket') {
@@ -2681,6 +2745,7 @@
     }
     mountChrome(document.querySelector('.app') || document.body);
     paintDemoBadge();
+    paintDepositNumber();
     if (!window.__nexWired) { wire(); window.__nexWired = true; }
     bindChrome();
     consentBar();

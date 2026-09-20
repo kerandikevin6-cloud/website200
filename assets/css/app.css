@@ -983,6 +983,20 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 .kv span{color:var(--muted)}
 .kv b{font-weight:500;font-family:var(--mono)}
 .stack{display:flex;flex-direction:column;gap:14px;padding:14px}
+/* ---------------- a number, mostly hidden ----------------
+   The saved deposit number, on the deposit sheet and in Account. It
+   reads as a filled field rather than an input, because it is not one:
+   there is nothing to type and nothing here to select, since the page
+   was never given the digits. */
+.saved-num{display:flex;align-items:center;gap:10px}
+.saved-num b{flex:1;min-width:0;font-weight:500;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis}
+.saved-num svg{color:var(--muted);flex:none}
+.saved-swap{
+  flex:none;font-size:12px;font-weight:500;color:var(--accent);
+  padding:4px 2px;background:none;
+}
+.saved-swap:hover{text-decoration:underline}
+
 /* ---------------- pull to refresh ----------------
    A single dot under the top bar. It fades in with the drag, turns with
    it, firms up when the gesture is far enough to fire, and spins while

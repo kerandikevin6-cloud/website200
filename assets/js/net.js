@@ -254,6 +254,16 @@
 
     session: function () { return call('/auth/session'); },
 
+    /* The deposit number. The password is asked for because this is the
+       number our messages go to, and a quietly changed one is how
+       somebody stops hearing from us without knowing why. */
+    updatePhone: function (phone, country, password) {
+      return call('/auth/phone', {
+        method: 'POST',
+        body: { phone: phone, country: country, password: password }
+      });
+    },
+
     logout: async function () {
       try { await call('/auth/logout', { method: 'POST' }); } catch (e) {}
       setTokens(null);
@@ -276,12 +286,18 @@
       }).catch(function () { return null; });
     },
 
+    /* phone null means "the number on my account". The browser is never
+       given those digits back, so this is the only way it can ask for
+       them to be used. */
     depositMpesa: async function (amountMinor, phone) {
       /* Wait for a sleeping instance rather than reporting its cold
          start as a failed deposit. */
       await ensureAwake();
       return call('/deposits/mpesa', {
-        method: 'POST', body: { amountMinor: amountMinor, phone: phone }
+        method: 'POST',
+        body: phone
+          ? { amountMinor: amountMinor, phone: phone }
+          : { amountMinor: amountMinor, usePhoneOnFile: true }
       });
     },
 
