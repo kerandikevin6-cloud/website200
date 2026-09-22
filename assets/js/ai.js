@@ -246,17 +246,34 @@
       '</div>';
     }
 
-    /* Nothing. The card that sat here announced the top signal — its
-       contract, its instrument and its hit rate — and then the first row
-       of the list underneath said the same three things again, only with
-       the expected return attached and in the same shape as the four
-       rows below it. Two of everything is not a summary, and the one
-       fact it had to itself, which family was scanned, has moved to the
-       heading over the list.
+    /* Once the scan is done, the two facts the whole screen exists to
+       produce: which volatility it landed on, and what it is predicting
+       on it. They used to be nowhere — the summary card was taken out
+       for repeating the list under it, and the button at the foot said
+       "Load volatility" without ever naming one, so a finished scan and
+       an unfinished one looked the same until you read the ranking.
 
-       The idle and scanning cards above stay: those say what the screen
-       is about before there is anything to rank. */
-    return '';
+       This is not the old card back: no hit rate, no expected return, no
+       second copy of the ranked row. Two lines, both of which are what
+       the Load button is about to do. */
+    var sig = current();
+    if (!sig) return '';
+    var meta = API.symbol(sig.symbol) || {};
+    return '<div class="ai-ready">' +
+        '<span class="label">Ready to load</span>' +
+        '<div class="ai-ready-grid">' +
+          '<div class="ai-ready-cell">' +
+            '<span>Volatility</span>' +
+            '<b>' + (sig.symbolName || meta.name || sig.symbol) + '</b>' +
+          '</div>' +
+          '<div class="ai-ready-cell">' +
+            '<span>Prediction</span>' +
+            '<b class="pred">' + sig.label + '</b>' +
+          '</div>' +
+        '</div>' +
+        '<p class="ai-ready-note">The terminal opens on this instrument with the ' +
+          'contract and digit already set. Nothing is placed until you press a side.</p>' +
+      '</div>';
   }
 
   function signalRows() {
@@ -302,7 +319,7 @@
        fold by the buttons it was explaining. */
     return '<div class="ai-dock">' +
         '<button class="btn btn-fill" id="aiTake">' +
-          I('candles', 16) + 'Load volatility</button>' +
+          I('candles', 16) + 'Load ' + (current().symbolName || 'volatility') + '</button>' +
         '<button class="btn btn-again" id="aiScanAgain">' +
           I('radar', 16) + 'Rescan for the best market</button>' +
       '</div>';
@@ -392,9 +409,9 @@
            top. */
         if (window.NexFlash) {
           window.NexFlash(c.status === 'won' ? 'win' : 'loss',
-            c.status === 'won' ? 'Won · ' + API.contracts.label(c)
-              : 'Lost · ' + API.contracts.label(c),
-            F.signedMoney(c.profit));
+            c.status === 'won' ? 'Contract Won' : 'Contract Lost',
+            c.symbolName || '',
+            API.contracts.label(c) + '  ' + F.signedUsd(c.profit));
         } else {
           window.NexToast(c.status === 'won'
             ? 'AI trade won ' + F.money(c.payout)

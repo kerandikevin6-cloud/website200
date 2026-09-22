@@ -34,6 +34,7 @@
     send: 'M4 12l16-8-6 16-2.5-6z',
     check: 'M5 13l4 4L19 7',
     minus: 'M5 12h14',
+    search: 'M20.5 20.5l-4.1-4.1',
     /* Feather's rotate-cw, which is a drawn glyph rather than the arc
        and two line segments I had approximated one with — the join
        between them never quite met, which at 17px is what "looks like a
@@ -116,6 +117,7 @@
     if (name === 'target') body =
       '<circle cx="12" cy="12" r="7.6"></circle><circle cx="12" cy="12" r="3.1"></circle>' + body;
     if (name === 'radar') body = '<circle cx="12" cy="12" r="1.5"></circle>' + body;
+    if (name === 'search') body = '<circle cx="11" cy="11" r="7"></circle>' + body;
     if (name === 'alert') body = '<circle cx="12" cy="12" r="9"></circle>' + body;
     if (name === 'gift') body = '<rect x="4.4" y="8.5" width="15.2" height="12.5" rx="1.8"></rect>' + body;
     /* Even / odd: one circle filled, one not — the split itself. */
@@ -534,7 +536,7 @@
     ],
     [
       { id: 'chat', label: 'Support', file: 'chat', icon: 'headset' },
-      { id: 'learn', label: 'Learn', file: 'learn', icon: 'book' },
+      { id: 'responsible', label: 'Responsible trading', file: 'responsible', icon: 'book' },
       { label: 'Refer and earn', modal: 'refer', icon: 'gift' }
     ]
   ];
@@ -660,7 +662,7 @@
           item('Trading history', { icon: 'clock', href: 'history' }) +
           item('Copy trading', { icon: 'copy', href: 'copy' }) +
           item('Support', { icon: 'headset', href: 'chat' }) +
-          item('Learn', { icon: 'book', href: 'learn' }) +
+          item('Responsible trading', { icon: 'book', href: 'responsible' }) +
           item('Refer and earn', { icon: 'gift', modal: 'refer' }) +
           item('Light / dark theme', {
             icon: isDark() ? 'moon' : 'sun',
@@ -808,17 +810,25 @@
     var title = typeof step.title === 'function' ? step.title(state.data) : step.title;
     var sub = typeof step.sub === 'function' ? step.sub(state.data) : step.sub;
 
+    /* A celebration step draws its own head — the mark, the headline and
+       the figure are the content, not a title bar over it — so the
+       standard head with its close button is left off. Everything else
+       about the dialog is the same, including the backdrop and Escape. */
+    var hero = typeof step.hero === 'function' ? step.hero(state.data) : step.hero;
+    var head = hero ? '' :
+      '<div class="modal-head">' +
+        (state.trail.length && !step.noBack
+          ? '<button class="iconbtn back-btn" data-modal-back aria-label="Back">' + icon('back', 17) + '</button>'
+          : '') +
+        '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
+        '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +
+      '</div>';
+
     host().innerHTML =
       '<div class="modal' + (fresh ? '' : ' open') + '" role="dialog" aria-modal="true" aria-label="' + title + '">' +
         '<div class="modal-bg" data-close></div>' +
-        '<div class="modal-box">' +
-          '<div class="modal-head">' +
-            (state.trail.length && !step.noBack
-              ? '<button class="iconbtn back-btn" data-modal-back aria-label="Back">' + icon('back', 17) + '</button>'
-              : '') +
-            '<div><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
-            '<button class="iconbtn" data-close aria-label="Close">' + icon('close', 18) + '</button>' +
-          '</div>' + step.body(state.data) +
+        '<div class="modal-box' + (hero ? ' modal-hero' : '') + '">' +
+          head + step.body(state.data) +
         '</div></div>';
 
     if (fresh) requestAnimationFrame(function () {
@@ -1139,8 +1149,17 @@
      One element, reused: a second result inside the three seconds
      replaces the first rather than stacking, because two banners over
      each other is worse than missing one. */
+  /* Three lines, in the shape a ticket actually reads: what happened,
+     which instrument it happened on, and the one line of detail that
+     carries the money. A pill with a name and a figure side by side was
+     two facts crammed onto one row and the instrument was nowhere on
+     it.
+
+     kind is 'win', 'loss' or 'order' — the last one for a contract that
+     has just been placed, which is news but not a result, so it is
+     neither green nor red. */
   var flashEl;
-  window.NexFlash = function (kind, title, sub) {
+  window.NexFlash = function (kind, label, name, line) {
     if (!flashEl) {
       flashEl = document.createElement('div');
       flashEl.className = 'flash';
@@ -1150,12 +1169,14 @@
     }
     /* Sound rides with the banner rather than with the settlement, so
        the two can never disagree: if it is on the screen it was heard,
-       and a result that is only logged stays silent. */
-    play(kind === 'win' ? 'win' : 'loss');
+       and a result that is only logged stays silent. An order being
+       placed is not an outcome and makes no sound. */
+    if (kind === 'win' || kind === 'loss') play(kind);
     flashEl.className = 'flash ' + (kind || '');
-    flashEl.innerHTML = '<b></b><span></span>';
-    flashEl.querySelector('b').textContent = title || '';
-    flashEl.querySelector('span').textContent = sub || '';
+    flashEl.innerHTML = '<i class="flash-k"></i><i class="flash-n"></i><b class="flash-v"></b>';
+    flashEl.querySelector('.flash-k').textContent = label || '';
+    flashEl.querySelector('.flash-n').textContent = name || '';
+    flashEl.querySelector('.flash-v').textContent = line || '';
     /* Restart the entry transition even when one is already up. */
     void flashEl.offsetWidth;
     flashEl.classList.add('open');

@@ -115,6 +115,18 @@
   --ctl-line:#AFC8E6;
   --ctl-on:#FFFFFF;
 
+  /* The banner across the top is the same dark ticket in both themes:
+     it sits over the chart, it is gone in three seconds, and a white
+     card flashing over a light screen is a flicker rather than a
+     notice. */
+  --flash-bg:#0D1926;
+  --flash-line:rgba(255,255,255,.08);
+  --flash-muted:#7C8FA5;
+  --flash-name:#B7C6D6;
+  --flash-live:#3FCFB4;
+  --flash-win:#2ED09A;
+  --flash-loss:#F0736A;
+
   --shadow:0 1px 2px rgba(12,22,34,.06), 0 10px 28px rgba(12,22,34,.09);
   --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
@@ -781,6 +793,23 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 }
 .tbtn .t{font-size:14.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .tbtn .s{font-size:10px;margin-top:2px;font-family:var(--mono);opacity:.88}
+/* Idle, the sub-line is two things at opposite ends of the button: what
+   it pays, and the rate that is. Justified apart rather than centred,
+   so the money starts where the eye already is and the percentage never
+   drifts around as the figure changes width. */
+.tbtn .s.payout{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font-size:11px;opacity:1;padding:0 1px;margin-top:4px;
+}
+.tbtn .s .s-k{font-family:var(--sans);font-weight:500;opacity:.92;white-space:nowrap}
+.tbtn .s .s-k b{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums}
+.tbtn .s .s-p{font-weight:600;font-variant-numeric:tabular-nums;opacity:.8;white-space:nowrap}
+/* Narrow phones: the rate is the first thing to go. The payout is the
+   figure somebody is actually reading. */
+@media (max-width:359px){
+  .tbtn .s .s-p{display:none}
+  .tbtn .s.payout{justify-content:center}
+}
 .tbtn.even{background:var(--pos-deep)}
 .tbtn.odd{background:var(--neg-deep)}
 .tbtn:active{filter:brightness(1.08);transform:translateY(1px)}
@@ -1068,18 +1097,38 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    app puts asides. Green won, red lost, and it clears itself. */
 .flash{
   position:fixed;left:50%;top:calc(var(--topbar-h) + 12px);transform:translate(-50%,-12px);
-  z-index:95;display:flex;align-items:baseline;gap:10px;
-  padding:10px 18px;border-radius:999px;border:1px solid transparent;
-  font-size:13px;opacity:0;pointer-events:none;
+  z-index:95;display:block;text-align:left;
+  width:min(420px, calc(100vw - 28px));
+  padding:14px 18px 15px;border-radius:14px;
+  background:var(--flash-bg);border:1px solid var(--flash-line);
+  opacity:0;pointer-events:none;
   transition:opacity .2s ease,transform .2s ease;
-  box-shadow:0 10px 28px rgba(0,0,0,.18);
-  max-width:calc(100vw - 32px);
+  box-shadow:0 14px 38px rgba(0,0,0,.34);
 }
 .flash.open{opacity:1;transform:translate(-50%,0)}
-.flash b{font-weight:600;white-space:nowrap}
-.flash span{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.flash.win{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
-.flash.loss{background:var(--neg-soft);border-color:var(--neg);color:var(--neg)}
+/* What happened, in the small type over it. Uppercase and tracked out,
+   so it reads as a stamp on the ticket rather than as a sentence. */
+.flash .flash-k{
+  display:block;font-style:normal;font-size:11px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--flash-muted);
+}
+/* The instrument. Quiet, because it is the one line somebody already
+   knows — it is the series they are watching. */
+.flash .flash-n{
+  display:block;font-style:normal;font-size:13px;margin-top:5px;
+  color:var(--flash-name);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+/* The money. Everything above it is context for this line. */
+.flash .flash-v{
+  display:block;margin-top:6px;font-size:17px;font-weight:600;
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.flash .flash-n:empty,.flash .flash-v:empty{display:none}
+.flash.win .flash-v{color:var(--flash-win)}
+.flash.loss .flash-v{color:var(--flash-loss)}
+.flash.order .flash-v{color:var(--flash-live)}
 @media (prefers-reduced-motion:reduce){
   .flash{transition:opacity .2s ease}
   .flash,.flash.open{transform:translate(-50%,0)}
@@ -1088,7 +1137,9 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    sitting just under it: seven of these in ten seconds has to read as
    commentary rather than as seven verdicts. */
 .tickpop{
-  position:fixed;left:50%;top:calc(var(--topbar-h) + 58px);transform:translate(-50%,-6px) scale(.96);
+  /* Clear of the result banner above it, which is now a three-line
+     ticket rather than a pill. */
+  position:fixed;left:50%;top:calc(var(--topbar-h) + 108px);transform:translate(-50%,-6px) scale(.96);
   z-index:94;display:flex;align-items:baseline;gap:8px;
   padding:5px 12px;border-radius:999px;border:1px solid transparent;
   font-size:12px;opacity:0;pointer-events:none;
@@ -1137,22 +1188,115 @@ footer a:hover{color:var(--text-2)}
 .ticket-wait{margin-top:10px;font-size:12px;color:var(--muted)}
 .ticket-when{margin-top:9px;font-size:11px;color:var(--muted);font-family:var(--mono)}
 
-/* ---------------- copy trading ---------------- */
-.copy-soon{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:26px 20px}
-.copy-mark{
-  display:grid;place-items:center;width:44px;height:44px;margin-bottom:2px;
-  border:1px solid var(--line-soft);background:var(--surface-2);color:var(--accent);
+/* ---------------- copy trading ----------------
+   Three stacked sections: whether the account can copy anyone, whether
+   it can be copied, and who there is to copy. They are all cards on the
+   page ground, so the page reads as a stack of decisions rather than as
+   one long form. */
+.cp{display:flex;flex-direction:column;gap:14px;padding:0 14px 18px}
+.cp-lede{
+  font-family:var(--display);font-weight:600;font-size:25px;
+  margin:6px 0 6px;letter-spacing:-.022em;
 }
-.copy-soon b{font-size:15px}
-.copy-soon p{color:var(--muted);font-size:12.5px;line-height:1.6;margin:0;max-width:46ch}
-.copy-steps{display:flex;flex-direction:column;margin:14px 0 18px;border-top:1px solid var(--line-soft)}
-.copy-step{display:flex;gap:14px;padding:15px 16px;border-bottom:1px solid var(--line-soft)}
-.copy-step i{
-  flex:none;width:24px;height:24px;display:grid;place-items:center;font-style:normal;
-  font-family:var(--mono);font-size:11.5px;color:var(--muted);border:1px solid var(--line-soft);
+.cp .card{padding:18px}
+/* ---- activation ---- */
+.cp-bal{
+  margin-top:10px;font-size:31px;font-weight:600;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;line-height:1.1;
 }
-.copy-step b{display:block;font-size:13.5px;font-weight:500}
-.copy-step span{display:block;color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:3px}
+.cp-min{
+  display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  margin-top:12px;font-size:12.5px;color:var(--muted);
+}
+.cp-min b{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+/* How far off the minimum is, drawn rather than worked out. It fills
+   green the moment the balance clears it, which is the one state change
+   this card exists to report. */
+.cp-bar{height:4px;margin-top:8px;border-radius:2px;background:var(--surface-3);overflow:hidden}
+.cp-bar i{display:block;height:100%;background:var(--accent);transition:width .3s ease}
+.cp-act.ok .cp-bar i{background:var(--pos)}
+.cp-note{margin:12px 0 14px!important;font-size:12.5px;line-height:1.6;color:var(--muted)}
+/* ---- becoming a provider ---- */
+.cp-prov h3{margin:9px 0 7px}
+.cp-prov > p{margin-bottom:14px}
+.cp-reqs{
+  display:flex;flex-direction:column;
+  border:1px solid var(--line-soft);border-radius:var(--r);
+  background:var(--surface-2);margin-bottom:14px;
+}
+.cp-req{display:flex;align-items:center;gap:11px;padding:11px 13px;font-size:12.5px}
+.cp-req + .cp-req{border-top:1px solid var(--line-soft)}
+.cp-req i{
+  flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  background:var(--neg-soft);color:var(--neg);
+}
+.cp-req.met i{background:var(--pos-soft);color:var(--pos)}
+.cp-req span{flex:1;min-width:0;color:var(--text-2)}
+.cp-req b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cp-req.met b{color:var(--pos)}
+.cp-prov .btn[disabled]{opacity:.5;cursor:not-allowed}
+/* ---- the marketplace ---- */
+.cp-market{padding-top:4px}
+.cp-sub{margin:7px 0 13px;font-size:12.5px;color:var(--muted);line-height:1.6}
+.cp-search{position:relative;display:flex;align-items:center;margin-bottom:12px}
+.cp-search svg{position:absolute;left:13px;color:var(--muted);pointer-events:none}
+.cp-search .input{padding-left:38px}
+.cp-list{display:flex;flex-direction:column;gap:12px}
+.cp-card{
+  background:var(--surface);border:1px solid var(--line-soft);
+  border-radius:var(--r-lg);padding:16px;
+}
+.cp-head{display:flex;align-items:center;gap:12px}
+.cp-av{
+  flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  background:var(--accent-soft);color:var(--accent);
+  font-size:13px;font-weight:700;letter-spacing:.02em;
+}
+.cp-who{flex:1;min-width:0;display:block}
+.cp-who b{display:block;font-size:14.5px;font-weight:600;letter-spacing:-.005em}
+.cp-ver{
+  display:inline-flex;align-items:center;gap:4px;margin-top:2px;
+  font-size:11.5px;color:var(--pos);
+}
+.cp-ver.off{color:var(--muted)}
+.cp-risk{
+  flex:none;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;white-space:nowrap;
+}
+.cp-risk.low{background:var(--pos-soft);color:var(--pos)}
+.cp-risk.mid{background:var(--warn-soft);color:var(--warn)}
+.cp-risk.high{background:var(--neg-soft);color:var(--neg)}
+/* Four figures on one row on a phone would be four columns two
+   characters wide. Two by two, so each one keeps its label. */
+.cp-figs{
+  display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:14px 0;
+  background:var(--line-soft);border:1px solid var(--line-soft);border-radius:var(--r);
+  overflow:hidden;
+}
+.cp-figs > div{background:var(--surface-2);padding:10px 12px;min-width:0}
+.cp-figs span{
+  display:block;font-size:10px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);
+}
+.cp-figs b{
+  display:block;margin-top:4px;font-size:14px;font-weight:600;
+  font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.cp-figs b.pos{color:var(--pos)}
+.cp-figs b.neg{color:var(--neg)}
+.cp-go{padding:12px}
+.cp-none{
+  padding:26px 18px;text-align:center;font-size:12.5px;color:var(--muted);
+  background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);
+}
+@media (min-width:760px){
+  .cp{max-width:680px;margin:0 auto;width:100%}
+  .cp-figs{grid-template-columns:repeat(4,1fr)}
+}
+
+/* The one thing left from the page that came before: the two links at
+   its foot, which the new one still ends on. */
 .copy-foot{display:flex;flex-direction:column;gap:10px;padding:0 16px}
 
 /* ---------------- light: depth ----------------
@@ -1414,6 +1558,7 @@ footer a:hover{color:var(--text-2)}
   .terminal .col-right .tbtn{padding:13px 12px}
   .terminal .col-right .tbtn .t{font-size:15px}
   .terminal .col-right .tbtn .s{font-size:11px;margin-top:2px}
+  .terminal .col-right .tbtn .s.payout{font-size:11.5px;margin-top:5px}
 
   /* The four facts, above the day's tally. */
   .terminal .col-right .tdetail{
@@ -1872,6 +2017,30 @@ body.locked{overflow:hidden}
 
 /* ---------------- AI scanner ---------------- */
 .ai-sect{margin:18px 14px 8px}
+/* ---------------- what the scan landed on ----------------
+   The two facts a finished scan produces, side by side above the
+   ranking: the instrument and the call on it. Sized like a headline
+   rather than like a table row, because everything else on this screen
+   is working and these two are the answer. */
+.ai-ready{
+  margin:14px;padding:16px 16px 14px;border-radius:var(--r-lg);
+  background:var(--surface);border:1px solid var(--line-soft);
+}
+.ai-ready-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.ai-ready-cell{
+  padding:12px 13px;border-radius:var(--r);
+  background:var(--surface-2);border:1px solid var(--line-soft);min-width:0;
+}
+.ai-ready-cell span{
+  display:block;font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);
+}
+.ai-ready-cell b{
+  display:block;margin-top:5px;font-size:15px;font-weight:600;line-height:1.3;
+}
+.ai-ready-cell b.pred{font-family:var(--mono);color:var(--accent)}
+.ai-ready-note{margin:11px 2px 0;font-size:11.5px;color:var(--muted);line-height:1.5}
+@media (max-width:359px){.ai-ready-grid{grid-template-columns:1fr}}
 .ai-hero{
   display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
   margin:14px;padding:22px 18px;border:1px solid var(--line-soft);background:var(--surface);
@@ -2701,6 +2870,85 @@ body[data-chrome="app"] main{background:var(--bg)}
   transition:width .3s ease;
 }
 .tbtn[disabled]{opacity:.34}
+
+/* ---------------- the result card ----------------
+   The dialog that ends a contract or an automated run. It draws its own
+   head, so .modal-hero drops the padding the standard box carries and
+   the card fills it edge to edge.
+
+   Mint rather than the app's blue: this is the one surface that is
+   purely a result, and the blue on every other dialog is the colour of
+   something to press. It has its own pair of tokens so the card reads
+   the same in both themes without either one borrowing a semantic
+   colour that means something else. */
+:root{
+  --hero-bg:#0F1D2D;
+  --hero-panel:#0A1420;
+  --hero-good:#3FCFB4;
+  --hero-good-ink:#0A1420;
+  --hero-bad:#E0645A;
+  --hero-text:#E6EDF5;
+  --hero-muted:#93A6BB;
+  --hero-line:rgba(255,255,255,.07);
+}
+.modal-box.modal-hero{
+  padding:0;border:none;background:transparent;box-shadow:none;
+  max-width:400px;overflow:visible;
+}
+.hero-card{
+  background:var(--hero-bg);color:var(--hero-text);
+  border-radius:22px;padding:34px 24px 26px;text-align:center;
+  box-shadow:var(--shadow-lg);
+}
+/* The ring, and the glow behind it. One element: the border is the ring
+   and the box-shadow is the halo, so there is nothing to keep centred
+   against anything else. */
+.hero-mark{
+  width:92px;height:92px;margin:0 auto 22px;border-radius:50%;
+  display:grid;place-items:center;
+  border:2px solid var(--hero-good);color:var(--hero-good);
+  box-shadow:0 0 0 6px rgba(63,207,180,.10), 0 0 34px rgba(63,207,180,.34);
+}
+.hero-card.bad .hero-mark{
+  border-color:var(--hero-bad);color:var(--hero-bad);
+  box-shadow:0 0 0 6px rgba(224,100,90,.10), 0 0 34px rgba(224,100,90,.30);
+}
+.hero-mark svg{stroke-width:2.6}
+.hero-title{
+  margin:0;font-size:23px;font-weight:700;letter-spacing:-.01em;
+  color:var(--hero-good);
+}
+.hero-card.bad .hero-title{color:var(--hero-bad)}
+.hero-amount{
+  margin-top:12px;font-size:34px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--hero-good);
+}
+.hero-card.bad .hero-amount{color:var(--hero-bad)}
+/* The figures sit in a well a shade darker than the card, which is what
+   separates them from the headline without a rule across the card. */
+.hero-rows{
+  margin:24px 0 22px;padding:16px 18px;border-radius:12px;
+  background:var(--hero-panel);text-align:left;
+}
+.hero-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:7px 0}
+.hero-row + .hero-row{border-top:1px solid var(--hero-line)}
+.hero-row > span{font-size:14px;color:var(--hero-text)}
+.hero-row b{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.hero-w{color:var(--hero-good)}
+.hero-l{color:var(--hero-bad)}
+.hero-close{
+  display:block;width:100%;padding:15px 18px;border-radius:12px;
+  background:var(--hero-good);color:var(--hero-good-ink);
+  font-size:15px;font-weight:700;
+}
+.hero-card.bad .hero-close{background:var(--hero-bad);color:#fff}
+.hero-close:active{filter:brightness(1.06)}
+@media (max-width:420px){
+  .hero-card{padding:30px 20px 22px}
+  .hero-mark{width:82px;height:82px;margin-bottom:18px}
+  .hero-title{font-size:21px}
+  .hero-amount{font-size:30px}
+}
 
 /* ---------------- outcome header ---------------- */
 .outcome{

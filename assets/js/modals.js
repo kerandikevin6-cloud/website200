@@ -238,6 +238,38 @@
     return shown + '@' + parts[1];
   }
 
+  /* ---------------- the result card ----------------
+     Shared by the contract result and the automated run result, so the
+     two endings are the same card with different figures in it: a ring
+     with a mark in it, the headline, the money, the rows, and one
+     button. Green when the session or the contract came out ahead, red
+     when it did not — the ring, the headline and the figure all move
+     together, so the colour is readable before a word of it is. */
+  function heroRow(k, v) {
+    return '<div class="hero-row"><span>' + k + '</span><b>' + v + '</b></div>';
+  }
+  function heroBody(o) {
+    var tone = o.good ? 'good' : 'bad';
+    return '<div class="hero-card ' + tone + '">' +
+        '<div class="hero-mark">' + I(o.good ? 'check' : 'close', 34) + '</div>' +
+        '<h2 class="hero-title">' + o.title + '</h2>' +
+        '<div class="hero-amount num">' + o.amount + '</div>' +
+        '<div class="hero-rows">' + o.rows + '</div>' +
+        '<button class="hero-close" type="button" data-close>Close</button>' +
+      '</div>';
+  }
+  /* What stopped the run, said as a headline rather than as the sentence
+     the terminal passes through. The sentence is still what a toast
+     carries when there is no dialog. */
+  function runHeadline(r, reason) {
+    var text = String(reason || '');
+    if (/take-profit/i.test(text)) return 'Target Profit Reached';
+    if (/stop-loss/i.test(text)) return 'Stop Loss Reached';
+    if ((r.pnl || 0) > 0) return 'Session Closed in Profit';
+    if ((r.pnl || 0) < 0) return 'Session Closed at a Loss';
+    return 'Session Complete';
+  }
+
   function kv(k, v, attrs) {
     return '<div class="kv"><span>' + k + '</span><b ' + (attrs || '') + '>' + v + '</b></div>';
   }
@@ -829,6 +861,16 @@
       }
     },
 
+    /* ---------------- the celebration shell ----------------
+       One card, used by both endings: a contract settling by hand and a
+       whole automated run stopping. A ring with a mark in it, what
+       happened, the money, the figures, and one way out.
+
+       No title bar over it. The headline is the content here, and a
+       second copy of it in a head with a close button beside it made the
+       card read as a form rather than as a result. The backdrop and
+       Escape still close it; so does the button, which is the whole
+       width of the card because it is the only thing to do. */
     /* ---------------- contract result ----------------
        What the old card under the chart used to say, shown once the
        contract is actually settled and there is something to report. */
@@ -840,38 +882,32 @@
             return c.status === 'won' ? 'Contract won'
               : c.status === 'sold' ? 'Sold early' : 'Contract lost';
           },
-          sub: function (s) { return (s.contract || {}).symbolName || ''; },
+          hero: true,
           noBack: true,
           body: function (s) {
             var c = s.contract || {};
             var won = c.status === 'won';
             var sold = c.status === 'sold';
-            var cls = c.profit >= 0 ? 'pos' : 'neg';
+            var good = c.profit >= 0;
 
-            return '<div class="outcome ' + cls + '">' +
-                '<span class="label">' + API().contracts.label(c) + '</span>' +
-                '<b class="num">' + F().signedMoney(c.profit) + '</b>' +
-                '<span class="outcome-sub">' +
-                  (won ? 'Paid ' + F().money(c.payout)
-                    : sold ? 'Closed at ' + F().money(c.value)
-                    : 'Stake not returned') +
-                '</span>' +
-              '</div>' +
-              '<div class="modal-form">' +
-                '<div class="totals">' +
-                  /* Three rows: what was risked, how long it ran, where
-                     the balance stands now. The entry and exit spots
-                     used to sit between them — five decimal places of
-                     working that nobody reads after the fact, pushing
-                     the one figure that matters down the card. They are
-                     still on the contract, and History still shows
-                     them. */
-                  kv('Stake', F().money(c.stake)) +
-                  kv('Duration', F().ticks(c.ticks)) +
-                  kv('Balance', F().money(API().account.balance())) +
-                '</div>' +
-                '<button class="btn btn-fill" type="button" data-close>Done</button>' +
-              '</div>';
+            return heroBody({
+              good: good,
+              title: won ? 'Contract Won' : sold ? 'Position Closed' : 'Contract Lost',
+              amount: F().signedUsd(c.profit),
+              /* Three rows: what was risked, how long it ran, where the
+                 balance stands now. The entry and exit spots used to sit
+                 between them — five decimal places of working that
+                 nobody reads after the fact, pushing the one figure that
+                 matters down the card. They are still on the contract,
+                 and History still shows them. */
+              rows:
+                heroRow('Contract:', API().contracts.label(c)) +
+                heroRow('Duration:', F().ticks(c.ticks)) +
+                heroRow('Stake:', F().money(c.stake)) +
+                heroRow(won ? 'Payout:' : sold ? 'Closed at:' : 'Returned:',
+                  won ? F().money(c.payout) : sold ? F().money(c.value) : F().money(0)) +
+                heroRow('Balance:', F().money(API().account.balance()))
+            });
           }
         }
       }
@@ -881,27 +917,26 @@
     runResult: {
       steps: {
         main: {
-          title: 'Run finished',
-          sub: function (s) { return s.reason || ''; },
+          title: function (s) { return runHeadline(s.run || {}, s.reason); },
+          hero: true,
           noBack: true,
           body: function (s) {
             var r = s.run || {};
-            var cls = r.pnl >= 0 ? 'pos' : 'neg';
-            return '<div class="outcome ' + cls + '">' +
-                '<span class="label">' + (r.done || 0) + ' of ' + (r.total || 0) + ' contracts</span>' +
-                '<b class="num">' + F().signedMoney(r.pnl || 0) + '</b>' +
-                '<span class="outcome-sub">Session result</span>' +
-              '</div>' +
-              '<div class="modal-form">' +
-                '<div class="totals">' +
-                  kv('Contracts placed', r.done || 0) +
-                  kv('Opening stake', F().money(r.base || 0)) +
-                  kv('Take profit', F().money(r.takeProfit || 0)) +
-                  kv('Stop loss', F().money(r.stopLoss || 0)) +
-                  kv('Balance', F().money(API().account.balance())) +
-                '</div>' +
-                '<button class="btn btn-fill" type="button" data-close>Done</button>' +
-              '</div>';
+            var done = r.done || 0;
+            var w = r.wins || 0;
+            var l = r.losses != null ? r.losses : Math.max(0, done - w);
+            var rate = done ? (w / done * 100) : 0;
+
+            return heroBody({
+              good: (r.pnl || 0) >= 0,
+              title: runHeadline(r, s.reason),
+              amount: F().signedUsd(r.pnl || 0),
+              rows:
+                heroRow('Total Trades:', done) +
+                heroRow('Wins / Losses:',
+                  '<span class="hero-w">' + w + 'W</span> / <span class="hero-l">' + l + 'L</span>') +
+                heroRow('Win Rate:', rate.toFixed(1) + '%')
+            });
           }
         }
       }

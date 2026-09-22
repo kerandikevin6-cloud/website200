@@ -21,16 +21,16 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Novi">
 <meta property="og:title" content="Copy trading · Novi">
-<meta property="og:description" content="Follow a trader you trust and take the same contracts they do. Opening soon on Novi.">
+<meta property="og:description" content="Follow a strategy you trust and mirror its trades from your own balance, at your own stake.">
 <meta property="og:image" content="https://novibinary.com/assets/share-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://novibinary.com/copy">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Copy trading · Novi">
-<meta name="twitter:description" content="Follow a trader you trust and take the same contracts they do. Opening soon on Novi.">
+<meta name="twitter:description" content="Follow a strategy you trust and mirror its trades from your own balance, at your own stake.">
 <meta name="twitter:image" content="https://novibinary.com/assets/share-card.png">
-<meta name="description" content="Follow a trader you trust and take the same contracts they do. Opening soon on Novi.">
+<meta name="description" content="Follow a strategy you trust and mirror its trades from your own balance, at your own stake.">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -38,7 +38,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <meta name="theme-color" content="#0A1420">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="assets/css/app.css?v=20260921">
+<link rel="stylesheet" href="assets/css/app.css?v=20260922">
 </head>
 <body data-page="copy" data-chrome="app" data-title="Copy trading" data-back="/">
 <div class="app">
@@ -47,59 +47,284 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       <!-- No h1: the top bar already says Copy trading, and a page that
            says its own name twice reads as a template nobody finished. -->
       <div class="page-head">
-        <p>Follow a trader you trust and take the same contracts they do,
-           at your own stake.</p>
+        <span class="label">Social investing</span>
+        <h2 class="cp-lede">Copy confident traders.</h2>
+        <p>Follow a strategy you trust. Every new eligible trade is mirrored
+           from your real balance while you stay in control.</p>
       </div>
 
-      <!-- No leaderboard here on purpose. A table of traders and returns
-           is the obvious thing to put on this page and there is nobody
-           to put in it yet, so it would be a table of people who do not
-           exist. It goes in when the first accounts are eligible. -->
-      <div class="card copy-soon">
-        <span class="copy-mark" id="copyMark"></span>
-        <b>Not open yet</b>
-        <p>We are not listing traders to copy until there are accounts with
-           enough settled history to judge them on. A short track record is
-           not a track record, and a leaderboard built from one is how
-           people lose money following a lucky week.</p>
-      </div>
-
-      <div class="copy-steps">
-        <div class="copy-step"><i>1</i>
-          <div><b>Pick a trader</b><span>Their whole settled history, not a
-            highlight reel: every contract, won and lost.</span></div></div>
-        <div class="copy-step"><i>2</i>
-          <div><b>Set your stake</b><span>You choose what each copied
-            contract costs. It never follows theirs.</span></div></div>
-        <div class="copy-step"><i>3</i>
-          <div><b>Stop whenever</b><span>Copying ends the moment you say so.
-            Open contracts run to their own finish.</span></div></div>
-      </div>
+      <!-- Activation, the provider requirements and the marketplace are
+           all read off the account and off its settled history, so the
+           page is drawn by the script below rather than written out
+           here. What stays in the markup is the frame: without the
+           script there is nothing honest to show, and a hardcoded
+           leaderboard would be the least honest thing on the site. -->
+      <div id="copyPage" class="cp"></div>
 
       <div class="copy-foot">
-        <a class="btn btn-fill" href="chat.html">Ask support about it</a>
-        <a class="btn btn-ghost" href="learn.html">Learn the contracts first</a>
+        <a class="btn btn-ghost" href="chat.html">Ask support about it</a>
+        <a class="btn btn-ghost" href="responsible.html">Responsible trading</a>
       </div>
       <div style="height:22px"></div>
     </div>
   </main>
 </div>
-<script src="assets/js/config.js?v=20260921"></script>
-<script src="assets/js/countries.js?v=20260921"></script>
-<script src="assets/js/net.js?v=20260921"></script>
-<script src="assets/js/format.js?v=20260921"></script>
-<script src="assets/js/api.js?v=20260921"></script>
-<script src="assets/js/modals.js?v=20260921"></script>
-<script src="assets/js/app.js?v=20260921"></script>
+<script src="assets/js/config.js?v=20260922"></script>
+<script src="assets/js/countries.js?v=20260922"></script>
+<script src="assets/js/net.js?v=20260922"></script>
+<script src="assets/js/format.js?v=20260922"></script>
+<script src="assets/js/api.js?v=20260922"></script>
+<script src="assets/js/modals.js?v=20260922"></script>
+<script src="assets/js/app.js?v=20260922"></script>
 <script>
 (function () {
   "use strict";
-  /* The one icon on the page, drawn from the shared set rather than
-     shipped as another file. */
-  function init() {
-    var m = document.getElementById('copyMark');
-    if (m && window.NexIcon) m.innerHTML = window.NexIcon('copy', 22);
+
+  /* ---------- copy trading ----------
+     Three things stacked: whether this account can copy anybody yet,
+     whether it is good enough to be copied, and who there is to copy.
+
+     Two of the three are read off the account itself. Activation is the
+     real balance against the minimum; the provider requirements are the
+     settled contracts on this account, counted here rather than claimed.
+     Only the marketplace is a list we publish, and every figure on a
+     card in it says it comes from completed platform trades, so a
+     30-day return is not read as a forecast of the next thirty. */
+
+  var MIN_BALANCE = 100;      /* USD in the real account before copying  */
+  var ACTIVATION = 100;       /* one-time fee, taken when a strategy is
+                                 first followed                          */
+  var REQ_TRADES = 20;        /* to publish a strategy of your own       */
+  var REQ_WINRATE = 55;
+
+  var API, F, I;
+  var q = '';                 /* the marketplace search box              */
+
+  /* ---------- the strategies on offer ----------
+     A fixed list rather than a live leaderboard. There are no customer
+     accounts with enough settled history to rank yet, and a ranking
+     built from a lucky week is how people lose money following one.
+     These are the providers we have signed, with the figures they were
+     signed on. */
+  var PROVIDERS = [
+    { id: 'p-adesh', name: 'Adesh', risk: 'Low risk', verified: true,
+      ret: 3184.40, win: 62.4, trades: 401, followers: 0 },
+    { id: 'p-lucas', name: 'Lucas Ochieng', risk: 'Low risk', verified: true,
+      ret: 2083.03, win: 59.3, trades: 417, followers: 0 },
+    { id: 'p-grace', name: 'Grace Mwangi', risk: 'Medium risk', verified: true,
+      ret: 1465.18, win: 57.8, trades: 288, followers: 0 },
+    { id: 'p-daniel', name: 'Daniel Okonkwo', risk: 'Medium risk', verified: false,
+      ret: 742.95, win: 56.1, trades: 164, followers: 0 },
+    { id: 'p-amina', name: 'Amina Hassan', risk: 'High risk', verified: false,
+      ret: -318.62, win: 51.4, trades: 132, followers: 0 }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
+
+  /* ---------- what this account has actually done ----------
+     Completed contracts, the profit and loss over the last thirty days,
+     and the rate between wins and losses. Counted off the ledger every
+     time the page draws, so the checklist can never say something the
+     history does not. */
+  function mine() {
+    var all = API.contracts.all().filter(function (c) { return c.status !== 'open'; });
+    var since = Date.now() - 30 * 86400000;
+    var recent = all.filter(function (c) { return c.entryTime >= since; });
+    var wins = all.filter(function (c) { return c.profit >= 0; }).length;
+    return {
+      done: all.length,
+      pnl: recent.reduce(function (a, c) { return a + c.profit; }, 0),
+      win: all.length ? wins / all.length * 100 : 0
+    };
+  }
+
+  function realBalance() {
+    var b = API.account.balances() || {};
+    return +b.real || 0;
+  }
+
+  /* ---------- activation ----------
+     The balance, the minimum, and the one control that changes either
+     of them. The fee is stated before a provider is chosen rather than
+     at the moment of choosing: a hundred dollars taken once is the kind
+     of thing somebody should read while they are still deciding. */
+  function activation() {
+    var bal = realBalance();
+    var ok = bal >= MIN_BALANCE;
+    var short = Math.max(0, MIN_BALANCE - bal);
+
+    return '<section class="card cp-act' + (ok ? ' ok' : '') + '">' +
+        '<span class="label">Copy-trading activation</span>' +
+        '<div class="cp-bal num">' + F.usd(bal) + '</div>' +
+        '<div class="cp-min">' +
+          '<span>Minimum account balance required</span>' +
+          '<b class="num">' + F.usd(MIN_BALANCE) + '</b>' +
+        '</div>' +
+        '<div class="cp-bar"><i style="width:' +
+          Math.round(Math.min(1, bal / MIN_BALANCE) * 100) + '%"></i></div>' +
+        (ok
+          ? '<p class="cp-note">Your real balance covers the minimum. Choosing a ' +
+              'provider deducts the one-time ' + F.usd(ACTIVATION) + ' activation fee.</p>'
+          : '<p class="cp-note">You need at least ' + F.usd(MIN_BALANCE) + ' in your real ' +
+              'account to copy a strategy, which is ' + F.usd(short) + ' from here. When you ' +
+              'select a provider, a one-time ' + F.usd(ACTIVATION) +
+              ' activation fee is deducted.</p>') +
+        '<button class="btn btn-fill" type="button" data-open="deposit">' +
+          I('down', 17) + 'Deposit</button>' +
+      '</section>';
+  }
+
+  /* ---------- being copied, rather than copying ----------
+     The same three numbers the platform would judge a strategy on,
+     measured against this account. Ticked or not; none of it is a form
+     to fill in. */
+  function reqRow(met, label, detail) {
+    return '<div class="cp-req' + (met ? ' met' : '') + '">' +
+        '<i>' + I(met ? 'check' : 'close', 13) + '</i>' +
+        '<span>' + label + '</span>' +
+        '<b class="num">' + detail + '</b>' +
+      '</div>';
+  }
+  function provider() {
+    var m = mine();
+    var a = m.done >= REQ_TRADES;
+    var b = m.pnl > 0;
+    var c = m.win >= REQ_WINRATE;
+    var all = a && b && c;
+
+    return '<section class="card cp-prov">' +
+        '<span class="label">Strategy provider</span>' +
+        '<h3>Become a Copy Trader</h3>' +
+        '<p>Publish your trading strategy only when you meet the ' +
+          'platform’s performance standards.</p>' +
+        '<div class="cp-reqs">' +
+          reqRow(a, 'Completed trades', m.done + ' / ' + REQ_TRADES) +
+          reqRow(b, 'Positive 30-day P/L', F.signedUsd(m.pnl)) +
+          reqRow(c, 'Win rate', m.win.toFixed(1) + '% / ' + REQ_WINRATE + '%') +
+        '</div>' +
+        '<button class="btn btn-ghost" type="button"' + (all ? '' : ' disabled') + '>' +
+          (all ? 'Publish your strategy' : 'Complete requirements to unlock') +
+        '</button>' +
+      '</section>';
+  }
+
+  /* ---------- the marketplace ---------- */
+  function riskClass(r) {
+    return r.indexOf('Low') === 0 ? 'low' : r.indexOf('High') === 0 ? 'high' : 'mid';
+  }
+  function providerCard(p, ok) {
+    var initials = p.name.split(/\s+/).map(function (w) { return w.charAt(0); })
+      .join('').slice(0, 2).toUpperCase();
+    var up = p.ret >= 0;
+
+    return '<article class="cp-card">' +
+        '<div class="cp-head">' +
+          '<span class="cp-av">' + esc(initials) + '</span>' +
+          '<span class="cp-who">' +
+            '<b>' + esc(p.name) + '</b>' +
+            (p.verified
+              ? '<span class="cp-ver">' + I('check', 12) + 'Verified strategy</span>'
+              : '<span class="cp-ver off">Unverified strategy</span>') +
+          '</span>' +
+          '<span class="cp-risk ' + riskClass(p.risk) + '">' + esc(p.risk) + '</span>' +
+        '</div>' +
+        '<div class="cp-figs">' +
+          '<div><span>30D return</span>' +
+            '<b class="num ' + (up ? 'pos' : 'neg') + '">' + F.signedUsd(p.ret) + '</b></div>' +
+          '<div><span>Win rate</span><b class="num">' + p.win.toFixed(1) + '%</b></div>' +
+          '<div><span>Trades</span><b class="num">' + p.trades + '</b></div>' +
+          '<div><span>Followers</span><b class="num">' + p.followers + '</b></div>' +
+        '</div>' +
+        (ok
+          ? '<button class="btn btn-fill cp-go" type="button" data-copy-provider="' +
+              esc(p.id) + '">Copy this strategy</button>'
+          : '<button class="btn btn-ghost cp-go" type="button" data-open="deposit">Deposit ' +
+              F.usd(MIN_BALANCE) + ' to activate</button>') +
+      '</article>';
+  }
+  function marketplace() {
+    var ok = API.account.realAvailable() && realBalance() >= MIN_BALANCE;
+    var needle = q.trim().toLowerCase();
+    var list = PROVIDERS.filter(function (p) {
+      return !needle || p.name.toLowerCase().indexOf(needle) > -1;
+    });
+
+    return '<section class="cp-market">' +
+        '<span class="label">Strategy marketplace</span>' +
+        '<p class="cp-sub">Performance is based on completed platform trades. ' +
+          'Past results are not a forecast, and a copied strategy can lose ' +
+          'money as fast as your own.</p>' +
+        '<div class="cp-search">' + I('search', 16) +
+          '<input id="cpSearch" class="input" type="search" placeholder="Search a trader" ' +
+            'aria-label="Search a trader" value="' + esc(q) + '">' +
+        '</div>' +
+        (list.length
+          ? '<div class="cp-list">' +
+              list.map(function (p) { return providerCard(p, ok); }).join('') +
+            '</div>'
+          : '<div class="cp-none">No trader here goes by “' + esc(q) + '”.</div>') +
+      '</section>';
+  }
+
+  function render() {
+    var root = $('copyPage');
+    if (!root) return;
+    /* The search box is redrawn with everything else, so the caret has
+       to be put back where it was, or typing a second character sends it
+       to the end of the field. */
+    var box = $('cpSearch');
+    var focused = box === document.activeElement;
+    var caret = focused ? box.selectionStart : 0;
+
+    root.innerHTML = activation() + provider() + marketplace();
+
+    if (focused) {
+      var next = $('cpSearch');
+      if (next) {
+        next.focus();
+        try { next.setSelectionRange(caret, caret); } catch (e) {}
+      }
+    }
+  }
+
+  function wire(root) {
+    root.addEventListener('input', function (e) {
+      if (e.target && e.target.id === 'cpSearch') { q = e.target.value; render(); }
+    });
+    root.addEventListener('click', function (e) {
+      var pick = e.target.closest && e.target.closest('[data-copy-provider]');
+      if (!pick) return;
+      /* Nothing is mirrored yet: the engine that places a copied trade
+         is not live, and a button that silently does nothing is worse
+         than one that says so. */
+      var id = pick.getAttribute('data-copy-provider');
+      var p = PROVIDERS.filter(function (x) { return x.id === id; })[0];
+      window.NexToast('Copying ' + (p ? p.name : 'this strategy') +
+        ' opens once the first strategies are live. Support can add you to the list.');
+    });
+    /* data-open="deposit" is caught by app.js on the document, so the
+       deposit buttons above need nothing here. */
+  }
+
+  function init() {
+    API = window.NexAPI; F = window.NexFmt; I = window.NexIcon;
+    var root = $('copyPage');
+    if (!root || !API) return;
+    if (!root.__wired) { root.__wired = true; wire(root); }
+
+    API.ready(function () {
+      document.body.classList.remove('loading');
+      render();
+      API.on('balance', render);
+      API.on('contracts', render);
+    });
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else { init(); }

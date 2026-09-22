@@ -482,10 +482,16 @@
         return '<button class="tbtn ' + tone + '" data-side="' + sd[0] + '"' +
           (blocked || busy ? ' disabled' : '') + '>' +
           '<div class="t">' + sd[1] + '</div>' +
-          /* Dollars, because the stake above it is dollars. A payout
-             quoted in shillings against a stake typed in dollars is two
-             different questions on one button. */
-          '<div class="s">' + F.usdAmount(payoutFor(sd[0])) + '</div>' +
+          /* The figure was a bare "19.53", which is a number with no
+             question attached: it could as easily have been the stake,
+             the price or the balance. It says what it is and what it is
+             in — Payout, in dollars, because the stake above it is
+             dollars — with the rate it works out to on the other end of
+             the row. */
+          '<div class="s payout">' +
+            '<span class="s-k">Payout <b>$' + F.usdAmount(payoutFor(sd[0])) + '</b></span>' +
+            '<span class="s-p">' + pct(sd[0]) + '</span>' +
+          '</div>' +
         '</button>';
       }).join('') + '</div>');
   }
@@ -606,6 +612,7 @@
       return null;
     }
     S.error = null;
+    flashOrder(res.contract);
     /* The live circle tints against the open contract, so the row has to
        be repainted the moment there is one rather than on the next tick. */
     renderPanel(); renderActive(); renderDock(); renderDigits();
@@ -616,7 +623,7 @@
   function startRun(side) {
     var cfg = API.prefs.auto();
     S.run = {
-      id: 'R' + Date.now(), side: side, total: cfg.runs, done: 0, pnl: 0,
+      id: 'R' + Date.now(), side: side, total: cfg.runs, done: 0, wins: 0, losses: 0, pnl: 0,
       base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss
     };
@@ -656,14 +663,26 @@
      report per contract and the run sums up at the end. */
   function flashResult(c) {
     if (!window.NexFlash) return;
-    if (c.status === 'won') {
-      window.NexFlash('win', 'Won · ' + API.contracts.label(c), F.signedMoney(c.profit));
-    } else if (c.status === 'sold') {
-      window.NexFlash(c.profit >= 0 ? 'win' : 'loss',
-        'Sold · ' + API.contracts.label(c), F.signedMoney(c.profit));
-    } else {
-      window.NexFlash('loss', 'Lost · ' + API.contracts.label(c), F.signedMoney(c.profit));
-    }
+    var stamp = c.status === 'won' ? 'Contract Won'
+      : c.status === 'sold' ? 'Position Closed' : 'Contract Lost';
+    var kind = c.status === 'sold' ? (c.profit >= 0 ? 'win' : 'loss')
+      : c.status === 'won' ? 'win' : 'loss';
+    window.NexFlash(kind, stamp, c.symbolName || '',
+      API.contracts.label(c) + '  ' + F.signedUsd(c.profit));
+  }
+
+  /* ---------- the order going on ----------
+     Placing a contract is the moment somebody has just committed money,
+     and until now the screen answered it by repainting a button. The
+     same banner the result uses says it: what was done, on what, at what
+     price. Neither green nor red, because nothing has been won or lost
+     yet. */
+  function flashOrder(c) {
+    if (!window.NexFlash || !c) return;
+    var meta = API.symbol(c.symbol) || {};
+    window.NexFlash('order', 'Market Order Executed', c.symbolName || '',
+      API.contracts.label(c) + ' $' + F.usdAmount(c.stake) +
+      ' at ' + F.price(c.entrySpot, meta.digits));
   }
 
   function onSettled(c) {
@@ -677,6 +696,11 @@
 
     var r = S.run;
     r.done++;
+    /* Counted as the run goes rather than derived at the end: the
+       summary card reports wins, losses and the rate between them, and a
+       contract sold early is neither a clean win nor a clean loss — it
+       is whichever side of zero it came out on. */
+    if (c.profit >= 0) r.wins++; else r.losses++;
     r.pnl = Math.round((r.pnl + c.profit) * 100) / 100;
     r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
     S.stake = r.stake;
