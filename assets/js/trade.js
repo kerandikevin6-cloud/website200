@@ -612,7 +612,6 @@
       return null;
     }
     S.error = null;
-    flashOrder(res.contract);
     /* The live circle tints against the open contract, so the row has to
        be repainted the moment there is one rather than on the next tick. */
     renderPanel(); renderActive(); renderDock(); renderDigits();
@@ -639,19 +638,20 @@
     renderDock();
     if (!reason) return;
 
-    /* The summary dialog is for a run worth summarising. One contract
-       is not: the banner across the top has already said won or lost
-       and by how much, and a dialog on top of it every six seconds is a
-       Done button between you and the next trade. It reappears the
-       moment a run is more than one contract again, which is when
-       "1 of 1" stops being the whole story. */
-    if (r.total > 1 && window.NexModal) {
+    /* Every run ends on the summary card, a run of one included. It
+       used to be held back for runs of more than one contract, on the
+       grounds that "1 of 1" is not a story worth a dialog — but a run
+       of one is the default, so in practice an automated trade settled
+       with nothing but a banner that was gone three seconds later, and
+       the card that reports the session never appeared at all.
+
+       A run stopped by hand before its contract settled has no result
+       to show, so that one still leaves with a toast. */
+    if (r.done && window.NexModal) {
       window.NexModal.open('runResult', null, { run: r, reason: reason });
       return;
     }
-    /* Stopped by hand, mid-contract: nothing else will say so. A run
-       that finished on its own has already flashed its result. */
-    if (r.done < r.total) window.NexToast(reason);
+    window.NexToast(reason);
   }
   function showResult(c) {
     if (window.NexModal) window.NexModal.open('result', null, { contract: c });
@@ -669,20 +669,6 @@
       : c.status === 'won' ? 'win' : 'loss';
     window.NexFlash(kind, stamp, c.symbolName || '',
       API.contracts.label(c) + '  ' + F.signedUsd(c.profit));
-  }
-
-  /* ---------- the order going on ----------
-     Placing a contract is the moment somebody has just committed money,
-     and until now the screen answered it by repainting a button. The
-     same banner the result uses says it: what was done, on what, at what
-     price. Neither green nor red, because nothing has been won or lost
-     yet. */
-  function flashOrder(c) {
-    if (!window.NexFlash || !c) return;
-    var meta = API.symbol(c.symbol) || {};
-    window.NexFlash('order', 'Market Order Executed', c.symbolName || '',
-      API.contracts.label(c) + ' $' + F.usdAmount(c.stake) +
-      ' at ' + F.price(c.entrySpot, meta.digits));
   }
 
   function onSettled(c) {

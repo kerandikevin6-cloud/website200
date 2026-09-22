@@ -263,10 +263,18 @@
      carries when there is no dialog. */
   function runHeadline(r, reason) {
     var text = String(reason || '');
+    var pnl = r.pnl || 0;
     if (/take-profit/i.test(text)) return 'Target Profit Reached';
     if (/stop-loss/i.test(text)) return 'Stop Loss Reached';
-    if ((r.pnl || 0) > 0) return 'Session Closed in Profit';
-    if ((r.pnl || 0) < 0) return 'Session Closed at a Loss';
+    /* A run of one is the default, and calling one contract a session
+       that closed in profit is three words for a thing that happened
+       once. It gets the contract's own wording; anything longer gets
+       the session's. */
+    if ((r.done || 0) <= 1) {
+      return pnl > 0 ? 'Contract Won' : pnl < 0 ? 'Contract Lost' : 'Contract Settled';
+    }
+    if (pnl > 0) return 'Session Closed in Profit';
+    if (pnl < 0) return 'Session Closed at a Loss';
     return 'Session Complete';
   }
 

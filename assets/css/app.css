@@ -123,7 +123,6 @@
   --flash-line:rgba(255,255,255,.08);
   --flash-muted:#7C8FA5;
   --flash-name:#B7C6D6;
-  --flash-live:#3FCFB4;
   --flash-win:#2ED09A;
   --flash-loss:#F0736A;
 
@@ -1128,7 +1127,6 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 .flash .flash-n:empty,.flash .flash-v:empty{display:none}
 .flash.win .flash-v{color:var(--flash-win)}
 .flash.loss .flash-v{color:var(--flash-loss)}
-.flash.order .flash-v{color:var(--flash-live)}
 @media (prefers-reduced-motion:reduce){
   .flash{transition:opacity .2s ease}
   .flash,.flash.open{transform:translate(-50%,0)}
