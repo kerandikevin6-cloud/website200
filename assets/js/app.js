@@ -1201,20 +1201,25 @@
      tick, climbing on one that lands the right way and falling on one
      that does not. The digit that caused it is already on the circle,
      on the chart and in the price. */
+  /* Dressed as the result banner now: the stamp, the instrument, and the
+     figure in green or red. The banner no longer comes up over the result
+     card, so this is the one ticket on screen while a contract runs. */
   var tickEl = null;
-  window.NexTick = function (kind, amount) {
+  window.NexTick = function (kind, amount, label, name) {
     if (!tickEl) {
       tickEl = document.createElement('div');
-      tickEl.className = 'tickpop';
+      tickEl.className = 'flash tickpop';
       /* Not announced. A screen reader reading seven of these in ten
          seconds would drown out everything else on the page, and the
          result banner above is already live. */
       tickEl.setAttribute('aria-hidden', 'true');
       document.body.appendChild(tickEl);
     }
-    tickEl.className = 'tickpop ' + (kind || '');
-    tickEl.innerHTML = '<b></b>';
-    tickEl.querySelector('b').textContent = amount || '';
+    tickEl.className = 'flash tickpop ' + (kind || '');
+    tickEl.innerHTML = '<i class="flash-k"></i><i class="flash-n"></i><b class="flash-v"></b>';
+    tickEl.querySelector('.flash-k').textContent = label || '';
+    tickEl.querySelector('.flash-n').textContent = name || '';
+    tickEl.querySelector('.flash-v').textContent = amount || '';
     void tickEl.offsetWidth;
     tickEl.classList.add('open');
     clearTimeout(tickEl._t);

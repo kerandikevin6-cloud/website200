@@ -604,7 +604,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 /* Lifted clear of the bottom edge. At 10px the last button sat on the
    card's border and read as half a control. */
 .chart-tools{
-  position:absolute;left:10px;bottom:26px;display:flex;flex-direction:column;
+  position:absolute;left:10px;bottom:26px;z-index:2;display:flex;flex-direction:column;
   border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);
 }
 .chart-tools button{width:30px;height:30px;display:grid;place-items:center;color:var(--muted)}
@@ -1131,31 +1131,14 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   .flash{transition:opacity .2s ease}
   .flash,.flash.open{transform:translate(-50%,0)}
 }
-/* The per-tick call. Smaller and flatter than the result banner, and
-   sitting just under it: seven of these in ten seconds has to read as
-   commentary rather than as seven verdicts. */
-.tickpop{
-  /* Clear of the result banner above it, which is now a three-line
-     ticket rather than a pill. */
-  position:fixed;left:50%;top:calc(var(--topbar-h) + 108px);transform:translate(-50%,-6px) scale(.96);
-  z-index:94;display:flex;align-items:baseline;gap:8px;
-  padding:5px 12px;border-radius:999px;border:1px solid transparent;
-  font-size:12px;opacity:0;pointer-events:none;
-  transition:opacity .14s ease,transform .14s ease;
-}
-.tickpop.open{opacity:1;transform:translate(-50%,0) scale(1)}
-/* One figure, so it is the figure that is sized: monospaced and
-   tabular, or the pill jumps sideways every time a digit changes
-   width, seven times in ten seconds. */
-.tickpop b{
-  font-family:var(--mono);font-variant-numeric:tabular-nums;
-  font-weight:600;font-size:13.5px;white-space:nowrap;
-}
-.tickpop.win{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
-.tickpop.loss{background:var(--neg-soft);border-color:var(--neg);color:var(--neg)}
+/* The per-tick call wears the banner's design (it carries the .flash
+   class too) and takes the banner's place at the top. Only the timing
+   is its own: it changes several times in ten seconds, so it comes in
+   quicker. One layer under the banner, so a mid-run result still
+   covers the last tick. */
+.flash.tickpop{z-index:94;transition:opacity .14s ease,transform .14s ease}
 @media (prefers-reduced-motion:reduce){
-  .tickpop{transition:opacity .14s ease}
-  .tickpop,.tickpop.open{transform:translate(-50%,0)}
+  .flash.tickpop{transition:opacity .14s ease}
 }
 
 footer{border-top:1px solid var(--line-soft);padding:24px 18px 32px;color:var(--muted);font-size:11.5px}

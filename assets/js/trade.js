@@ -565,7 +565,8 @@
        trade button is showing, said loudly enough to notice. */
     var pnl = mine.value - mine.stake;
     var good = API.contracts.favours(mine, d.point.digit);
-    window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl));
+    window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl),
+      'Tick ' + mine.elapsed + ' of ' + mine.ticks, mine.symbolName || '');
   }
 
   /* ---------- how long a contract runs ----------
@@ -657,10 +658,9 @@
     if (window.NexModal) window.NexModal.open('result', null, { contract: c });
   }
 
-  /* Every settled contract says so across the top, green won and red
-     lost, whether it was placed by hand or by a run. The dialog only
-     comes up for a hand-placed one; inside a run the banner is the whole
-     report per contract and the run sums up at the end. */
+  /* A contract settling inside a run that carries on says so across the
+     top, green won and red lost. Anything that ends on a card, a
+     hand-placed contract or the last of a run, leaves this to the card. */
   function flashResult(c) {
     if (!window.NexFlash) return;
     var stamp = c.status === 'won' ? 'Contract Won'
@@ -671,13 +671,19 @@
       API.contracts.label(c) + '  ' + F.signedUsd(c.profit));
   }
 
+  /* The sound the banner would have made, for a result that goes
+     straight to the card instead. */
+  function soundResult(c) {
+    if (window.NexSound) window.NexSound.play(c.profit >= 0 && c.status !== 'lost' ? 'win' : 'loss');
+  }
+
   function onSettled(c) {
-    /* A hand-placed contract gets the full result dialog. Contracts
-       inside an automated run would throw a dialog every few seconds,
-       so those report with the banner alone and the run sums up at the
-       end. */
-    if (c.status !== 'open') flashResult(c);
-    if (c.status !== 'open' && !c.run) showResult(c);
+    /* A hand-placed contract gets the full result dialog and nothing
+       else: a banner saying the same thing over the top of the card was
+       the one result reported twice. Contracts inside an automated run
+       would throw a dialog every few seconds, so those report with the
+       banner, except the last, which the run's card reports. */
+    if (c.status !== 'open' && !c.run) { soundResult(c); showResult(c); }
     if (!S.run || c.run !== S.run.id) { renderAll(); return; }
 
     var r = S.run;
@@ -691,11 +697,13 @@
     r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
     S.stake = r.stake;
 
-    if (r.pnl >= r.takeProfit) return stopRun('Take-profit reached at ' + F.signedUsd(r.pnl));
-    if (-r.pnl >= r.stopLoss) return stopRun('Stop-loss reached at ' + F.signedUsd(r.pnl));
-    if (r.done >= r.total) return stopRun('Run finished at ' + F.signedUsd(r.pnl));
-    if (!check()) return stopRun('Run stopped: ' + S.error);
+    var end = r.pnl >= r.takeProfit ? 'Take-profit reached at ' + F.signedUsd(r.pnl)
+      : -r.pnl >= r.stopLoss ? 'Stop-loss reached at ' + F.signedUsd(r.pnl)
+      : r.done >= r.total ? 'Run finished at ' + F.signedUsd(r.pnl)
+      : !check() ? 'Run stopped: ' + S.error : null;
+    if (end) { soundResult(c); return stopRun(end); }
 
+    flashResult(c);
     renderAll();
     setTimeout(function () { if (S.run) place(r.side, r.id); }, 700);
   }
