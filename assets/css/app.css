@@ -2867,14 +2867,14 @@ body[data-chrome="app"] main{background:var(--bg)}
    the same in both themes without either one borrowing a semantic
    colour that means something else. */
 :root{
-  --hero-bg:#1C1C1C;
-  --hero-panel:#0A1420;
-  --hero-good:#3FCFB4;
-  --hero-good-ink:#0A1420;
-  --hero-bad:#E0645A;
-  --hero-text:#E6EDF5;
-  --hero-muted:#A3A29D;
-  --hero-line:rgba(255,255,255,.07);
+  --hero-bg:var(--surface);
+  --hero-panel:var(--surface);
+  --hero-good:var(--pos);
+  --hero-good-ink:#FFFFFF;
+  --hero-bad:var(--neg);
+  --hero-text:var(--text-2);
+  --hero-muted:var(--muted);
+  --hero-line:var(--line-soft);
 }
 .modal-box.modal-hero{
   padding:0;border:none;background:transparent;box-shadow:none;
@@ -3564,4 +3564,86 @@ html[data-oauth]::after{
     padding:8px 10px;background:var(--surface);border-top:1px solid var(--line);
   }
   .terminal{padding-bottom:64px}
+}
+
+
+
+/* ================================================================
+   Trading pop-ups and the result card, in the orbis manner
+   Same words and figures as before; only how they are drawn changes.
+   ================================================================ */
+
+/* ---- the banner a settled contract raises, and the per-tick call ----
+   A small card under the top bar in the page's own colours: a coloured
+   edge says won or lost, the stamp and the instrument sit on the left,
+   the money on the right. */
+.flash{
+  top:calc(var(--topbar-h) + 10px);
+  width:min(360px, calc(100vw - 24px));
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:14px;
+  padding:10px 14px 10px 16px;border-radius:0;
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);
+  box-shadow:0 1px 2px rgba(0,0,0,.05), 0 12px 32px rgba(0,0,0,.12);
+}
+.flash.win{border-left-color:var(--pos)}
+.flash.loss{border-left-color:var(--neg)}
+.flash.order{border-left-color:var(--text-2)}
+.flash .flash-k{
+  grid-column:1;font-size:10px;letter-spacing:.1em;color:var(--muted);
+}
+.flash .flash-n{
+  grid-column:1;margin-top:2px;font-size:12.5px;color:var(--text);
+}
+.flash .flash-v{
+  grid-column:2;grid-row:1 / span 2;margin:0;font-size:15px;color:var(--text);text-align:right;
+}
+.flash.win .flash-v{color:var(--pos)}
+.flash.loss .flash-v{color:var(--neg)}
+/* the tick call is the quieter of the two: tighter, lighter shadow */
+.flash.tickpop{
+  width:min(320px, calc(100vw - 24px));padding:7px 12px 7px 14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.08);
+}
+.flash.tickpop .flash-n{font-size:12px}
+.flash.tickpop .flash-v{font-size:14px}
+:root[data-theme="dark"] .flash{box-shadow:0 12px 32px rgba(0,0,0,.45)}
+
+/* ---- a running side: near-black, with the time left drawn in green ---- */
+.tbtn.stop{background:var(--text);color:var(--bg)}
+.tbtn.stop:hover{background:var(--text)}
+.tbtn-bar{height:3px;background:var(--accent-fill)}
+
+/* ---- the result card ----
+   A plain panel: a tinted disc with the mark, the headline, the money
+   in green or red, the figures as rows, and one button. */
+.modal-box.modal-hero{max-width:380px}
+.hero-card{
+  border-radius:0;padding:28px 22px 20px;border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.18);
+}
+.hero-mark{
+  width:60px;height:60px;margin:0 auto 16px;border:none;box-shadow:none;
+  background:var(--pos-soft);color:var(--pos);
+}
+.hero-card.bad .hero-mark{border:none;box-shadow:none;background:var(--neg-soft);color:var(--neg)}
+.hero-mark svg{width:28px;height:28px;stroke-width:2.2}
+.hero-title,.hero-card.bad .hero-title{font-size:17px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+.hero-amount{margin-top:8px;font-size:28px;font-weight:600;font-family:var(--mono)}
+.hero-rows{margin:20px 0 18px;padding:0;border-radius:0;background:none;border-top:1px solid var(--line-soft)}
+.hero-row{padding:10px 0}
+.hero-row + .hero-row{border-top:1px solid var(--line-soft)}
+.hero-row > span{font-size:13px;color:var(--muted)}
+.hero-row b{font-size:13.5px;font-weight:600;color:var(--text);font-family:var(--mono)}
+.hero-close{
+  padding:13px 18px;border-radius:0;font-size:14px;font-weight:600;
+  background:var(--accent-fill);color:#fff;
+}
+.hero-close:hover{background:var(--accent-fill-2)}
+.hero-card.bad .hero-close{background:var(--text);color:var(--bg)}
+.hero-card.bad .hero-close:hover{background:var(--text);opacity:.9}
+@media (max-width:420px){
+  .hero-card{padding:24px 18px 18px}
+  .hero-mark{width:56px;height:56px;margin-bottom:14px}
+  .hero-title{font-size:16.5px}
+  .hero-amount{font-size:26px}
 }

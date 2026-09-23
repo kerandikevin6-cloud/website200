@@ -617,20 +617,21 @@
   }
 
   /* ---------- automated runs ---------- */
-  /* How many contracts a run places. Not asked for and not the same
-     twice: somewhere from four to eight, so the card at the end has a
-     real count of wins against losses to report. The target profit is
-     what actually decides it: reach it and the run stops there, however
-     many were left. */
-  var RUN_MIN = 4, RUN_MAX = 8;
-  function runLength() {
-    return RUN_MIN + Math.floor(Math.random() * (RUN_MAX - RUN_MIN + 1));
+  /* How many contracts a run places: what the auto settings say, which
+     is one unless someone has chosen more. It used to be a random four to
+     eight, so a single press kept placing contracts (doubling the stake
+     after every loss) long after the trader thought they had finished,
+     and the result card only came at the end of a run they never asked
+     for. Target profit and stop loss still end a longer run early. */
+  function runLength(cfg) {
+    var n = Math.floor(+(cfg && cfg.runs) || 1);
+    return Math.max(1, Math.min(50, n));
   }
 
   function startRun(side) {
     var cfg = API.prefs.auto();
     S.run = {
-      id: 'R' + Date.now(), side: side, total: runLength(), done: 0, wins: 0, losses: 0, pnl: 0,
+      id: 'R' + Date.now(), side: side, total: runLength(cfg), done: 0, wins: 0, losses: 0, pnl: 0,
       base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss
     };
