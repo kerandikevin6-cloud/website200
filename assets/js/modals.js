@@ -261,21 +261,15 @@
   /* What stopped the run, said as a headline rather than as the sentence
      the terminal passes through. The sentence is still what a toast
      carries when there is no dialog. */
-  function runHeadline(r, reason) {
-    var text = String(reason || '');
-    var pnl = r.pnl || 0;
-    if (/take-profit/i.test(text)) return 'Target Profit Reached';
-    if (/stop-loss/i.test(text)) return 'Stop Loss Reached';
-    /* A run of one is the default, and calling one contract a session
-       that closed in profit is three words for a thing that happened
-       once. It gets the contract's own wording; anything longer gets
-       the session's. */
-    if ((r.done || 0) <= 1) {
-      return pnl > 0 ? 'Contract Won' : pnl < 0 ? 'Contract Lost' : 'Contract Settled';
-    }
-    if (pnl > 0) return 'Session Closed in Profit';
-    if (pnl < 0) return 'Session Closed at a Loss';
-    return 'Session Complete';
+  /* Every result card is headed the same way, Contract Won or Contract
+     Lost, whether one contract settled or a run ended on its target or
+     stop. "Session Closed in Profit" and "Target Profit Reached" read as
+     a different kind of event from the same thing. */
+  function runHeadline(r) {
+    return (r.pnl || 0) >= 0 ? 'Contract Won' : 'Contract Lost';
+  }
+  function tickTally(w, l) {
+    return '<span class="hero-w">' + w + 'W</span> / <span class="hero-l">' + l + 'L</span>';
   }
 
   function kv(k, v, attrs) {
@@ -605,6 +599,10 @@
             /* What to send, kept in one place: the rejected branch shows
                the same list under a notice rather than a second copy of
                it that can drift. */
+            function badge(doc) {
+              return API().kyc.sent(doc) ? '<span class="badge ok">Sent</span>'
+                : '<span class="badge warn">Required</span>';
+            }
             function checklist() {
               return '<div class="modal-form"><div class="list" style="margin:0">' +
                 '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
@@ -614,14 +612,14 @@
                   '<span class="ico">' + I('card', 18) + '</span>' +
                   '<span class="t"><b>Proof of address</b>' +
                     '<span>Bill or statement, last 3 months</span></span>' +
-                  '<span class="badge warn">Required</span></button>' +
+                  badge('Proof of address') + '</button>' +
                 /* Front and back, two pictures: the upload step asks
                    for both when this is the document. */
                 '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
                   '<span class="ico">' + I('idcard', 18) + '</span>' +
                   '<span class="t"><b>Government ID</b>' +
                     '<span>National ID, passport or driving licence</span></span>' +
-                  '<span class="badge">Optional</span></button>' +
+                  badge('Government ID') + '</button>' +
               '</div></div>';
             }
 
@@ -636,6 +634,12 @@
                customer who cannot tell them apart sends it again. */
             /* The list stays under it, so a second document (the ID after
                proof of address, or the other way round) can still be sent. */
+            var missing = API().kyc.missing();
+            if (state === 'pending' && missing.length) {
+              return '<div class="modal-form"><div class="notice">' + I('alert', 17) +
+                '<span>One more to send: your ' + missing[0].toLowerCase() + '. Both documents are ' +
+                'needed before we can verify the account.</span></div></div>' + checklist();
+            }
             if (state === 'pending') {
               return '<div class="modal-form"><div class="notice">' + I('clock', 17) +
                 '<span>Under review. Your document is with us, most are checked ' +
@@ -888,8 +892,7 @@
         main: {
           title: function (s) {
             var c = s.contract || {};
-            return c.status === 'won' ? 'Contract won'
-              : c.status === 'sold' ? 'Sold early' : 'Contract lost';
+            return (c.status === 'won' || (c.status === 'sold' && c.profit >= 0)) ? 'Contract won' : 'Contract lost';
           },
           hero: true,
           noBack: true,
@@ -901,7 +904,7 @@
 
             return heroBody({
               good: good,
-              title: won ? 'Contract Won' : sold ? 'Position Closed' : 'Contract Lost',
+              title: (won || (sold && good)) ? 'Contract Won' : 'Contract Lost',
               amount: F().signedUsd(c.profit),
               /* Three rows: what was risked, how long it ran, where the
                  balance stands now. The entry and exit spots used to sit
@@ -912,6 +915,7 @@
               rows:
                 heroRow('Contract:', API().contracts.label(c)) +
                 heroRow('Duration:', F().ticks(c.ticks)) +
+                heroRow('Wins / Losses:', tickTally(c.tickWins || 0, c.tickLosses || 0)) +
                 heroRow('Stake:', F().money(c.stake)) +
                 heroRow(won ? 'Payout:' : sold ? 'Closed at:' : 'Returned:',
                   won ? F().money(c.payout) : sold ? F().money(c.value) : F().money(0)) +
@@ -926,24 +930,23 @@
     runResult: {
       steps: {
         main: {
-          title: function (s) { return runHeadline(s.run || {}, s.reason); },
+          title: function (s) { return runHeadline(s.run || {}); },
           hero: true,
           noBack: true,
           body: function (s) {
             var r = s.run || {};
-            var done = r.done || 0;
-            var w = r.wins || 0;
-            var l = r.losses != null ? r.losses : Math.max(0, done - w);
-            var rate = done ? (w / done * 100) : 0;
+            var w = r.tickWins || 0;
+            var l = r.tickLosses || 0;
+            var ticks = w + l;
+            var rate = ticks ? (w / ticks * 100) : 0;
 
             return heroBody({
               good: (r.pnl || 0) >= 0,
-              title: runHeadline(r, s.reason),
+              title: runHeadline(r),
               amount: F().signedUsd(r.pnl || 0),
               rows:
-                heroRow('Total Trades:', done) +
-                heroRow('Wins / Losses:',
-                  '<span class="hero-w">' + w + 'W</span> / <span class="hero-l">' + l + 'L</span>') +
+                heroRow('Total Ticks:', ticks) +
+                heroRow('Wins / Losses:', tickTally(w, l)) +
                 heroRow('Win Rate:', rate.toFixed(1) + '%')
             });
           }

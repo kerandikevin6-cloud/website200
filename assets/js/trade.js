@@ -632,6 +632,7 @@
     var cfg = API.prefs.auto();
     S.run = {
       id: 'R' + Date.now(), side: side, total: runLength(cfg), done: 0, wins: 0, losses: 0, pnl: 0,
+      ticks: 0, tickWins: 0, tickLosses: 0,
       base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss
     };
@@ -671,8 +672,7 @@
      hand-placed contract or the last of a run, leaves this to the card. */
   function flashResult(c) {
     if (!window.NexFlash) return;
-    var stamp = c.status === 'won' ? 'Contract Won'
-      : c.status === 'sold' ? 'Position Closed' : 'Contract Lost';
+    var stamp = (c.status === 'won' || (c.status === 'sold' && c.profit >= 0)) ? 'Contract Won' : 'Contract Lost';
     var kind = c.status === 'sold' ? (c.profit >= 0 ? 'win' : 'loss')
       : c.status === 'won' ? 'win' : 'loss';
     window.NexFlash(kind, stamp, c.symbolName || '',
@@ -701,6 +701,10 @@
        contract sold early is neither a clean win nor a clean loss — it
        is whichever side of zero it came out on. */
     if (c.profit >= 0) r.wins++; else r.losses++;
+    /* and the ticks inside them, which is what the card reports */
+    r.ticks += c.elapsed || c.ticks || 0;
+    r.tickWins += c.tickWins || 0;
+    r.tickLosses += c.tickLosses || 0;
     r.pnl = Math.round((r.pnl + c.profit) * 100) / 100;
     r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
     S.stake = r.stake;

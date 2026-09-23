@@ -349,6 +349,8 @@
        apart from "waiting on us", which a customer needs and a boolean
        cannot express. */
     kycStatus: saved.kycStatus || (saved.verified ? 'verified' : 'unverified'),
+    /* Which of the two required documents have gone to review. */
+    kycSent: saved.kycSent || {},
     consent: !!saved.consent,
     riskAck: !!saved.riskAck,
     contracts: saved.contracts || [],
@@ -368,7 +370,7 @@
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
         ticket: S.ticket,
-        verified: S.verified, kycStatus: S.kycStatus, consent: S.consent, riskAck: S.riskAck,
+        verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
         auto: S.auto, autoV: S.autoV
@@ -710,6 +712,12 @@
       c.lastSpot = point.price;
       c.lastDigit = point.digit;
       c.value = mark(c, point.digit);
+      /* The tally the result card reports: of the ticks this contract
+         lived through, how many landed its way. Counted here, on every
+         tick including the one that settles it, so wins and losses add
+         up to the ticks shown while it ran. */
+      if (winning(c, point.digit)) c.tickWins = (c.tickWins || 0) + 1;
+      else c.tickLosses = (c.tickLosses || 0) + 1;
       changed = true;
       if (c.elapsed >= c.ticks) settle(c, point);
     });
@@ -996,6 +1004,14 @@
       hasDoc: function (name) { return !!docs[name]; },
       setDoc: function (name, file) { docs[name] = file; B.emit('kyc', false); },
       clearDoc: function (name) { delete docs[name]; B.emit('kyc', false); },
+
+      /* Both are required: proof of address and a government ID. */
+      REQUIRED: ['Proof of address', 'Government ID'],
+      sent: function (doc) { return !!S.kycSent[doc]; },
+      markSent: function (doc) { S.kycSent[doc] = Date.now(); persist(); B.emit('kyc', false); },
+      missing: function () {
+        return ['Proof of address', 'Government ID'].filter(function (d) { return !S.kycSent[d]; });
+      },
 
       /* Local only, and only when there is no server to ask. With a
          backend configured the browser must never call itself verified:

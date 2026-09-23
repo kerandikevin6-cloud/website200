@@ -2502,10 +2502,16 @@
     }
     if (name === 'verify') {
       if (node && node.disabled) return;
+      var askForTheOther = function () {
+        window.NexToast('Sent. Now your ' + API.kyc.missing()[0].toLowerCase() + ', both are required.');
+        gotoStep('list');
+      };
 
       /* No backend: the old local behaviour, which is a simulation and
          is the only place it is still honest. */
       if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        API.kyc.markSent(state.data.doc || 'Proof of address');
+        if (API.kyc.missing().length) return askForTheOther();
         API.kyc.simulateApproval();
         gotoStep('done');
         return;
@@ -2541,6 +2547,10 @@
            is the whole reason this route exists. */
         API.kyc.markPending();
         slots.forEach(function (s) { API.kyc.clearDoc(s); });
+        API.kyc.markSent(doc);
+        /* Both documents are required: after the first, straight back to
+           the list for the second rather than a "nothing more needed". */
+        if (API.kyc.missing().length) return askForTheOther();
         gotoStep('done');
       }).catch(function (err) {
         if (node) { node.disabled = false; node.textContent = 'Submit for review'; }
