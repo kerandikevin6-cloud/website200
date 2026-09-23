@@ -33,19 +33,23 @@
      white. Every surface above it is then a real step up, which is what
      was missing: a white card on a near-white page is not a card, and
      the whole screen read as one unlit sheet. */
-  --bg:#DFE9F6;
+  /* Light is flat and neutral: a warm near-white ground, white panels a
+     hair above it, and thin grey lines doing the separating. No blue in
+     the neutrals, so the brand blue is the only blue on the screen and
+     reads as the brand rather than as the wallpaper. */
+  --bg:#FAFAF9;
   --surface:#FFFFFF;
-  --surface-2:#E8F0FB;
-  --surface-3:#D2E1F4;
-  --line:#B6CBE6;
-  --line-soft:#D3E0F0;
-  --text:#0C1622;
-  --text-2:#3B4756;
+  --surface-2:#F3F2EF;
+  --surface-3:#ECEAE6;
+  --line:#E8E6E1;
+  --line-soft:#F0EFEB;
+  --text:#1C1C1C;
+  --text-2:#5E5E59;
   /* Darker than it looks like it needs to be. The quiet text now sits
      on a blue ground rather than on white, and #64717F against that is
      3.9:1 — under the 4.5 small text wants. This clears it on every
      surface in the theme. */
-  --muted:#566475;
+  --muted:#6F6E68;                               /* 5.1:1 on white, 4.9:1 on the ground, 4.6:1 on surface-2 */
 
   /* brand + semantic
      Deeper than the dark theme's. A blue that reads well on a dark
@@ -99,11 +103,11 @@
      under the line is accent-tinted, not grey: it is the one large area
      of colour on the screen and it is what stops a light trading
      terminal looking like a spreadsheet. */
-  --chart-line:#0C1622;
-  --chart-grid:#D5E2F1;
-  --chart-fill:rgba(10,95,206,.11);
-  --chart-axis:#7A8796;
-  --chart-bg:#F2F7FD;
+  --chart-line:#1C1C1C;
+  --chart-grid:#EDEBE6;
+  --chart-fill:rgba(10,95,206,.08);
+  --chart-axis:#8A8983;
+  --chart-bg:#FFFFFF;
 
   /* The ground a control sits on, and the slot inside it that is
      chosen. In light these carry blue, because a control drawn in white
@@ -111,8 +115,8 @@
      the tabs, the mode pill and the instrument chip disappear. In dark
      the surfaces already differ by value, so these resolve to what was
      there before. */
-  --ctl:#D8E6F8;
-  --ctl-line:#AFC8E6;
+  --ctl:#F3F2EF;
+  --ctl-line:#E8E6E1;
   --ctl-on:#FFFFFF;
 
   /* The banner across the top is the same dark ticket in both themes:
@@ -126,7 +130,7 @@
   --flash-win:#2ED09A;
   --flash-loss:#F0736A;
 
-  --shadow:0 1px 2px rgba(12,22,34,.06), 0 10px 28px rgba(12,22,34,.09);
+  --shadow:0 1px 2px rgba(28,28,28,.04), 0 10px 28px rgba(28,28,28,.07);
   --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
   --r-xl:20px;
@@ -446,7 +450,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   box-shadow:0 8px 28px rgba(0,0,0,.28);
   backdrop-filter:blur(14px) saturate(1.4);
 }
-:root{--tabbar-bg:rgba(255,255,255,.82);--tabbar-line:rgba(0,0,0,.09)}
+:root{--tabbar-bg:rgba(255,255,255,.86);--tabbar-line:rgba(28,28,28,.08)}
 :root[data-theme="dark"]{--tabbar-bg:rgba(20,29,40,.86);--tabbar-line:rgba(255,255,255,.1)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){--tabbar-bg:rgba(20,29,40,.86);--tabbar-line:rgba(255,255,255,.1)}
@@ -595,7 +599,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 .chart-map{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   width:98%;height:auto;z-index:0;pointer-events:none;
-  color:#0C1622;opacity:.055;
+  color:#1C1C1C;opacity:.05;
 }
 :root[data-theme="dark"] .chart-map{color:#9FC6F5;opacity:.1}
 @media (prefers-color-scheme:dark){
@@ -1295,7 +1299,7 @@ footer a:hover{color:var(--text-2)}
 :root:not([data-theme="dark"]) .card,
 :root:not([data-theme="dark"]) .modal-box,
 :root:not([data-theme="dark"]) .drawer{
-  box-shadow:0 1px 2px rgba(12,22,34,.05), 0 8px 22px rgba(12,22,34,.06);
+  box-shadow:none;              /* flat: the line around it is the separation */
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .panel,
@@ -1315,7 +1319,7 @@ footer a:hover{color:var(--text-2)}
    the ground behind it, so it floated with nothing under it. */
 :root:not([data-theme="dark"]) .topbar{
   background:var(--surface);
-  box-shadow:0 1px 0 rgba(12,22,34,.06), 0 6px 18px rgba(12,22,34,.05);
+  box-shadow:0 1px 0 var(--line);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .topbar{background:var(--bg);box-shadow:none}
@@ -2949,17 +2953,17 @@ body[data-chrome="app"] main{background:var(--bg)}
    both, and a black rail against a light app is not premium, it is two
    products in one window.
 
-   In light it is white with blue kept in it — the ground is the palest
-   step and the header and hovers step up from there in the same hue, so
-   the panel has colour without having a tint laid over it. */
+   In light it is white with warm grey steps for the header and hovers,
+   the same neutrals as the page, with the brand blue only on the item
+   that is chosen. */
 .drawer{
-  --d-bg:#F6FAFF;
-  --d-surface:#E4EEFB;
-  --d-line:#CFDFF2;
-  --d-line-soft:#DCE8F7;
-  --d-text:#0B1420;
-  --d-text-2:#384554;
-  --d-muted:#5A6878;
+  --d-bg:#FFFFFF;
+  --d-surface:#F3F2EF;
+  --d-line:#E8E6E1;
+  --d-line-soft:#F0EFEB;
+  --d-text:#1C1C1C;
+  --d-text-2:#5E5E59;
+  --d-muted:#6F6E68;
   --d-accent:#0A5FCE;
   --d-accent-bg:#D8E8FD;
   --d-accent-line:#A9CCF7;
