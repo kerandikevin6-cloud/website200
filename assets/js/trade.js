@@ -206,9 +206,9 @@
        contract asks: a split for parity, a bullseye for hitting one
        digit, arrows for above and below. */
     var tabs = [
-      ['even_odd', 'Even / Odd', 'parity'],
-      ['matches', 'Matches / Differs', 'target'],
-      ['over_under', 'Over / Under', 'overunder']
+      ['even_odd', 'Even / Odd', 'lc-contrast'],
+      ['matches', 'Matches / Differs', 'lc-crosshair'],
+      ['over_under', 'Over / Under', 'lc-arrow-down-up']
     ];
     /* The heading only shows where the tabs are a list inside the
        ticket. Across the top of the chart they are plainly three tabs

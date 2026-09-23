@@ -54,16 +54,16 @@
   /* brand + semantic
      Deeper than the dark theme's. A blue that reads well on a dark
      ground is thin and toy-like on a white one. */
-  --accent:#0A5FCE;
-  --accent-soft:#D5E6FC;
+  --accent:#007A43;                              /* green text: 5.4:1 on white */
+  --accent-soft:#E6F7EE;
   /* The blue a *filled* control is painted in, and the ink that goes on
      top of it. Separate from --accent because that one has to stay
      legible as text on white and so is pulled deliberately dark; this
      one never carries anything but white, so it can be the brand blue
      at full strength. A chosen toggle is the one thing on a light
      screen that should read as lit rather than merely outlined. */
-  --accent-fill:#007FFA;
-  --accent-fill-2:#0069DB;
+  --accent-fill:#008545;                         /* filled controls: white on it is 4.7:1 */
+  --accent-fill-2:#007A43;
   --accent-ink:#FFFFFF;
   --pos:#0B7A4B;
   --pos-soft:#E3F2EA;
@@ -103,9 +103,9 @@
      under the line is accent-tinted, not grey: it is the one large area
      of colour on the screen and it is what stops a light trading
      terminal looking like a spreadsheet. */
-  --chart-line:#1C1C1C;
+  --chart-line:#00994F;                          /* one green line, a grey wash under it */
   --chart-grid:#EDEBE6;
-  --chart-fill:rgba(10,95,206,.08);
+  --chart-fill:rgba(28,28,28,.055);
   --chart-axis:#8A8983;
   --chart-bg:#FFFFFF;
 
@@ -123,10 +123,10 @@
      it sits over the chart, it is gone in three seconds, and a white
      card flashing over a light screen is a flicker rather than a
      notice. */
-  --flash-bg:#0D1926;
+  --flash-bg:#1C1C1C;
   --flash-line:rgba(255,255,255,.08);
-  --flash-muted:#7C8FA5;
-  --flash-name:#B7C6D6;
+  --flash-muted:#A3A29D;
+  --flash-name:#D6D5D0;
   --flash-win:#2ED09A;
   --flash-loss:#F0736A;
 
@@ -175,20 +175,20 @@
 
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0A1420;
-    --surface:#0F1D2D;
-    --surface-2:#152639;
-    --surface-3:#1C3047;
-    --line:#24384F;
-    --line-soft:#1A2B3E;
-    --text:#E6EDF5;
-    --text-2:#A8B7C7;
-    --muted:#7488A0;
+    --bg:#171716;
+    --surface:#1E1E1D;
+    --surface-2:#272725;
+    --surface-3:#2E2E2C;
+    --line:#2E2E2C;
+    --line-soft:#262625;
+    --text:#EDECE8;
+    --text-2:#A5A49E;
+    --muted:#8E8D86;
 
-    --accent:#3D9BFF;
-    --accent-soft:#122C45;
-    --accent-fill:#007FFA;
-    --accent-fill-2:#0069DB;
+    --accent:#00C26F;
+    --accent-soft:#14312A;
+    --accent-fill:#008545;
+    --accent-fill-2:#007A43;
     --accent-ink:#FFFFFF;
     --pos:#17A06A;
     --pos-soft:#0E2B26;
@@ -206,15 +206,15 @@
     --tick-text:#F0CB4B;
     --tick-soft:#2E2610;
 
-    --chart-line:#E6EDF5;
-    --chart-grid:#17293C;
-    --chart-fill:rgba(61,155,255,.09);
-    --chart-axis:#6B809A;
-    --chart-bg:#0A1420;
+    --chart-line:#00BF63;
+    --chart-grid:#2C2C2A;
+    --chart-fill:rgba(255,255,255,.055);
+    --chart-axis:#78776F;
+    --chart-bg:#171716;
 
-    --ctl:#132437;
-    --ctl-line:#1F3550;
-    --ctl-on:#1C3047;
+    --ctl:#232322;
+    --ctl-line:#333331;
+    --ctl-on:#2C2C2A;
 
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
     --shadow-lg:0 24px 64px rgba(0,0,0,.6);
@@ -223,22 +223,22 @@
 }
 
 :root[data-theme="dark"]{
-  --bg:#0A1420;
-  --surface:#0F1D2D;
-  --surface-2:#152639;
-  --surface-3:#1C3047;
-  --line:#24384F;
-  --line-soft:#1A2B3E;
-  --text:#E6EDF5;
-  --text-2:#A8B7C7;
-  --muted:#7488A0;
+  --bg:#171716;
+  --surface:#1E1E1D;
+  --surface-2:#272725;
+  --surface-3:#2E2E2C;
+  --line:#2E2E2C;
+  --line-soft:#262625;
+  --text:#EDECE8;
+  --text-2:#A5A49E;
+  --muted:#8E8D86;
 
-  --accent:#3D9BFF;
-  --accent-soft:#122C45;
+  --accent:#00C26F;
+  --accent-soft:#14312A;
   --again:#A99BF0;
   --again-soft:#1D1A38;
-  --accent-fill:#007FFA;
-  --accent-fill-2:#0069DB;
+  --accent-fill:#008545;
+  --accent-fill-2:#007A43;
   --accent-ink:#FFFFFF;
   --pos:#17A06A;
   --pos-soft:#0E2B26;
@@ -254,15 +254,15 @@
   --tick-text:#F0CB4B;
   --tick-soft:#2E2610;
 
-  --chart-line:#E6EDF5;
-  --chart-grid:#17293C;
-  --chart-fill:rgba(61,155,255,.09);
-  --chart-axis:#6B809A;
-  --chart-bg:#0A1420;
+  --chart-line:#00BF63;
+  --chart-grid:#2C2C2A;
+  --chart-fill:rgba(255,255,255,.055);
+  --chart-axis:#78776F;
+  --chart-bg:#171716;
 
-  --ctl:#132437;
-  --ctl-line:#1F3550;
-  --ctl-on:#1C3047;
+  --ctl:#232322;
+  --ctl-line:#333331;
+  --ctl-on:#2C2C2A;
 
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
   --shadow-lg:0 24px 64px rgba(0,0,0,.6);
@@ -424,7 +424,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    white knob is the difference between reading it and checking it. */
 .switch[aria-checked="true"]{
   background:var(--accent-fill);border-color:var(--accent-fill-2);
-  box-shadow:0 1px 3px rgba(0,105,219,.35);
+  box-shadow:0 1px 3px rgba(0,133,69,.35);
 }
 .switch[aria-checked="true"]::after{transform:translateX(16px);background:#fff}
 .drawer-foot{margin-top:auto;padding:10px;border-top:1px solid var(--line-soft)}
@@ -451,9 +451,9 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   backdrop-filter:blur(14px) saturate(1.4);
 }
 :root{--tabbar-bg:rgba(255,255,255,.86);--tabbar-line:rgba(28,28,28,.08)}
-:root[data-theme="dark"]{--tabbar-bg:rgba(20,29,40,.86);--tabbar-line:rgba(255,255,255,.1)}
+:root[data-theme="dark"]{--tabbar-bg:#1E1E1D;--tabbar-line:rgba(255,255,255,.1)}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){--tabbar-bg:rgba(20,29,40,.86);--tabbar-line:rgba(255,255,255,.1)}
+  :root:not([data-theme="light"]){--tabbar-bg:#1E1E1D;--tabbar-line:rgba(255,255,255,.1)}
 }
 /* every slot is an identical box: the active state only repaints,
    it never changes a size, so the bar cannot shift between pages */
@@ -493,7 +493,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 .tabbar a.active{color:var(--accent-ink)}
 .tabbar a.active::before{
   background:var(--accent-fill);
-  box-shadow:0 2px 8px rgba(0,105,219,.35);
+  box-shadow:0 2px 8px rgba(0,133,69,.35);
 }
 .tabbar a.active .tb-ico{color:var(--accent-ink)}
 .tabbar a:active{transform:scale(.94)}
@@ -601,9 +601,9 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   width:98%;height:auto;z-index:0;pointer-events:none;
   color:#1C1C1C;opacity:.05;
 }
-:root[data-theme="dark"] .chart-map{color:#9FC6F5;opacity:.1}
+:root[data-theme="dark"] .chart-map{color:#EDECE8;opacity:.06}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .chart-map{color:#9FC6F5;opacity:.1}
+  :root:not([data-theme="light"]) .chart-map{color:#EDECE8;opacity:.06}
 }
 /* Lifted clear of the bottom edge. At 10px the last button sat on the
    card's border and read as half a control. */
@@ -734,7 +734,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   border-color:var(--accent-fill-2);
   /* The glow is the blue's own colour, so the capsule looks lit rather
      than dropped on top of the track. */
-  box-shadow:0 1px 2px rgba(0,58,122,.24), 0 6px 16px rgba(0,105,219,.28);
+  box-shadow:0 1px 2px rgba(0,70,36,.24), 0 6px 16px rgba(0,133,69,.28);
 }
 @media (prefers-reduced-motion:reduce){ .seg button::before{transition:none} }
 .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -945,8 +945,8 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   padding:14px;border-radius:var(--r);font-weight:600;font-size:14px;
 }
 .btn-fill{background:var(--accent);color:#fff}
-:root[data-theme="dark"] .btn-fill{color:#06182B}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn-fill{color:#06182B}}
+:root[data-theme="dark"] .btn-fill{color:#FFFFFF}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn-fill{color:#FFFFFF}}
 .btn-fill:hover{filter:brightness(1.07)}
 .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--text)}
 .btn-ghost:hover{background:var(--surface-2)}
@@ -1467,7 +1467,7 @@ footer a:hover{color:var(--text-2)}
 .rnav.on .rnav-ico{color:var(--accent-ink)}
 .rnav.on .rnav-ico::before{
   content:"";position:absolute;width:36px;height:36px;border-radius:var(--r);
-  background:var(--accent-fill);box-shadow:0 2px 8px rgba(0,105,219,.3);
+  background:var(--accent-fill);box-shadow:0 2px 8px rgba(0,133,69,.3);
 }
 .rnav.on .rnav-lab{font-weight:500}
 .rnav.danger{color:var(--neg)}
@@ -1632,7 +1632,7 @@ footer a:hover{color:var(--text-2)}
 .wm-name i{font-weight:400;color:var(--accent)}
 /* The landing footer is dark in both themes, so the light theme's blue —
    which is pulled dark to work on white — would disappear into it. */
-.lfoot .wm-name i{color:#6FB6FF}
+.lfoot .wm-name i{color:#00C26F}
 
 /* On a phone the bar carries the menu, the name, the balance, Deposit
    and the bell. The name is the first thing to give ground: the
@@ -2487,30 +2487,30 @@ body.locked{overflow:hidden}
 :root{
   --lpad:22px;
   --lsec-y:76px;
-  --tint-blue:#AECBF0;
-  --tint-blue-fg:#0D1A2B;
+  --tint-blue:#C6EBD6;
+  --tint-blue-fg:#0B2A1A;
   --tint-purple:#B7ACE8;
   --tint-purple-fg:#171233;
   --lhero-bg:#F1F2F5;
   --lnav-h:72px;
   --lfoot-bg:#101820;
   --lfoot-fg:#E7EDF4;
-  --lfoot-muted:#8FA0B2;
+  --lfoot-muted:#A3A29D;
 }
 :root[data-theme="dark"]{
-  --tint-blue:#152740;
+  --tint-blue:#14312A;
   --tint-blue-fg:#E3ECF8;
   --tint-purple:#241D3F;
   --tint-purple-fg:#EAE4F8;
-  --lhero-bg:#0E1A28;
+  --lhero-bg:#1C1C1C;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --tint-blue:#152740;
+    --tint-blue:#14312A;
     --tint-blue-fg:#E3ECF8;
     --tint-purple:#241D3F;
     --tint-purple-fg:#EAE4F8;
-    --lhero-bg:#0E1A28;
+    --lhero-bg:#1C1C1C;
   }
 }
 
@@ -2867,13 +2867,13 @@ body[data-chrome="app"] main{background:var(--bg)}
    the same in both themes without either one borrowing a semantic
    colour that means something else. */
 :root{
-  --hero-bg:#0F1D2D;
+  --hero-bg:#1C1C1C;
   --hero-panel:#0A1420;
   --hero-good:#3FCFB4;
   --hero-good-ink:#0A1420;
   --hero-bad:#E0645A;
   --hero-text:#E6EDF5;
-  --hero-muted:#93A6BB;
+  --hero-muted:#A3A29D;
   --hero-line:rgba(255,255,255,.07);
 }
 .modal-box.modal-hero{
@@ -2964,9 +2964,9 @@ body[data-chrome="app"] main{background:var(--bg)}
   --d-text:#1C1C1C;
   --d-text-2:#5E5E59;
   --d-muted:#6F6E68;
-  --d-accent:#0A5FCE;
-  --d-accent-bg:#D8E8FD;
-  --d-accent-line:#A9CCF7;
+  --d-accent:#007A43;
+  --d-accent-bg:#E6F7EE;
+  --d-accent-line:#B7E4CB;
   --d-danger:#B32B22;
   --d-danger-2:#8C1710;
   --d-danger-bg:#FBE7E5;
@@ -2974,32 +2974,32 @@ body[data-chrome="app"] main{background:var(--bg)}
   border-right:1px solid var(--d-line);
 }
 :root[data-theme="dark"] .drawer{
-  --d-bg:#111A24;
-  --d-surface:#1A2632;
+  --d-bg:#171716;
+  --d-surface:#232322;
   --d-line:rgba(255,255,255,.09);
   --d-line-soft:rgba(255,255,255,.07);
-  --d-text:#E9EFF6;
-  --d-text-2:#B3C1D0;
-  --d-muted:#7F8FA1;
-  --d-accent:#6FB6FF;
-  --d-accent-bg:rgba(61,155,255,.16);
-  --d-accent-line:rgba(61,155,255,.32);
+  --d-text:#EDECE8;
+  --d-text-2:#A5A49E;
+  --d-muted:#8E8D86;
+  --d-accent:#00C26F;
+  --d-accent-bg:rgba(0,191,99,.14);
+  --d-accent-line:rgba(0,191,99,.3);
   --d-danger:#FF8478;
   --d-danger-2:#FF9B90;
   --d-danger-bg:rgba(255,132,120,.12);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .drawer{
-    --d-bg:#111A24;
-    --d-surface:#1A2632;
+    --d-bg:#171716;
+    --d-surface:#232322;
     --d-line:rgba(255,255,255,.09);
     --d-line-soft:rgba(255,255,255,.07);
-    --d-text:#E9EFF6;
-    --d-text-2:#B3C1D0;
-    --d-muted:#7F8FA1;
-    --d-accent:#6FB6FF;
-    --d-accent-bg:rgba(61,155,255,.16);
-    --d-accent-line:rgba(61,155,255,.32);
+    --d-text:#EDECE8;
+    --d-text-2:#A5A49E;
+    --d-muted:#8E8D86;
+    --d-accent:#00C26F;
+    --d-accent-bg:rgba(0,191,99,.14);
+    --d-accent-line:rgba(0,191,99,.3);
     --d-danger:#FF8478;
     --d-danger-2:#FF9B90;
     --d-danger-bg:rgba(255,132,120,.12);
@@ -3052,7 +3052,7 @@ body[data-chrome="app"] main{background:var(--bg)}
    JS with no React runtime: five 4x35 bars, 2px apart, scaling on a
    staggered delay, in the same indigo. Everything that waits uses this
    one, so a spinner never means two different things. */
-:root{--loader:#6366F1}
+:root{--loader:#00BF63}
 .scaleloader{display:inline-flex;align-items:center;gap:4px;height:35px}
 .scaleloader i{
   display:block;width:4px;height:35px;border-radius:2px;
@@ -3467,3 +3467,101 @@ html[data-oauth]::after{
    an option that vanishes and comes back looks like the rules changed. */
 .row.is-off{opacity:.45;pointer-events:none}
 .row.is-off .badge{color:var(--muted);border-color:var(--line)}
+
+
+
+/* ================================================================
+   Trading screen, in the orbis manner
+   Appended last on purpose: it restates a handful of components
+   (bottom bar, contract tabs, instrument chip, trade buttons) rather
+   than editing each of the layers above, so the whole look lives in
+   one place and can be read, or reverted, as a unit.
+   ================================================================ */
+
+/* ---- bottom bar: a shelf fixed to the bottom edge, edge to edge ---- */
+:root{--tabbar-h:58px}
+.tabbar{
+  left:0;right:0;bottom:0;transform:none;
+  width:auto;max-width:none;height:calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding:0 0 env(safe-area-inset-bottom);gap:0;border-radius:0;
+  background:var(--surface);border:0;border-top:1px solid var(--line);
+  box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+.tabbar a{height:var(--tabbar-h);border-radius:0;gap:4px;padding:0 2px 6px;color:var(--muted)}
+.tabbar a::before{display:none}
+.tabbar .tb-lab{font-size:10px;letter-spacing:0;text-transform:none;font-weight:500}
+.tabbar a.active,.tabbar a.active .tb-ico{color:var(--text)}
+/* the chosen tab is marked with a small green dot under its name */
+.tabbar a.active::after{
+  content:"";position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;
+  border-radius:50%;background:var(--accent-fill);
+}
+.tabbar a:active{transform:none;opacity:.7}
+
+/* ---- the three contracts: plain labels, a green underline for the chosen one ---- */
+.ctabs{background:var(--surface);border-bottom:1px solid var(--line)}
+.ctab{padding:10px 6px 11px;font-size:12px;font-weight:500;color:var(--muted);gap:6px}
+.ctab + .ctab::before{display:none}
+.ctab-ico{color:var(--muted)}
+.ctab:hover{color:var(--text)}
+.ctab.active{background:none;color:var(--text);font-weight:600}
+.ctab.active .ctab-ico{color:var(--accent-fill)}
+.ctab::after,.ctab.active::after{
+  left:22%;right:22%;bottom:0;width:auto;height:2px;margin:0;border-radius:0;opacity:1;
+}
+.ctab.active::after{background:var(--accent-fill)}
+@media (max-width:899px){
+  .ctab{padding:10px 4px 11px;font-size:11.5px}
+}
+@media (min-width:900px){
+  .terminal .col-right .ctabs{border:1px solid var(--line);padding:10px 0 4px}
+  .terminal .col-right .ctab{padding:10px 14px;font-size:13px;font-weight:500}
+  .terminal .col-right .ctab.active{background:var(--surface-2);color:var(--text);font-weight:600}
+  .terminal .col-right .ctab.active .ctab-ico{color:var(--accent-fill)}
+  .terminal .col-right .ctab.active::after{left:0;right:auto;top:0;bottom:0;width:2px;height:auto;background:var(--accent-fill)}
+}
+
+/* ---- the instrument chip over the chart: one compact line and a quiet figure ---- */
+.chart-head{top:8px;left:8px;width:min(212px,60%)}
+.chart-inst .sel-btn{
+  padding:4px 8px;font-size:11px;letter-spacing:.01em;color:var(--text);
+  background:var(--surface);border-color:var(--line);
+}
+.chart-inst .sel-btn svg{width:13px;height:13px}
+.chart-inst .sel-btn:hover,.chart-inst.open .sel-btn{background:var(--surface);border-color:var(--text-2)}
+.inst-live{padding:3px 8px;font-size:10.5px;background:var(--surface);border-color:var(--line)}
+.inst-live .c{font-size:10px}
+
+/* ---- trade buttons: shorter, flat, square, green and red ---- */
+.trade-actions{gap:8px}
+.tbtn{
+  padding:6px 10px 7px;border-radius:0;box-shadow:none;
+  transition:background .15s ease, opacity .15s ease;
+}
+.tbtn .t{font-size:13.5px;letter-spacing:.04em}
+.tbtn .s.payout{font-size:10.5px;margin-top:1px}
+.tbtn.even{background:var(--accent-fill)}
+.tbtn.even:hover{background:var(--accent-fill-2)}
+.tbtn.odd{background:#C93B39}
+.tbtn.odd:hover{background:#B13230}
+.tbtn:active{filter:none;transform:none;opacity:.9}
+@media (min-width:900px){
+  .terminal .col-right .trade-actions{gap:8px}
+  .terminal .col-right .tbtn{padding:7px 12px 8px}
+  .terminal .col-right .tbtn .t{font-size:14px}
+  .terminal .col-right .tbtn .s.payout{font-size:11px;margin-top:1px}
+}
+/* the chosen side of a toggle is a flat green fill, no glow */
+.seg button.active::before{box-shadow:none}
+
+/* On a phone the two buttons stay on screen: fixed just above the
+   bottom bar, on their own white shelf, with the ticket scrolling
+   under them. The terminal leaves their height clear at its foot. */
+@media (max-width:899px){
+  .trade-dock{
+    position:fixed;left:0;right:0;z-index:44;
+    bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    padding:8px 10px;background:var(--surface);border-top:1px solid var(--line);
+  }
+  .terminal{padding-bottom:64px}
+}

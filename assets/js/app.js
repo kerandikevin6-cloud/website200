@@ -105,7 +105,19 @@
   }
   window.NexSolid = micon;
 
+  /* Lucide glyphs (lucide.dev), drawn whole: the contract tabs use
+     these, the same family the rest of the orbis-style screen uses. */
+  var LUCIDE = {
+    'lc-contrast': '<circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z" fill="currentColor"></path>',
+    'lc-crosshair': '<circle cx="12" cy="12" r="10"></circle><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"></path>',
+    'lc-arrow-down-up': '<path d="m3 16 4 4 4-4"></path><path d="M7 20V4"></path><path d="m21 8-4-4-4 4"></path><path d="M17 4v16"></path>'
+  };
+
   function icon(name, size) {
+    if (LUCIDE[name]) {
+      return '<svg width="' + (size || 17) + '" height="' + (size || 17) + '" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + LUCIDE[name] + '</svg>';
+    }
     var d = I[name] || '', parts = d.split('|'), body = '';
     if (name === 'globe' || name === 'coin' || name === 'clock') body += '<circle cx="12" cy="12" r="9"></circle>';
     if (name === 'user') body = '<circle cx="12" cy="8" r="3.4"></circle>';
