@@ -73,12 +73,14 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
             </button>
           </div>
         </div>
+        <!-- Pinned with the chart: the digits are read against the price
+             line, tick by tick, so they stay on screen with it. -->
+        <div class="digits" id="digits"></div>
       </div>
 
-      <!-- Everything from here down is one run of scrolling content: the
-           digits, whatever is running, the ticket, and the two buttons. -->
+      <!-- Everything from here down is one run of scrolling content:
+           whatever is running, the ticket, and the two buttons. -->
       <div class="col-mid">
-        <div class="digits" id="digits"></div>
         <div id="activeList"></div>
       </div>
 

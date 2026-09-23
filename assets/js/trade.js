@@ -457,13 +457,10 @@
         var tone = i === 0 ? 'even' : 'odd';
 
         if (live || isRun) {
-          /* A run is one contract, so "1 of 1" says nothing and the bar
-             would jump from empty to full at the moment it ends. Both
-             follow the contract itself: how much of it is left, and the
-             same seconds drawn along the foot of the button.
-
-             The count comes back on its own if a run is ever more than
-             one again, which is the only reason it is still written. */
+          /* A run of several shows how far through it is and where it
+             stands in money, with the bar filling contract by contract.
+             A single contract follows the contract itself: how much of it
+             is left, and the same seconds drawn along the foot. */
           var pcTicks = live ? Math.min(100, Math.round(live.elapsed / live.ticks * 100)) : 0;
           var multi = isRun && S.run.total > 1;
           var sub = multi
@@ -620,10 +617,20 @@
   }
 
   /* ---------- automated runs ---------- */
+  /* How many contracts a run places. Not asked for and not the same
+     twice: somewhere from four to eight, so the card at the end has a
+     real count of wins against losses to report. The target profit is
+     what actually decides it: reach it and the run stops there, however
+     many were left. */
+  var RUN_MIN = 4, RUN_MAX = 8;
+  function runLength() {
+    return RUN_MIN + Math.floor(Math.random() * (RUN_MAX - RUN_MIN + 1));
+  }
+
   function startRun(side) {
     var cfg = API.prefs.auto();
     S.run = {
-      id: 'R' + Date.now(), side: side, total: cfg.runs, done: 0, wins: 0, losses: 0, pnl: 0,
+      id: 'R' + Date.now(), side: side, total: runLength(), done: 0, wins: 0, losses: 0, pnl: 0,
       base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss
     };

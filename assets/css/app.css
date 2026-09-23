@@ -3203,10 +3203,10 @@ body[data-chrome="app"] main{background:var(--bg)}
    288 and there is plenty under it. On a short one it gives height back,
    or the scrolling half of the screen is a letterbox.
 
-   The sum: the pinned head is the top bar (58) and the contract tabs
-   (~40) plus the chart, and it is held to a little over half the
-   viewport so the other half is content that moves. */
-#chart{height:clamp(150px, calc(55dvh - 98px), 288px)}
+   The sum: the pinned head is the top bar (58), the contract tabs (~40)
+   and the digit row (~80) plus the chart, and it is held to about three
+   fifths of the viewport so the rest is content that moves. */
+#chart{height:clamp(140px, calc(60dvh - 178px), 288px)}
 
 /* a little more air recovered from the panel itself */
 .panel{gap:9px;padding-top:0}

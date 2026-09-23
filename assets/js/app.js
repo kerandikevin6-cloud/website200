@@ -2499,9 +2499,12 @@
         return;
       }
 
+      /* Whatever the upload step asked for: one slot for proof of
+         address, front and back for a government ID. */
       var docs = API.kyc.docs();
-      var file = docs['Proof of address'];
-      if (!file) {
+      var doc = state.data.doc || 'Proof of address';
+      var slots = doc === 'Government ID' ? [doc + ' front', doc + ' back'] : [doc];
+      if (slots.some(function (s) { return !docs[s]; })) {
         window.NexToast('Choose the document first.');
         return;
       }
@@ -2514,11 +2517,18 @@
 
       if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
 
-      window.NexNet.submitProofOfAddress(file, session.id).then(function () {
+      /* One after the other, so a failed back never leaves half an ID
+         half-sent in parallel. */
+      slots.reduce(function (p, s) {
+        return p.then(function () {
+          var kind = s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          return window.NexNet.submitKycDocument(docs[s], session.id, kind);
+        });
+      }, Promise.resolve()).then(function () {
         /* Pending, not verified. The server decides, and the difference
            is the whole reason this route exists. */
         API.kyc.markPending();
-        API.kyc.clearDoc('Proof of address');
+        slots.forEach(function (s) { API.kyc.clearDoc(s); });
         gotoStep('done');
       }).catch(function (err) {
         if (node) { node.disabled = false; node.textContent = 'Submit for review'; }

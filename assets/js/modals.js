@@ -615,14 +615,13 @@
                   '<span class="t"><b>Proof of address</b>' +
                     '<span>Bill or statement, last 3 months</span></span>' +
                   '<span class="badge warn">Required</span></button>' +
-                /* Government ID is listed but switched off rather than
-                   hidden. It comes back when payouts are large enough to
-                   require it, and an option that vanishes and returns
-                   looks like the rules changed. */
-                '<div class="row is-off">' +
+                /* Front and back, two pictures: the upload step asks
+                   for both when this is the document. */
+                '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
                   '<span class="ico">' + I('idcard', 18) + '</span>' +
-                  '<span class="t"><b>Government ID</b><span>Not needed yet</span></span>' +
-                  '<span class="badge">Coming soon</span></div>' +
+                  '<span class="t"><b>Government ID</b>' +
+                    '<span>National ID, passport or driving licence</span></span>' +
+                  '<span class="badge">Optional</span></button>' +
               '</div></div>';
             }
 
@@ -635,10 +634,12 @@
 
             /* Under review is a different answer from not started, and a
                customer who cannot tell them apart sends it again. */
+            /* The list stays under it, so a second document (the ID after
+               proof of address, or the other way round) can still be sent. */
             if (state === 'pending') {
-              return '<div class="empty" style="padding:26px 10px">' + I('clock', 24) +
-                '<b>Under review</b><span>Your document is with us. Most are checked ' +
-                'within the hour, and the answer appears here.</span></div>';
+              return '<div class="modal-form"><div class="notice">' + I('clock', 17) +
+                '<span>Under review. Your document is with us, most are checked ' +
+                'within the hour, and the answer appears here.</span></div></div>' + checklist();
             }
 
             if (state === 'rejected') {

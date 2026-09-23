@@ -424,7 +424,10 @@
       return call('/kyc');
     },
 
-    submitProofOfAddress: async function (file, userId) {
+    /* kind names the file in storage (proof-of-address, government-id-front,
+       government-id-back), which is how a reviewer tells them apart: the
+       /kyc record itself carries only the path. */
+    submitKycDocument: async function (file, userId, kind) {
       var cfg = window.NEXAS_CONFIG || {};
       if (!cfg.supabaseUrl || !cfg.supabaseKey) {
         throw ApiError('Uploads are not configured on this site.', 'no_storage');
@@ -438,7 +441,7 @@
          storage policy checks. */
       var dot = (file.name || '').lastIndexOf('.');
       var ext = dot > -1 ? file.name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : 'jpg';
-      var path = userId + '/proof-of-address-' + Date.now() + '.' + (ext || 'jpg');
+      var path = userId + '/' + (kind || 'proof-of-address') + '-' + Date.now() + '.' + (ext || 'jpg');
 
       var res;
       try {
