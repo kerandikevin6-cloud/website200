@@ -175,9 +175,10 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
             : !active ? 'Activate with your key, then fund the minimum.'
             : F.usd(short) + ' to go.') + '</p>' +
         (ready
-          /* Nothing left to do: a plain deposit for topping up. */
-          ? '<button class="btn btn-ghost cp-dep" type="button" data-open="deposit">' +
-              I('down', 17) + 'Deposit</button>'
+          /* Every requirement met: the one thing left is to pick a
+             trader, so that is the button. It takes you to the list. */
+          ? '<button class="btn btn-fill cp-dep" type="button" data-copy-go>' +
+              I('copy', 17) + 'Copy trade now</button>'
           : vipAcct
             /* A VIP hands out the keys, so the only step is the balance. */
             ? '<button class="btn btn-fill cp-dep" type="button" data-open="deposit">' +
@@ -372,7 +373,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       return !needle || p.name.toLowerCase().indexOf(needle) > -1;
     });
 
-    return '<section class="cp-market">' +
+    return '<section class="cp-market" id="cpMarket">' +
         '<span class="label">Strategy marketplace</span>' +
         '<p class="cp-sub">Performance is based on completed platform trades. ' +
           'Past results are not a forecast, and a copied strategy can lose ' +
@@ -465,6 +466,12 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
           vip.busy = false; render();
           window.NexToast(err.message);
         });
+        return;
+      }
+
+      if (e.target.closest && e.target.closest('[data-copy-go]')) {
+        var market = $('cpMarket');
+        if (market) market.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
 
