@@ -1214,6 +1214,13 @@ footer a:hover{color:var(--text-2)}
    becomes a line saying so. */
 .cp-act .btn{width:100%}
 .cp-key,.cp-dep{margin-top:10px}
+.cp-act-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cp-state{
+  display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;
+  background:var(--surface-2);color:var(--muted);font-size:11.5px;font-weight:600
+}
+.cp-state.ready{background:var(--pos-soft);color:var(--pos)}
+.cp-act.ready{border-color:var(--pos-soft)}
 /* ---- a VIP's own keys ----
    A header with the one control that matters on a shared screen (Show /
    Hide), each key on one line with an icon to copy it, and a quiet foot

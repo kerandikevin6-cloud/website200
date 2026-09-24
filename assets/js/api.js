@@ -960,7 +960,10 @@
     },
 
     copy: {
-      active: function () { return !!S.copyActive; },
+      /* VIP accounts hand out the keys, so they never need one. */
+      active: function () {
+        return !!S.copyActive || !!(S.session && S.session.tier === 'vip');
+      },
       setActive: function (v) {
         S.copyActive = !!v;
         persist();

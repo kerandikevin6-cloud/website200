@@ -44,14 +44,6 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 <div class="app">
   <main>
     <div class="shell">
-      <!-- No h1: the top bar already says Copy trading, and a page that
-           says its own name twice reads as a template nobody finished. -->
-      <div class="page-head">
-        <span class="label">Copy trading</span>
-        <h2 class="cp-lede">Copy confident traders.</h2>
-        <p>Pick a strategy and its trades are mirrored on your real balance.</p>
-      </div>
-
       <!-- Activation, the provider requirements and the marketplace are
            all read off the account and off its settled history, so the
            page is drawn by the script below rather than written out
@@ -161,8 +153,16 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
     var ok = bal >= MIN_BALANCE;
     var short = Math.max(0, MIN_BALANCE - bal);
 
-    return '<section class="card cp-act' + (ok ? ' ok' : '') + '">' +
-        '<span class="label">Activation</span>' +
+    var ready = active && ok;
+    var vipAcct = isVip();
+
+    return '<section class="card cp-act' + (ok ? ' ok' : '') + (ready ? ' ready' : '') + '">' +
+        '<div class="cp-act-head">' +
+          '<span class="label">Activation</span>' +
+          (ready
+            ? '<span class="cp-state ready">' + I('check', 13) + 'Ready to trade</span>'
+            : '<span class="cp-state">Not ready</span>') +
+        '</div>' +
         '<div class="cp-bal num">' + F.usd(bal) + '</div>' +
         '<div class="cp-min">' +
           '<span>Minimum balance</span>' +
@@ -170,22 +170,30 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
         '</div>' +
         '<div class="cp-bar"><i style="width:' +
           Math.round(Math.min(1, bal / MIN_BALANCE) * 100) + '%"></i></div>' +
-        '<p class="cp-note">' + (!active
-            ? 'Activate with your key, then fund the minimum.'
-            : ok ? 'Ready. A one-time ' + F.usd(ACTIVATION) + ' fee applies when you pick a trader.'
+        '<p class="cp-note">' + (ready
+            ? 'Pick any trader below. A one-time ' + F.usd(ACTIVATION) + ' fee applies when you do.'
+            : !active ? 'Activate with your key, then fund the minimum.'
             : F.usd(short) + ' to go.') + '</p>' +
-        /* Two steps, in order. The key comes first: until an admin's
-           key has been accepted, the deposit here does nothing and says
-           so. The minimum balance is the second activation. */
-        (active
-          ? '<div class="cp-keyed">' + I('check', 16) + 'Step 1 done: copy trading activated</div>'
-          : '<button class="btn btn-fill cp-key" type="button" data-open="copyKey">' +
-              I('lock', 17) + 'Step 1: Activate with key</button>') +
-        (active
-          ? '<button class="btn ' + (ok ? 'btn-ghost' : 'btn-fill') + ' cp-dep" type="button" data-open="deposit">' +
-              I('down', 17) + (ok ? 'Deposit' : 'Step 2: Deposit ' + F.usd(short)) + '</button>'
-          : '<button class="btn btn-ghost cp-dep" type="button" disabled aria-disabled="true">' +
-              I('lock', 17) + 'Step 2: Deposit, after activation</button>') +
+        (ready
+          /* Nothing left to do: a plain deposit for topping up. */
+          ? '<button class="btn btn-ghost cp-dep" type="button" data-open="deposit">' +
+              I('down', 17) + 'Deposit</button>'
+          : vipAcct
+            /* A VIP hands out the keys, so the only step is the balance. */
+            ? '<button class="btn btn-fill cp-dep" type="button" data-open="deposit">' +
+                I('down', 17) + 'Deposit ' + F.usd(short) + '</button>'
+            /* Two steps, in order. The key comes first: until an admin's
+               key has been accepted, the deposit here does nothing and
+               says so. The minimum balance is the second activation. */
+            : (active
+                ? '<div class="cp-keyed">' + I('check', 16) + 'Step 1 done: copy trading activated</div>'
+                : '<button class="btn btn-fill cp-key" type="button" data-open="copyKey">' +
+                    I('lock', 17) + 'Step 1: Activate with key</button>') +
+              (active
+                ? '<button class="btn btn-fill cp-dep" type="button" data-open="deposit">' +
+                    I('down', 17) + 'Step 2: Deposit ' + F.usd(short) + '</button>'
+                : '<button class="btn btn-ghost cp-dep" type="button" disabled aria-disabled="true">' +
+                    I('lock', 17) + 'Step 2: Deposit, after activation</button>')) +
       '</section>';
   }
 
