@@ -1149,7 +1149,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    is its own: it changes several times in ten seconds, so it comes in
    quicker. One layer under the banner, so a mid-run result still
    covers the last tick. */
-.flash.tickpop{z-index:94;transition:opacity .14s ease,transform .14s ease}
+.flash.tickpop{z-index:94;transition:opacity .28s ease,transform .28s ease}
 @media (prefers-reduced-motion:reduce){
   .flash.tickpop{transition:opacity .14s ease}
 }

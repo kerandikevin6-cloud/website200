@@ -1154,7 +1154,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    is its own: it changes several times in ten seconds, so it comes in
    quicker. One layer under the banner, so a mid-run result still
    covers the last tick. */
-.flash.tickpop{z-index:94;transition:opacity .14s ease,transform .14s ease}
+.flash.tickpop{z-index:94;transition:opacity .28s ease,transform .28s ease}
 @media (prefers-reduced-motion:reduce){
   .flash.tickpop{transition:opacity .14s ease}
 }
@@ -8398,6 +8398,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      calls per contract instead of one verdict at the end. */
   var RUN_MS = 10000;
 
+  /* The pause between one automated contract settling and the next being
+     placed. */
+  var RUN_GAP_MS = 2200;
+
   function ticksFor(symbol) {
     var meta = API.symbol(symbol) || {};
     var rate = meta.rate || 1000;
@@ -8592,7 +8596,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     flashResult(c);
     renderAll();
-    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, 700);
+    /* A breath between contracts, so the won/lost banner is read before
+       the next contract's pop-ups start. 700ms had them on top of it. */
+    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, RUN_GAP_MS);
   }
 
   /* The record of this contract goes to the server from app.js, which
@@ -11064,7 +11070,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     void tickEl.offsetWidth;
     tickEl.classList.add('open');
     clearTimeout(tickEl._t);
-    tickEl._t = setTimeout(function () { tickEl.classList.remove('open'); }, 750);
+    /* Long enough to read the figure before it goes. It was 750ms, which
+       on a series ticking every second read as a flicker. */
+    tickEl._t = setTimeout(function () { tickEl.classList.remove('open'); }, 1300);
     play('tick');
   };
 

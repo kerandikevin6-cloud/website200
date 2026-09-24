@@ -610,6 +610,10 @@
      calls per contract instead of one verdict at the end. */
   var RUN_MS = 10000;
 
+  /* The pause between one automated contract settling and the next being
+     placed. */
+  var RUN_GAP_MS = 2200;
+
   function ticksFor(symbol) {
     var meta = API.symbol(symbol) || {};
     var rate = meta.rate || 1000;
@@ -804,7 +808,9 @@
 
     flashResult(c);
     renderAll();
-    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, 700);
+    /* A breath between contracts, so the won/lost banner is read before
+       the next contract's pop-ups start. 700ms had them on top of it. */
+    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, RUN_GAP_MS);
   }
 
   /* The record of this contract goes to the server from app.js, which

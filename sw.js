@@ -17,7 +17,7 @@
    It does not need bumping every deploy. The header says revalidate
    now, so from here on a changed file is picked up by asking. This is
    the one-time way out of the year that was already promised. */
-var CACHE = 'nexas-v31';
+var CACHE = 'nexas-v32';
 var SHELL = [
   'landing.html', 'index.html', 'ai.html', 'markets.html', 'positions.html', 'learn.html', 'responsible.html', 'account.html',
   'chat.html', 'history.html', 'copy.html', 'terms.html', 'privacy.html', 'risk.html',
