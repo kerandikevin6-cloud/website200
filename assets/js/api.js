@@ -334,6 +334,9 @@
     symbol: (saved.symbol && BY_ID[saved.symbol]) ? saved.symbol : 'R_10',
     /* Set by the scanner, consumed by the terminal, see prefs.ticket. */
     ticket: saved.ticket || null,
+    /* The stake last chosen on the terminal, in USD. Kept here so a trip
+       to the scanner and back does not reset it to the default. */
+    stake: (+saved.stake > 0) ? +saved.stake : null,
     /* Demo until an account exists. A visitor who has never signed up
        must never be looking at a screen that says "real", not even at
        zero, because the number is not the point: the word is. */
@@ -369,7 +372,7 @@
     try {
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
-        ticket: S.ticket,
+        ticket: S.ticket, stake: S.stake,
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
@@ -1072,6 +1075,13 @@
         var t = S.ticket || null;
         if (t) { S.ticket = null; persistNow(); }
         return t;
+      },
+
+      stake: function () { return S.stake; },
+      setStake: function (usd) {
+        var v = Math.round((+usd || 0) * 100) / 100;
+        S.stake = v > 0 ? v : null;
+        persist();
       },
 
       setSymbol: function (id) {

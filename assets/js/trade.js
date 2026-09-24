@@ -838,6 +838,9 @@
   }
   function setStakeShown(shown) {
     S.stake = Math.max(0, Math.round((+shown || 0) * 100) / 100);
+    /* Remembered, so leaving the terminal and coming back opens on the
+       stake the trader chose rather than the default. */
+    API.prefs.setStake(S.stake);
   }
 
   /* v is in display units, what the buttons add and what the field holds. */
@@ -877,12 +880,12 @@
     el.dock = $('dock');
     el.active = $('activeList');
 
-    /* Open on a round figure in the viewer's own money, 500 KES, not
-       the 1,290 that a $10 default converts to. Only on a first mount,
-       so a stake the trader chose is never overwritten. */
+    /* Open on the stake the trader last chose, from any earlier visit.
+       Only someone who has never set one gets the round default. Only on
+       a first mount, so a stake mid-session is never overwritten. */
     if (!root.__stakeSet) {
       root.__stakeSet = true;
-      S.stake = API.money.stakeChips().start;
+      S.stake = API.prefs.stake() || API.money.stakeChips().start;
     }
 
     /* Markets is where an instrument is chosen; this is where that choice
