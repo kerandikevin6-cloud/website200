@@ -534,6 +534,12 @@
     /* A VIP's own copy-trading keys, and a new one on demand. */
     myCopyKeys: function () { return call('/copy/keys'); },
     makeCopyKey: function () { return call('/copy/keys', { method: 'POST' }); },
+    regenerateCopyKey: function (id) {
+      return call('/copy/keys/' + encodeURIComponent(id) + '/regenerate', { method: 'POST' });
+    },
+    deactivateCopyKey: function (id) {
+      return call('/copy/keys/' + encodeURIComponent(id) + '/deactivate', { method: 'POST' });
+    },
 
     /* Redeems a copy-trading key an admin issued. The server checks it,
        marks it used, and turns copy trading on for this account. */

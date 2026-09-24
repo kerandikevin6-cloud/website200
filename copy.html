@@ -194,7 +194,9 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
      them, and the keys start hidden: this page is the kind that ends up
      on a shared screen, and a key on show is a key anyone watching can
      spend. */
-  var vip = { keys: null, activated: 0, shown: false, error: null, busy: false };
+  var vip = { keys: null, activated: 0, shown: false, error: null, busy: false,
+              confirm: null,   /* the key id asking "deactivate?" */
+              working: null }; /* the key id with a request in flight */
 
   function isVip() {
     var s = API.session.get() || {};
@@ -208,11 +210,30 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
     var body;
     if (vip.error) body = '<p class="cp-note">' + esc(vip.error) + '</p>';
     else if (!vip.keys) body = '<p class="cp-note">Loading your key\u2026</p>';
+    else if (!unused.length) body = '<div class="cp-keys"><div class="cp-keyempty">' +
+        'No active keys. Make one when you have someone to invite.</div></div>';
     else body = '<div class="cp-keys">' + unused.map(function (k) {
-        return '<div class="cp-keyrow">' +
+        var id = esc(k.id);
+        var busy = vip.working === k.id;
+        /* Deactivating cannot be undone, so it asks once, in the row,
+           rather than in a browser dialog. */
+        if (vip.confirm === k.id) {
+          return '<div class="cp-keyrow confirm">' +
+            '<span class="cp-keyask">Deactivate this key?</span>' +
+            '<button class="cp-textbtn" type="button" data-vip-cancel>Cancel</button>' +
+            '<button class="cp-textbtn danger" type="button" data-vip-deactivate="' + id + '"' +
+              (busy ? ' disabled' : '') + '>' + (busy ? 'Working\u2026' : 'Deactivate') + '</button>' +
+          '</div>';
+        }
+        return '<div class="cp-keyrow' + (busy ? ' busy' : '') + '">' +
           '<span class="cp-keytext num">' + esc(vip.shown ? k.key : masked(k.key)) + '</span>' +
           '<button class="cp-iconbtn" type="button" data-vip-copy="' + esc(k.key) + '" ' +
             'aria-label="Copy key" title="Copy key">' + I('copy', 16) + '</button>' +
+          '<button class="cp-iconbtn" type="button" data-vip-regen="' + id + '"' + (busy ? ' disabled' : '') +
+            ' aria-label="Regenerate key" title="Regenerate: new code, old one stops working">' +
+            I('refresh', 16) + '</button>' +
+          '<button class="cp-iconbtn danger" type="button" data-vip-ask="' + id + '"' + (busy ? ' disabled' : '') +
+            ' aria-label="Deactivate key" title="Deactivate key">' + I('close', 16) + '</button>' +
         '</div>';
       }).join('') + '</div>';
 
@@ -398,6 +419,31 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
         setTimeout(function () { vc.innerHTML = I('copy', 16); vc.classList.remove('done-copy'); }, 1400);
         return;
       }
+      var ask = e.target.closest && e.target.closest('[data-vip-ask]');
+      if (ask) { vip.confirm = ask.getAttribute('data-vip-ask'); render(); return; }
+      if (e.target.closest && e.target.closest('[data-vip-cancel]')) { vip.confirm = null; render(); return; }
+
+      var regen = e.target.closest && e.target.closest('[data-vip-regen]');
+      var deact = e.target.closest && e.target.closest('[data-vip-deactivate]');
+      if (regen || deact) {
+        if (vip.working) return;
+        var kid = (regen || deact).getAttribute(regen ? 'data-vip-regen' : 'data-vip-deactivate');
+        vip.working = kid; render();
+        (regen ? window.NexNet.regenerateCopyKey(kid) : window.NexNet.deactivateCopyKey(kid))
+          .then(function (out) {
+            vip.keys = out.keys || vip.keys;
+            vip.activated = out.activated || vip.activated;
+            vip.working = null; vip.confirm = null;
+            render();
+            window.NexToast(regen ? 'New code ready. The old one no longer works.' : 'Key deactivated');
+          }).catch(function (err) {
+            vip.working = null; vip.confirm = null; render();
+            window.NexToast(err.message);
+            loadVip();
+          });
+        return;
+      }
+
       if (e.target.closest && e.target.closest('[data-vip-new]')) {
         if (vip.busy) return;
         vip.busy = true; render();
