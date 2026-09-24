@@ -675,14 +675,22 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    traffic light the rest of the time. The arrow stays amber throughout:
    it marks where the tick landed, which is true whatever the contract
    makes of it. */
-.dcell.cur.hit .digit{
-  border-color:var(--pos);border-width:2px;background:var(--pos-soft);color:var(--pos);
+/* Solid, not tinted: the whole circle turns green or red so the
+   verdict reads from across the room. */
+.dcell.cur.hit .digit,
+.dcell.cur.sel.hit .digit{
+  border-color:var(--pos);border-width:2px;background:var(--pos);color:#fff;font-weight:700;
+  box-shadow:0 0 0 3px var(--pos-soft),0 4px 14px var(--pos-soft);
 }
-.dcell.cur.hit .dpct{color:var(--pos)}
-.dcell.cur.miss .digit{
-  border-color:var(--neg);border-width:2px;background:var(--neg-soft);color:var(--neg);
+.dcell.cur.hit .dpct{color:var(--pos);font-weight:700}
+.dcell.cur.hit::after{border-bottom-color:var(--pos)}
+.dcell.cur.miss .digit,
+.dcell.cur.sel.miss .digit{
+  border-color:var(--neg);border-width:2px;background:var(--neg);color:#fff;font-weight:700;
+  box-shadow:0 0 0 3px var(--neg-soft),0 4px 14px var(--neg-soft);
 }
-.dcell.cur.miss .dpct{color:var(--neg)}
+.dcell.cur.miss .dpct{color:var(--neg);font-weight:700}
+.dcell.cur.miss::after{border-bottom-color:var(--neg)}
 
 @media (prefers-reduced-motion:reduce){
   .dcell{transition:none}

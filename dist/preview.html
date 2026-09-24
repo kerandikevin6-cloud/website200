@@ -680,14 +680,22 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
    traffic light the rest of the time. The arrow stays amber throughout:
    it marks where the tick landed, which is true whatever the contract
    makes of it. */
-.dcell.cur.hit .digit{
-  border-color:var(--pos);border-width:2px;background:var(--pos-soft);color:var(--pos);
+/* Solid, not tinted: the whole circle turns green or red so the
+   verdict reads from across the room. */
+.dcell.cur.hit .digit,
+.dcell.cur.sel.hit .digit{
+  border-color:var(--pos);border-width:2px;background:var(--pos);color:#fff;font-weight:700;
+  box-shadow:0 0 0 3px var(--pos-soft),0 4px 14px var(--pos-soft);
 }
-.dcell.cur.hit .dpct{color:var(--pos)}
-.dcell.cur.miss .digit{
-  border-color:var(--neg);border-width:2px;background:var(--neg-soft);color:var(--neg);
+.dcell.cur.hit .dpct{color:var(--pos);font-weight:700}
+.dcell.cur.hit::after{border-bottom-color:var(--pos)}
+.dcell.cur.miss .digit,
+.dcell.cur.sel.miss .digit{
+  border-color:var(--neg);border-width:2px;background:var(--neg);color:#fff;font-weight:700;
+  box-shadow:0 0 0 3px var(--neg-soft),0 4px 14px var(--neg-soft);
 }
-.dcell.cur.miss .dpct{color:var(--neg)}
+.dcell.cur.miss .dpct{color:var(--neg);font-weight:700}
+.dcell.cur.miss::after{border-bottom-color:var(--neg)}
 
 @media (prefers-reduced-motion:reduce){
   .dcell{transition:none}
@@ -5014,6 +5022,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     over: 1.72,
     under: 1.72
   };
+  var WITHDRAW_UNLOCK_USD = 20;
   var LIMITS = { min: 1, max: 5000, maxTicks: 10, minTicks: 1 };
 
   /* ---------- countries we take mobile money from ----------
@@ -5243,6 +5252,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     riskAck: !!saved.riskAck,
     contracts: saved.contracts || [],
     transactions: saved.transactions || [],
+    /* Everything ever deposited to the real account, in USD. Withdrawals
+       open only once a verified account has put in WITHDRAW_UNLOCK_USD. */
+    deposited: saved.deposited != null ? +saved.deposited || 0
+      : (saved.transactions || []).reduce(function (a, t) {
+          return a + (t.kind === 'Deposit' && t.amount > 0 && t.account === 'real' ? t.amount : 0);
+        }, 0),
     /* The two stop rules a run ends on. They were 200 and 100; the stop
        loss is now 999, which is far enough out that a run ends on the
        target or on its run count rather than on a figure nobody chose.
@@ -5261,6 +5276,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
+        deposited: S.deposited,
         auto: S.auto, autoV: S.autoV
       }));
     } catch (e) {}
@@ -5763,7 +5779,22 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       realAvailable: realAvailable,
       enforce: enforceAccount,
       demoMode: function () { return !!S.demoMode; },
-      credit: function (amount, kind) { adjust(Math.abs(+amount || 0), { kind: kind || 'Deposit' }); },
+      credit: function (amount, kind) {
+        var usd = Math.abs(+amount || 0);
+        if ((kind || 'Deposit') === 'Deposit') S.deposited = round(S.deposited + usd, 2);
+        adjust(usd, { kind: kind || 'Deposit' });
+      },
+      /* The last step after verification: a deposit of at least this much
+         before the first withdrawal. */
+      unlockUsd: WITHDRAW_UNLOCK_USD,
+      deposited: function () { return S.deposited; },
+      setDeposited: function (usd) {
+        var next = Math.round((+usd || 0) * 100) / 100;
+        if (S.deposited === next) return;
+        S.deposited = next;
+        persist();
+      },
+      withdrawUnlocked: function () { return S.deposited >= WITHDRAW_UNLOCK_USD; },
       debit: function (amount, kind) { adjust(-Math.abs(+amount || 0), { kind: kind || 'Withdrawal' }); }
     },
 
@@ -6560,6 +6591,20 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return '<span class="hero-w">' + w + 'W</span> / <span class="hero-l">' + l + 'L</span>';
   }
 
+  /* The final step after verification: a deposit of the unlock amount.
+     Shared by the verify screen and the withdrawal gate so the two say
+     the same thing. */
+  function fundStep() {
+    var A = API().account;
+    var need = A.unlockUsd;
+    var left = Math.max(0, Math.round((need - A.deposited()) * 100) / 100);
+    return '<div class="notice">' + I('shield', 17) +
+        '<span><b>Final step: deposit ' + need + ' USD.</b> Withdrawals open once ' +
+        need + ' USD has been deposited to your account' +
+        (left < need ? ', ' + left + ' USD to go' : '') + '.</span></div>' +
+      '<button class="btn btn-fill" type="button" data-open="deposit">Deposit ' + need + ' USD</button>';
+  }
+
   function kv(k, v, attrs) {
     return '<div class="kv"><span>' + k + '</span><b ' + (attrs || '') + '>' + v + '</b></div>';
   }
@@ -6914,6 +6959,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
             var state = API().kyc.status();
 
             if (state === 'verified') {
+              var A = API().account;
+              if (!A.withdrawUnlocked()) {
+                return '<div class="modal-form">' +
+                  '<div class="empty" style="padding:18px 10px 8px">' + I('check', 24) +
+                    '<b>Account verified</b><span>One last step before you can withdraw.</span></div>' +
+                  fundStep() +
+                '</div>';
+              }
               return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
                 '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>';
             }
@@ -6983,6 +7036,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           function () {
             return kv('Status', '<span class="badge warn">In review</span>') +
               kv('Usually takes', 'Under an hour') +
+              kv('Then', 'Deposit ' + API().account.unlockUsd + ' USD') +
               kv('Unlocks', 'Withdrawals');
           })
       }
@@ -7233,7 +7287,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
               title: runHeadline(r),
               amount: F().signedUsd(r.pnl || 0),
               rows:
-                heroRow('Total Ticks:', ticks) +
+                heroRow('Total Trades:', ticks) +
                 heroRow('Wins / Losses:', tickTally(w, l)) +
                 heroRow('Win Rate:', rate.toFixed(1) + '%')
             });
@@ -7435,9 +7489,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
               '<div class="totals">' + kv('Available', F().money(API().account.balance())) +
                 kv('You receive', F().localMoney(startLocal),
                    'data-total="wAmount" data-fee="0"') + '</div>' +
-              (API().kyc.verified() ? '' :
-                '<div class="notice">' + I('shield', 17) +
-                '<span>Identity verification is required before your first payout.</span></div>') +
+              (!API().kyc.verified()
+                ? '<div class="notice">' + I('shield', 17) +
+                  '<span>Identity verification is required before your first payout.</span></div>'
+                : !API().account.withdrawUnlocked()
+                  ? '<div class="notice">' + I('shield', 17) +
+                    '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
+                  : '') +
               act('Request withdrawal', 'withdraw', 'btn-pos') +
             '</div>';
           }
@@ -7464,6 +7522,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
               kv('Network fee', F().money(1)) +
               kv('New balance', F().money(API().account.balance())) +
               kv('Reference', '<span class="num">' + s.ref + '</span>'));
+          }
+        },
+        fund: {
+          title: 'One last step',
+          sub: 'Your account is verified. A first deposit opens withdrawals.',
+          body: function () {
+            return '<div class="modal-form">' + fundStep() +
+              '<button class="btn btn-ghost" type="button" data-close>Later</button>' +
+            '</div>';
           }
         },
         kyc: {
@@ -7796,7 +7863,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return '<div class="tdetail">' +
       detailRow('Instrument', meta.name) +
       detailRow('Contract', tabLabel()) +
-      detailRow('Duration', (RUN_MS / 1000) + ' seconds') +
+      detailRow('Duration', S.mode === 'manual' ? '1 tick' : (RUN_MS / 1000) + ' seconds') +
       /* The two sides of a contract do not always pay the same — Matches
          and Differs are nowhere near each other — so this says one rate
          only when it is honestly one rate. */
@@ -7919,6 +7986,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var open = API.contracts.open();
     for (var i = 0; i < open.length; i++) {
       if (open[i].symbol === S.symbol) return open[i];
+    }
+    /* A one-tick manual trade settles on the very tick that lands, so
+       it is never open when the row repaints. Hold the colour on the
+       digit that decided it until the next tick replaces it. */
+    var all = API.contracts.all();
+    for (var j = 0; j < all.length && j < 5; j++) {
+      var c = all[j];
+      if (c.symbol === S.symbol && c.status !== 'open' && c.exitTime &&
+          Date.now() - c.exitTime < ((API.symbol(c.symbol) || {}).rate || 1000) - 50) return c;
     }
     return null;
   }
@@ -8087,9 +8163,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return Math.max(1, Math.min(10, Math.round(RUN_MS / rate)));
   }
 
+  /* Manual is one trade: a single tick, settled on the next digit.
+     Auto is the one that runs a string of them. */
+  function contractTicks(symbol) {
+    return S.mode === 'manual' ? 1 : ticksFor(symbol);
+  }
+
   /* ---------- validation ---------- */
   function check() {
-    S.error = API.contracts.validate({ stake: S.stake, ticks: ticksFor(S.symbol), symbol: S.symbol });
+    S.error = API.contracts.validate({ stake: S.stake, ticks: contractTicks(S.symbol), symbol: S.symbol });
     return !S.error;
   }
 
@@ -8098,7 +8180,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var res = API.contracts.buy({
       symbol: S.symbol, type: typeFor(side), side: side,
       barrier: S.tab === 'even_odd' ? null : S.barrier,
-      stake: S.stake, ticks: ticksFor(S.symbol), run: runId || null
+      stake: S.stake, ticks: contractTicks(S.symbol), run: runId || null
     });
     if (!res.ok) {
       S.error = res.error;
@@ -8160,8 +8242,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }
     window.NexToast(reason);
   }
+  /* A manual trade ends on the same card as an automated run: one
+     trade, its wins and losses, the rate, and the money. */
   function showResult(c) {
-    if (window.NexModal) window.NexModal.open('result', null, { contract: c });
+    if (!window.NexModal) return;
+    window.NexModal.open('runResult', null, { run: {
+      done: 1, pnl: c.profit,
+      tickWins: c.tickWins || 0, tickLosses: c.tickLosses || 0
+    } });
   }
 
   /* A contract settling inside a run that carries on says so across the
@@ -8821,8 +8909,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      won on merit and short enough that the way out is in sight. */
   var SHOWN = 5;
 
+  /* The scanner only ever answers with a volatility index. Gold, forex,
+     crypto and the rest are still on the terminal, but a signal on them
+     is not what anybody opens this screen for. */
+  function pool() {
+    return API.symbols.filter(function (s) { return s.group === 'Volatility'; });
+  }
+
   function rescan() {
-    S.signals = API.symbols.map(function (s) { return score(s.id); })
+    S.signals = pool().map(function (s) { return score(s.id); })
       .filter(Boolean)
       .sort(function (a, b) { return b.edge - a.edge; })
       .slice(0, SHOWN);
@@ -8864,9 +8959,19 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     clearInterval(timer);
     timer = setInterval(function () {
       S.step++;
-      if (S.step >= API.symbols.length) {
+      if (S.step >= pool().length) {
         clearInterval(timer);
+        var before = S.lastPick;
+        S.pick = null;
         rescan();
+        /* A fresh scan lands on a different index from the last one when
+           there is another worth taking, so the pick moves round the
+           volatilities rather than settling on one. */
+        if (before && S.signals.length > 1 && S.signals[0].symbol === before) {
+          S.signals.push(S.signals.shift());
+          S.pick = S.signals[0].symbol;
+        }
+        S.lastPick = S.pick;
         S.phase = 'done';
         render();
         return;
@@ -8914,13 +9019,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   /* ---------- markup ---------- */
   function scanCard() {
     if (S.phase === 'scanning') {
-      var sym = API.symbols[Math.min(S.step, API.symbols.length - 1)];
+      var list = pool();
+      var sym = list[Math.min(S.step, list.length - 1)];
       return '<div class="ai-hero scanning">' +
         window.NexLoader() +
         '<b>Scanning the market</b>' +
         '<span class="ai-sub num">' + sym.name + '</span>' +
         '<div class="ai-progress"><i style="width:' +
-          Math.round((S.step + 1) / API.symbols.length * 100) + '%"></i></div>' +
+          Math.round((S.step + 1) / list.length * 100) + '%"></i></div>' +
       '</div>';
     }
 
@@ -8929,7 +9035,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         window.NexLoader() +
         '<b>Signal engine</b>' +
         '<span class="ai-sub">Reads the last ' + WINDOW + ' ticks on all ' +
-          API.symbols.length + ' instruments and ranks the digit contracts by expected return.</span>' +
+          pool().length + ' volatility indices and ranks the digit contracts by expected return.</span>' +
         '<button class="ai-go" id="aiScan">' + I('radar', 17) + 'Scan the market</button>' +
       '</div>';
     }
@@ -10591,12 +10697,25 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }, out.accounts || []);
       paintDemoBadge();
       paintDepositNumber();
+      await syncDeposited();
       return out;
     } catch (err) {
       return null;
     }
   }
   window.NexHydrate = hydrateSession;
+
+  /* What the server says has actually been paid in. Only settled
+     deposits count toward the unlock; a pending one is not money yet. */
+  async function syncDeposited() {
+    if (!window.NexNet || !window.NexNet.live || !window.NexNet.signedIn()) return;
+    try {
+      var list = await window.NexNet.deposits();
+      var cents = list.filter(function (p) { return p.status === 'success'; })
+        .reduce(function (a, p) { return a + (+(p.creditedMinor != null ? p.creditedMinor : p.credited_minor) || 0); }, 0);
+      API.account.setDeposited(cents / 100);
+    } catch (e) { /* keep what we had */ }
+  }
 
   /* ---------- form validation ----------
      Everything the person types is checked before anything is submitted,
@@ -11415,6 +11534,22 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           return;
         }
         gotoStep('kyc');
+        return;
+      }
+      /* Verified is not the last step: a first deposit of the unlock
+         amount is. Checked against the server, like the verification
+         above, so somebody who just paid is not turned away. */
+      if (!API.account.withdrawUnlocked()) {
+        if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
+          if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
+          syncDeposited().then(function () {
+            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (API.account.withdrawUnlocked()) runAction('withdraw', node);
+            else gotoStep('fund');
+          });
+          return;
+        }
+        gotoStep('fund');
         return;
       }
       clearErrors();

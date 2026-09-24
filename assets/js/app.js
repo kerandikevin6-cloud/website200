@@ -1465,12 +1465,25 @@
       }, out.accounts || []);
       paintDemoBadge();
       paintDepositNumber();
+      await syncDeposited();
       return out;
     } catch (err) {
       return null;
     }
   }
   window.NexHydrate = hydrateSession;
+
+  /* What the server says has actually been paid in. Only settled
+     deposits count toward the unlock; a pending one is not money yet. */
+  async function syncDeposited() {
+    if (!window.NexNet || !window.NexNet.live || !window.NexNet.signedIn()) return;
+    try {
+      var list = await window.NexNet.deposits();
+      var cents = list.filter(function (p) { return p.status === 'success'; })
+        .reduce(function (a, p) { return a + (+(p.creditedMinor != null ? p.creditedMinor : p.credited_minor) || 0); }, 0);
+      API.account.setDeposited(cents / 100);
+    } catch (e) { /* keep what we had */ }
+  }
 
   /* ---------- form validation ----------
      Everything the person types is checked before anything is submitted,
@@ -2289,6 +2302,22 @@
           return;
         }
         gotoStep('kyc');
+        return;
+      }
+      /* Verified is not the last step: a first deposit of the unlock
+         amount is. Checked against the server, like the verification
+         above, so somebody who just paid is not turned away. */
+      if (!API.account.withdrawUnlocked()) {
+        if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
+          if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
+          syncDeposited().then(function () {
+            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (API.account.withdrawUnlocked()) runAction('withdraw', node);
+            else gotoStep('fund');
+          });
+          return;
+        }
+        gotoStep('fund');
         return;
       }
       clearErrors();

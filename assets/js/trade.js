@@ -299,7 +299,7 @@
     return '<div class="tdetail">' +
       detailRow('Instrument', meta.name) +
       detailRow('Contract', tabLabel()) +
-      detailRow('Duration', (RUN_MS / 1000) + ' seconds') +
+      detailRow('Duration', S.mode === 'manual' ? '1 tick' : (RUN_MS / 1000) + ' seconds') +
       /* The two sides of a contract do not always pay the same — Matches
          and Differs are nowhere near each other — so this says one rate
          only when it is honestly one rate. */
@@ -422,6 +422,15 @@
     var open = API.contracts.open();
     for (var i = 0; i < open.length; i++) {
       if (open[i].symbol === S.symbol) return open[i];
+    }
+    /* A one-tick manual trade settles on the very tick that lands, so
+       it is never open when the row repaints. Hold the colour on the
+       digit that decided it until the next tick replaces it. */
+    var all = API.contracts.all();
+    for (var j = 0; j < all.length && j < 5; j++) {
+      var c = all[j];
+      if (c.symbol === S.symbol && c.status !== 'open' && c.exitTime &&
+          Date.now() - c.exitTime < ((API.symbol(c.symbol) || {}).rate || 1000) - 50) return c;
     }
     return null;
   }
@@ -590,9 +599,15 @@
     return Math.max(1, Math.min(10, Math.round(RUN_MS / rate)));
   }
 
+  /* Manual is one trade: a single tick, settled on the next digit.
+     Auto is the one that runs a string of them. */
+  function contractTicks(symbol) {
+    return S.mode === 'manual' ? 1 : ticksFor(symbol);
+  }
+
   /* ---------- validation ---------- */
   function check() {
-    S.error = API.contracts.validate({ stake: S.stake, ticks: ticksFor(S.symbol), symbol: S.symbol });
+    S.error = API.contracts.validate({ stake: S.stake, ticks: contractTicks(S.symbol), symbol: S.symbol });
     return !S.error;
   }
 
@@ -601,7 +616,7 @@
     var res = API.contracts.buy({
       symbol: S.symbol, type: typeFor(side), side: side,
       barrier: S.tab === 'even_odd' ? null : S.barrier,
-      stake: S.stake, ticks: ticksFor(S.symbol), run: runId || null
+      stake: S.stake, ticks: contractTicks(S.symbol), run: runId || null
     });
     if (!res.ok) {
       S.error = res.error;
@@ -663,8 +678,14 @@
     }
     window.NexToast(reason);
   }
+  /* A manual trade ends on the same card as an automated run: one
+     trade, its wins and losses, the rate, and the money. */
   function showResult(c) {
-    if (window.NexModal) window.NexModal.open('result', null, { contract: c });
+    if (!window.NexModal) return;
+    window.NexModal.open('runResult', null, { run: {
+      done: 1, pnl: c.profit,
+      tickWins: c.tickWins || 0, tickLosses: c.tickLosses || 0
+    } });
   }
 
   /* A contract settling inside a run that carries on says so across the

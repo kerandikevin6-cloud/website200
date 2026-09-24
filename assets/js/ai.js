@@ -123,8 +123,15 @@
      won on merit and short enough that the way out is in sight. */
   var SHOWN = 5;
 
+  /* The scanner only ever answers with a volatility index. Gold, forex,
+     crypto and the rest are still on the terminal, but a signal on them
+     is not what anybody opens this screen for. */
+  function pool() {
+    return API.symbols.filter(function (s) { return s.group === 'Volatility'; });
+  }
+
   function rescan() {
-    S.signals = API.symbols.map(function (s) { return score(s.id); })
+    S.signals = pool().map(function (s) { return score(s.id); })
       .filter(Boolean)
       .sort(function (a, b) { return b.edge - a.edge; })
       .slice(0, SHOWN);
@@ -166,9 +173,19 @@
     clearInterval(timer);
     timer = setInterval(function () {
       S.step++;
-      if (S.step >= API.symbols.length) {
+      if (S.step >= pool().length) {
         clearInterval(timer);
+        var before = S.lastPick;
+        S.pick = null;
         rescan();
+        /* A fresh scan lands on a different index from the last one when
+           there is another worth taking, so the pick moves round the
+           volatilities rather than settling on one. */
+        if (before && S.signals.length > 1 && S.signals[0].symbol === before) {
+          S.signals.push(S.signals.shift());
+          S.pick = S.signals[0].symbol;
+        }
+        S.lastPick = S.pick;
         S.phase = 'done';
         render();
         return;
@@ -216,13 +233,14 @@
   /* ---------- markup ---------- */
   function scanCard() {
     if (S.phase === 'scanning') {
-      var sym = API.symbols[Math.min(S.step, API.symbols.length - 1)];
+      var list = pool();
+      var sym = list[Math.min(S.step, list.length - 1)];
       return '<div class="ai-hero scanning">' +
         window.NexLoader() +
         '<b>Scanning the market</b>' +
         '<span class="ai-sub num">' + sym.name + '</span>' +
         '<div class="ai-progress"><i style="width:' +
-          Math.round((S.step + 1) / API.symbols.length * 100) + '%"></i></div>' +
+          Math.round((S.step + 1) / list.length * 100) + '%"></i></div>' +
       '</div>';
     }
 
@@ -231,7 +249,7 @@
         window.NexLoader() +
         '<b>Signal engine</b>' +
         '<span class="ai-sub">Reads the last ' + WINDOW + ' ticks on all ' +
-          API.symbols.length + ' instruments and ranks the digit contracts by expected return.</span>' +
+          pool().length + ' volatility indices and ranks the digit contracts by expected return.</span>' +
         '<button class="ai-go" id="aiScan">' + I('radar', 17) + 'Scan the market</button>' +
       '</div>';
     }

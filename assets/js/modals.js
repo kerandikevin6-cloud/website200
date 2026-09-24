@@ -272,6 +272,20 @@
     return '<span class="hero-w">' + w + 'W</span> / <span class="hero-l">' + l + 'L</span>';
   }
 
+  /* The final step after verification: a deposit of the unlock amount.
+     Shared by the verify screen and the withdrawal gate so the two say
+     the same thing. */
+  function fundStep() {
+    var A = API().account;
+    var need = A.unlockUsd;
+    var left = Math.max(0, Math.round((need - A.deposited()) * 100) / 100);
+    return '<div class="notice">' + I('shield', 17) +
+        '<span><b>Final step: deposit ' + need + ' USD.</b> Withdrawals open once ' +
+        need + ' USD has been deposited to your account' +
+        (left < need ? ', ' + left + ' USD to go' : '') + '.</span></div>' +
+      '<button class="btn btn-fill" type="button" data-open="deposit">Deposit ' + need + ' USD</button>';
+  }
+
   function kv(k, v, attrs) {
     return '<div class="kv"><span>' + k + '</span><b ' + (attrs || '') + '>' + v + '</b></div>';
   }
@@ -626,6 +640,14 @@
             var state = API().kyc.status();
 
             if (state === 'verified') {
+              var A = API().account;
+              if (!A.withdrawUnlocked()) {
+                return '<div class="modal-form">' +
+                  '<div class="empty" style="padding:18px 10px 8px">' + I('check', 24) +
+                    '<b>Account verified</b><span>One last step before you can withdraw.</span></div>' +
+                  fundStep() +
+                '</div>';
+              }
               return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
                 '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>';
             }
@@ -695,6 +717,7 @@
           function () {
             return kv('Status', '<span class="badge warn">In review</span>') +
               kv('Usually takes', 'Under an hour') +
+              kv('Then', 'Deposit ' + API().account.unlockUsd + ' USD') +
               kv('Unlocks', 'Withdrawals');
           })
       }
@@ -945,7 +968,7 @@
               title: runHeadline(r),
               amount: F().signedUsd(r.pnl || 0),
               rows:
-                heroRow('Total Ticks:', ticks) +
+                heroRow('Total Trades:', ticks) +
                 heroRow('Wins / Losses:', tickTally(w, l)) +
                 heroRow('Win Rate:', rate.toFixed(1) + '%')
             });
@@ -1147,9 +1170,13 @@
               '<div class="totals">' + kv('Available', F().money(API().account.balance())) +
                 kv('You receive', F().localMoney(startLocal),
                    'data-total="wAmount" data-fee="0"') + '</div>' +
-              (API().kyc.verified() ? '' :
-                '<div class="notice">' + I('shield', 17) +
-                '<span>Identity verification is required before your first payout.</span></div>') +
+              (!API().kyc.verified()
+                ? '<div class="notice">' + I('shield', 17) +
+                  '<span>Identity verification is required before your first payout.</span></div>'
+                : !API().account.withdrawUnlocked()
+                  ? '<div class="notice">' + I('shield', 17) +
+                    '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
+                  : '') +
               act('Request withdrawal', 'withdraw', 'btn-pos') +
             '</div>';
           }
@@ -1176,6 +1203,15 @@
               kv('Network fee', F().money(1)) +
               kv('New balance', F().money(API().account.balance())) +
               kv('Reference', '<span class="num">' + s.ref + '</span>'));
+          }
+        },
+        fund: {
+          title: 'One last step',
+          sub: 'Your account is verified. A first deposit opens withdrawals.',
+          body: function () {
+            return '<div class="modal-form">' + fundStep() +
+              '<button class="btn btn-ghost" type="button" data-close>Later</button>' +
+            '</div>';
           }
         },
         kyc: {

@@ -129,6 +129,7 @@
     over: 1.72,
     under: 1.72
   };
+  var WITHDRAW_UNLOCK_USD = 20;
   var LIMITS = { min: 1, max: 5000, maxTicks: 10, minTicks: 1 };
 
   /* ---------- countries we take mobile money from ----------
@@ -358,6 +359,12 @@
     riskAck: !!saved.riskAck,
     contracts: saved.contracts || [],
     transactions: saved.transactions || [],
+    /* Everything ever deposited to the real account, in USD. Withdrawals
+       open only once a verified account has put in WITHDRAW_UNLOCK_USD. */
+    deposited: saved.deposited != null ? +saved.deposited || 0
+      : (saved.transactions || []).reduce(function (a, t) {
+          return a + (t.kind === 'Deposit' && t.amount > 0 && t.account === 'real' ? t.amount : 0);
+        }, 0),
     /* The two stop rules a run ends on. They were 200 and 100; the stop
        loss is now 999, which is far enough out that a run ends on the
        target or on its run count rather than on a figure nobody chose.
@@ -376,6 +383,7 @@
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
+        deposited: S.deposited,
         auto: S.auto, autoV: S.autoV
       }));
     } catch (e) {}
@@ -878,7 +886,22 @@
       realAvailable: realAvailable,
       enforce: enforceAccount,
       demoMode: function () { return !!S.demoMode; },
-      credit: function (amount, kind) { adjust(Math.abs(+amount || 0), { kind: kind || 'Deposit' }); },
+      credit: function (amount, kind) {
+        var usd = Math.abs(+amount || 0);
+        if ((kind || 'Deposit') === 'Deposit') S.deposited = round(S.deposited + usd, 2);
+        adjust(usd, { kind: kind || 'Deposit' });
+      },
+      /* The last step after verification: a deposit of at least this much
+         before the first withdrawal. */
+      unlockUsd: WITHDRAW_UNLOCK_USD,
+      deposited: function () { return S.deposited; },
+      setDeposited: function (usd) {
+        var next = Math.round((+usd || 0) * 100) / 100;
+        if (S.deposited === next) return;
+        S.deposited = next;
+        persist();
+      },
+      withdrawUnlocked: function () { return S.deposited >= WITHDRAW_UNLOCK_USD; },
       debit: function (amount, kind) { adjust(-Math.abs(+amount || 0), { kind: kind || 'Withdrawal' }); }
     },
 
