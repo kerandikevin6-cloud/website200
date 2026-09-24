@@ -475,7 +475,7 @@
              and where it stands, and the bar fills towards the target. */
           var multi = isRun && S.run.done > 0;
           var sub = multi
-            ? S.run.done + (S.run.done === 1 ? ' trade' : ' trades') + ' · ' + F.signed(S.run.pnl)
+            ? 'Running · ' + F.signed(S.run.pnl)
             : live
               ? secondsLeft(live) + ' · ' + F.signed(live.value - live.stake)
               : 'starting';
@@ -574,8 +574,11 @@
        trade button is showing, said loudly enough to notice. */
     var pnl = mine.value - mine.stake;
     var good = API.contracts.favours(mine, d.point.digit);
+    /* No count on it. An automated run has no fixed length, so "4 of 10"
+       promised an ending that was not coming; the totals are on the card
+       when the run ends. */
     window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl),
-      'Tick ' + mine.elapsed + ' of ' + mine.ticks, mine.symbolName || '');
+      good ? 'Trade won' : 'Trade lost', mine.symbolName || '');
   }
 
   /* ---------- how long a contract runs ----------

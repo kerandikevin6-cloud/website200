@@ -2532,28 +2532,26 @@
     }
     if (name === 'verify') {
       if (node && node.disabled) return;
-      var askForTheOther = function () {
-        window.NexToast('Sent. Now your ' + API.kyc.missing()[0].toLowerCase() + ', both are required.');
-        gotoStep('list');
-      };
+
+      /* All three at once: proof of address and both sides of the ID,
+         sent as one submission and approved once. */
+      var SLOTS = [
+        ['Proof of address', 'proof_of_address'],
+        ['Government ID front', 'government_id_front'],
+        ['Government ID back', 'government_id_back']
+      ];
+      var docs = API.kyc.docs();
+      if (SLOTS.some(function (s) { return !docs[s[0]]; })) {
+        window.NexToast('Add all three documents first.');
+        return;
+      }
 
       /* No backend: the old local behaviour, which is a simulation and
          is the only place it is still honest. */
       if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
-        API.kyc.markSent(state.data.doc || 'Proof of address');
-        if (API.kyc.missing().length) return askForTheOther();
+        SLOTS.forEach(function (s) { API.kyc.clearDoc(s[0]); });
         API.kyc.simulateApproval();
         gotoStep('done');
-        return;
-      }
-
-      /* Whatever the upload step asked for: one slot for proof of
-         address, front and back for a government ID. */
-      var docs = API.kyc.docs();
-      var doc = state.data.doc || 'Proof of address';
-      var slots = doc === 'Government ID' ? [doc + ' front', doc + ' back'] : [doc];
-      if (slots.some(function (s) { return !docs[s]; })) {
-        window.NexToast('Choose the document first.');
         return;
       }
 
@@ -2565,25 +2563,24 @@
 
       if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
 
-      /* One after the other, so a failed back never leaves half an ID
-         half-sent in parallel. */
-      slots.reduce(function (p, s) {
+      /* Uploaded one after the other, then handed in together. Nothing
+         reaches review until all three are up. */
+      var sent = [];
+      SLOTS.reduce(function (p, s) {
         return p.then(function () {
-          var kind = s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-          return window.NexNet.submitKycDocument(docs[s], session.id, kind);
+          return window.NexNet.uploadKycFile(docs[s[0]], session.id, s[1].replace(/_/g, '-'))
+            .then(function (meta) { meta.kind = s[1]; sent.push(meta); });
         });
       }, Promise.resolve()).then(function () {
+        return window.NexNet.submitKyc(sent);
+      }).then(function () {
         /* Pending, not verified. The server decides, and the difference
            is the whole reason this route exists. */
         API.kyc.markPending();
-        slots.forEach(function (s) { API.kyc.clearDoc(s); });
-        API.kyc.markSent(doc);
-        /* Both documents are required: after the first, straight back to
-           the list for the second rather than a "nothing more needed". */
-        if (API.kyc.missing().length) return askForTheOther();
+        SLOTS.forEach(function (s) { API.kyc.clearDoc(s[0]); });
         gotoStep('done');
       }).catch(function (err) {
-        if (node) { node.disabled = false; node.textContent = 'Submit for review'; }
+        if (node) { node.disabled = false; node.textContent = 'Submit all for review'; }
         window.NexToast(err.message);
       });
       return;

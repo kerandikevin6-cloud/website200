@@ -863,6 +863,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 }
 .badge.ok{background:var(--pos-soft);color:var(--pos)}
 .badge.warn{background:var(--accent-soft);color:var(--accent)}
+.badge.neg{background:var(--neg-soft);color:var(--neg)}
 
 /* ---------------- markets ---------------- */
 .mkt{display:flex;align-items:center;gap:14px;padding:14px 16px;width:100%}
@@ -4624,10 +4625,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       return call('/kyc');
     },
 
-    /* kind names the file in storage (proof-of-address, government-id-front,
-       government-id-back), which is how a reviewer tells them apart: the
-       /kyc record itself carries only the path. */
-    submitKycDocument: async function (file, userId, kind) {
+    /* Puts one file in the private bucket and says where it went. kind
+       names the file (proof-of-address, government-id-front,
+       government-id-back). Nothing is under review until submitKyc
+       hands the set in. */
+    uploadKycFile: async function (file, userId, kind) {
       var cfg = window.NEXAS_CONFIG || {};
       if (!cfg.supabaseUrl || !cfg.supabaseKey) {
         throw ApiError('Uploads are not configured on this site.', 'no_storage');
@@ -4664,10 +4666,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         throw ApiError(detail.message || 'That file could not be uploaded.', 'upload_failed');
       }
 
-      return call('/kyc', {
-        method: 'POST',
-        body: { path: path, mimeType: file.type || undefined, byteSize: file.size || undefined }
-      });
+      return { path: path, mimeType: file.type || undefined, byteSize: file.size || undefined };
+    },
+
+    /* Hands every document in as one submission: [{ kind, path, ... }]. */
+    submitKyc: function (documents) {
+      return call('/kyc', { method: 'POST', body: { documents: documents } });
     },
 
     /* ---------- support tickets ----------
@@ -6971,31 +6975,33 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           title: 'Verify your account',
           sub: 'Reviewed within an hour. Needed before your first withdrawal.',
           body: function () {
-            /* What to send, kept in one place: the rejected branch shows
-               the same list under a notice rather than a second copy of
-               it that can drift. */
-            function badge(doc) {
-              return API().kyc.sent(doc) ? '<span class="badge ok">Sent</span>'
+            /* One submission: proof of address and both sides of an ID go
+               in together and are approved together. */
+            function uploadButton(label) {
+              return '<button class="btn btn-fill" type="button" data-goto="upload">' +
+                I('up', 17) + label + '</button>';
+            }
+            /* Each document says where the account stands, from the
+               server's status: approved once the account is verified, not
+               "sent" forever after. */
+            function docs(st) {
+              var badge = st === 'verified' ? '<span class="badge ok">Approved</span>'
+                : st === 'pending' ? '<span class="badge warn">Under review</span>'
+                : st === 'rejected' ? '<span class="badge neg">Not accepted</span>'
                 : '<span class="badge warn">Required</span>';
+              var ico = st === 'verified' ? ' pos' : '';
+              return '<div class="list" style="margin:0">' +
+                '<div class="row"><span class="ico' + ico + '">' + I(st === 'verified' ? 'check' : 'card', 18) + '</span>' +
+                  '<span class="t"><b>Proof of address</b>' +
+                    '<span>Bill or statement, last 3 months</span></span>' + badge + '</div>' +
+                '<div class="row"><span class="ico' + ico + '">' + I(st === 'verified' ? 'check' : 'idcard', 18) + '</span>' +
+                  '<span class="t"><b>Government ID, front and back</b>' +
+                    '<span>National ID, passport or driving licence</span></span>' + badge + '</div>' +
+              '</div>';
             }
             function checklist() {
-              return '<div class="modal-form"><div class="list" style="margin:0">' +
-                '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
-                  '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
-                  '<span class="badge ok">Done</span></div>' +
-                '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
-                  '<span class="ico">' + I('card', 18) + '</span>' +
-                  '<span class="t"><b>Proof of address</b>' +
-                    '<span>Bill or statement, last 3 months</span></span>' +
-                  badge('Proof of address') + '</button>' +
-                /* Front and back, two pictures: the upload step asks
-                   for both when this is the document. */
-                '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
-                  '<span class="ico">' + I('idcard', 18) + '</span>' +
-                  '<span class="t"><b>Government ID</b>' +
-                    '<span>National ID, passport or driving licence</span></span>' +
-                  badge('Government ID') + '</button>' +
-              '</div></div>';
+              return '<div class="modal-form">' + docs('unverified') +
+                uploadButton('Upload documents') + '</div>';
             }
 
             var state = API().kyc.status();
@@ -7006,44 +7012,38 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                 return '<div class="modal-form">' +
                   '<div class="empty" style="padding:18px 10px 8px">' + I('check', 24) +
                     '<b>Account verified</b><span>One last step before you can withdraw.</span></div>' +
-                  fundStep() +
+                  docs('verified') + fundStep() +
                 '</div>';
               }
-              return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
-                '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>';
+              return '<div class="modal-form">' +
+                '<div class="empty" style="padding:18px 10px 8px">' + I('check', 24) +
+                  '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>' +
+                docs('verified') + '</div>';
             }
 
-            /* Under review is a different answer from not started, and a
-               customer who cannot tell them apart sends it again. */
-            /* The list stays under it, so a second document (the ID after
-               proof of address, or the other way round) can still be sent. */
-            var missing = API().kyc.missing();
-            if (state === 'pending' && missing.length) {
-              return '<div class="modal-form"><div class="notice">' + I('alert', 17) +
-                '<span>One more to send: your ' + missing[0].toLowerCase() + '. Both documents are ' +
-                'needed before we can verify the account.</span></div></div>' + checklist();
-            }
             if (state === 'pending') {
               return '<div class="modal-form"><div class="notice">' + I('clock', 17) +
-                '<span>Under review. Your document is with us, most are checked ' +
-                'within the hour, and the answer appears here.</span></div></div>' + checklist();
+                '<span>Under review. Your documents are with us, most are checked ' +
+                'within the hour, and the answer appears here.</span></div>' + docs('pending') +
+                /* For anybody who sent only part of it under the old
+                   one-at-a-time flow: a full set replaces what is waiting. */
+                '<button class="btn btn-ghost" type="button" data-goto="upload">' +
+                  'Send all documents again</button></div>';
             }
 
             if (state === 'rejected') {
               return '<div class="modal-form"><div class="notice">' + I('alert', 17) +
-                '<span>That document was not accepted. Send another and we will look ' +
-                'again.</span></div></div>' + checklist();
+                '<span>Your documents were not accepted. Send them again and we will look ' +
+                'again.</span></div>' + docs('rejected') + uploadButton('Send documents again') + '</div>';
             }
 
             return checklist();
           }
         },
         upload: {
-          title: 'Upload document',
-          sub: 'JPG, PNG or PDF under 8 MB. All four corners visible.',
-          body: function (state) {
-            var doc = state.doc || 'Document';
-            var two = doc === 'Government ID';
+          title: 'Upload documents',
+          sub: 'All three together. JPG, PNG or PDF under 8 MB, all four corners visible.',
+          body: function () {
             function picker(slot, label) {
               var id = 'doc_' + slot;
               return '<div class="picker" data-slot="' + slot + '">' +
@@ -7060,13 +7060,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
               '</div>';
             }
             return '<div class="modal-form">' +
-              (two
-                ? picker(doc + ' front', 'Front of your ID') + picker(doc + ' back', 'Back of your ID')
-                : picker(doc, doc)) +
+              picker('Proof of address', 'Proof of address') +
+              picker('Government ID front', 'Front of your ID') +
+              picker('Government ID back', 'Back of your ID') +
               '<div class="notice">' + I('shield', 17) +
                 '<span>Your documents are used only to verify identity and are never shown to other traders.</span></div>' +
               '<button class="btn btn-fill" type="button" data-action="verify" id="verifySubmit" disabled>' +
-                'Submit for review</button>' +
+                'Submit all for review</button>' +
             '</div>';
           }
         },
@@ -8105,7 +8105,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
              and where it stands, and the bar fills towards the target. */
           var multi = isRun && S.run.done > 0;
           var sub = multi
-            ? S.run.done + (S.run.done === 1 ? ' trade' : ' trades') + ' · ' + F.signed(S.run.pnl)
+            ? 'Running · ' + F.signed(S.run.pnl)
             : live
               ? secondsLeft(live) + ' · ' + F.signed(live.value - live.stake)
               : 'starting';
@@ -8204,8 +8204,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        trade button is showing, said loudly enough to notice. */
     var pnl = mine.value - mine.stake;
     var good = API.contracts.favours(mine, d.point.digit);
+    /* No count on it. An automated run has no fixed length, so "4 of 10"
+       promised an ending that was not coming; the totals are on the card
+       when the run ends. */
     window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl),
-      'Tick ' + mine.elapsed + ' of ' + mine.ticks, mine.symbolName || '');
+      good ? 'Trade won' : 'Trade lost', mine.symbolName || '');
   }
 
   /* ---------- how long a contract runs ----------
@@ -11904,28 +11907,26 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }
     if (name === 'verify') {
       if (node && node.disabled) return;
-      var askForTheOther = function () {
-        window.NexToast('Sent. Now your ' + API.kyc.missing()[0].toLowerCase() + ', both are required.');
-        gotoStep('list');
-      };
+
+      /* All three at once: proof of address and both sides of the ID,
+         sent as one submission and approved once. */
+      var SLOTS = [
+        ['Proof of address', 'proof_of_address'],
+        ['Government ID front', 'government_id_front'],
+        ['Government ID back', 'government_id_back']
+      ];
+      var docs = API.kyc.docs();
+      if (SLOTS.some(function (s) { return !docs[s[0]]; })) {
+        window.NexToast('Add all three documents first.');
+        return;
+      }
 
       /* No backend: the old local behaviour, which is a simulation and
          is the only place it is still honest. */
       if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
-        API.kyc.markSent(state.data.doc || 'Proof of address');
-        if (API.kyc.missing().length) return askForTheOther();
+        SLOTS.forEach(function (s) { API.kyc.clearDoc(s[0]); });
         API.kyc.simulateApproval();
         gotoStep('done');
-        return;
-      }
-
-      /* Whatever the upload step asked for: one slot for proof of
-         address, front and back for a government ID. */
-      var docs = API.kyc.docs();
-      var doc = state.data.doc || 'Proof of address';
-      var slots = doc === 'Government ID' ? [doc + ' front', doc + ' back'] : [doc];
-      if (slots.some(function (s) { return !docs[s]; })) {
-        window.NexToast('Choose the document first.');
         return;
       }
 
@@ -11937,25 +11938,24 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
       if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
 
-      /* One after the other, so a failed back never leaves half an ID
-         half-sent in parallel. */
-      slots.reduce(function (p, s) {
+      /* Uploaded one after the other, then handed in together. Nothing
+         reaches review until all three are up. */
+      var sent = [];
+      SLOTS.reduce(function (p, s) {
         return p.then(function () {
-          var kind = s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-          return window.NexNet.submitKycDocument(docs[s], session.id, kind);
+          return window.NexNet.uploadKycFile(docs[s[0]], session.id, s[1].replace(/_/g, '-'))
+            .then(function (meta) { meta.kind = s[1]; sent.push(meta); });
         });
       }, Promise.resolve()).then(function () {
+        return window.NexNet.submitKyc(sent);
+      }).then(function () {
         /* Pending, not verified. The server decides, and the difference
            is the whole reason this route exists. */
         API.kyc.markPending();
-        slots.forEach(function (s) { API.kyc.clearDoc(s); });
-        API.kyc.markSent(doc);
-        /* Both documents are required: after the first, straight back to
-           the list for the second rather than a "nothing more needed". */
-        if (API.kyc.missing().length) return askForTheOther();
+        SLOTS.forEach(function (s) { API.kyc.clearDoc(s[0]); });
         gotoStep('done');
       }).catch(function (err) {
-        if (node) { node.disabled = false; node.textContent = 'Submit for review'; }
+        if (node) { node.disabled = false; node.textContent = 'Submit all for review'; }
         window.NexToast(err.message);
       });
       return;

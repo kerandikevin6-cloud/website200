@@ -424,10 +424,11 @@
       return call('/kyc');
     },
 
-    /* kind names the file in storage (proof-of-address, government-id-front,
-       government-id-back), which is how a reviewer tells them apart: the
-       /kyc record itself carries only the path. */
-    submitKycDocument: async function (file, userId, kind) {
+    /* Puts one file in the private bucket and says where it went. kind
+       names the file (proof-of-address, government-id-front,
+       government-id-back). Nothing is under review until submitKyc
+       hands the set in. */
+    uploadKycFile: async function (file, userId, kind) {
       var cfg = window.NEXAS_CONFIG || {};
       if (!cfg.supabaseUrl || !cfg.supabaseKey) {
         throw ApiError('Uploads are not configured on this site.', 'no_storage');
@@ -464,10 +465,12 @@
         throw ApiError(detail.message || 'That file could not be uploaded.', 'upload_failed');
       }
 
-      return call('/kyc', {
-        method: 'POST',
-        body: { path: path, mimeType: file.type || undefined, byteSize: file.size || undefined }
-      });
+      return { path: path, mimeType: file.type || undefined, byteSize: file.size || undefined };
+    },
+
+    /* Hands every document in as one submission: [{ kind, path, ... }]. */
+    submitKyc: function (documents) {
+      return call('/kyc', { method: 'POST', body: { documents: documents } });
     },
 
     /* ---------- support tickets ----------

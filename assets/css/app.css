@@ -858,6 +858,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 }
 .badge.ok{background:var(--pos-soft);color:var(--pos)}
 .badge.warn{background:var(--accent-soft);color:var(--accent)}
+.badge.neg{background:var(--neg-soft);color:var(--neg)}
 
 /* ---------------- markets ---------------- */
 .mkt{display:flex;align-items:center;gap:14px;padding:14px 16px;width:100%}

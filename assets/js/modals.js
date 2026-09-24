@@ -612,31 +612,33 @@
           title: 'Verify your account',
           sub: 'Reviewed within an hour. Needed before your first withdrawal.',
           body: function () {
-            /* What to send, kept in one place: the rejected branch shows
-               the same list under a notice rather than a second copy of
-               it that can drift. */
-            function badge(doc) {
-              return API().kyc.sent(doc) ? '<span class="badge ok">Sent</span>'
+            /* One submission: proof of address and both sides of an ID go
+               in together and are approved together. */
+            function uploadButton(label) {
+              return '<button class="btn btn-fill" type="button" data-goto="upload">' +
+                I('up', 17) + label + '</button>';
+            }
+            /* Each document says where the account stands, from the
+               server's status: approved once the account is verified, not
+               "sent" forever after. */
+            function docs(st) {
+              var badge = st === 'verified' ? '<span class="badge ok">Approved</span>'
+                : st === 'pending' ? '<span class="badge warn">Under review</span>'
+                : st === 'rejected' ? '<span class="badge neg">Not accepted</span>'
                 : '<span class="badge warn">Required</span>';
+              var ico = st === 'verified' ? ' pos' : '';
+              return '<div class="list" style="margin:0">' +
+                '<div class="row"><span class="ico' + ico + '">' + I(st === 'verified' ? 'check' : 'card', 18) + '</span>' +
+                  '<span class="t"><b>Proof of address</b>' +
+                    '<span>Bill or statement, last 3 months</span></span>' + badge + '</div>' +
+                '<div class="row"><span class="ico' + ico + '">' + I(st === 'verified' ? 'check' : 'idcard', 18) + '</span>' +
+                  '<span class="t"><b>Government ID, front and back</b>' +
+                    '<span>National ID, passport or driving licence</span></span>' + badge + '</div>' +
+              '</div>';
             }
             function checklist() {
-              return '<div class="modal-form"><div class="list" style="margin:0">' +
-                '<div class="row"><span class="ico pos">' + I('check', 18) + '</span>' +
-                  '<span class="t"><b>Email address</b><span>' + maskEmail() + '</span></span>' +
-                  '<span class="badge ok">Done</span></div>' +
-                '<button class="row" data-goto="upload" data-set="doc:Proof of address">' +
-                  '<span class="ico">' + I('card', 18) + '</span>' +
-                  '<span class="t"><b>Proof of address</b>' +
-                    '<span>Bill or statement, last 3 months</span></span>' +
-                  badge('Proof of address') + '</button>' +
-                /* Front and back, two pictures: the upload step asks
-                   for both when this is the document. */
-                '<button class="row" data-goto="upload" data-set="doc:Government ID">' +
-                  '<span class="ico">' + I('idcard', 18) + '</span>' +
-                  '<span class="t"><b>Government ID</b>' +
-                    '<span>National ID, passport or driving licence</span></span>' +
-                  badge('Government ID') + '</button>' +
-              '</div></div>';
+              return '<div class="modal-form">' + docs('unverified') +
+                uploadButton('Upload documents') + '</div>';
             }
 
             var state = API().kyc.status();
@@ -647,44 +649,38 @@
                 return '<div class="modal-form">' +
                   '<div class="empty" style="padding:18px 10px 8px">' + I('check', 24) +
                     '<b>Account verified</b><span>One last step before you can withdraw.</span></div>' +
-                  fundStep() +
+                  docs('verified') + fundStep() +
                 '</div>';
               }
-              return '<div class="empty" style="padding:26px 10px">' + I('check', 24) +
-                '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>';
+              return '<div class="modal-form">' +
+                '<div class="empty" style="padding:18px 10px 8px">' + I('check', 24) +
+                  '<b>Account verified</b><span>Withdrawals are open on this account.</span></div>' +
+                docs('verified') + '</div>';
             }
 
-            /* Under review is a different answer from not started, and a
-               customer who cannot tell them apart sends it again. */
-            /* The list stays under it, so a second document (the ID after
-               proof of address, or the other way round) can still be sent. */
-            var missing = API().kyc.missing();
-            if (state === 'pending' && missing.length) {
-              return '<div class="modal-form"><div class="notice">' + I('alert', 17) +
-                '<span>One more to send: your ' + missing[0].toLowerCase() + '. Both documents are ' +
-                'needed before we can verify the account.</span></div></div>' + checklist();
-            }
             if (state === 'pending') {
               return '<div class="modal-form"><div class="notice">' + I('clock', 17) +
-                '<span>Under review. Your document is with us, most are checked ' +
-                'within the hour, and the answer appears here.</span></div></div>' + checklist();
+                '<span>Under review. Your documents are with us, most are checked ' +
+                'within the hour, and the answer appears here.</span></div>' + docs('pending') +
+                /* For anybody who sent only part of it under the old
+                   one-at-a-time flow: a full set replaces what is waiting. */
+                '<button class="btn btn-ghost" type="button" data-goto="upload">' +
+                  'Send all documents again</button></div>';
             }
 
             if (state === 'rejected') {
               return '<div class="modal-form"><div class="notice">' + I('alert', 17) +
-                '<span>That document was not accepted. Send another and we will look ' +
-                'again.</span></div></div>' + checklist();
+                '<span>Your documents were not accepted. Send them again and we will look ' +
+                'again.</span></div>' + docs('rejected') + uploadButton('Send documents again') + '</div>';
             }
 
             return checklist();
           }
         },
         upload: {
-          title: 'Upload document',
-          sub: 'JPG, PNG or PDF under 8 MB. All four corners visible.',
-          body: function (state) {
-            var doc = state.doc || 'Document';
-            var two = doc === 'Government ID';
+          title: 'Upload documents',
+          sub: 'All three together. JPG, PNG or PDF under 8 MB, all four corners visible.',
+          body: function () {
             function picker(slot, label) {
               var id = 'doc_' + slot;
               return '<div class="picker" data-slot="' + slot + '">' +
@@ -701,13 +697,13 @@
               '</div>';
             }
             return '<div class="modal-form">' +
-              (two
-                ? picker(doc + ' front', 'Front of your ID') + picker(doc + ' back', 'Back of your ID')
-                : picker(doc, doc)) +
+              picker('Proof of address', 'Proof of address') +
+              picker('Government ID front', 'Front of your ID') +
+              picker('Government ID back', 'Back of your ID') +
               '<div class="notice">' + I('shield', 17) +
                 '<span>Your documents are used only to verify identity and are never shown to other traders.</span></div>' +
               '<button class="btn btn-fill" type="button" data-action="verify" id="verifySubmit" disabled>' +
-                'Submit for review</button>' +
+                'Submit all for review</button>' +
             '</div>';
           }
         },
