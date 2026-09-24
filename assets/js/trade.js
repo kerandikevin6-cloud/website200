@@ -471,9 +471,11 @@
              A single contract follows the contract itself: how much of it
              is left, and the same seconds drawn along the foot. */
           var pcTicks = live ? Math.min(100, Math.round(live.elapsed / live.ticks * 100)) : 0;
-          var multi = isRun && S.run.total > 1;
+          /* A run has no fixed length: it shows how many it has placed
+             and where it stands, and the bar fills towards the target. */
+          var multi = isRun && S.run.done > 0;
           var sub = multi
-            ? S.run.done + ' of ' + S.run.total + ' · ' + F.signed(S.run.pnl)
+            ? S.run.done + (S.run.done === 1 ? ' trade' : ' trades') + ' · ' + F.signed(S.run.pnl)
             : live
               ? secondsLeft(live) + ' · ' + F.signed(live.value - live.stake)
               : 'starting';
@@ -481,7 +483,8 @@
             '<div class="t">Stop</div>' +
             '<div class="s">' + sub + '</div>' +
             '<i class="tbtn-bar" style="width:' + (multi
-              ? Math.round(S.run.done / S.run.total * 100) : pcTicks) + '%"></i>' +
+              ? Math.round(Math.max(0, Math.min(1, S.run.pnl / S.run.takeProfit)) * 100)
+              : pcTicks) + '%"></i>' +
           '</button>';
         }
 
@@ -631,34 +634,62 @@
     return res.contract;
   }
 
-  /* ---------- automated runs ---------- */
-  /* How many contracts a run places: what the auto settings say, which
-     is one unless someone has chosen more. It used to be a random four to
-     eight, so a single press kept placing contracts (doubling the stake
-     after every loss) long after the trader thought they had finished,
-     and the result card only came at the end of a run they never asked
-     for. Target profit and stop loss still end a longer run early. */
-  function runLength(cfg) {
-    var n = Math.floor(+(cfg && cfg.runs) || 1);
-    return Math.max(1, Math.min(50, n));
+  /* ---------- automated runs ----------
+     A run has no fixed number of contracts. It keeps placing them until
+     its running profit reaches the target or its running loss reaches
+     the stop, and nothing else ends it on its own.
+
+     Signed in, the server keeps that count. The run is opened there with
+     its two rules, every contract is recorded against it, and the answer
+     to "carry on or stop" comes back with the record. Without a server,
+     or if it does not answer in time, the same two rules are applied
+     here so a run can never go on past them. */
+  function live() {
+    return !!(window.NexNet && window.NexNet.live && window.NexNet.signedIn());
   }
 
   function startRun(side) {
     var cfg = API.prefs.auto();
-    S.run = {
-      id: 'R' + Date.now(), side: side, total: runLength(cfg), done: 0, wins: 0, losses: 0, pnl: 0,
+    var r = S.run = {
+      id: 'R' + Date.now(), side: side, done: 0, wins: 0, losses: 0, pnl: 0,
       ticks: 0, tickWins: 0, tickLosses: 0,
       base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
-      takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss
+      takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss,
+      serverId: null
     };
     renderPanel();
-    place(side, S.run.id);
+    renderDock();
+
+    if (!live()) { place(side, r.id); return; }
+
+    window.NexNet.startRun({
+      accountKind: API.account.kind() === 'real' ? 'real' : 'demo',
+      takeProfitMinor: Math.round(r.takeProfit * 100),
+      stopLossMinor: Math.round(r.stopLoss * 100),
+      multiplier: r.multiplier,
+      baseStakeMinor: Math.round(r.base * 100)
+    }).then(function (run) {
+      if (S.run !== r) return;              /* stopped while it was opening */
+      if (run && run.id) { r.serverId = run.id; r.id = run.id; }
+      place(side, r.id);
+    }).catch(function () {
+      /* The rules still hold without the server; they are just applied
+         here instead. */
+      if (S.run !== r) return;
+      place(side, r.id);
+    });
   }
-  function stopRun(reason) {
+
+  /* kind: 'take_profit' | 'stop_loss' | 'stopped' */
+  function stopRun(reason, kind) {
     if (!S.run) return;
     var r = S.run;
     S.run = null;
     S.stake = r.base;
+    r.endKind = kind || 'stopped';
+    if (r.serverId && r.endKind === 'stopped' && live()) {
+      window.NexNet.stopRun(r.serverId).catch(function () {});
+    }
     renderPanel();
     renderDock();
     if (!reason) return;
@@ -683,7 +714,7 @@
   function showResult(c) {
     if (!window.NexModal) return;
     window.NexModal.open('runResult', null, { run: {
-      done: 1, pnl: c.profit,
+      done: 1, pnl: c.profit, endKind: 'single',
       tickWins: c.tickWins || 0, tickLosses: c.tickLosses || 0
     } });
   }
@@ -730,15 +761,58 @@
     r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
     S.stake = r.stake;
 
-    var end = r.pnl >= r.takeProfit ? 'Take-profit reached at ' + F.signedUsd(r.pnl)
-      : -r.pnl >= r.stopLoss ? 'Stop-loss reached at ' + F.signedUsd(r.pnl)
-      : r.done >= r.total ? 'Run finished at ' + F.signedUsd(r.pnl)
-      : !check() ? 'Run stopped: ' + S.error : null;
-    if (end) { soundResult(c); return stopRun(end); }
+    /* The server's verdict when there is a server, the same rules here
+       when there is not. */
+    if (r.serverId) {
+      waitForRun(r, c.id, function (run) { decide(r, c, run); });
+    } else {
+      decide(r, c, null);
+    }
+  }
+
+  function decide(r, c, run) {
+    if (S.run !== r) return;
+    var kind = null;
+    if (run && run.status && run.status !== 'running') {
+      kind = run.status;
+      if (run.pnlMinor != null) r.pnl = run.pnlMinor / 100;
+    } else if (!run) {
+      kind = r.pnl >= r.takeProfit ? 'take_profit'
+        : -r.pnl >= r.stopLoss ? 'stop_loss' : null;
+    }
+
+    if (kind === 'take_profit') { soundResult(c); return stopRun('Target profit reached at ' + F.signedUsd(r.pnl), kind); }
+    if (kind === 'stop_loss') { soundResult(c); return stopRun('Stop loss reached at ' + F.signedUsd(r.pnl), kind); }
+    if (kind === 'stopped') { soundResult(c); return stopRun('Run stopped', kind); }
+    /* The one other thing that ends a run: the next stake cannot be
+       placed, usually because the balance no longer covers it. */
+    if (!check()) { soundResult(c); return stopRun('Run stopped: ' + S.error, 'stopped'); }
 
     flashResult(c);
     renderAll();
-    setTimeout(function () { if (S.run) place(r.side, r.id); }, 700);
+    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, 700);
+  }
+
+  /* The record of this contract goes to the server from app.js, which
+     passes the run's new status on as a 'nex:run' event. Five seconds
+     is long enough for a slow connection and short enough that a lost
+     answer does not stall the run: after that the rules are applied
+     here. */
+  function waitForRun(r, contractId, done) {
+    var finished = false;
+    function finish(run) {
+      if (finished) return;
+      finished = true;
+      document.removeEventListener('nex:run', onRun);
+      clearTimeout(timer);
+      done(run);
+    }
+    function onRun(e) {
+      var d = e.detail || {};
+      if (d.run && d.run.id === r.serverId && d.ref === String(contractId)) finish(d.run);
+    }
+    document.addEventListener('nex:run', onRun);
+    var timer = setTimeout(function () { finish(null); }, 5000);
   }
 
   /* ---------- events ---------- */
@@ -799,7 +873,7 @@
       var stop = t.closest('[data-stop]');
       if (stop) {
         var which2 = stop.getAttribute('data-stop');
-        if (S.run) { stopRun('Run stopped'); renderAll(); return; }
+        if (S.run) { stopRun('Run stopped', 'stopped'); renderAll(); return; }
         var live = runningOn(which2);
         if (live) {
           var sold = API.contracts.sell(live.id);
@@ -813,7 +887,7 @@
       if (side) {
         if (!check()) { renderPanel(); window.NexToast(S.error); return; }
         var which = side.getAttribute('data-side');
-        if (S.mode === 'auto') { S.run ? stopRun('Run stopped') : startRun(which); }
+        if (S.mode === 'auto') { S.run ? stopRun('Run stopped', 'stopped') : startRun(which); }
         else place(which);
         return;
       }

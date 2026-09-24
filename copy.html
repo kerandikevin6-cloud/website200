@@ -99,6 +99,9 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
 
   var API, F, I;
   var q = '';                 /* the marketplace search box              */
+  var FOLLOW_KEY = 'nexas.copy.following';
+  var following = null;       /* the provider this account is copying    */
+  try { following = localStorage.getItem(FOLLOW_KEY); } catch (e) {}
 
   /* ---------- the strategies on offer ----------
      A fixed list rather than a live leaderboard. There are no customer
@@ -176,6 +179,12 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
               ' activation fee is deducted.</p>') +
         '<button class="btn btn-fill" type="button" data-open="deposit">' +
           I('down', 17) + 'Deposit</button>' +
+        /* Copy trading opens with a key an admin issues. Once it is
+           redeemed the button becomes a plain statement of the fact. */
+        (API.copy.active()
+          ? '<div class="cp-keyed">' + I('check', 16) + 'Copy trading activated</div>'
+          : '<button class="btn btn-ghost cp-key" type="button" data-open="copyKey">' +
+              I('lock', 17) + 'Activate with key</button>') +
       '</section>';
   }
 
@@ -241,14 +250,17 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
           '<div><span>Followers</span><b class="num">' + p.followers + '</b></div>' +
         '</div>' +
         (ok
-          ? '<button class="btn btn-fill cp-go" type="button" data-copy-provider="' +
-              esc(p.id) + '">Copy this strategy</button>'
-          : '<button class="btn btn-ghost cp-go" type="button" data-open="deposit">Deposit ' +
-              F.usd(MIN_BALANCE) + ' to activate</button>') +
+          ? (following === p.id
+              ? '<button class="btn btn-ghost cp-go" type="button" data-copy-stop="' +
+                  esc(p.id) + '">' + I('check', 15) + 'Copying · Stop</button>'
+              : '<button class="btn btn-fill cp-go" type="button" data-copy-provider="' +
+                  esc(p.id) + '">Copy this strategy</button>')
+          : '<button class="btn btn-ghost cp-go" type="button" data-open="copyKey">' +
+              I('lock', 15) + 'Activate with key</button>') +
       '</article>';
   }
   function marketplace() {
-    var ok = API.account.realAvailable() && realBalance() >= MIN_BALANCE;
+    var ok = API.copy.active();
     var needle = q.trim().toLowerCase();
     var list = PROVIDERS.filter(function (p) {
       return !needle || p.name.toLowerCase().indexOf(needle) > -1;
@@ -297,15 +309,23 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       if (e.target && e.target.id === 'cpSearch') { q = e.target.value; render(); }
     });
     root.addEventListener('click', function (e) {
+      var stop = e.target.closest && e.target.closest('[data-copy-stop]');
+      if (stop) {
+        following = null;
+        try { localStorage.removeItem(FOLLOW_KEY); } catch (e2) {}
+        window.NexToast('Stopped copying');
+        render();
+        return;
+      }
       var pick = e.target.closest && e.target.closest('[data-copy-provider]');
       if (!pick) return;
-      /* Nothing is mirrored yet: the engine that places a copied trade
-         is not live, and a button that silently does nothing is worse
-         than one that says so. */
+      if (!API.copy.active()) { if (window.NexModal) window.NexModal.open('copyKey'); return; }
       var id = pick.getAttribute('data-copy-provider');
       var p = PROVIDERS.filter(function (x) { return x.id === id; })[0];
-      window.NexToast('Copying ' + (p ? p.name : 'this strategy') +
-        ' opens once the first strategies are live. Support can add you to the list.');
+      following = id;
+      try { localStorage.setItem(FOLLOW_KEY, id); } catch (e3) {}
+      window.NexToast('Now copying ' + (p ? p.name : 'this strategy'));
+      render();
     });
     /* data-open="deposit" is caught by app.js on the document, so the
        deposit buttons above need nothing here. */
@@ -322,6 +342,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       render();
       API.on('balance', render);
       API.on('contracts', render);
+      API.on('copy', render);
     });
   }
 

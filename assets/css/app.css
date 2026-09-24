@@ -1209,6 +1209,15 @@ footer a:hover{color:var(--text-2)}
 .cp-bar i{display:block;height:100%;background:var(--accent);transition:width .3s ease}
 .cp-act.ok .cp-bar i{background:var(--pos)}
 .cp-note{margin:12px 0 14px!important;font-size:12.5px;line-height:1.6;color:var(--muted)}
+/* The key an admin issues, under the deposit button. Once redeemed it
+   becomes a line saying so. */
+.cp-act .btn{width:100%}
+.cp-key{margin-top:10px}
+.cp-keyed{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  margin-top:10px;padding:11px 12px;border-radius:12px;
+  background:var(--pos-soft);color:var(--pos);font-size:13.5px;font-weight:600;
+}
 /* ---- becoming a provider ---- */
 .cp-prov h3{margin:9px 0 7px}
 .cp-prov > p{margin-bottom:14px}

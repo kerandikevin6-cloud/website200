@@ -265,7 +265,12 @@
      Lost, whether one contract settled or a run ended on its target or
      stop. "Session Closed in Profit" and "Target Profit Reached" read as
      a different kind of event from the same thing. */
+  /* An automated run is headed by why it ended; a single manual trade
+     by whether it won. */
   function runHeadline(r) {
+    if (r.endKind === 'take_profit') return 'Target Profit Reached';
+    if (r.endKind === 'stop_loss') return 'Stop Loss Reached';
+    if (r.endKind === 'stopped') return 'Run Stopped';
     return (r.pnl || 0) >= 0 ? 'Contract Won' : 'Contract Lost';
   }
   function tickTally(w, l) {
@@ -435,14 +440,11 @@
       steps: {
         form: {
           title: 'Automated run',
-          sub: 'The run stops on its own when any of these is hit.',
+          sub: 'The run keeps trading until it reaches the take profit or the stop loss.',
           body: function () {
             var a = API().prefs.auto();
             return '<div class="modal-form">' +
-              '<div class="pair">' +
-                field('autoRuns', 'Number of runs', 'value="' + a.runs + '" inputmode="numeric"') +
-                field('autoMult', 'Stake × on loss', 'value="' + a.multiplier + '" inputmode="decimal"') +
-              '</div>' +
+              field('autoMult', 'Stake × on loss', 'value="' + a.multiplier + '" inputmode="decimal"') +
               '<div class="pair">' +
                 field('autoTP', 'Take profit', 'value="' + a.takeProfit + '" inputmode="decimal"') +
                 field('autoSL', 'Stop loss', 'value="' + a.stopLoss + '" inputmode="decimal"') +
@@ -974,6 +976,30 @@
             });
           }
         }
+      }
+    },
+
+    /* ---------------- copy-trading key ---------------- */
+    copyKey: {
+      steps: {
+        main: {
+          title: 'Activate with key',
+          sub: 'Enter the activation key support gave you.',
+          body: function () {
+            return '<div class="modal-form">' +
+              field('copyKey', 'Activation key',
+                'autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"',
+                'Each key works once, on one account.') +
+              act('Activate', 'copyKey') +
+              '<button class="btn btn-ghost" type="button" data-close>Cancel</button>' +
+            '</div>';
+          }
+        },
+        done: okStep(
+          'Copy trading active',
+          null,
+          'Key accepted',
+          'Copy trading is now on for this account. Pick a strategy to follow.')
       }
     },
 

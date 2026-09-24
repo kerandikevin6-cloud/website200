@@ -319,7 +319,7 @@
        and press again if you want another. The multiplier and the two
        targets stay: they are what a longer run would stop on, and the
        number of contracts is the one thing nobody should have to set. */
-    return { runs: 1, multiplier: 2, takeProfit: 200, stopLoss: 999 };
+    return { multiplier: 2, takeProfit: 200, stopLoss: 999 };
   }
   var S = {
     geo: saved.geo || null,
@@ -361,6 +361,9 @@
     transactions: saved.transactions || [],
     /* Everything ever deposited to the real account, in USD. Withdrawals
        open only once a verified account has put in WITHDRAW_UNLOCK_USD. */
+    /* Copy trading opens with a key an admin issues. The server says
+       whether this account has redeemed one; this is its last answer. */
+    copyActive: !!saved.copyActive,
     deposited: saved.deposited != null ? +saved.deposited || 0
       : (saved.transactions || []).reduce(function (a, t) {
           return a + (t.kind === 'Deposit' && t.amount > 0 && t.account === 'real' ? t.amount : 0);
@@ -383,7 +386,7 @@
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
-        deposited: S.deposited,
+        deposited: S.deposited, copyActive: S.copyActive,
         auto: S.auto, autoV: S.autoV
       }));
     } catch (e) {}
@@ -956,6 +959,15 @@
       minStakeUsd: minStakeUsd
     },
 
+    copy: {
+      active: function () { return !!S.copyActive; },
+      setActive: function (v) {
+        S.copyActive = !!v;
+        persist();
+        B.emit('copy', S.copyActive);
+      }
+    },
+
     referrals: {
       tiers: BOOST_TIERS,
       code: referralCode,
@@ -1005,6 +1017,7 @@
         S.verified = user.kyc === 'verified';
         S.kycStatus = user.kyc || 'unverified';
         S.demoMode = !!user.demoMode;
+        if (user.copyActive != null) S.copyActive = !!user.copyActive;
         if (fresh) S.account = 'real';
 
         /* The country on the account beats anything guessed from an IP

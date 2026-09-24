@@ -1461,6 +1461,7 @@
         /* The presentation switch, as the server reports it. The browser
            never decides this. */
         demoMode: !!(out.profile && out.profile.demo_mode),
+        copyActive: !!(out.profile && out.profile.copy_active),
         tier: (out.profile && out.profile.tier) || 'standard'
       }, out.accounts || []);
       paintDemoBadge();
@@ -2587,6 +2588,25 @@
       });
       return;
     }
+    if (name === 'copyKey') {
+      clearErrors();
+      var key = ((document.getElementById('copyKey') || {}).value || '').trim();
+      if (!key) return fieldError('copyKey', 'Enter the key you were given');
+      /* Only the server can say a key is real. With no backend there is
+         nobody to ask, so nothing is switched on. */
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        return fieldError('copyKey', 'Sign in first, then enter your key');
+      }
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
+      window.NexNet.activateCopy(key).then(function () {
+        API.copy.setActive(true);
+        gotoStep('done');
+      }).catch(function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Activate'; }
+        fieldError('copyKey', serverErrorText(err));
+      });
+      return;
+    }
     if (name === 'recheckDeposit') {
       var ref = state.data.ref;
       if (!ref || !(window.NexNet && window.NexNet.live)) return closeModals();
@@ -2624,17 +2644,15 @@
     }
     if (name === 'saveAuto') {
       clearErrors();
-      var runs = +document.getElementById('autoRuns').value || 0;
       var mult = +document.getElementById('autoMult').value || 0;
       var tp = +document.getElementById('autoTP').value || 0;
       var sl = +document.getElementById('autoSL').value || 0;
 
-      if (runs < 1 || runs > 500) return fieldError('autoRuns', 'Between 1 and 500 runs');
       if (mult < 1 || mult > 5) return fieldError('autoMult', 'Between 1 and 5');
       if (tp <= 0) return fieldError('autoTP', 'Set a take-profit above zero');
       if (sl <= 0) return fieldError('autoSL', 'Set a stop-loss above zero');
 
-      API.prefs.setAuto({ runs: runs, multiplier: mult, takeProfit: tp, stopLoss: sl });
+      API.prefs.setAuto({ multiplier: mult, takeProfit: tp, stopLoss: sl });
       gotoStep('done');
       return;
     }
@@ -2645,6 +2663,11 @@
     API.on('settled', function (c) {
       if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
       window.NexNet.recordTrades([tradePayload(c)]).then(function (out) {
+        /* A contract placed by an automated run comes back with the run's
+           status, which is what the terminal waits on to carry on or stop. */
+        (out && out.runs || []).forEach(function (run) {
+          document.dispatchEvent(new CustomEvent('nex:run', { detail: { run: run, ref: String(c.id) } }));
+        });
         /* A settled contract on the real account moves the balance on
            the server now, and the server is the one that counts. Adopt
            what it says rather than trusting the figure this browser just
@@ -2912,9 +2935,12 @@
       entrySpot: c.entrySpot == null ? undefined : c.entrySpot,
       exitSpot: c.exitSpot == null ? undefined : c.exitSpot,
       openedAt: new Date(c.entryTime).toISOString(),
-      settledAt: new Date(c.exitTime || c.entryTime).toISOString()
+      settledAt: new Date(c.exitTime || c.entryTime).toISOString(),
+      /* Only a run the server opened has an id it knows. */
+      runId: UUID.test(c.run || '') ? c.run : undefined
     };
   }
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   function syncHistory() {
     if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;

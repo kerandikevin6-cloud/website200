@@ -502,7 +502,7 @@
       if (!trades || !trades.length) return { recorded: 0 };
       /* The server caps a batch at 200; send in chunks so a long
          backlog after an offline spell still goes up. */
-      var done = 0, balanceMinor = null, refused = [];
+      var done = 0, balanceMinor = null, refused = [], runs = [];
       for (var i = 0; i < trades.length; i += 100) {
         var out = await call('/trades', {
           method: 'POST', body: { trades: trades.slice(i, i + 100) }
@@ -512,8 +512,26 @@
            the one the caller should believe. */
         if (out.balanceMinor != null) balanceMinor = out.balanceMinor;
         if (out.refused) refused = refused.concat(out.refused);
+        if (out.runs) runs = runs.concat(out.runs);
       }
-      return { recorded: done, balanceMinor: balanceMinor, refused: refused };
+      return { recorded: done, balanceMinor: balanceMinor, refused: refused, runs: runs };
+    },
+
+    /* An automated run, opened on the server with its two stop rules.
+       Contracts are recorded against it through recordTrades. */
+    startRun: async function (body) {
+      var out = await call('/runs', { method: 'POST', body: body });
+      return out.run;
+    },
+    stopRun: async function (id) {
+      var out = await call('/runs/' + encodeURIComponent(id) + '/stop', { method: 'POST' });
+      return out.run;
+    },
+
+    /* Redeems a copy-trading key an admin issued. The server checks it,
+       marks it used, and turns copy trading on for this account. */
+    activateCopy: function (key) {
+      return call('/copy/activate', { method: 'POST', body: { key: key } });
     },
 
     deposits: async function () {
