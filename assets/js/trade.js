@@ -362,7 +362,18 @@
         '<button class="scan-x" id="scanClear" aria-label="Dismiss">' + I('close', 14) + '</button>' +
       '</div>';
 
+    /* A strategy being copied, picked on the copy trading page. Said
+       once, with a way to stop, so nobody wonders why it is there. */
+    var copying = null;
+    try { copying = localStorage.getItem('nexas.copy.followingName'); } catch (e) {}
+    var copyRow = !copying ? '' :
+      '<div class="scan-note copy-note">' + I('copy', 15) +
+        '<span>Copying <b>' + String(copying).replace(/</g, '&lt;') + '</b>’s strategy.</span>' +
+        '<button class="scan-x" id="copyStop" aria-label="Stop copying">' + I('close', 14) + '</button>' +
+      '</div>';
+
     html(el.panel,
+      copyRow +
       scanRow +
       '<div class="seg" id="modeSeg">' +
         /* The label is wrapped because the capsule behind it is an
@@ -832,6 +843,15 @@
       }
 
       if (t.closest('#scanClear')) { S.fromScan = null; renderPanel(); return; }
+      if (t.closest('#copyStop')) {
+        try {
+          localStorage.removeItem('nexas.copy.following');
+          localStorage.removeItem('nexas.copy.followingName');
+        } catch (e2) {}
+        window.NexToast('Stopped copying');
+        renderPanel();
+        return;
+      }
 
       var mode = t.closest('[data-mode]');
       if (mode) {
