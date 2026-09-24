@@ -1213,7 +1213,8 @@ footer a:hover{color:var(--text-2)}
 /* The key an admin issues, under the deposit button. Once redeemed it
    becomes a line saying so. */
 .cp-act .btn{width:100%}
-.cp-key{margin-top:10px}
+.cp-key,.cp-dep{margin-top:10px}
+.cp-dep[disabled]{opacity:.55;cursor:not-allowed}
 .cp-keyed{
   display:flex;align-items:center;justify-content:center;gap:7px;
   margin-top:10px;padding:11px 12px;border-radius:12px;
@@ -3664,4 +3665,56 @@ html[data-oauth]::after{
   .hero-mark{width:56px;height:56px;margin-bottom:14px}
   .hero-title{font-size:16.5px}
   .hero-amount{font-size:26px}
+}
+
+/* ---------------- first-run tour ----------------
+   A dimmed screen with a hole cut over the real control, and one card
+   beside it. The hole is a box with a shadow the size of the viewport,
+   so the dimming follows the control without a mask or a canvas. */
+.tour{position:fixed;inset:0;z-index:90;opacity:0;transition:opacity .2s ease}
+.tour.open{opacity:1}
+.tour-hole{
+  position:fixed;border-radius:14px;pointer-events:none;
+  box-shadow:0 0 0 9999px rgba(8,10,12,.62),0 0 0 2px var(--accent-fill);
+  transition:top .25s ease,left .25s ease,width .25s ease,height .25s ease;
+}
+.tour.centred .tour-hole{top:50%;left:50%;width:0;height:0;box-shadow:0 0 0 9999px rgba(8,10,12,.62)}
+.tour-card{
+  position:fixed;width:min(340px,calc(100vw - 32px));
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--line);border-radius:var(--r-xl);
+  padding:16px 16px 14px;box-shadow:0 18px 50px rgba(0,0,0,.28);outline:none;
+  transition:top .25s ease,left .25s ease;
+}
+.tour.centred .tour-card{top:50%;left:50%;transform:translate(-50%,-50%)}
+.tour-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.tour-ico{
+  display:grid;place-items:center;width:34px;height:34px;border-radius:10px;
+  background:var(--accent-soft);color:var(--accent)
+}
+.tour-count{flex:1;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tour-x{
+  display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:8px;
+  background:transparent;color:var(--muted);cursor:pointer
+}
+.tour-x:hover{background:var(--accent-soft);color:var(--text)}
+.tour-title{margin:0 0 6px;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.tour-body{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.tour-dots{display:flex;gap:5px;margin:14px 0 12px}
+.tour-dots i{height:4px;flex:1;border-radius:2px;background:var(--line);transition:background .2s ease}
+.tour-dots i.done{background:var(--accent-soft)}
+.tour-dots i.on{background:var(--accent-fill)}
+.tour-btns{display:flex;align-items:center;gap:8px}
+.tour-btns button{
+  height:38px;padding:0 14px;border-radius:10px;font:inherit;font-size:13.5px;
+  font-weight:600;cursor:pointer
+}
+.tour-skip{margin-right:auto;border:0;background:transparent;color:var(--muted)}
+.tour-skip:hover{color:var(--text)}
+.tour-back{border:1px solid var(--line);background:transparent;color:var(--text)}
+.tour-next{border:0;background:var(--accent-fill);color:var(--accent-ink)}
+.tour-btns [hidden]{display:none}
+.tour-btns .tour-back[hidden] + .tour-next{margin-left:auto}
+@media (prefers-reduced-motion:reduce){
+  .tour,.tour-hole,.tour-card{transition:none}
 }

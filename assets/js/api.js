@@ -1011,6 +1011,9 @@
           legalName: user.legalName || null,
           displayName: user.displayName || null,
           nameLocked: !!user.nameLocked,
+          /* When the account was made, so the first-run tour can tell a
+             new account from an old one on a new device. */
+          createdAt: user.createdAt || (S.session && S.session.id === user.id && S.session.createdAt) || null,
           method: 'server',
           at: Date.now()
         };

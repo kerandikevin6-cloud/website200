@@ -157,6 +157,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
      at the moment of choosing: a hundred dollars taken once is the kind
      of thing somebody should read while they are still deciding. */
   function activation() {
+    var active = API.copy.active();
     var bal = realBalance();
     var ok = bal >= MIN_BALANCE;
     var short = Math.max(0, MIN_BALANCE - bal);
@@ -177,14 +178,18 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
               'account to copy a strategy, which is ' + F.usd(short) + ' from here. When you ' +
               'select a provider, a one-time ' + F.usd(ACTIVATION) +
               ' activation fee is deducted.</p>') +
-        '<button class="btn btn-fill" type="button" data-open="deposit">' +
-          I('down', 17) + 'Deposit</button>' +
-        /* Copy trading opens with a key an admin issues. Once it is
-           redeemed the button becomes a plain statement of the fact. */
-        (API.copy.active()
-          ? '<div class="cp-keyed">' + I('check', 16) + 'Copy trading activated</div>'
-          : '<button class="btn btn-ghost cp-key" type="button" data-open="copyKey">' +
-              I('lock', 17) + 'Activate with key</button>') +
+        /* Two steps, in order. The key comes first: until an admin's
+           key has been accepted, the deposit here does nothing and says
+           so. The minimum balance is the second activation. */
+        (active
+          ? '<div class="cp-keyed">' + I('check', 16) + 'Step 1 done: copy trading activated</div>'
+          : '<button class="btn btn-fill cp-key" type="button" data-open="copyKey">' +
+              I('lock', 17) + 'Step 1: Activate with key</button>') +
+        (active
+          ? '<button class="btn ' + (ok ? 'btn-ghost' : 'btn-fill') + ' cp-dep" type="button" data-open="deposit">' +
+              I('down', 17) + (ok ? 'Deposit' : 'Step 2: Deposit ' + F.usd(short)) + '</button>'
+          : '<button class="btn btn-ghost cp-dep" type="button" disabled aria-disabled="true">' +
+              I('lock', 17) + 'Step 2: Deposit, after activation</button>') +
       '</section>';
   }
 
@@ -255,12 +260,16 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
                   esc(p.id) + '">' + I('check', 15) + 'Copying · Stop</button>'
               : '<button class="btn btn-fill cp-go" type="button" data-copy-provider="' +
                   esc(p.id) + '">Copy this strategy</button>')
-          : '<button class="btn btn-ghost cp-go" type="button" data-open="copyKey">' +
-              I('lock', 15) + 'Activate with key</button>') +
+          : !API.copy.active()
+            ? '<button class="btn btn-ghost cp-go" type="button" data-open="copyKey">' +
+                I('lock', 15) + 'Activate with key</button>'
+            : '<button class="btn btn-ghost cp-go" type="button" data-open="deposit">' +
+                I('down', 15) + 'Deposit ' + F.usd(MIN_BALANCE) + ' to copy</button>') +
       '</article>';
   }
   function marketplace() {
-    var ok = API.copy.active();
+    /* Both activations: the key, then the minimum balance. */
+    var ok = API.copy.active() && API.account.realAvailable() && realBalance() >= MIN_BALANCE;
     var needle = q.trim().toLowerCase();
     var list = PROVIDERS.filter(function (p) {
       return !needle || p.name.toLowerCase().indexOf(needle) > -1;
@@ -320,6 +329,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       var pick = e.target.closest && e.target.closest('[data-copy-provider]');
       if (!pick) return;
       if (!API.copy.active()) { if (window.NexModal) window.NexModal.open('copyKey'); return; }
+      if (realBalance() < MIN_BALANCE) { if (window.NexModal) window.NexModal.open('deposit'); return; }
       var id = pick.getAttribute('data-copy-provider');
       var p = PROVIDERS.filter(function (x) { return x.id === id; })[0];
       following = id;

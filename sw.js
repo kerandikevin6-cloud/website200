@@ -17,7 +17,7 @@
    It does not need bumping every deploy. The header says revalidate
    now, so from here on a changed file is picked up by asking. This is
    the one-time way out of the year that was already promised. */
-var CACHE = 'nexas-v21';
+var CACHE = 'nexas-v22';
 var SHELL = [
   'landing.html', 'index.html', 'ai.html', 'markets.html', 'positions.html', 'learn.html', 'responsible.html', 'account.html',
   'chat.html', 'history.html', 'copy.html', 'terms.html', 'privacy.html', 'risk.html',
@@ -25,7 +25,7 @@ var SHELL = [
   'assets/css/app.css?v=20260921',
   'assets/js/config.js?v=20260921', 'assets/js/countries.js?v=20260921', 'assets/js/net.js?v=20260921', 'assets/js/format.js?v=20260921', 'assets/js/api.js?v=20260921', 'assets/js/chart.js?v=20260921',
   'assets/js/modals.js?v=20260921', 'assets/js/trade.js?v=20260921', 'assets/js/positions.js?v=20260921',
-  'assets/js/ai.js?v=20260921', 'assets/js/app.js?v=20260921',
+  'assets/js/ai.js?v=20260921', 'assets/js/tour.js?v=20260923', 'assets/js/app.js?v=20260921',
   'assets/mpesa.png', 'assets/cards.png', 'assets/cards-ink.png',
   'assets/share-card.png',
   'assets/favicon.ico', 'assets/favicon-32.png', 'assets/favicon-192.png',

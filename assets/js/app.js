@@ -1455,6 +1455,7 @@
         phoneMasked: out.profile && out.profile.phone_masked,
         phoneSet: !!(out.profile && out.profile.phone_set),
         legalName: (out.profile && out.profile.legal_name) || (out.user && out.user.name),
+        createdAt: out.user && out.user.createdAt,
         displayName: out.profile && out.profile.display_name,
         nameLocked: !!(out.profile && out.profile.name_locked),
         country: out.profile && out.profile.country,
@@ -3086,6 +3087,8 @@
     initChat();
     initMarkets();
     if (window.NexTrade) window.NexTrade.init();
+    /* The first-run tour, once per new account, on the trade screen. */
+    if (window.NexTour) window.NexTour.maybeStart();
     if (window.NexPositions) window.NexPositions.init();
     if (window.NexAI) window.NexAI.init();
     resumeDeposit();
