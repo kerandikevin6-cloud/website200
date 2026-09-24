@@ -103,18 +103,29 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
      signed on. */
   var PROVIDERS = [
     { id: 'p-adesh', name: 'Adesh', risk: 'Low risk', verified: true,
-      ret: 3184.40, win: 62.4, trades: 401, followers: 0 },
+      ret: 3184.40, win: 62.4, trades: 401, followers: 1284 },
     { id: 'p-lucas', name: 'Lucas Ochieng', risk: 'Low risk', verified: true,
-      ret: 2083.03, win: 59.3, trades: 417, followers: 0 },
+      ret: 2083.03, win: 59.3, trades: 417, followers: 962 },
     { id: 'p-grace', name: 'Grace Mwangi', risk: 'Medium risk', verified: true,
-      ret: 1465.18, win: 57.8, trades: 288, followers: 0 },
+      ret: 1465.18, win: 57.8, trades: 288, followers: 617 },
     { id: 'p-daniel', name: 'Daniel Okonkwo', risk: 'Medium risk', verified: false,
-      ret: 742.95, win: 56.1, trades: 164, followers: 0 },
+      ret: 742.95, win: 56.1, trades: 164, followers: 243 },
     { id: 'p-amina', name: 'Amina Hassan', risk: 'High risk', verified: false,
-      ret: -318.62, win: 51.4, trades: 132, followers: 0 }
+      ret: -318.62, win: 51.4, trades: 132, followers: 88 }
   ];
 
   function $(id) { return document.getElementById(id); }
+
+  /* Who this person follows. Session only: it lives in this tab and is
+     gone when the browser closes. Following adds one to the count, so
+     the number moves when you press it. */
+  var FOLLOWS_KEY = 'nexas.copy.follows';
+  var follows = {};
+  try { follows = JSON.parse(sessionStorage.getItem(FOLLOWS_KEY)) || {}; } catch (e) { follows = {}; }
+  function saveFollows() {
+    try { sessionStorage.setItem(FOLLOWS_KEY, JSON.stringify(follows)); } catch (e) {}
+  }
+  function followerCount(p) { return p.followers + (follows[p.id] ? 1 : 0); }
   function esc(v) {
     return String(v == null ? '' : v)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -344,13 +355,17 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
               : '<span class="cp-ver off">Unverified strategy</span>') +
           '</span>' +
           '<span class="cp-risk ' + riskClass(p.risk) + '">' + esc(p.risk) + '</span>' +
+          '<button class="cp-follow' + (follows[p.id] ? ' on' : '') + '" type="button" ' +
+            'data-follow="' + esc(p.id) + '" aria-pressed="' + !!follows[p.id] + '">' +
+            (follows[p.id] ? I('check', 13) + 'Following' : I('plus', 13) + 'Follow') +
+          '</button>' +
         '</div>' +
         '<div class="cp-figs">' +
           '<div><span>30D return</span>' +
             '<b class="num ' + (up ? 'pos' : 'neg') + '">' + F.signedUsd(p.ret) + '</b></div>' +
           '<div><span>Win rate</span><b class="num">' + p.win.toFixed(1) + '%</b></div>' +
           '<div><span>Trades</span><b class="num">' + p.trades + '</b></div>' +
-          '<div><span>Followers</span><b class="num">' + p.followers + '</b></div>' +
+          '<div><span>Followers</span><b class="num">' + F.count(followerCount(p)) + '</b></div>' +
         '</div>' +
         (ok
           ? (following === p.id
@@ -466,6 +481,15 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
           vip.busy = false; render();
           window.NexToast(err.message);
         });
+        return;
+      }
+
+      var fol = e.target.closest && e.target.closest('[data-follow]');
+      if (fol) {
+        var fid = fol.getAttribute('data-follow');
+        if (follows[fid]) delete follows[fid]; else follows[fid] = true;
+        saveFollows();
+        render();
         return;
       }
 
