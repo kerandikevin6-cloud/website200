@@ -1467,7 +1467,10 @@
       }, out.accounts || []);
       paintDemoBadge();
       paintDepositNumber();
-      await syncDeposited();
+      /* Not awaited: the deposit total only matters on the withdrawal
+         screen, which asks for it again itself, and every page load was
+         waiting on this second request before it could carry on. */
+      syncDeposited();
       return out;
     } catch (err) {
       return null;
