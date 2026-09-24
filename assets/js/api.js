@@ -789,8 +789,12 @@
       method: method || 'password',
       at: Date.now()
     };
+    /* Every sign-in lands on the real account, new accounts included.
+       Demo is somewhere you choose to go, not where you are put. */
+    S.account = 'real';
     persist();
     B.emit('session', S.session);
+    B.emit('balance', { balance: balance(), account: S.account });
     return S.session;
   }
   function signOut() {
@@ -948,6 +952,10 @@
          screen is the balance in the database rather than whatever this
          browser last wrote to localStorage. */
       adopt: function (user, accounts) {
+        /* A fresh sign-in (no session held, or somebody else's) opens on
+           the real account, new accounts included. A reload of the same
+           session keeps whichever account was last chosen. */
+        var fresh = !S.session || S.session.id !== user.id;
         S.session = {
           id: user.id,
           email: user.email,
@@ -971,6 +979,7 @@
         S.verified = user.kyc === 'verified';
         S.kycStatus = user.kyc || 'unverified';
         S.demoMode = !!user.demoMode;
+        if (fresh) S.account = 'real';
 
         /* The country on the account beats anything guessed from an IP
            lookup or a timezone, and it is the reason a Kenyan customer
