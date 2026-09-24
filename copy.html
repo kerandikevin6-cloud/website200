@@ -210,25 +210,30 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
     else if (!vip.keys) body = '<p class="cp-note">Loading your key\u2026</p>';
     else body = '<div class="cp-keys">' + unused.map(function (k) {
         return '<div class="cp-keyrow">' +
-          '<b class="num">' + esc(vip.shown ? k.key : masked(k.key)) + '</b>' +
-          '<button class="btn btn-ghost btn-sm" type="button" data-vip-copy="' + esc(k.key) + '">' +
-            I('copy', 14) + 'Copy</button>' +
+          '<span class="cp-keytext num">' + esc(vip.shown ? k.key : masked(k.key)) + '</span>' +
+          '<button class="cp-iconbtn" type="button" data-vip-copy="' + esc(k.key) + '" ' +
+            'aria-label="Copy key" title="Copy key">' + I('copy', 16) + '</button>' +
         '</div>';
       }).join('') + '</div>';
 
     return '<section class="card cp-vip">' +
         '<div class="cp-vip-head">' +
-          '<span class="label">Your copy-trading key</span>' +
+          '<span class="cp-vip-ico">' + I('gift', 18) + '</span>' +
+          '<span class="cp-vip-t">' +
+            '<b>Your copy-trading key</b>' +
+            '<span>VIP' + (vip.activated ? ' · ' + vip.activated + ' activated' : '') + '</span>' +
+          '</span>' +
           (vip.keys && unused.length
             ? '<button class="cp-eye" type="button" data-vip-toggle aria-pressed="' + vip.shown + '">' +
                 (vip.shown ? 'Hide' : 'Show') + '</button>'
             : '') +
         '</div>' +
         body +
-        '<p class="cp-note">Give a key to someone you invite. Each works once' +
-          (vip.activated ? ' \u00b7 ' + vip.activated + ' activated so far' : '') + '.</p>' +
-        '<button class="btn btn-ghost" type="button" data-vip-new' + (vip.busy ? ' disabled' : '') + '>' +
-          I('plus', 16) + 'New key</button>' +
+        '<div class="cp-vip-foot">' +
+          '<span>Share with someone you invite. Each key works once.</span>' +
+          '<button class="cp-newkey" type="button" data-vip-new' + (vip.busy ? ' disabled' : '') + '>' +
+            I('plus', 14) + 'New key</button>' +
+        '</div>' +
       '</section>';
   }
 
@@ -385,7 +390,14 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
         vip.shown = !vip.shown; render(); return;
       }
       var vc = e.target.closest && e.target.closest('[data-vip-copy]');
-      if (vc) { copyKey(vc.getAttribute('data-vip-copy')); return; }
+      if (vc) {
+        copyKey(vc.getAttribute('data-vip-copy'));
+        /* The icon says it worked, for a moment, then goes back. */
+        vc.innerHTML = I('check', 16);
+        vc.classList.add('done-copy');
+        setTimeout(function () { vc.innerHTML = I('copy', 16); vc.classList.remove('done-copy'); }, 1400);
+        return;
+      }
       if (e.target.closest && e.target.closest('[data-vip-new]')) {
         if (vip.busy) return;
         vip.busy = true; render();

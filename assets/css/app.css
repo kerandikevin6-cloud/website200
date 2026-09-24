@@ -1214,19 +1214,52 @@ footer a:hover{color:var(--text-2)}
    becomes a line saying so. */
 .cp-act .btn{width:100%}
 .cp-key,.cp-dep{margin-top:10px}
-/* ---- a VIP's own keys ---- */
-.cp-vip-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+/* ---- a VIP's own keys ----
+   A header with the one control that matters on a shared screen (Show /
+   Hide), each key on one line with an icon to copy it, and a quiet foot
+   with the way to make another. */
+.cp-vip{border-color:var(--accent-soft)}
+.cp-vip-head{display:flex;align-items:center;gap:12px}
+.cp-vip-ico{
+  flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;
+  background:var(--accent-soft);color:var(--accent)
+}
+.cp-vip-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cp-vip-t b{font-size:14.5px;font-weight:600;letter-spacing:-.005em}
+.cp-vip-t span{font-size:12px;color:var(--muted)}
 .cp-eye{
-  height:30px;padding:0 12px;border:1px solid var(--line);border-radius:999px;
+  flex:none;height:30px;padding:0 14px;border:1px solid var(--line);border-radius:999px;
   background:transparent;color:var(--text);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer
 }
-.cp-keys{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.cp-eye:hover{border-color:var(--accent);color:var(--accent)}
+.cp-eye[aria-pressed="true"]{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.cp-keys{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .cp-keyrow{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:var(--accent-soft)
+  display:flex;align-items:center;gap:8px;min-width:0;
+  padding:6px 6px 6px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2,var(--surface))
 }
-.cp-keyrow b{font-size:16px;font-weight:600;letter-spacing:.06em;font-variant-numeric:tabular-nums}
-.cp-vip .btn[data-vip-new]{width:100%}
+.cp-keytext{
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:15px;font-weight:600;letter-spacing:.08em
+}
+.cp-iconbtn{
+  flex:none;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:9px;
+  background:transparent;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease
+}
+.cp-iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.cp-iconbtn.done-copy{background:var(--pos-soft);color:var(--pos)}
+.cp-iconbtn:focus-visible,.cp-eye:focus-visible,.cp-newkey:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cp-vip-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:12px;font-size:12px;color:var(--muted);line-height:1.45
+}
+.cp-newkey{
+  flex:none;display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;
+  border:0;border-radius:8px;background:transparent;color:var(--accent);
+  font:inherit;font-size:12.5px;font-weight:600;cursor:pointer
+}
+.cp-newkey:hover{background:var(--accent-soft)}
+.cp-newkey[disabled]{opacity:.5;cursor:default}
 .cp-dep[disabled]{opacity:.55;cursor:not-allowed}
 .cp-keyed{
   display:flex;align-items:center;justify-content:center;gap:7px;
