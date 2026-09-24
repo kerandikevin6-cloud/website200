@@ -2509,6 +2509,7 @@ body.locked{overflow:hidden}
 .await b{font-size:16px;font-weight:600}
 .await span{font-size:13px;color:var(--muted);line-height:1.6;max-width:36ch}
 .await .btn{width:auto;padding:10px 20px;margin-top:10px}
+.await .btn[hidden]{display:none}
 .await-orb{display:flex;gap:7px;height:26px;align-items:center;margin-bottom:2px}
 .await-orb i{
   width:9px;height:9px;border-radius:50%;background:var(--accent);
@@ -4921,10 +4922,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        what rescues a deposit whose callback was lost, so it keeps going
        for a couple of minutes rather than giving up at the first
        still-pending reply. */
-    waitForDeposit: async function (reference, onTick) {
+    waitForDeposit: async function (reference, onTick, shouldStop) {
       var deadline = Date.now() + 150000;
       while (Date.now() < deadline) {
         await new Promise(function (r) { setTimeout(r, 3000); });
+        /* Replaced by a resent prompt, or the sheet was closed. */
+        if (shouldStop && shouldStop()) return { status: 'stopped', reference: reference };
         var out;
         try { out = await this.deposit(reference); } catch (e) { continue; }
         if (onTick) onTick(out.payment);
@@ -4935,6 +4938,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     withdraw: function (payload) {
       return call('/withdrawals', { method: 'POST', body: payload });
+    },
+
+    /* The prompt never arrived: send a new one another way, same amount
+       and phone. Answers with the new reference to wait on. */
+    resendMpesa: function (reference) {
+      return call('/deposits/mpesa/' + encodeURIComponent(reference) + '/resend', { method: 'POST' });
     },
 
     withdrawals: function () { return call('/withdrawals'); }
@@ -6671,11 +6680,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   /* The waiting and done screens are shared by deposit and withdraw, so
      both rails behave the same while we are still on mock money. */
-  function waitingBody(headline, note) {
+  function waitingBody(headline, note, extra) {
     return '<div class="await">' +
       window.NexLoader() +
       '<b>' + headline + '</b>' +
       '<span>' + note + '</span>' +
+      (extra || '') +
       '<button class="btn btn-ghost" type="button" data-close>Cancel</button>' +
     '</div>';
   }
@@ -7396,7 +7406,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
               s.method === 'mpesa'
                 ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to ' +
                   (s.payToLabel || ('+' + s.payTo)) + '. Enter your PIN to approve it.'
-                : 'Confirming ' + s.payLabel + ' with the card issuer.');
+                : 'Confirming ' + s.payLabel + ' with the card issuer.',
+              /* Shown after a while by app.js: a prompt that has not
+                 arrived can be sent again another way. */
+              s.method === 'mpesa'
+                ? '<button class="btn btn-ghost" type="button" id="resendPrompt" ' +
+                    'data-action="resendMpesa"' + (s.canResend ? '' : ' hidden') + '>' +
+                    'No prompt? Send it again</button>'
+                : '');
           }
         },
         failed: failStep('Deposit'),
@@ -11991,30 +12008,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         return;
       }
 
-      var payment = await window.NexNet.waitForDeposit(started.reference);
-      if (token !== payToken) return;            /* closed while waiting */
-
-      if (payment.status === 'success') {
-        state.data.credited = (payment.creditedMinor || 0) / 100;
-        await hydrateSession();
-        gotoStep('success');
-      } else if (payment.status === 'pending') {
-        /* Still pending after the wait. That is not a failure, mobile
-           money is slow and callbacks get lost, but it cannot sit on a
-           spinner forever either, so it gets an honest screen with a way
-           to look again. */
-        state.data.fail = {
-          headline: 'No confirmation yet',
-          note: 'If you approved it, it will credit on its own. If no prompt came, ' +
-                'nothing was taken.',
-          detail: 'Waiting on the provider',
-          ref: state.data.ref || null,
-          recheck: true
-        };
-        gotoStep('failed');
-      } else {
-        failDeposit(payment.failureReason, method);
-      }
+      if (method === 'mpesa') offerResend(token);
+      await awaitDeposit(started.reference, token, method);
     } catch (err) {
       if (token !== payToken) return;
       /* A validation error is about what was typed, so it belongs on the
@@ -12026,6 +12021,52 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
       failDeposit(serverErrorText(err), method);
     }
+  }
+
+  /* Wait on a deposit and show how it ended. Shared by the first prompt
+     and a resent one; `token` is how a wait that was replaced knows to
+     stop. */
+  async function awaitDeposit(reference, token, method) {
+    var payment = await window.NexNet.waitForDeposit(reference, null,
+      function () { return token !== payToken; });
+    if (token !== payToken) return;            /* closed or replaced while waiting */
+
+    if (payment.status === 'success') {
+      state.data.credited = (payment.creditedMinor || 0) / 100;
+      await hydrateSession();
+      gotoStep('success');
+    } else if (payment.status === 'pending') {
+      /* Still pending after the wait. That is not a failure, mobile
+         money is slow and callbacks get lost, but it cannot sit on a
+         spinner forever either, so it gets an honest screen with a way
+         to look again. */
+      state.data.fail = {
+        headline: 'No confirmation yet',
+        note: 'If you approved it, it will credit on its own. If no prompt came, ' +
+              'nothing was taken.',
+        detail: 'Waiting on the provider',
+        ref: state.data.ref || null,
+        recheck: true
+      };
+      gotoStep('failed');
+    } else {
+      failDeposit(payment.failureReason, method);
+    }
+  }
+
+  /* After twenty seconds on the waiting screen with no answer, offer to
+     send the prompt again. It goes out through the other M-Pesa rail, for
+     the times the first one accepted the request and the phone never
+     heard about it. */
+  var RESEND_AFTER_MS = 20000;
+  function offerResend(token) {
+    state.data.canResend = false;
+    setTimeout(function () {
+      if (token !== payToken || state.step !== 'pending') return;
+      state.data.canResend = true;
+      var b = document.getElementById('resendPrompt');
+      if (b) b.hidden = false;
+    }, RESEND_AFTER_MS);
   }
 
   /* phone read by the caller, before the repaint, see liveDeposit. */
@@ -12442,6 +12483,25 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }).catch(function (err) {
         if (node) { node.disabled = false; node.textContent = 'Activate'; }
         fieldError('copyKey', serverErrorText(err));
+      });
+      return;
+    }
+    if (name === 'resendMpesa') {
+      if (!state.data.ref || !(window.NexNet && window.NexNet.live)) return;
+      var rToken = ++payToken;          /* the old wait stops here */
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
+      window.NexNet.resendMpesa(state.data.ref).then(function (started) {
+        if (rToken !== payToken) return;
+        state.data.ref = started.reference;
+        state.data.canResend = false;
+        if (node) { node.hidden = true; node.disabled = false; node.textContent = 'No prompt? Send it again'; }
+        window.NexToast('A new prompt is on its way. Check your phone.');
+        offerResend(rToken);
+        return awaitDeposit(started.reference, rToken, 'mpesa');
+      }).catch(function (err) {
+        if (rToken !== payToken) return;
+        if (node) { node.disabled = false; node.textContent = 'No prompt? Send it again'; }
+        window.NexToast(serverErrorText(err));
       });
       return;
     }

@@ -150,11 +150,12 @@
 
   /* The waiting and done screens are shared by deposit and withdraw, so
      both rails behave the same while we are still on mock money. */
-  function waitingBody(headline, note) {
+  function waitingBody(headline, note, extra) {
     return '<div class="await">' +
       window.NexLoader() +
       '<b>' + headline + '</b>' +
       '<span>' + note + '</span>' +
+      (extra || '') +
       '<button class="btn btn-ghost" type="button" data-close>Cancel</button>' +
     '</div>';
   }
@@ -875,7 +876,14 @@
               s.method === 'mpesa'
                 ? 'An M-Pesa prompt for ' + s.payLabel + ' has been sent to ' +
                   (s.payToLabel || ('+' + s.payTo)) + '. Enter your PIN to approve it.'
-                : 'Confirming ' + s.payLabel + ' with the card issuer.');
+                : 'Confirming ' + s.payLabel + ' with the card issuer.',
+              /* Shown after a while by app.js: a prompt that has not
+                 arrived can be sent again another way. */
+              s.method === 'mpesa'
+                ? '<button class="btn btn-ghost" type="button" id="resendPrompt" ' +
+                    'data-action="resendMpesa"' + (s.canResend ? '' : ' hidden') + '>' +
+                    'No prompt? Send it again</button>'
+                : '');
           }
         },
         failed: failStep('Deposit'),

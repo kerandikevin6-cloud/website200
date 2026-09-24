@@ -580,10 +580,12 @@
        what rescues a deposit whose callback was lost, so it keeps going
        for a couple of minutes rather than giving up at the first
        still-pending reply. */
-    waitForDeposit: async function (reference, onTick) {
+    waitForDeposit: async function (reference, onTick, shouldStop) {
       var deadline = Date.now() + 150000;
       while (Date.now() < deadline) {
         await new Promise(function (r) { setTimeout(r, 3000); });
+        /* Replaced by a resent prompt, or the sheet was closed. */
+        if (shouldStop && shouldStop()) return { status: 'stopped', reference: reference };
         var out;
         try { out = await this.deposit(reference); } catch (e) { continue; }
         if (onTick) onTick(out.payment);
@@ -594,6 +596,12 @@
 
     withdraw: function (payload) {
       return call('/withdrawals', { method: 'POST', body: payload });
+    },
+
+    /* The prompt never arrived: send a new one another way, same amount
+       and phone. Answers with the new reference to wait on. */
+    resendMpesa: function (reference) {
+      return call('/deposits/mpesa/' + encodeURIComponent(reference) + '/resend', { method: 'POST' });
     },
 
     withdrawals: function () { return call('/withdrawals'); }

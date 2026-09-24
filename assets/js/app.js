@@ -2156,30 +2156,8 @@
         return;
       }
 
-      var payment = await window.NexNet.waitForDeposit(started.reference);
-      if (token !== payToken) return;            /* closed while waiting */
-
-      if (payment.status === 'success') {
-        state.data.credited = (payment.creditedMinor || 0) / 100;
-        await hydrateSession();
-        gotoStep('success');
-      } else if (payment.status === 'pending') {
-        /* Still pending after the wait. That is not a failure, mobile
-           money is slow and callbacks get lost, but it cannot sit on a
-           spinner forever either, so it gets an honest screen with a way
-           to look again. */
-        state.data.fail = {
-          headline: 'No confirmation yet',
-          note: 'If you approved it, it will credit on its own. If no prompt came, ' +
-                'nothing was taken.',
-          detail: 'Waiting on the provider',
-          ref: state.data.ref || null,
-          recheck: true
-        };
-        gotoStep('failed');
-      } else {
-        failDeposit(payment.failureReason, method);
-      }
+      if (method === 'mpesa') offerResend(token);
+      await awaitDeposit(started.reference, token, method);
     } catch (err) {
       if (token !== payToken) return;
       /* A validation error is about what was typed, so it belongs on the
@@ -2191,6 +2169,52 @@
       }
       failDeposit(serverErrorText(err), method);
     }
+  }
+
+  /* Wait on a deposit and show how it ended. Shared by the first prompt
+     and a resent one; `token` is how a wait that was replaced knows to
+     stop. */
+  async function awaitDeposit(reference, token, method) {
+    var payment = await window.NexNet.waitForDeposit(reference, null,
+      function () { return token !== payToken; });
+    if (token !== payToken) return;            /* closed or replaced while waiting */
+
+    if (payment.status === 'success') {
+      state.data.credited = (payment.creditedMinor || 0) / 100;
+      await hydrateSession();
+      gotoStep('success');
+    } else if (payment.status === 'pending') {
+      /* Still pending after the wait. That is not a failure, mobile
+         money is slow and callbacks get lost, but it cannot sit on a
+         spinner forever either, so it gets an honest screen with a way
+         to look again. */
+      state.data.fail = {
+        headline: 'No confirmation yet',
+        note: 'If you approved it, it will credit on its own. If no prompt came, ' +
+              'nothing was taken.',
+        detail: 'Waiting on the provider',
+        ref: state.data.ref || null,
+        recheck: true
+      };
+      gotoStep('failed');
+    } else {
+      failDeposit(payment.failureReason, method);
+    }
+  }
+
+  /* After twenty seconds on the waiting screen with no answer, offer to
+     send the prompt again. It goes out through the other M-Pesa rail, for
+     the times the first one accepted the request and the phone never
+     heard about it. */
+  var RESEND_AFTER_MS = 20000;
+  function offerResend(token) {
+    state.data.canResend = false;
+    setTimeout(function () {
+      if (token !== payToken || state.step !== 'pending') return;
+      state.data.canResend = true;
+      var b = document.getElementById('resendPrompt');
+      if (b) b.hidden = false;
+    }, RESEND_AFTER_MS);
   }
 
   /* phone read by the caller, before the repaint, see liveDeposit. */
@@ -2607,6 +2631,25 @@
       }).catch(function (err) {
         if (node) { node.disabled = false; node.textContent = 'Activate'; }
         fieldError('copyKey', serverErrorText(err));
+      });
+      return;
+    }
+    if (name === 'resendMpesa') {
+      if (!state.data.ref || !(window.NexNet && window.NexNet.live)) return;
+      var rToken = ++payToken;          /* the old wait stops here */
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Sending'; }
+      window.NexNet.resendMpesa(state.data.ref).then(function (started) {
+        if (rToken !== payToken) return;
+        state.data.ref = started.reference;
+        state.data.canResend = false;
+        if (node) { node.hidden = true; node.disabled = false; node.textContent = 'No prompt? Send it again'; }
+        window.NexToast('A new prompt is on its way. Check your phone.');
+        offerResend(rToken);
+        return awaitDeposit(started.reference, rToken, 'mpesa');
+      }).catch(function (err) {
+        if (rToken !== payToken) return;
+        if (node) { node.disabled = false; node.textContent = 'No prompt? Send it again'; }
+        window.NexToast(serverErrorText(err));
       });
       return;
     }
