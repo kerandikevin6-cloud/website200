@@ -1214,6 +1214,19 @@ footer a:hover{color:var(--text-2)}
    becomes a line saying so. */
 .cp-act .btn{width:100%}
 .cp-key,.cp-dep{margin-top:10px}
+/* ---- a VIP's own keys ---- */
+.cp-vip-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cp-eye{
+  height:30px;padding:0 12px;border:1px solid var(--line);border-radius:999px;
+  background:transparent;color:var(--text);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer
+}
+.cp-keys{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.cp-keyrow{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:var(--accent-soft)
+}
+.cp-keyrow b{font-size:16px;font-weight:600;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.cp-vip .btn[data-vip-new]{width:100%}
 .cp-dep[disabled]{opacity:.55;cursor:not-allowed}
 .cp-keyed{
   display:flex;align-items:center;justify-content:center;gap:7px;
@@ -3701,9 +3714,9 @@ html[data-oauth]::after{
 .tour-title{margin:0 0 6px;font-size:17px;font-weight:600;letter-spacing:-.01em}
 .tour-body{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted)}
 .tour-dots{display:flex;gap:5px;margin:14px 0 12px}
-.tour-dots i{height:4px;flex:1;border-radius:2px;background:var(--line);transition:background .2s ease}
-.tour-dots i.done{background:var(--accent-soft)}
-.tour-dots i.on{background:var(--accent-fill)}
+.tour-dot{display:block;height:4px;flex:1 1 0;min-width:0;padding:0;margin:0;border-radius:2px;background:var(--line);transition:background .2s ease}
+.tour-dot.is-done{background:var(--accent-soft)}
+.tour-dot.is-on{background:var(--accent-fill)}
 .tour-btns{display:flex;align-items:center;gap:8px}
 .tour-btns button{
   height:38px;padding:0 14px;border-radius:10px;font:inherit;font-size:13.5px;

@@ -1014,6 +1014,8 @@
           /* When the account was made, so the first-run tour can tell a
              new account from an old one on a new device. */
           createdAt: user.createdAt || (S.session && S.session.id === user.id && S.session.createdAt) || null,
+          /* standard | vip. VIPs get copy-trading keys to hand out. */
+          tier: user.tier || 'standard',
           method: 'server',
           at: Date.now()
         };

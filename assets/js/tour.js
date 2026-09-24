@@ -158,7 +158,8 @@
     el.querySelector('.tour-title').textContent = step.title;
     el.querySelector('.tour-body').textContent = step.body;
     el.querySelector('.tour-dots').innerHTML = STEPS.map(function (_, k) {
-      return '<i class="' + (k === i ? 'on' : k < i ? 'done' : '') + '"></i>';
+      /* Own class names: the page already styles .done and .on. */
+      return '<i class="tour-dot' + (k === i ? ' is-on' : k < i ? ' is-done' : '') + '"></i>';
     }).join('');
     el.querySelector('.tour-back').hidden = i === 0;
     el.querySelector('.tour-skip').hidden = !!step.last;

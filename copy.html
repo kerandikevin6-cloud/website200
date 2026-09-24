@@ -47,10 +47,9 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       <!-- No h1: the top bar already says Copy trading, and a page that
            says its own name twice reads as a template nobody finished. -->
       <div class="page-head">
-        <span class="label">Social investing</span>
+        <span class="label">Copy trading</span>
         <h2 class="cp-lede">Copy confident traders.</h2>
-        <p>Follow a strategy you trust. Every new eligible trade is mirrored
-           from your real balance while you stay in control.</p>
+        <p>Pick a strategy and its trades are mirrored on your real balance.</p>
       </div>
 
       <!-- Activation, the provider requirements and the marketplace are
@@ -163,21 +162,18 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
     var short = Math.max(0, MIN_BALANCE - bal);
 
     return '<section class="card cp-act' + (ok ? ' ok' : '') + '">' +
-        '<span class="label">Copy-trading activation</span>' +
+        '<span class="label">Activation</span>' +
         '<div class="cp-bal num">' + F.usd(bal) + '</div>' +
         '<div class="cp-min">' +
-          '<span>Minimum account balance required</span>' +
+          '<span>Minimum balance</span>' +
           '<b class="num">' + F.usd(MIN_BALANCE) + '</b>' +
         '</div>' +
         '<div class="cp-bar"><i style="width:' +
           Math.round(Math.min(1, bal / MIN_BALANCE) * 100) + '%"></i></div>' +
-        (ok
-          ? '<p class="cp-note">Your real balance covers the minimum. Choosing a ' +
-              'provider deducts the one-time ' + F.usd(ACTIVATION) + ' activation fee.</p>'
-          : '<p class="cp-note">You need at least ' + F.usd(MIN_BALANCE) + ' in your real ' +
-              'account to copy a strategy, which is ' + F.usd(short) + ' from here. When you ' +
-              'select a provider, a one-time ' + F.usd(ACTIVATION) +
-              ' activation fee is deducted.</p>') +
+        '<p class="cp-note">' + (!active
+            ? 'Activate with your key, then fund the minimum.'
+            : ok ? 'Ready. A one-time ' + F.usd(ACTIVATION) + ' fee applies when you pick a trader.'
+            : F.usd(short) + ' to go.') + '</p>' +
         /* Two steps, in order. The key comes first: until an admin's
            key has been accepted, the deposit here does nothing and says
            so. The minimum balance is the second activation. */
@@ -191,6 +187,73 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
           : '<button class="btn btn-ghost cp-dep" type="button" disabled aria-disabled="true">' +
               I('lock', 17) + 'Step 2: Deposit, after activation</button>') +
       '</section>';
+  }
+
+  /* ---------- a VIP's own keys ----------
+     VIP accounts hand out copy-trading keys. The card comes first for
+     them, and the keys start hidden: this page is the kind that ends up
+     on a shared screen, and a key on show is a key anyone watching can
+     spend. */
+  var vip = { keys: null, activated: 0, shown: false, error: null, busy: false };
+
+  function isVip() {
+    var s = API.session.get() || {};
+    return s.tier === 'vip';
+  }
+  function masked(k) { return k.replace(/[A-Z0-9]/g, '\u2022'); }
+
+  function vipCard() {
+    if (!isVip()) return '';
+    var unused = (vip.keys || []).filter(function (k) { return k.status === 'unused'; });
+    var body;
+    if (vip.error) body = '<p class="cp-note">' + esc(vip.error) + '</p>';
+    else if (!vip.keys) body = '<p class="cp-note">Loading your key\u2026</p>';
+    else body = '<div class="cp-keys">' + unused.map(function (k) {
+        return '<div class="cp-keyrow">' +
+          '<b class="num">' + esc(vip.shown ? k.key : masked(k.key)) + '</b>' +
+          '<button class="btn btn-ghost btn-sm" type="button" data-vip-copy="' + esc(k.key) + '">' +
+            I('copy', 14) + 'Copy</button>' +
+        '</div>';
+      }).join('') + '</div>';
+
+    return '<section class="card cp-vip">' +
+        '<div class="cp-vip-head">' +
+          '<span class="label">Your copy-trading key</span>' +
+          (vip.keys && unused.length
+            ? '<button class="cp-eye" type="button" data-vip-toggle aria-pressed="' + vip.shown + '">' +
+                (vip.shown ? 'Hide' : 'Show') + '</button>'
+            : '') +
+        '</div>' +
+        body +
+        '<p class="cp-note">Give a key to someone you invite. Each works once' +
+          (vip.activated ? ' \u00b7 ' + vip.activated + ' activated so far' : '') + '.</p>' +
+        '<button class="btn btn-ghost" type="button" data-vip-new' + (vip.busy ? ' disabled' : '') + '>' +
+          I('plus', 16) + 'New key</button>' +
+      '</section>';
+  }
+
+  function loadVip() {
+    if (!isVip() || !(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
+    if (vip.loading) return;
+    vip.loading = true;
+    window.NexNet.myCopyKeys().then(function (out) {
+      vip.loading = false;
+      vip.keys = out.keys || [];
+      vip.activated = out.activated || 0;
+      vip.error = null;
+      render();
+    }).catch(function (err) {
+      vip.loading = false;
+      vip.error = err.message;
+      render();
+    });
+  }
+
+  function copyKey(text) {
+    function done() { window.NexToast('Key copied'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { window.NexToast(text); });
+    } else { window.NexToast(text); }
   }
 
   /* ---------- being copied, rather than copying ----------
@@ -302,7 +365,7 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
     var focused = box === document.activeElement;
     var caret = focused ? box.selectionStart : 0;
 
-    root.innerHTML = activation() + provider() + marketplace();
+    root.innerHTML = vipCard() + activation() + provider() + marketplace();
 
     if (focused) {
       var next = $('cpSearch');
@@ -318,6 +381,27 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       if (e.target && e.target.id === 'cpSearch') { q = e.target.value; render(); }
     });
     root.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-vip-toggle]')) {
+        vip.shown = !vip.shown; render(); return;
+      }
+      var vc = e.target.closest && e.target.closest('[data-vip-copy]');
+      if (vc) { copyKey(vc.getAttribute('data-vip-copy')); return; }
+      if (e.target.closest && e.target.closest('[data-vip-new]')) {
+        if (vip.busy) return;
+        vip.busy = true; render();
+        window.NexNet.makeCopyKey().then(function (out) {
+          vip.keys = out.keys || vip.keys;
+          vip.activated = out.activated || vip.activated;
+          vip.busy = false;
+          render();
+          window.NexToast('New key ready');
+        }).catch(function (err) {
+          vip.busy = false; render();
+          window.NexToast(err.message);
+        });
+        return;
+      }
+
       var stop = e.target.closest && e.target.closest('[data-copy-stop]');
       if (stop) {
         following = null;
@@ -353,6 +437,8 @@ document.documentElement.setAttribute('data-oauth','');}catch(e){}</script>
       API.on('balance', render);
       API.on('contracts', render);
       API.on('copy', render);
+      API.on('session', function () { if (isVip() && !vip.keys) loadVip(); render(); });
+      loadVip();
     });
   }
 
