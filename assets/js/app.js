@@ -3089,22 +3089,13 @@
      is labelled is a demonstration; the same win unlabelled is a claim
      about how the product performs, and this is the line between the
      two. It is not dismissible for that reason. */
+  /* The demo marker is not shown on the site. Whether an account is in
+     VIP demo is for staff, and the console says so beside the VIP badge;
+     on the site the label widened the top bar past the screen on phones.
+     This only clears one left over from an earlier build. */
   function paintDemoBadge() {
-    var on = API.account.demoMode && API.account.demoMode();
     var el = document.getElementById('demoBadge');
-
-    if (!on) { if (el) el.remove(); return; }
-    if (el) return;
-
-    var bar = document.querySelector('.topbar');
-    if (!bar) return;
-
-    el = document.createElement('span');
-    el.id = 'demoBadge';
-    el.className = 'demo-badge';
-    el.setAttribute('role', 'status');
-    el.textContent = 'VIP DEMO';
-    bar.appendChild(el);
+    if (el) el.remove();
   }
 
   /* ---------- coming back from Google ----------

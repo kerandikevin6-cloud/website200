@@ -3831,6 +3831,21 @@ html[data-oauth]::after{
 :root[data-theme="light"] .quick button{background:var(--surface);border-color:var(--line);color:var(--text)}
 :root[data-theme="light"] .quick button:hover{border-color:var(--accent-fill);color:var(--accent)}
 
+/* ---- no accidental zoom on phones ----
+   Two taps in quick succession on a button (the stake steps, the trade
+   buttons) made the browser double-tap zoom, and a zoomed page scrolls
+   sideways, which reads as the bottom bar and the trade buttons coming
+   loose. manipulation turns double-tap zoom off and leaves pinch zoom
+   alone, so anybody who needs the text larger can still have it.
+
+   iPhones also zoom in on any field under 16px the moment it is tapped:
+   the target, stop and multiple boxes are 14.5px and the forms 12.5px.
+   On touch screens they are 16px. */
+html{touch-action:manipulation;overflow-x:clip}
+@media (pointer:coarse){
+  .tgt-v input,.input,.input.sm,textarea,select{font-size:16px}
+}
+
 </style>
 
 <div class="app" id="app"></div>
@@ -13272,22 +13287,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      is labelled is a demonstration; the same win unlabelled is a claim
      about how the product performs, and this is the line between the
      two. It is not dismissible for that reason. */
+  /* The demo marker is not shown on the site. Whether an account is in
+     VIP demo is for staff, and the console says so beside the VIP badge;
+     on the site the label widened the top bar past the screen on phones.
+     This only clears one left over from an earlier build. */
   function paintDemoBadge() {
-    var on = API.account.demoMode && API.account.demoMode();
     var el = document.getElementById('demoBadge');
-
-    if (!on) { if (el) el.remove(); return; }
-    if (el) return;
-
-    var bar = document.querySelector('.topbar');
-    if (!bar) return;
-
-    el = document.createElement('span');
-    el.id = 'demoBadge';
-    el.className = 'demo-badge';
-    el.setAttribute('role', 'status');
-    el.textContent = 'VIP DEMO';
-    bar.appendChild(el);
+    if (el) el.remove();
   }
 
   /* ---------- coming back from Google ----------

@@ -3825,3 +3825,18 @@ html[data-oauth]::after{
 :root[data-theme="light"] .stake{background:var(--surface)}
 :root[data-theme="light"] .quick button{background:var(--surface);border-color:var(--line);color:var(--text)}
 :root[data-theme="light"] .quick button:hover{border-color:var(--accent-fill);color:var(--accent)}
+
+/* ---- no accidental zoom on phones ----
+   Two taps in quick succession on a button (the stake steps, the trade
+   buttons) made the browser double-tap zoom, and a zoomed page scrolls
+   sideways, which reads as the bottom bar and the trade buttons coming
+   loose. manipulation turns double-tap zoom off and leaves pinch zoom
+   alone, so anybody who needs the text larger can still have it.
+
+   iPhones also zoom in on any field under 16px the moment it is tapped:
+   the target, stop and multiple boxes are 14.5px and the forms 12.5px.
+   On touch screens they are 16px. */
+html{touch-action:manipulation;overflow-x:clip}
+@media (pointer:coarse){
+  .tgt-v input,.input,.input.sm,textarea,select{font-size:16px}
+}
