@@ -531,6 +531,11 @@
       return out.run;
     },
 
+    /* Deletes the account and everything in it. */
+    deleteAccount: function (body) {
+      return call('/auth/account/delete', { method: 'POST', body: body });
+    },
+
     /* A VIP's own copy-trading keys, and a new one on demand. */
     myCopyKeys: function () { return call('/copy/keys'); },
     makeCopyKey: function () { return call('/copy/keys', { method: 'POST' }); },

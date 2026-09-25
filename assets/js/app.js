@@ -1458,6 +1458,7 @@
         phoneSet: !!(out.profile && out.profile.phone_set),
         legalName: (out.profile && out.profile.legal_name) || (out.user && out.user.name),
         createdAt: out.user && out.user.createdAt,
+        provider: out.user && out.user.provider,
         displayName: out.profile && out.profile.display_name,
         nameLocked: !!(out.profile && out.profile.name_locked),
         country: out.profile && out.profile.country,
@@ -2649,6 +2650,35 @@
       }).catch(function (err) {
         if (node) { node.disabled = false; node.textContent = 'Submit all for review'; }
         window.NexToast(err.message);
+      });
+      return;
+    }
+    if (name === 'deleteAccount') {
+      clearErrors();
+      var confirmBox = document.getElementById('delConfirm');
+      var pwBox = document.getElementById('delPassword');
+      var typed = ((confirmBox || {}).value || '').trim();
+      if (typed !== 'DELETE') return fieldError('delConfirm', 'Type DELETE to confirm');
+      if (pwBox && !pwBox.value) return fieldError('delPassword', 'Enter your password');
+      if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) {
+        return fieldError('delConfirm', 'Sign in again, then try once more');
+      }
+
+      if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Deleting'; }
+      window.NexNet.deleteAccount({
+        confirm: 'DELETE',
+        password: pwBox ? pwBox.value : undefined
+      }).then(function () {
+        /* Gone on the server; forget it here too. */
+        try { window.NexNet.setTokens(null); } catch (e) {}
+        API.session.signOut();
+        try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+        closeModals();
+        splash('Your account has been deleted', 'landing');
+      }).catch(function (err) {
+        if (node) { node.disabled = false; node.textContent = 'Delete my account'; }
+        if (err.fields && err.fields.password) return fieldError('delPassword', err.message);
+        fieldError('delConfirm', serverErrorText(err));
       });
       return;
     }

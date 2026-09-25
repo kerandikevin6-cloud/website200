@@ -960,7 +960,9 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--text)}
 .btn-ghost:hover{background:var(--surface-2)}
 .btn-pos{background:var(--pos);color:#fff}
-.btn-neg{background:var(--neg);color:#fff}
+.btn-neg,.btn-danger{background:var(--neg);color:#fff}
+.btn-danger:hover{background:var(--neg-deep)}
+.btn-danger[disabled]{opacity:.6}
 
 .auth{
   min-height:100dvh;display:flex;flex-direction:column;justify-content:center;

@@ -1045,6 +1045,8 @@
           createdAt: user.createdAt || (S.session && S.session.id === user.id && S.session.createdAt) || null,
           /* standard | vip. VIPs get copy-trading keys to hand out. */
           tier: user.tier || 'standard',
+          /* email | google: whether deleting the account asks for a password. */
+          provider: user.provider || (S.session && S.session.id === user.id && S.session.provider) || 'email',
           method: 'server',
           at: Date.now()
         };

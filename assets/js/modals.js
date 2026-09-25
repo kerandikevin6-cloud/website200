@@ -578,6 +578,41 @@
     },
 
     /* ---------------- password ---------------- */
+    /* ---------------- delete the account ----------------
+       Said plainly, once, before anything happens: what goes, that it
+       cannot be undone, and what has to be settled first. */
+    deleteAccount: {
+      steps: {
+        main: {
+          title: 'Delete account',
+          sub: 'This removes your account and everything in it. It cannot be undone.',
+          body: function () {
+            var s = API().session.get() || {};
+            var real = (API().account.balances() || {}).real || 0;
+            var needsPassword = (s.provider || 'email') === 'email';
+            return '<div class="modal-form">' +
+              '<div class="notice">' + I('alert', 17) +
+                '<span>Your balances, trade history, deposits, withdrawals and verification ' +
+                'documents are deleted for good.</span></div>' +
+              (real > 0
+                ? '<div class="notice">' + I('alert', 17) +
+                    '<span>You have ' + F().money(real) + ' in your real account. ' +
+                    'Withdraw it first; an account with money in it cannot be deleted.</span></div>'
+                : '') +
+              (needsPassword
+                ? '<div class="field"><label for="delPassword">Password</label>' +
+                    '<input class="input" id="delPassword" type="password" autocomplete="current-password"></div>'
+                : '') +
+              field('delConfirm', 'Type DELETE to confirm',
+                'autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE"') +
+              '<button class="btn btn-danger" type="button" data-action="deleteAccount">Delete my account</button>' +
+              '<button class="btn btn-ghost" type="button" data-close>Keep my account</button>' +
+            '</div>';
+          }
+        }
+      }
+    },
+
     password: {
       steps: {
         form: {
