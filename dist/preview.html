@@ -5401,7 +5401,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      sitting in somebody's localStorage and a stale one is worse than a
      new one: a saved runs:10 would keep a run going for the best part
      of a minute on a build where nothing else can. */
-  var AUTO_V = 3;
+  var AUTO_V = 4;
   function AUTO_DEFAULTS() {
     /* One contract. A run of ten at five seconds each is fifty seconds
        of watching a button, and nothing about the outcome is clearer at
@@ -5409,7 +5409,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        and press again if you want another. The multiplier and the two
        targets stay: they are what a longer run would stop on, and the
        number of contracts is the one thing nobody should have to set. */
-    return { multiplier: 2, takeProfit: 200, stopLoss: 999 };
+    /* No stake multiplier: every contract in a run is staked the same.
+       Doubling after a loss made runs long and swung the balance by
+       tens of dollars mid-run. */
+    return { multiplier: 1, takeProfit: 200, stopLoss: 999 };
   }
   var S = {
     geo: saved.geo || null,
@@ -5429,6 +5432,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        through sign-out, so the same person signing back in keeps theirs,
        and anybody else starts clean. */
     owner: saved.owner || null,
+    /* Automated runs, one record each, so Positions can show a run as the
+       one trade it is. A run still marked running from an earlier visit
+       ended when that page did. */
+    runs: (saved.runs || []).map(function (r) {
+      return r.status === 'running' ? Object.assign({}, r, { status: 'stopped', endedAt: r.endedAt || r.startedAt }) : r;
+    }),
     /* The stake last chosen on the terminal, in USD. Kept here so a trip
        to the scanner and back does not reset it to the default. */
     stake: (+saved.stake > 0) ? +saved.stake : null,
@@ -5468,7 +5477,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        `autoV` carries the change into browsers that already hold the old
        pair, otherwise the new default would only ever be seen by someone
        opening the app for the first time. */
-    auto: (saved.autoV === AUTO_V && saved.auto) || AUTO_DEFAULTS(),
+    /* Settings saved under the previous version keep their own target
+       and stop; only the multiplier is dropped. */
+    auto: (saved.autoV === AUTO_V && saved.auto) ||
+      (saved.auto && saved.autoV === 3
+        ? Object.assign(AUTO_DEFAULTS(), {
+            takeProfit: +saved.auto.takeProfit || AUTO_DEFAULTS().takeProfit,
+            stopLoss: +saved.auto.stopLoss || AUTO_DEFAULTS().stopLoss
+          })
+        : AUTO_DEFAULTS()),
     autoV: AUTO_V
   };
   var saveTimer;
@@ -5476,7 +5493,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     try {
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
-        ticket: S.ticket, stake: S.stake, owner: S.owner,
+        ticket: S.ticket, stake: S.stake, owner: S.owner, runs: S.runs.slice(0, 100),
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
@@ -5647,6 +5664,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      has no business being persisted in a browser anyway, so they live for
      the session only. */
   var docs = {};
+
+  /* The balance the top bar holds at while a run is going. Not saved:
+     a run does not survive a reload, so neither does this. */
+  var hold = null;
 
   /* ---------- money ---------- */
   function balance() { return S.balances[S.account]; }
@@ -5962,6 +5983,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       currency: function () { return display().cur; },
       baseCurrency: function () { return S.currency; },
       balances: function () { return S.balances; },
+      /* What the top bar shows. While an automated run is going it stays
+         at the balance the run started from, and moves once, when the run
+         ends. The real balance underneath still moves contract by
+         contract, and is what every stake is checked against. */
+      displayBalance: function () { return hold != null ? hold : balance(); },
+      hold: function (v) { hold = v; B.emit('balance', { balance: balance(), account: S.account }); },
+      release: function () { hold = null; B.emit('balance', { balance: balance(), account: S.account }); },
       /* Returns false when the switch was refused, so the caller can
          send the visitor to sign up instead of reporting success. */
       use: function (kind) {
@@ -6035,6 +6063,28 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
     transactions: { list: function () { return S.transactions.slice(); } },
 
+    runs: {
+      all: function () { return S.runs.slice(); },
+      get: function (id) { return S.runs.filter(function (r) { return r.id === id; })[0] || null; },
+      active: function () { return S.runs.filter(function (r) { return r.status === 'running'; })[0] || null; },
+      start: function (rec) {
+        S.runs.unshift(Object.assign({ status: 'running', done: 0, wins: 0, losses: 0, pnl: 0 }, rec));
+        persist();
+        B.emit('contracts', { reason: 'run' });
+      },
+      update: function (id, patch) {
+        S.runs.forEach(function (r) { if (r.id === id) Object.assign(r, patch); });
+        persist();
+        B.emit('contracts', { reason: 'run' });
+      },
+      /* The server hands a run its own id once it is opened there; the
+         record follows it. */
+      rename: function (from, to) {
+        S.runs.forEach(function (r) { if (r.id === from) r.id = to; });
+        persist();
+      }
+    },
+
     geo: {
       countries: COUNTRIES,
       code: countryCode,
@@ -6103,6 +6153,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (S.owner && S.owner !== user.id) {
           S.contracts = [];
           S.transactions = [];
+          S.runs = [];
           S.balances = { real: 0, demo: DEMO_SEED_USD };
           S.deposited = 0;
           S.copyActive = false;
@@ -7010,13 +7061,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           body: function () {
             var a = API().prefs.auto();
             return '<div class="modal-form">' +
-              field('autoMult', 'Stake × on loss', 'value="' + a.multiplier + '" inputmode="decimal"') +
               '<div class="pair">' +
                 field('autoTP', 'Take profit', 'value="' + a.takeProfit + '" inputmode="decimal"') +
                 field('autoSL', 'Stop loss', 'value="' + a.stopLoss + '" inputmode="decimal"') +
               '</div>' +
               '<div class="notice">' + I('shield', 17) +
-                '<span>Doubling stake after a loss grows exposure fast: six losses at ×2 stakes 63 times your opening amount.</span></div>' +
+                '<span>Every contract in a run uses the same stake. Your balance changes once, when the run ends.</span></div>' +
               act('Save settings', 'saveAuto') +
             '</div>';
           }
@@ -7564,9 +7614,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           noBack: true,
           body: function (s) {
             var r = s.run || {};
-            var w = r.tickWins || 0;
-            var l = r.tickLosses || 0;
-            var ticks = w + l;
+            /* Contracts, not ticks. Counting every tick inside every
+               contract turned a run of eight into "70 trades" with more
+               losses than wins, on a run that reached its target. */
+            var w = r.wins || 0;
+            var l = r.losses || 0;
+            var ticks = r.done || (w + l);
             var rate = ticks ? (w / ticks * 100) : 0;
 
             return heroBody({
@@ -8146,7 +8199,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return '<div class="targets">' +
       targetCell('tgtTP', 'Target profit', '$', auto.takeProfit, 'pos') +
       targetCell('tgtSL', 'Stop loss', '$', auto.stopLoss, 'neg') +
-      targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier, 'warn') +
     '</div>';
   }
 
@@ -8458,13 +8510,16 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        what it is worth right now. It climbs on a tick that lands the
        right way and falls on one that does not — the same figure the
        trade button is showing, said loudly enough to notice. */
+    /* Inside a run, the figure is the run's: what it has made so far plus
+       what the open contract is worth now. Each tick used to be called
+       "Trade won" or "Trade lost" with that one contract's value, which
+       read as dozens of separate trades winning and losing when it was
+       one run moving. */
     var pnl = mine.value - mine.stake;
-    var good = API.contracts.favours(mine, d.point.digit);
-    /* No count on it. An automated run has no fixed length, so "4 of 10"
-       promised an ending that was not coming; the totals are on the card
-       when the run ends. */
-    window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl),
-      good ? 'Trade won' : 'Trade lost', mine.symbolName || '');
+    if (S.run && mine.run === S.run.id) pnl = S.run.pnl + pnl;
+    var up = pnl >= 0;
+    window.NexTick(up ? 'win' : 'loss', F.signedUsd(pnl),
+      S.run ? 'Run P/L' : 'Trade P/L', mine.symbolName || '');
   }
 
   /* ---------- how long a contract runs ----------
@@ -8487,7 +8542,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   /* The pause between one automated contract settling and the next being
      placed. */
-  var RUN_GAP_MS = 2200;
+  var RUN_GAP_MS = 1500;
 
   function ticksFor(symbol) {
     var meta = API.symbol(symbol) || {};
@@ -8543,13 +8598,26 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   function startRun(side) {
     var cfg = API.prefs.auto();
+    /* Every contract in a run is staked the same. There is no multiplier
+       any more: doubling after each loss is what made runs long and put
+       -$20 and -$40 contracts in the middle of a $5 run. */
     var r = S.run = {
       id: 'R' + Date.now(), side: side, done: 0, wins: 0, losses: 0, pnl: 0,
-      ticks: 0, tickWins: 0, tickLosses: 0,
-      base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
+      base: S.stake, stake: S.stake, multiplier: 1,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss,
       serverId: null
     };
+
+    /* A run is one trade to the person running it: the balance on screen
+       stays where it started and moves once, when the run ends. */
+    API.account.hold(API.account.displayBalance());
+    var sideLabel = (sidesFor().filter(function (sd) { return sd[0] === side; })[0] || [side, side])[1];
+    API.runs.start({
+      id: r.id, side: side, label: sideLabel, type: typeFor(side), tab: S.tab,
+      symbol: S.symbol, symbolName: (API.symbol(S.symbol) || {}).name || S.symbol,
+      stake: r.base, takeProfit: r.takeProfit, stopLoss: r.stopLoss,
+      account: API.account.kind(), startedAt: Date.now()
+    });
     renderPanel();
     renderDock();
 
@@ -8563,7 +8631,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       baseStakeMinor: Math.round(r.base * 100)
     }).then(function (run) {
       if (S.run !== r) return;              /* stopped while it was opening */
-      if (run && run.id) { r.serverId = run.id; r.id = run.id; }
+      if (run && run.id) {
+        API.runs.rename(r.id, run.id);
+        r.serverId = run.id; r.id = run.id;
+      }
       place(side, r.id);
     }).catch(function () {
       /* The rules still hold without the server; they are just applied
@@ -8583,6 +8654,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (r.serverId && r.endKind === 'stopped' && live()) {
       window.NexNet.stopRun(r.serverId).catch(function () {});
     }
+    API.runs.update(r.id, {
+      status: r.endKind, endedAt: Date.now(),
+      done: r.done, wins: r.wins, losses: r.losses, pnl: r.pnl
+    });
+    /* The run is over: the balance on screen catches up in one move. */
+    API.account.release();
     renderPanel();
     renderDock();
     if (!reason) return;
@@ -8608,7 +8685,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (!window.NexModal) return;
     window.NexModal.open('runResult', null, { run: {
       done: 1, pnl: c.profit, endKind: 'single',
-      tickWins: c.tickWins || 0, tickLosses: c.tickLosses || 0
+      wins: c.profit >= 0 ? 1 : 0, losses: c.profit >= 0 ? 0 : 1
     } });
   }
 
@@ -8646,13 +8723,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        contract sold early is neither a clean win nor a clean loss — it
        is whichever side of zero it came out on. */
     if (c.profit >= 0) r.wins++; else r.losses++;
-    /* and the ticks inside them, which is what the card reports */
-    r.ticks += c.elapsed || c.ticks || 0;
-    r.tickWins += c.tickWins || 0;
-    r.tickLosses += c.tickLosses || 0;
     r.pnl = Math.round((r.pnl + c.profit) * 100) / 100;
-    r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
-    S.stake = r.stake;
+    API.runs.update(r.id, { done: r.done, wins: r.wins, losses: r.losses, pnl: r.pnl });
 
     /* The server's verdict when there is a server, the same rules here
        when there is not. */
@@ -8681,10 +8753,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        placed, usually because the balance no longer covers it. */
     if (!check()) { soundResult(c); return stopRun('Run stopped: ' + S.error, 'stopped'); }
 
-    flashResult(c);
+    /* No banner between contracts. A run is one trade: its running P/L
+       is on the button and on the tick pop-ups, and its result is the
+       card at the end. A red "Contract Lost -$5" every few seconds read
+       as money leaving the account mid-trade. */
     renderAll();
-    /* A breath between contracts, so the won/lost banner is read before
-       the next contract's pop-ups start. 700ms had them on top of it. */
     setTimeout(function () { if (S.run === r) place(r.side, r.id); }, RUN_GAP_MS);
   }
 
@@ -8815,7 +8888,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
       if (id === 'tgtTP') API.prefs.setAuto({ takeProfit: Math.max(0, +e.target.value || 0) });
       else if (id === 'tgtSL') API.prefs.setAuto({ stopLoss: Math.max(0, +e.target.value || 0) });
-      else if (id === 'tgtMult') API.prefs.setAuto({ multiplier: Math.max(1, +e.target.value || 1) });
     });
     root.addEventListener('blur', function (e) {
       var id = e.target.id;
@@ -8979,6 +9051,74 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return API.transactions.list().filter(function (t) { return within(t.t); });
   }
 
+  /* ---------- runs ----------
+     An automated run is one trade to the person who started it, so it is
+     listed as one: open while it runs, one row in the history when it
+     ends. Its contracts are inside it, on the detail sheet. Contracts
+     not in a run are listed on their own, as they always were. */
+  function contractsOf(runId) {
+    return API.contracts.all().filter(function (c) { return c.run === runId; });
+  }
+  function runSummary(r) {
+    var cs = contractsOf(r.id);
+    var settled = cs.filter(function (c) { return c.status !== 'open'; });
+    var open = cs.filter(function (c) { return c.status === 'open'; })[0];
+    var pnl = settled.reduce(function (a, c) { return a + (c.profit || 0); }, 0);
+    return {
+      run: r, contracts: cs,
+      done: settled.length,
+      wins: settled.filter(function (c) { return c.profit >= 0; }).length,
+      losses: settled.filter(function (c) { return c.profit < 0; }).length,
+      /* Settled P/L, plus what the open contract is worth right now. */
+      pnl: Math.round((pnl + (open ? open.value - open.stake : 0)) * 100) / 100,
+      live: r.status === 'running',
+      at: r.endedAt || (settled[0] && settled[0].exitTime) || r.startedAt
+    };
+  }
+  var REASON = {
+    running: 'Running', take_profit: 'Target reached', stop_loss: 'Stop loss hit', stopped: 'Stopped'
+  };
+
+  function items() {
+    if (view === 'transactions') return rows();
+    var runs = API.runs ? API.runs.all() : [];
+    var known = {};
+    runs.forEach(function (r) { known[r.id] = true; });
+
+    if (view === 'open') {
+      var openRuns = runs.filter(function (r) { return r.status === 'running'; })
+        .map(function (r) { return { kind: 'run', s: runSummary(r) }; });
+      var loose = API.contracts.open().filter(function (c) { return !(c.run && known[c.run]); })
+        .map(function (c) { return { kind: 'contract', c: c }; });
+      return openRuns.concat(loose);
+    }
+
+    var closedRuns = runs.filter(function (r) { return r.status !== 'running'; })
+      .map(runSummary)
+      .filter(function (s) {
+        return s.done && within(s.at) && s.contracts.some(typeOk);
+      })
+      .map(function (s) { return { kind: 'run', s: s, at: s.at }; });
+    var single = rows().filter(function (c) { return !(c.run && known[c.run]); })
+      .map(function (c) { return { kind: 'contract', c: c, at: c.exitTime || c.entryTime }; });
+    return closedRuns.concat(single).sort(function (a, b) { return b.at - a.at; });
+  }
+
+  function runRow(s) {
+    var r = s.run;
+    var cls = s.live ? 'live' : s.pnl >= 0 ? 'pos' : 'neg';
+    return '<button class="trow" data-run="' + r.id + '">' +
+      '<span class="ico ' + cls + '">' +
+        (s.live ? I('clock', 16) : I(s.pnl >= 0 ? 'check' : 'close', 16)) + '</span>' +
+      '<span class="t"><b>Auto · ' + (r.label || r.side) + '</b>' +
+        '<span>' + String(r.symbolName || r.symbol || '').replace(' Index', '') + ' · ' +
+          s.done + (s.done === 1 ? ' trade' : ' trades') + ' · ' + s.wins + 'W/' + s.losses + 'L' +
+          (s.live ? '' : ' · ' + F.clock(s.at)) + '</span></span>' +
+      '<span class="p"><span class="num ' + (s.pnl >= 0 ? 'pos' : 'neg') + '">' + F.signed(s.pnl) + '</span>' +
+        '<span class="num sub">' + (REASON[r.status] || r.status) + '</span></span>' +
+    '</button>';
+  }
+
   /* The P&L header used to sit here. Removed on purpose: this page is
      for what is open and what settled, and a running total at the top
      turns every visit into a scoreboard check. The numbers are still on
@@ -9023,12 +9163,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   /* ---------- list ---------- */
   function renderList() {
-    var data = rows();
+    var data = items();
     if (!data.length) {
       el.list.innerHTML = '<div class="empty">' +
         I('book', 26) +
         '<b>Nothing here yet</b>' +
-        '<span>' + (view === 'open' ? 'Contracts you take will appear here while they run.'
+        '<span>' + (view === 'open' ? 'Trades and automated runs appear here while they run.'
           : view === 'closed' ? 'No settled contracts in this period.'
           : 'No money movements in this period.') + '</span></div>';
       return;
@@ -9047,7 +9187,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       return;
     }
 
-    el.list.innerHTML = '<div class="list">' + data.map(function (c) {
+    el.list.innerHTML = '<div class="list">' + data.map(function (it) {
+      if (it.kind === 'run') return runRow(it.s);
+      var c = it.c;
       var live = c.status === 'open';
       var pl = live ? c.value - c.stake : c.profit;
       return '<button class="trow" data-detail="' + c.id + '">' +
@@ -9105,6 +9247,52 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     window.NexModal.open('detail');
   }
   function kv(k, v) { return '<div class="kv"><span>' + k + '</span><b>' + v + '</b></div>'; }
+
+  function runDetail(id) {
+    var r = API.runs.get(id);
+    if (!r) return;
+    window.NexModals.detail = {
+      steps: {
+        main: {
+          title: 'Auto · ' + (r.label || r.side),
+          sub: r.symbolName,
+          body: function () {
+            var s = runSummary(API.runs.get(id) || r);
+            var list = s.contracts.slice().sort(function (a, b) { return a.entryTime - b.entryTime; });
+            return '<div class="modal-form">' +
+              '<div class="detail-pl ' + (s.pnl >= 0 ? 'pos' : 'neg') + '"><span class="label">' +
+                (s.live ? 'Running' : 'Result') + '</span><b class="num">' + F.signedMoney(s.pnl) + '</b></div>' +
+              '<div class="totals">' +
+                kv('Status', REASON[r.status] || r.status) +
+                kv('Trades', s.done) +
+                kv('Wins / Losses', s.wins + ' / ' + s.losses) +
+                kv('Stake per trade', F.money(r.stake)) +
+                kv('Target profit', F.money(r.takeProfit)) +
+                kv('Stop loss', F.money(r.stopLoss)) +
+                kv('Started', F.dateTime(r.startedAt)) +
+                (r.endedAt && !s.live ? kv('Ended', F.dateTime(r.endedAt)) : '') +
+              '</div>' +
+              (list.length
+                ? '<div class="label" style="margin:4px 0 -4px">Trades in this run</div>' +
+                  '<div class="list" style="margin:0">' + list.map(function (c, i) {
+                    var live = c.status === 'open';
+                    var pl = live ? c.value - c.stake : c.profit;
+                    return '<div class="trow">' +
+                      '<span class="ico ' + (live ? 'live' : pl >= 0 ? 'pos' : 'neg') + '">' + (i + 1) + '</span>' +
+                      '<span class="t"><b>' + API.contracts.label(c) + '</b>' +
+                        '<span>' + F.money(c.stake) + ' · ' + F.clock(c.exitTime || c.entryTime) + '</span></span>' +
+                      '<span class="p"><span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
+                        '<span class="num sub">' + (live ? 'running' : c.status) + '</span></span>' +
+                    '</div>';
+                  }).join('') + '</div>'
+                : '') +
+            '</div>';
+          }
+        }
+      }
+    };
+    window.NexModal.open('detail');
+  }
 
   /* ---------- export ---------- */
   function csv() {
@@ -9171,6 +9359,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       if (r) { filter.range = r.getAttribute('data-range'); renderAll(); return; }
       var d = e.target.closest('[data-detail]');
       if (d) { detail(d.getAttribute('data-detail')); return; }
+      var rr = e.target.closest('[data-run]');
+      if (rr) { runDetail(rr.getAttribute('data-run')); return; }
       if (e.target.closest('#exportBtn')) { csv(); return; }
     });
     root.addEventListener('change', function (e) {
@@ -10491,7 +10681,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       '<span class="acct-txt">' +
         '<span class="acct-kind">' + kind + ' · USD</span>' +
         '<span class="bal num">' +
-          (real ? F.usdAmount(API.account.balance()) : F.amount(API.account.balance())) +
+          (real ? F.usdAmount(API.account.displayBalance()) : F.amount(API.account.displayBalance())) +
         '</span>' +
       '</span>' + icon('chevD', 12);
   }
@@ -12679,15 +12869,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     }
     if (name === 'saveAuto') {
       clearErrors();
-      var mult = +document.getElementById('autoMult').value || 0;
       var tp = +document.getElementById('autoTP').value || 0;
       var sl = +document.getElementById('autoSL').value || 0;
 
-      if (mult < 1 || mult > 5) return fieldError('autoMult', 'Between 1 and 5');
       if (tp <= 0) return fieldError('autoTP', 'Set a take-profit above zero');
       if (sl <= 0) return fieldError('autoSL', 'Set a stop-loss above zero');
 
-      API.prefs.setAuto({ multiplier: mult, takeProfit: tp, stopLoss: sl });
+      API.prefs.setAuto({ multiplier: 1, takeProfit: tp, stopLoss: sl });
       gotoStep('done');
       return;
     }

@@ -445,13 +445,12 @@
           body: function () {
             var a = API().prefs.auto();
             return '<div class="modal-form">' +
-              field('autoMult', 'Stake × on loss', 'value="' + a.multiplier + '" inputmode="decimal"') +
               '<div class="pair">' +
                 field('autoTP', 'Take profit', 'value="' + a.takeProfit + '" inputmode="decimal"') +
                 field('autoSL', 'Stop loss', 'value="' + a.stopLoss + '" inputmode="decimal"') +
               '</div>' +
               '<div class="notice">' + I('shield', 17) +
-                '<span>Doubling stake after a loss grows exposure fast: six losses at ×2 stakes 63 times your opening amount.</span></div>' +
+                '<span>Every contract in a run uses the same stake. Your balance changes once, when the run ends.</span></div>' +
               act('Save settings', 'saveAuto') +
             '</div>';
           }
@@ -999,9 +998,12 @@
           noBack: true,
           body: function (s) {
             var r = s.run || {};
-            var w = r.tickWins || 0;
-            var l = r.tickLosses || 0;
-            var ticks = w + l;
+            /* Contracts, not ticks. Counting every tick inside every
+               contract turned a run of eight into "70 trades" with more
+               losses than wins, on a run that reached its target. */
+            var w = r.wins || 0;
+            var l = r.losses || 0;
+            var ticks = r.done || (w + l);
             var rate = ticks ? (w / ticks * 100) : 0;
 
             return heroBody({

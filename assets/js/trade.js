@@ -271,7 +271,6 @@
     return '<div class="targets">' +
       targetCell('tgtTP', 'Target profit', '$', auto.takeProfit, 'pos') +
       targetCell('tgtSL', 'Stop loss', '$', auto.stopLoss, 'neg') +
-      targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier, 'warn') +
     '</div>';
   }
 
@@ -583,13 +582,16 @@
        what it is worth right now. It climbs on a tick that lands the
        right way and falls on one that does not — the same figure the
        trade button is showing, said loudly enough to notice. */
+    /* Inside a run, the figure is the run's: what it has made so far plus
+       what the open contract is worth now. Each tick used to be called
+       "Trade won" or "Trade lost" with that one contract's value, which
+       read as dozens of separate trades winning and losing when it was
+       one run moving. */
     var pnl = mine.value - mine.stake;
-    var good = API.contracts.favours(mine, d.point.digit);
-    /* No count on it. An automated run has no fixed length, so "4 of 10"
-       promised an ending that was not coming; the totals are on the card
-       when the run ends. */
-    window.NexTick(good ? 'win' : 'loss', F.signedUsd(pnl),
-      good ? 'Trade won' : 'Trade lost', mine.symbolName || '');
+    if (S.run && mine.run === S.run.id) pnl = S.run.pnl + pnl;
+    var up = pnl >= 0;
+    window.NexTick(up ? 'win' : 'loss', F.signedUsd(pnl),
+      S.run ? 'Run P/L' : 'Trade P/L', mine.symbolName || '');
   }
 
   /* ---------- how long a contract runs ----------
@@ -612,7 +614,7 @@
 
   /* The pause between one automated contract settling and the next being
      placed. */
-  var RUN_GAP_MS = 2200;
+  var RUN_GAP_MS = 1500;
 
   function ticksFor(symbol) {
     var meta = API.symbol(symbol) || {};
@@ -668,13 +670,26 @@
 
   function startRun(side) {
     var cfg = API.prefs.auto();
+    /* Every contract in a run is staked the same. There is no multiplier
+       any more: doubling after each loss is what made runs long and put
+       -$20 and -$40 contracts in the middle of a $5 run. */
     var r = S.run = {
       id: 'R' + Date.now(), side: side, done: 0, wins: 0, losses: 0, pnl: 0,
-      ticks: 0, tickWins: 0, tickLosses: 0,
-      base: S.stake, stake: S.stake, multiplier: cfg.multiplier,
+      base: S.stake, stake: S.stake, multiplier: 1,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss,
       serverId: null
     };
+
+    /* A run is one trade to the person running it: the balance on screen
+       stays where it started and moves once, when the run ends. */
+    API.account.hold(API.account.displayBalance());
+    var sideLabel = (sidesFor().filter(function (sd) { return sd[0] === side; })[0] || [side, side])[1];
+    API.runs.start({
+      id: r.id, side: side, label: sideLabel, type: typeFor(side), tab: S.tab,
+      symbol: S.symbol, symbolName: (API.symbol(S.symbol) || {}).name || S.symbol,
+      stake: r.base, takeProfit: r.takeProfit, stopLoss: r.stopLoss,
+      account: API.account.kind(), startedAt: Date.now()
+    });
     renderPanel();
     renderDock();
 
@@ -688,7 +703,10 @@
       baseStakeMinor: Math.round(r.base * 100)
     }).then(function (run) {
       if (S.run !== r) return;              /* stopped while it was opening */
-      if (run && run.id) { r.serverId = run.id; r.id = run.id; }
+      if (run && run.id) {
+        API.runs.rename(r.id, run.id);
+        r.serverId = run.id; r.id = run.id;
+      }
       place(side, r.id);
     }).catch(function () {
       /* The rules still hold without the server; they are just applied
@@ -708,6 +726,12 @@
     if (r.serverId && r.endKind === 'stopped' && live()) {
       window.NexNet.stopRun(r.serverId).catch(function () {});
     }
+    API.runs.update(r.id, {
+      status: r.endKind, endedAt: Date.now(),
+      done: r.done, wins: r.wins, losses: r.losses, pnl: r.pnl
+    });
+    /* The run is over: the balance on screen catches up in one move. */
+    API.account.release();
     renderPanel();
     renderDock();
     if (!reason) return;
@@ -733,7 +757,7 @@
     if (!window.NexModal) return;
     window.NexModal.open('runResult', null, { run: {
       done: 1, pnl: c.profit, endKind: 'single',
-      tickWins: c.tickWins || 0, tickLosses: c.tickLosses || 0
+      wins: c.profit >= 0 ? 1 : 0, losses: c.profit >= 0 ? 0 : 1
     } });
   }
 
@@ -771,13 +795,8 @@
        contract sold early is neither a clean win nor a clean loss — it
        is whichever side of zero it came out on. */
     if (c.profit >= 0) r.wins++; else r.losses++;
-    /* and the ticks inside them, which is what the card reports */
-    r.ticks += c.elapsed || c.ticks || 0;
-    r.tickWins += c.tickWins || 0;
-    r.tickLosses += c.tickLosses || 0;
     r.pnl = Math.round((r.pnl + c.profit) * 100) / 100;
-    r.stake = c.status === 'won' ? r.base : Math.round(r.stake * r.multiplier * 100) / 100;
-    S.stake = r.stake;
+    API.runs.update(r.id, { done: r.done, wins: r.wins, losses: r.losses, pnl: r.pnl });
 
     /* The server's verdict when there is a server, the same rules here
        when there is not. */
@@ -806,10 +825,11 @@
        placed, usually because the balance no longer covers it. */
     if (!check()) { soundResult(c); return stopRun('Run stopped: ' + S.error, 'stopped'); }
 
-    flashResult(c);
+    /* No banner between contracts. A run is one trade: its running P/L
+       is on the button and on the tick pop-ups, and its result is the
+       card at the end. A red "Contract Lost -$5" every few seconds read
+       as money leaving the account mid-trade. */
     renderAll();
-    /* A breath between contracts, so the won/lost banner is read before
-       the next contract's pop-ups start. 700ms had them on top of it. */
     setTimeout(function () { if (S.run === r) place(r.side, r.id); }, RUN_GAP_MS);
   }
 
@@ -940,7 +960,6 @@
       }
       if (id === 'tgtTP') API.prefs.setAuto({ takeProfit: Math.max(0, +e.target.value || 0) });
       else if (id === 'tgtSL') API.prefs.setAuto({ stopLoss: Math.max(0, +e.target.value || 0) });
-      else if (id === 'tgtMult') API.prefs.setAuto({ multiplier: Math.max(1, +e.target.value || 1) });
     });
     root.addEventListener('blur', function (e) {
       var id = e.target.id;

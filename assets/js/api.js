@@ -311,7 +311,7 @@
      sitting in somebody's localStorage and a stale one is worse than a
      new one: a saved runs:10 would keep a run going for the best part
      of a minute on a build where nothing else can. */
-  var AUTO_V = 3;
+  var AUTO_V = 4;
   function AUTO_DEFAULTS() {
     /* One contract. A run of ten at five seconds each is fifty seconds
        of watching a button, and nothing about the outcome is clearer at
@@ -319,7 +319,10 @@
        and press again if you want another. The multiplier and the two
        targets stay: they are what a longer run would stop on, and the
        number of contracts is the one thing nobody should have to set. */
-    return { multiplier: 2, takeProfit: 200, stopLoss: 999 };
+    /* No stake multiplier: every contract in a run is staked the same.
+       Doubling after a loss made runs long and swung the balance by
+       tens of dollars mid-run. */
+    return { multiplier: 1, takeProfit: 200, stopLoss: 999 };
   }
   var S = {
     geo: saved.geo || null,
@@ -339,6 +342,12 @@
        through sign-out, so the same person signing back in keeps theirs,
        and anybody else starts clean. */
     owner: saved.owner || null,
+    /* Automated runs, one record each, so Positions can show a run as the
+       one trade it is. A run still marked running from an earlier visit
+       ended when that page did. */
+    runs: (saved.runs || []).map(function (r) {
+      return r.status === 'running' ? Object.assign({}, r, { status: 'stopped', endedAt: r.endedAt || r.startedAt }) : r;
+    }),
     /* The stake last chosen on the terminal, in USD. Kept here so a trip
        to the scanner and back does not reset it to the default. */
     stake: (+saved.stake > 0) ? +saved.stake : null,
@@ -378,7 +387,15 @@
        `autoV` carries the change into browsers that already hold the old
        pair, otherwise the new default would only ever be seen by someone
        opening the app for the first time. */
-    auto: (saved.autoV === AUTO_V && saved.auto) || AUTO_DEFAULTS(),
+    /* Settings saved under the previous version keep their own target
+       and stop; only the multiplier is dropped. */
+    auto: (saved.autoV === AUTO_V && saved.auto) ||
+      (saved.auto && saved.autoV === 3
+        ? Object.assign(AUTO_DEFAULTS(), {
+            takeProfit: +saved.auto.takeProfit || AUTO_DEFAULTS().takeProfit,
+            stopLoss: +saved.auto.stopLoss || AUTO_DEFAULTS().stopLoss
+          })
+        : AUTO_DEFAULTS()),
     autoV: AUTO_V
   };
   var saveTimer;
@@ -386,7 +403,7 @@
     try {
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
-        ticket: S.ticket, stake: S.stake, owner: S.owner,
+        ticket: S.ticket, stake: S.stake, owner: S.owner, runs: S.runs.slice(0, 100),
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
@@ -557,6 +574,10 @@
      has no business being persisted in a browser anyway, so they live for
      the session only. */
   var docs = {};
+
+  /* The balance the top bar holds at while a run is going. Not saved:
+     a run does not survive a reload, so neither does this. */
+  var hold = null;
 
   /* ---------- money ---------- */
   function balance() { return S.balances[S.account]; }
@@ -872,6 +893,13 @@
       currency: function () { return display().cur; },
       baseCurrency: function () { return S.currency; },
       balances: function () { return S.balances; },
+      /* What the top bar shows. While an automated run is going it stays
+         at the balance the run started from, and moves once, when the run
+         ends. The real balance underneath still moves contract by
+         contract, and is what every stake is checked against. */
+      displayBalance: function () { return hold != null ? hold : balance(); },
+      hold: function (v) { hold = v; B.emit('balance', { balance: balance(), account: S.account }); },
+      release: function () { hold = null; B.emit('balance', { balance: balance(), account: S.account }); },
       /* Returns false when the switch was refused, so the caller can
          send the visitor to sign up instead of reporting success. */
       use: function (kind) {
@@ -945,6 +973,28 @@
 
     transactions: { list: function () { return S.transactions.slice(); } },
 
+    runs: {
+      all: function () { return S.runs.slice(); },
+      get: function (id) { return S.runs.filter(function (r) { return r.id === id; })[0] || null; },
+      active: function () { return S.runs.filter(function (r) { return r.status === 'running'; })[0] || null; },
+      start: function (rec) {
+        S.runs.unshift(Object.assign({ status: 'running', done: 0, wins: 0, losses: 0, pnl: 0 }, rec));
+        persist();
+        B.emit('contracts', { reason: 'run' });
+      },
+      update: function (id, patch) {
+        S.runs.forEach(function (r) { if (r.id === id) Object.assign(r, patch); });
+        persist();
+        B.emit('contracts', { reason: 'run' });
+      },
+      /* The server hands a run its own id once it is opened there; the
+         record follows it. */
+      rename: function (from, to) {
+        S.runs.forEach(function (r) { if (r.id === from) r.id = to; });
+        persist();
+      }
+    },
+
     geo: {
       countries: COUNTRIES,
       code: countryCode,
@@ -1013,6 +1063,7 @@
         if (S.owner && S.owner !== user.id) {
           S.contracts = [];
           S.transactions = [];
+          S.runs = [];
           S.balances = { real: 0, demo: DEMO_SEED_USD };
           S.deposited = 0;
           S.copyActive = false;

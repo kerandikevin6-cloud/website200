@@ -33,6 +33,74 @@
     return API.transactions.list().filter(function (t) { return within(t.t); });
   }
 
+  /* ---------- runs ----------
+     An automated run is one trade to the person who started it, so it is
+     listed as one: open while it runs, one row in the history when it
+     ends. Its contracts are inside it, on the detail sheet. Contracts
+     not in a run are listed on their own, as they always were. */
+  function contractsOf(runId) {
+    return API.contracts.all().filter(function (c) { return c.run === runId; });
+  }
+  function runSummary(r) {
+    var cs = contractsOf(r.id);
+    var settled = cs.filter(function (c) { return c.status !== 'open'; });
+    var open = cs.filter(function (c) { return c.status === 'open'; })[0];
+    var pnl = settled.reduce(function (a, c) { return a + (c.profit || 0); }, 0);
+    return {
+      run: r, contracts: cs,
+      done: settled.length,
+      wins: settled.filter(function (c) { return c.profit >= 0; }).length,
+      losses: settled.filter(function (c) { return c.profit < 0; }).length,
+      /* Settled P/L, plus what the open contract is worth right now. */
+      pnl: Math.round((pnl + (open ? open.value - open.stake : 0)) * 100) / 100,
+      live: r.status === 'running',
+      at: r.endedAt || (settled[0] && settled[0].exitTime) || r.startedAt
+    };
+  }
+  var REASON = {
+    running: 'Running', take_profit: 'Target reached', stop_loss: 'Stop loss hit', stopped: 'Stopped'
+  };
+
+  function items() {
+    if (view === 'transactions') return rows();
+    var runs = API.runs ? API.runs.all() : [];
+    var known = {};
+    runs.forEach(function (r) { known[r.id] = true; });
+
+    if (view === 'open') {
+      var openRuns = runs.filter(function (r) { return r.status === 'running'; })
+        .map(function (r) { return { kind: 'run', s: runSummary(r) }; });
+      var loose = API.contracts.open().filter(function (c) { return !(c.run && known[c.run]); })
+        .map(function (c) { return { kind: 'contract', c: c }; });
+      return openRuns.concat(loose);
+    }
+
+    var closedRuns = runs.filter(function (r) { return r.status !== 'running'; })
+      .map(runSummary)
+      .filter(function (s) {
+        return s.done && within(s.at) && s.contracts.some(typeOk);
+      })
+      .map(function (s) { return { kind: 'run', s: s, at: s.at }; });
+    var single = rows().filter(function (c) { return !(c.run && known[c.run]); })
+      .map(function (c) { return { kind: 'contract', c: c, at: c.exitTime || c.entryTime }; });
+    return closedRuns.concat(single).sort(function (a, b) { return b.at - a.at; });
+  }
+
+  function runRow(s) {
+    var r = s.run;
+    var cls = s.live ? 'live' : s.pnl >= 0 ? 'pos' : 'neg';
+    return '<button class="trow" data-run="' + r.id + '">' +
+      '<span class="ico ' + cls + '">' +
+        (s.live ? I('clock', 16) : I(s.pnl >= 0 ? 'check' : 'close', 16)) + '</span>' +
+      '<span class="t"><b>Auto · ' + (r.label || r.side) + '</b>' +
+        '<span>' + String(r.symbolName || r.symbol || '').replace(' Index', '') + ' · ' +
+          s.done + (s.done === 1 ? ' trade' : ' trades') + ' · ' + s.wins + 'W/' + s.losses + 'L' +
+          (s.live ? '' : ' · ' + F.clock(s.at)) + '</span></span>' +
+      '<span class="p"><span class="num ' + (s.pnl >= 0 ? 'pos' : 'neg') + '">' + F.signed(s.pnl) + '</span>' +
+        '<span class="num sub">' + (REASON[r.status] || r.status) + '</span></span>' +
+    '</button>';
+  }
+
   /* The P&L header used to sit here. Removed on purpose: this page is
      for what is open and what settled, and a running total at the top
      turns every visit into a scoreboard check. The numbers are still on
@@ -77,12 +145,12 @@
 
   /* ---------- list ---------- */
   function renderList() {
-    var data = rows();
+    var data = items();
     if (!data.length) {
       el.list.innerHTML = '<div class="empty">' +
         I('book', 26) +
         '<b>Nothing here yet</b>' +
-        '<span>' + (view === 'open' ? 'Contracts you take will appear here while they run.'
+        '<span>' + (view === 'open' ? 'Trades and automated runs appear here while they run.'
           : view === 'closed' ? 'No settled contracts in this period.'
           : 'No money movements in this period.') + '</span></div>';
       return;
@@ -101,7 +169,9 @@
       return;
     }
 
-    el.list.innerHTML = '<div class="list">' + data.map(function (c) {
+    el.list.innerHTML = '<div class="list">' + data.map(function (it) {
+      if (it.kind === 'run') return runRow(it.s);
+      var c = it.c;
       var live = c.status === 'open';
       var pl = live ? c.value - c.stake : c.profit;
       return '<button class="trow" data-detail="' + c.id + '">' +
@@ -159,6 +229,52 @@
     window.NexModal.open('detail');
   }
   function kv(k, v) { return '<div class="kv"><span>' + k + '</span><b>' + v + '</b></div>'; }
+
+  function runDetail(id) {
+    var r = API.runs.get(id);
+    if (!r) return;
+    window.NexModals.detail = {
+      steps: {
+        main: {
+          title: 'Auto · ' + (r.label || r.side),
+          sub: r.symbolName,
+          body: function () {
+            var s = runSummary(API.runs.get(id) || r);
+            var list = s.contracts.slice().sort(function (a, b) { return a.entryTime - b.entryTime; });
+            return '<div class="modal-form">' +
+              '<div class="detail-pl ' + (s.pnl >= 0 ? 'pos' : 'neg') + '"><span class="label">' +
+                (s.live ? 'Running' : 'Result') + '</span><b class="num">' + F.signedMoney(s.pnl) + '</b></div>' +
+              '<div class="totals">' +
+                kv('Status', REASON[r.status] || r.status) +
+                kv('Trades', s.done) +
+                kv('Wins / Losses', s.wins + ' / ' + s.losses) +
+                kv('Stake per trade', F.money(r.stake)) +
+                kv('Target profit', F.money(r.takeProfit)) +
+                kv('Stop loss', F.money(r.stopLoss)) +
+                kv('Started', F.dateTime(r.startedAt)) +
+                (r.endedAt && !s.live ? kv('Ended', F.dateTime(r.endedAt)) : '') +
+              '</div>' +
+              (list.length
+                ? '<div class="label" style="margin:4px 0 -4px">Trades in this run</div>' +
+                  '<div class="list" style="margin:0">' + list.map(function (c, i) {
+                    var live = c.status === 'open';
+                    var pl = live ? c.value - c.stake : c.profit;
+                    return '<div class="trow">' +
+                      '<span class="ico ' + (live ? 'live' : pl >= 0 ? 'pos' : 'neg') + '">' + (i + 1) + '</span>' +
+                      '<span class="t"><b>' + API.contracts.label(c) + '</b>' +
+                        '<span>' + F.money(c.stake) + ' · ' + F.clock(c.exitTime || c.entryTime) + '</span></span>' +
+                      '<span class="p"><span class="num ' + (pl >= 0 ? 'pos' : 'neg') + '">' + F.signed(pl) + '</span>' +
+                        '<span class="num sub">' + (live ? 'running' : c.status) + '</span></span>' +
+                    '</div>';
+                  }).join('') + '</div>'
+                : '') +
+            '</div>';
+          }
+        }
+      }
+    };
+    window.NexModal.open('detail');
+  }
 
   /* ---------- export ---------- */
   function csv() {
@@ -225,6 +341,8 @@
       if (r) { filter.range = r.getAttribute('data-range'); renderAll(); return; }
       var d = e.target.closest('[data-detail]');
       if (d) { detail(d.getAttribute('data-detail')); return; }
+      var rr = e.target.closest('[data-run]');
+      if (rr) { runDetail(rr.getAttribute('data-run')); return; }
       if (e.target.closest('#exportBtn')) { csv(); return; }
     });
     root.addEventListener('change', function (e) {

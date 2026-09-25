@@ -569,7 +569,7 @@
       '<span class="acct-txt">' +
         '<span class="acct-kind">' + kind + ' · USD</span>' +
         '<span class="bal num">' +
-          (real ? F.usdAmount(API.account.balance()) : F.amount(API.account.balance())) +
+          (real ? F.usdAmount(API.account.displayBalance()) : F.amount(API.account.displayBalance())) +
         '</span>' +
       '</span>' + icon('chevD', 12);
   }
@@ -2757,15 +2757,13 @@
     }
     if (name === 'saveAuto') {
       clearErrors();
-      var mult = +document.getElementById('autoMult').value || 0;
       var tp = +document.getElementById('autoTP').value || 0;
       var sl = +document.getElementById('autoSL').value || 0;
 
-      if (mult < 1 || mult > 5) return fieldError('autoMult', 'Between 1 and 5');
       if (tp <= 0) return fieldError('autoTP', 'Set a take-profit above zero');
       if (sl <= 0) return fieldError('autoSL', 'Set a stop-loss above zero');
 
-      API.prefs.setAuto({ multiplier: mult, takeProfit: tp, stopLoss: sl });
+      API.prefs.setAuto({ multiplier: 1, takeProfit: tp, stopLoss: sl });
       gotoStep('done');
       return;
     }
