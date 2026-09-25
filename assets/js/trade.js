@@ -301,7 +301,7 @@
     return '<div class="tdetail">' +
       detailRow('Instrument', meta.name) +
       detailRow('Contract', tabLabel()) +
-      detailRow('Duration', S.mode === 'manual' ? '1 tick' : (RUN_MS / 1000) + ' seconds') +
+      detailRow('Duration', S.mode === 'manual' ? '1 tick' : 'Until target or stop') +
       /* The two sides of a contract do not always pay the same — Matches
          and Differs are nowhere near each other — so this says one rate
          only when it is honestly one rate. */
@@ -638,9 +638,6 @@
      calls per contract instead of one verdict at the end. */
   var RUN_MS = 10000;
 
-  /* The pause between one automated contract settling and the next being
-     placed. */
-  var RUN_GAP_MS = 1500;
 
   function ticksFor(symbol) {
     var meta = API.symbol(symbol) || {};
@@ -650,8 +647,12 @@
 
   /* Manual is one trade: a single tick, settled on the next digit.
      Auto is the one that runs a string of them. */
-  function contractTicks(symbol) {
-    return S.mode === 'manual' ? 1 : ticksFor(symbol);
+  /* One tick, always. A manual trade is one tick; an automated run is
+     a continuous chain of them, each settled on the next tick and the
+     next placed at once, so the run reads as one contract that keeps
+     going rather than ten-second contracts that stop and restart. */
+  function contractTicks() {
+    return 1;
   }
 
   /* ---------- validation ---------- */
@@ -826,11 +827,23 @@
 
     /* The server's verdict when there is a server, the same rules here
        when there is not. */
-    if (r.serverId) {
-      waitForRun(r, c.id, function (run) { decide(r, c, run); });
-    } else {
-      decide(r, c, null);
-    }
+    /* Decided here, at once, so the next tick's trade is not held up
+       waiting on the network. The server applies the same two rules to
+       the same contracts, and if it ends the run first, onServerRun below
+       stops it. */
+    decide(r, c, null);
+  }
+
+  /* The server's answer for each contract recorded against the run. */
+  function onServerRun(e) {
+    var d = e.detail || {};
+    var run = d.run;
+    var r = S.run;
+    if (!r || !run || run.id !== r.serverId || run.status === 'running') return;
+    var reason = run.status === 'take_profit' ? 'Target profit reached at ' + F.signedUsd(r.pnl)
+      : run.status === 'stop_loss' ? 'Stop loss reached at ' + F.signedUsd(r.pnl)
+      : 'Run stopped';
+    stopRun(reason, run.status);
   }
 
   function decide(r, c, run) {
@@ -855,31 +868,17 @@
        is on the button and on the tick pop-ups, and its result is the
        card at the end. A red "Contract Lost -$5" every few seconds read
        as money leaving the account mid-trade. */
+    /* The run's total on every tick: the one figure somebody watches. */
+    if (window.NexTick) {
+      window.NexTick(r.pnl >= 0 ? 'win' : 'loss', F.signedUsd(r.pnl), 'Run P/L', c.symbolName || '');
+    }
     renderAll();
-    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, RUN_GAP_MS);
+    /* Straight on to the next tick. Deferred only out of the tick that
+       settled this one, so the new trade is not advanced on the same
+       tick it was bought on. */
+    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, 0);
   }
 
-  /* The record of this contract goes to the server from app.js, which
-     passes the run's new status on as a 'nex:run' event. Five seconds
-     is long enough for a slow connection and short enough that a lost
-     answer does not stall the run: after that the rules are applied
-     here. */
-  function waitForRun(r, contractId, done) {
-    var finished = false;
-    function finish(run) {
-      if (finished) return;
-      finished = true;
-      document.removeEventListener('nex:run', onRun);
-      clearTimeout(timer);
-      done(run);
-    }
-    function onRun(e) {
-      var d = e.detail || {};
-      if (d.run && d.run.id === r.serverId && d.ref === String(contractId)) finish(d.run);
-    }
-    document.addEventListener('nex:run', onRun);
-    var timer = setTimeout(function () { finish(null); }, 5000);
-  }
 
   /* ---------- events ---------- */
   function wire(root) {
@@ -1108,6 +1107,8 @@
         if (chart) chart.dirty = true;
       }));
       unsub.push(API.on('settled', onSettled));
+      document.addEventListener('nex:run', onServerRun);
+      unsub.push(function () { document.removeEventListener('nex:run', onServerRun); });
       unsub.push(API.on('balance', function () { check(); typing() ? refreshValidity() : renderPanel(); }));
       unsub.push(API.on('connection', renderDock));
     });
