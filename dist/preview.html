@@ -8797,8 +8797,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        card at the end. A red "Contract Lost -$5" every few seconds read
        as money leaving the account mid-trade. */
     /* The run's total on every tick: the one figure somebody watches. */
+    /* Both numbers, labelled, so the total cannot be mistaken for the
+       last trade: the big figure is everything the run has made so far,
+       the line above it is what this one trade added or took away. */
     if (window.NexTick) {
-      window.NexTick(r.pnl >= 0 ? 'win' : 'loss', F.signedUsd(r.pnl), 'Run P/L', c.symbolName || '');
+      window.NexTick(r.pnl >= 0 ? 'win' : 'loss', F.signedUsd(r.pnl),
+        'Run total',
+        'This trade ' + F.signedUsd(c.profit));
     }
     renderAll();
     /* Straight on to the next tick. Deferred only out of the tick that
