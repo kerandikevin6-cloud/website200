@@ -46,3 +46,10 @@ probe*.html          # throwaway harness pages used while testing
 # NOTE: dist/ is deliberately NOT ignored. dist/preview.html is the
 # single-file build produced by `node build.js` and is tracked on
 # purpose, so the whole interface can be shared as one link.
+
+# Screenshots and recordings dropped in for reference, never part of the site
+/*.png
+/*.jpg
+/*.jpeg
+/*.mp4
+/*.mov
