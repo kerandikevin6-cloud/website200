@@ -1227,9 +1227,6 @@ footer a:hover{color:var(--text-2)}
    becomes a line saying so. */
 .cp-act .btn{width:100%}
 .cp-key,.cp-dep{margin-top:10px}
-/* The automated run's trade limit, said under the targets it sits with. */
-.run-cap{margin:8px 2px 0;font-size:11.5px;line-height:1.45;color:var(--muted)}
-.run-cap b{color:var(--text);font-weight:600}
 .cp-act-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .cp-state{
   display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;
@@ -8350,10 +8347,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         '</div>' +
       '</div>' +
       targets +
-      (S.mode === 'auto'
-        ? '<div class="run-cap">Ends after at most <b>' + capText(auto.takeProfit) +
-            ' trades</b>, or at the target or stop loss, whichever comes first.</div>'
-        : '') +
       /* Last, under the automated run box, and in the same place in both
          modes. It used to sit directly under the stake in manual and
          above two boxes in auto, so the digit moved down the panel when
@@ -8569,14 +8562,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var winProfit = stake * (API.contracts.payoutRate(typeFor(side)) - 1);
     var wins = winProfit > 0 ? Math.ceil(Math.max(0.01, takeProfit) / winProfit) : MAX_TRADES;
     return Math.max(MIN_TRADES, Math.min(MAX_TRADES, 2 * wins + 1));
-  }
-
-  /* The cap for this ticket, as the panel says it: one number, or a
-     range where the two sides pay differently (Matches and Differs). */
-  function capText(takeProfit) {
-    var caps = sidesFor().map(function (sd) { return tradeCap(sd[0], S.stake, takeProfit); });
-    var lo = Math.min.apply(null, caps), hi = Math.max.apply(null, caps);
-    return lo === hi ? String(lo) : lo + '–' + hi;
   }
 
   function checkRunTargets() {

@@ -401,10 +401,6 @@
         '</div>' +
       '</div>' +
       targets +
-      (S.mode === 'auto'
-        ? '<div class="run-cap">Ends after at most <b>' + capText(auto.takeProfit) +
-            ' trades</b>, or at the target or stop loss, whichever comes first.</div>'
-        : '') +
       /* Last, under the automated run box, and in the same place in both
          modes. It used to sit directly under the stake in manual and
          above two boxes in auto, so the digit moved down the panel when
@@ -620,14 +616,6 @@
     var winProfit = stake * (API.contracts.payoutRate(typeFor(side)) - 1);
     var wins = winProfit > 0 ? Math.ceil(Math.max(0.01, takeProfit) / winProfit) : MAX_TRADES;
     return Math.max(MIN_TRADES, Math.min(MAX_TRADES, 2 * wins + 1));
-  }
-
-  /* The cap for this ticket, as the panel says it: one number, or a
-     range where the two sides pay differently (Matches and Differs). */
-  function capText(takeProfit) {
-    var caps = sidesFor().map(function (sd) { return tradeCap(sd[0], S.stake, takeProfit); });
-    var lo = Math.min.apply(null, caps), hi = Math.max.apply(null, caps);
-    return lo === hi ? String(lo) : lo + '–' + hi;
   }
 
   function checkRunTargets() {
