@@ -2763,7 +2763,7 @@
       if (tp <= 0) return fieldError('autoTP', 'Set a take-profit above zero');
       if (sl <= 0) return fieldError('autoSL', 'Set a stop-loss above zero');
 
-      API.prefs.setAuto({ multiplier: 1, takeProfit: tp, stopLoss: sl });
+      API.prefs.setAuto({ takeProfit: tp, stopLoss: sl });
       gotoStep('done');
       return;
     }
@@ -3042,10 +3042,13 @@
          c.payout keeps the potential figure after a loss, and sending
          that would have the server crediting a payout on a losing
          contract — which it refuses, taking the whole record with it. */
-      payoutMinor: c.status === 'won' ? Math.round((+c.payout || 0) * 100) : 0,
+      payoutMinor: c.status === 'won' ? Math.round((+c.payout || 0) * 100)
+        : c.status === 'sold' ? Math.round((+c.value || 0) * 100) : 0,
       profitMinor: Math.round((+c.profit || 0) * 100),
       currency: 'USD',
-      status: c.status === 'won' ? 'won' : 'lost',
+      /* A contract closed early is a sale, credited at what it was sold
+         for. Sent as "lost" it cost the whole stake on the server. */
+      status: c.status === 'won' ? 'won' : c.status === 'sold' ? 'sold' : 'lost',
       ticks: c.ticks || undefined,
       entrySpot: c.entrySpot == null ? undefined : c.entrySpot,
       exitSpot: c.exitSpot == null ? undefined : c.exitSpot,
@@ -3064,7 +3067,7 @@
        predates the tag and could belong to anybody who used this
        browser, so it stays here rather than going up as this account's. */
     var settled = API.contracts.closed().filter(function (c) {
-      return (c.status === 'won' || c.status === 'lost') && me && c.owner === me;
+      return (c.status === 'won' || c.status === 'lost' || c.status === 'sold') && me && c.owner === me;
     });
     if (!settled.length) return;
     /* Quietly. A failure here costs a record, not a trade. The backlog

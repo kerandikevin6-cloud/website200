@@ -271,6 +271,9 @@
     return '<div class="targets">' +
       targetCell('tgtTP', 'Target profit', '$', auto.takeProfit, 'pos') +
       targetCell('tgtSL', 'Stop loss', '$', auto.stopLoss, 'neg') +
+      /* Shown and saved, not applied: every contract in a run is staked
+         the same. */
+      targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier || 1, 'warn') +
     '</div>';
   }
 
@@ -592,6 +595,29 @@
     var up = pnl >= 0;
     window.NexTick(up ? 'win' : 'loss', F.signedUsd(pnl),
       S.run ? 'Run P/L' : 'Trade P/L', mine.symbolName || '');
+  }
+
+  /* ---------- a run's targets, on every tick ----------
+     The run's total is what it has made from finished contracts plus
+     what the open contract is worth right now: the figure the pop-ups
+     show. When that total reaches the target profit, or falls to the
+     stop loss, the open contract is sold at its current value and the
+     run ends there, rather than waiting for the contract to finish and
+     often swinging back past the target. The sale settles like any
+     other contract, so the run's own bookkeeping (and the server's)
+     arrives at the same total. */
+  function checkRunTargets() {
+    var r = S.run;
+    if (!r || r.closing) return;
+    var open = API.contracts.open().filter(function (c) { return c.run === r.id; })[0];
+    if (!open || open.elapsed >= open.ticks) return;   /* settling on its own */
+    var total = r.pnl + (open.value - open.stake);
+    var hitProfit = total >= r.takeProfit - 0.005;
+    var hitLoss = -total >= r.stopLoss - 0.005;
+    if (!hitProfit && !hitLoss) return;
+    r.closing = true;
+    var sold = API.contracts.sell(open.id);
+    if (!sold.ok) r.closing = false;
   }
 
   /* ---------- how long a contract runs ----------
@@ -960,6 +986,7 @@
       }
       if (id === 'tgtTP') API.prefs.setAuto({ takeProfit: Math.max(0, +e.target.value || 0) });
       else if (id === 'tgtSL') API.prefs.setAuto({ stopLoss: Math.max(0, +e.target.value || 0) });
+      else if (id === 'tgtMult') API.prefs.setAuto({ multiplier: Math.max(1, +e.target.value || 1) });
     });
     root.addEventListener('blur', function (e) {
       var id = e.target.id;
@@ -1073,6 +1100,7 @@
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
         callTick(d);
+        checkRunTargets();
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
            under the finger once a second for no reason */

@@ -8199,6 +8199,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return '<div class="targets">' +
       targetCell('tgtTP', 'Target profit', '$', auto.takeProfit, 'pos') +
       targetCell('tgtSL', 'Stop loss', '$', auto.stopLoss, 'neg') +
+      /* Shown and saved, not applied: every contract in a run is staked
+         the same. */
+      targetCell('tgtMult', 'Loss multiple', '\u00D7', auto.multiplier || 1, 'warn') +
     '</div>';
   }
 
@@ -8520,6 +8523,29 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var up = pnl >= 0;
     window.NexTick(up ? 'win' : 'loss', F.signedUsd(pnl),
       S.run ? 'Run P/L' : 'Trade P/L', mine.symbolName || '');
+  }
+
+  /* ---------- a run's targets, on every tick ----------
+     The run's total is what it has made from finished contracts plus
+     what the open contract is worth right now: the figure the pop-ups
+     show. When that total reaches the target profit, or falls to the
+     stop loss, the open contract is sold at its current value and the
+     run ends there, rather than waiting for the contract to finish and
+     often swinging back past the target. The sale settles like any
+     other contract, so the run's own bookkeeping (and the server's)
+     arrives at the same total. */
+  function checkRunTargets() {
+    var r = S.run;
+    if (!r || r.closing) return;
+    var open = API.contracts.open().filter(function (c) { return c.run === r.id; })[0];
+    if (!open || open.elapsed >= open.ticks) return;   /* settling on its own */
+    var total = r.pnl + (open.value - open.stake);
+    var hitProfit = total >= r.takeProfit - 0.005;
+    var hitLoss = -total >= r.stopLoss - 0.005;
+    if (!hitProfit && !hitLoss) return;
+    r.closing = true;
+    var sold = API.contracts.sell(open.id);
+    if (!sold.ok) r.closing = false;
   }
 
   /* ---------- how long a contract runs ----------
@@ -8888,6 +8914,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
       if (id === 'tgtTP') API.prefs.setAuto({ takeProfit: Math.max(0, +e.target.value || 0) });
       else if (id === 'tgtSL') API.prefs.setAuto({ stopLoss: Math.max(0, +e.target.value || 0) });
+      else if (id === 'tgtMult') API.prefs.setAuto({ multiplier: Math.max(1, +e.target.value || 1) });
     });
     root.addEventListener('blur', function (e) {
       var id = e.target.id;
@@ -9001,6 +9028,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
         callTick(d);
+        checkRunTargets();
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
            under the finger once a second for no reason */
@@ -12875,7 +12903,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       if (tp <= 0) return fieldError('autoTP', 'Set a take-profit above zero');
       if (sl <= 0) return fieldError('autoSL', 'Set a stop-loss above zero');
 
-      API.prefs.setAuto({ multiplier: 1, takeProfit: tp, stopLoss: sl });
+      API.prefs.setAuto({ takeProfit: tp, stopLoss: sl });
       gotoStep('done');
       return;
     }
@@ -13154,10 +13182,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
          c.payout keeps the potential figure after a loss, and sending
          that would have the server crediting a payout on a losing
          contract — which it refuses, taking the whole record with it. */
-      payoutMinor: c.status === 'won' ? Math.round((+c.payout || 0) * 100) : 0,
+      payoutMinor: c.status === 'won' ? Math.round((+c.payout || 0) * 100)
+        : c.status === 'sold' ? Math.round((+c.value || 0) * 100) : 0,
       profitMinor: Math.round((+c.profit || 0) * 100),
       currency: 'USD',
-      status: c.status === 'won' ? 'won' : 'lost',
+      /* A contract closed early is a sale, credited at what it was sold
+         for. Sent as "lost" it cost the whole stake on the server. */
+      status: c.status === 'won' ? 'won' : c.status === 'sold' ? 'sold' : 'lost',
       ticks: c.ticks || undefined,
       entrySpot: c.entrySpot == null ? undefined : c.entrySpot,
       exitSpot: c.exitSpot == null ? undefined : c.exitSpot,
@@ -13176,7 +13207,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        predates the tag and could belong to anybody who used this
        browser, so it stays here rather than going up as this account's. */
     var settled = API.contracts.closed().filter(function (c) {
-      return (c.status === 'won' || c.status === 'lost') && me && c.owner === me;
+      return (c.status === 'won' || c.status === 'lost' || c.status === 'sold') && me && c.owner === me;
     });
     if (!settled.length) return;
     /* Quietly. A failure here costs a record, not a trade. The backlog
