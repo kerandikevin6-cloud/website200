@@ -805,8 +805,8 @@
   function signIn(email, method) {
     S.session = {
       token: 'demo.' + Math.random().toString(36).slice(2),
-      email: email || 'amara@mail.com',
-      name: 'Amara Kimani',
+      email: email || '',
+      name: (email || '').split('@')[0] || 'Guest',
       method: method || 'password',
       at: Date.now()
     };

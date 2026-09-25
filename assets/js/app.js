@@ -1660,7 +1660,41 @@
   /* The one row on the account page that knows something. It is painted
      here rather than written into the page, because the masked number
      arrives with the session and changes the moment somebody edits it. */
+  /* ---------- the account page ----------
+     Everything on it comes from the signed-in session: the name, the
+     address (masked, as in the menu), and where verification stands. It
+     used to be fixed sample text, so every account opened on somebody
+     called Amara. */
+  var KYC_VIEW = {
+    verified:   { badge: 'Verified',     cls: 'ok',   row: 'Your identity is verified' },
+    pending:    { badge: 'In review',    cls: 'warn', row: 'Your documents are being checked' },
+    rejected:   { badge: 'Not accepted', cls: 'neg',  row: 'Send your documents again' },
+    unverified: { badge: 'Unverified',   cls: 'warn', row: 'Required before your first withdrawal' }
+  };
+  function paintAccount() {
+    var nameEl = document.getElementById('acctName');
+    if (!nameEl) return;
+    var who = API.session.get() || {};
+    var name = who.displayName || who.name || (who.email || '').split('@')[0] || 'Your account';
+    function set(id, text) { var n = document.getElementById(id); if (n) n.textContent = text; }
+
+    set('acctName', name);
+    set('acctNameRow', name);
+    set('acctAvatar', name.trim().charAt(0).toUpperCase() || '?');
+    set('acctEmail', who.email ? maskEmail(who.email) : 'Not signed in');
+
+    var view = KYC_VIEW[API.kyc.status()] || KYC_VIEW.unverified;
+    ['acctKycBadge', 'acctKycRowBadge'].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (!b) return;
+      b.textContent = view.badge;
+      b.className = 'badge ' + view.cls;
+    });
+    set('acctKycRow', view.row);
+  }
+
   function paintDepositNumber() {
+    paintAccount();
     var val = document.getElementById('depositNumVal');
     if (!val) return;
     var who = API.session.get() || {};
@@ -1861,6 +1895,9 @@
       }
 
       if (t.closest('[data-signout]')) {
+        /* The account page's Log out is a link; it must not navigate
+           before the session is actually ended. */
+        e.preventDefault();
         if (window.NexNet && window.NexNet.live) window.NexNet.logout();
         API.session.signOut();
         splash('Signing you out', 'landing');
@@ -2739,6 +2776,8 @@
     });
     API.on('connection', connectionBanner);
     API.on('geo', paintCountry);
+    API.on('session', paintAccount);
+    API.on('kyc', paintAccount);
     connectionBanner();
   }
 
