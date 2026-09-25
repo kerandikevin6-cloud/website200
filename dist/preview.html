@@ -42,41 +42,43 @@
      hair above it, and thin grey lines doing the separating. No blue in
      the neutrals, so the brand blue is the only blue on the screen and
      reads as the brand rather than as the wallpaper. */
-  --bg:#FAFAF9;
+  --bg:#F7F9FA;
   --surface:#FFFFFF;
-  --surface-2:#F3F2EF;
-  --surface-3:#ECEAE6;
-  --line:#E8E6E1;
-  --line-soft:#F0EFEB;
-  --text:#1C1C1C;
-  --text-2:#5E5E59;
+  --surface-2:#F2F4F7;
+  --surface-3:#EAECF0;
+  --line:#E5E7EB;
+  --line-soft:#EEF0F3;
+  --text:#1F2933;
+  --text-2:#475467;
   /* Darker than it looks like it needs to be. The quiet text now sits
      on a blue ground rather than on white, and #64717F against that is
      3.9:1 — under the 4.5 small text wants. This clears it on every
      surface in the theme. */
-  --muted:#6F6E68;                               /* 5.1:1 on white, 4.9:1 on the ground, 4.6:1 on surface-2 */
+  --muted:#667085;                               /* 5.1:1 on white, 4.9:1 on the ground, 4.6:1 on surface-2 */
 
   /* brand + semantic
      Deeper than the dark theme's. A blue that reads well on a dark
      ground is thin and toy-like on a white one. */
-  --accent:#007A43;                              /* green text: 5.4:1 on white */
-  --accent-soft:#E6F7EE;
+  --accent:#007A50;                              /* green text: 5.4:1 on white */
+  --accent-soft:#E8F7F0;
   /* The blue a *filled* control is painted in, and the ink that goes on
      top of it. Separate from --accent because that one has to stay
      legible as text on white and so is pulled deliberately dark; this
      one never carries anything but white, so it can be the brand blue
      at full strength. A chosen toggle is the one thing on a light
      screen that should read as lit rather than merely outlined. */
-  --accent-fill:#008545;                         /* filled controls: white on it is 4.7:1 */
-  --accent-fill-2:#007A43;
+  --accent-fill:#009B63;                         /* filled controls: white on it is 4.7:1 */
+  --accent-fill-2:#007A50;
   --accent-ink:#FFFFFF;
-  --pos:#0B7A4B;
-  --pos-soft:#E3F2EA;
-  --neg:#B32B22;
-  --neg-soft:#FAE9E7;
+  --pos:#007A50;
+  --pos-soft:#E8F7F0;
+  --neg:#D9363E;
+  --neg-soft:#FDECED;
   /* deep, saturated CTA colours - the buy / sell buttons only */
-  --pos-deep:#046340;
-  --neg-deep:#8C1710;
+  --odd-fill:#D9363E;
+  --odd-fill-2:#C02A33;
+  --pos-deep:#007A50;
+  --neg-deep:#B42A31;
   --warn:#9C5A0B;
   --warn-soft:#FBF0DF;
   /* ---- the tick marker ----
@@ -94,13 +96,13 @@
      so it never becomes a fourth status colour by accident. */
   --again:#5B45C9;
   --again-soft:#EDEAFB;
-  --tick:#F5C518;
-  --tick-line:#D8AC06;
-  --tick-ink:#241A00;
+  --tick:#009B63;
+  --tick-line:#009B63;
+  --tick-ink:#FFFFFF;
   /* The same yellow is illegible as small text on white, so text uses
      the dark end of it. 5.6:1 on the page ground. */
-  --tick-text:#7A5C00;
-  --tick-soft:#FDF3D2;
+  --tick-text:#007A50;
+  --tick-soft:#E8F7F0;
 
   /* chart
      Its own ground, a shade off the white panels around it, so the
@@ -108,10 +110,10 @@
      under the line is accent-tinted, not grey: it is the one large area
      of colour on the screen and it is what stops a light trading
      terminal looking like a spreadsheet. */
-  --chart-line:#00994F;                          /* one green line, a grey wash under it */
-  --chart-grid:#EDEBE6;
-  --chart-fill:rgba(28,28,28,.055);
-  --chart-axis:#8A8983;
+  --chart-line:#16A673;                          /* one green line, a grey wash under it */
+  --chart-grid:#EEF0F3;
+  --chart-fill:rgba(22,166,115,.10);
+  --chart-axis:#667085;
   --chart-bg:#FFFFFF;
 
   /* The ground a control sits on, and the slot inside it that is
@@ -120,8 +122,8 @@
      the tabs, the mode pill and the instrument chip disappear. In dark
      the surfaces already differ by value, so these resolve to what was
      there before. */
-  --ctl:#F3F2EF;
-  --ctl-line:#E8E6E1;
+  --ctl:#FFFFFF;
+  --ctl-line:#E5E7EB;
   --ctl-on:#FFFFFF;
 
   /* The banner across the top is the same dark ticket in both themes:
@@ -135,7 +137,7 @@
   --flash-win:#2ED09A;
   --flash-loss:#F0736A;
 
-  --shadow:0 1px 2px rgba(28,28,28,.04), 0 10px 28px rgba(28,28,28,.07);
+  --shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 28px rgba(16,24,40,.06);
   --shadow-lg:0 24px 64px rgba(12,18,26,.2);
 
   --r-xl:20px;
@@ -193,6 +195,8 @@
     --accent:#00C26F;
     --accent-soft:#14312A;
     --accent-fill:#008545;
+    --odd-fill:#C93B39;
+    --odd-fill-2:#B13230;
     --accent-fill-2:#007A43;
     --accent-ink:#FFFFFF;
     --pos:#17A06A;
@@ -243,6 +247,8 @@
   --again:#A99BF0;
   --again-soft:#1D1A38;
   --accent-fill:#008545;
+  --odd-fill:#C93B39;
+  --odd-fill-2:#B13230;
   --accent-fill-2:#007A43;
   --accent-ink:#FFFFFF;
   --pos:#17A06A;
@@ -455,7 +461,7 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
   box-shadow:0 8px 28px rgba(0,0,0,.28);
   backdrop-filter:blur(14px) saturate(1.4);
 }
-:root{--tabbar-bg:rgba(255,255,255,.86);--tabbar-line:rgba(28,28,28,.08)}
+:root{--tabbar-bg:rgba(255,255,255,.92);--tabbar-line:rgba(31,41,51,.08)}
 :root[data-theme="dark"]{--tabbar-bg:#1E1E1D;--tabbar-line:rgba(255,255,255,.1)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){--tabbar-bg:#1E1E1D;--tabbar-line:rgba(255,255,255,.1)}
@@ -3075,18 +3081,18 @@ body[data-chrome="app"] main{background:var(--bg)}
    that is chosen. */
 .drawer{
   --d-bg:#FFFFFF;
-  --d-surface:#F3F2EF;
-  --d-line:#E8E6E1;
-  --d-line-soft:#F0EFEB;
-  --d-text:#1C1C1C;
-  --d-text-2:#5E5E59;
-  --d-muted:#6F6E68;
-  --d-accent:#007A43;
-  --d-accent-bg:#E6F7EE;
-  --d-accent-line:#B7E4CB;
-  --d-danger:#B32B22;
-  --d-danger-2:#8C1710;
-  --d-danger-bg:#FBE7E5;
+  --d-surface:#F2F4F7;
+  --d-line:#E5E7EB;
+  --d-line-soft:#EEF0F3;
+  --d-text:#1F2933;
+  --d-text-2:#475467;
+  --d-muted:#667085;
+  --d-accent:#007A50;
+  --d-accent-bg:#E8F7F0;
+  --d-accent-line:#B5E5CF;
+  --d-danger:#D9363E;
+  --d-danger-2:#B42A31;
+  --d-danger-bg:#FDECED;
   background:var(--d-bg);color:var(--d-text);
   border-right:1px solid var(--d-line);
 }
@@ -3659,8 +3665,8 @@ html[data-oauth]::after{
 .tbtn .s.payout{font-size:10.5px;margin-top:1px}
 .tbtn.even{background:var(--accent-fill)}
 .tbtn.even:hover{background:var(--accent-fill-2)}
-.tbtn.odd{background:#C93B39}
-.tbtn.odd:hover{background:#B13230}
+.tbtn.odd{background:var(--odd-fill)}
+.tbtn.odd:hover{background:var(--odd-fill-2)}
 .tbtn:active{filter:none;transform:none;opacity:.9}
 @media (min-width:900px){
   .terminal .col-right .trade-actions{gap:8px}
@@ -3816,6 +3822,17 @@ html[data-oauth]::after{
 @media (prefers-reduced-motion:reduce){
   .tour,.tour-hole,.tour-card{transition:none}
 }
+
+/* ---- light theme, matched to the reference screen ----
+   White controls on the cool grey ground, thin grey borders, green for
+   what is chosen. The real-account chip goes white like the reference,
+   keeping its green label; the practice chip keeps its amber, which is
+   what tells somebody the money is not real. */
+:root[data-theme="light"] .acct.real{background:var(--surface);border-color:var(--line)}
+:root[data-theme="light"] .acct.real:hover{background:var(--surface-2)}
+:root[data-theme="light"] .stake{background:var(--surface)}
+:root[data-theme="light"] .quick button{background:var(--surface);border-color:var(--line);color:var(--text)}
+:root[data-theme="light"] .quick button:hover{border-color:var(--accent-fill);color:var(--accent)}
 
 </style>
 
