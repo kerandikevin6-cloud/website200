@@ -58,7 +58,8 @@
     };
   }
   var REASON = {
-    running: 'Running', take_profit: 'Target reached', stop_loss: 'Stop loss hit', stopped: 'Stopped'
+    running: 'Running', take_profit: 'Target reached', stop_loss: 'Stop loss hit', stopped: 'Stopped',
+    trade_limit: 'Trade limit'
   };
 
   function items() {
@@ -251,6 +252,7 @@
                 kv('Stake per trade', F.money(r.stake)) +
                 kv('Target profit', F.money(r.takeProfit)) +
                 kv('Stop loss', F.money(r.stopLoss)) +
+                (r.maxTrades ? kv('Trade limit', r.maxTrades) : '') +
                 kv('Started', F.dateTime(r.startedAt)) +
                 (r.endedAt && !s.live ? kv('Ended', F.dateTime(r.endedAt)) : '') +
               '</div>' +

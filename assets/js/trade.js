@@ -401,6 +401,10 @@
         '</div>' +
       '</div>' +
       targets +
+      (S.mode === 'auto'
+        ? '<div class="run-cap">Ends after at most <b>' + capText(auto.takeProfit) +
+            ' trades</b>, or at the target or stop loss, whichever comes first.</div>'
+        : '') +
       /* Last, under the automated run box, and in the same place in both
          modes. It used to sit directly under the stake in manual and
          above two boxes in auto, so the digit moved down the panel when
@@ -606,6 +610,26 @@
      often swinging back past the target. The sale settles like any
      other contract, so the run's own bookkeeping (and the server's)
      arrives at the same total. */
+  /* How many trades a run may take, from how many wins its target
+     needs: the target over what one win pays, rounded up. Roughly two
+     trades a win, so a target one win away gets 3 trades, two wins 5,
+     three wins 7, four wins 9, and nothing ever more than 10. The run
+     ends on whichever comes first: the target, the stop loss, or this. */
+  var MIN_TRADES = 3, MAX_TRADES = 10;
+  function tradeCap(side, stake, takeProfit) {
+    var winProfit = stake * (API.contracts.payoutRate(typeFor(side)) - 1);
+    var wins = winProfit > 0 ? Math.ceil(Math.max(0.01, takeProfit) / winProfit) : MAX_TRADES;
+    return Math.max(MIN_TRADES, Math.min(MAX_TRADES, 2 * wins + 1));
+  }
+
+  /* The cap for this ticket, as the panel says it: one number, or a
+     range where the two sides pay differently (Matches and Differs). */
+  function capText(takeProfit) {
+    var caps = sidesFor().map(function (sd) { return tradeCap(sd[0], S.stake, takeProfit); });
+    var lo = Math.min.apply(null, caps), hi = Math.max.apply(null, caps);
+    return lo === hi ? String(lo) : lo + '–' + hi;
+  }
+
   function checkRunTargets() {
     var r = S.run;
     if (!r || r.closing) return;
@@ -704,6 +728,7 @@
       id: 'R' + Date.now(), side: side, done: 0, wins: 0, losses: 0, pnl: 0,
       base: S.stake, stake: S.stake, multiplier: 1,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss,
+      maxTrades: tradeCap(side, S.stake, cfg.takeProfit),
       serverId: null
     };
 
@@ -714,7 +739,7 @@
     API.runs.start({
       id: r.id, side: side, label: sideLabel, type: typeFor(side), tab: S.tab,
       symbol: S.symbol, symbolName: (API.symbol(S.symbol) || {}).name || S.symbol,
-      stake: r.base, takeProfit: r.takeProfit, stopLoss: r.stopLoss,
+      stake: r.base, takeProfit: r.takeProfit, stopLoss: r.stopLoss, maxTrades: r.maxTrades,
       account: API.account.kind(), startedAt: Date.now()
     });
     renderPanel();
@@ -750,7 +775,7 @@
     S.run = null;
     S.stake = r.base;
     r.endKind = kind || 'stopped';
-    if (r.serverId && r.endKind === 'stopped' && live()) {
+    if (r.serverId && (r.endKind === 'stopped' || r.endKind === 'trade_limit') && live()) {
       window.NexNet.stopRun(r.serverId).catch(function () {});
     }
     API.runs.update(r.id, {
@@ -860,6 +885,10 @@
     if (kind === 'take_profit') { soundResult(c); return stopRun('Target profit reached at ' + F.signedUsd(r.pnl), kind); }
     if (kind === 'stop_loss') { soundResult(c); return stopRun('Stop loss reached at ' + F.signedUsd(r.pnl), kind); }
     if (kind === 'stopped') { soundResult(c); return stopRun('Run stopped', kind); }
+    if (r.maxTrades && r.done >= r.maxTrades) {
+      soundResult(c);
+      return stopRun('Trade limit reached at ' + F.signedUsd(r.pnl), 'trade_limit');
+    }
     /* The one other thing that ends a run: the next stake cannot be
        placed, usually because the balance no longer covers it. */
     if (!check()) { soundResult(c); return stopRun('Run stopped: ' + S.error, 'stopped'); }

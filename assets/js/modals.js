@@ -272,6 +272,7 @@
     if (r.endKind === 'take_profit') return 'Target Profit Reached';
     if (r.endKind === 'stop_loss') return 'Stop Loss Reached';
     if (r.endKind === 'stopped') return 'Run Stopped';
+    if (r.endKind === 'trade_limit') return (r.pnl || 0) >= 0 ? 'Run Closed in Profit' : 'Run Closed at a Loss';
     return (r.pnl || 0) >= 0 ? 'Contract Won' : 'Contract Lost';
   }
   function tickTally(w, l) {
