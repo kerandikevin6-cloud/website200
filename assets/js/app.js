@@ -2066,7 +2066,7 @@
       headline: 'Not enough in M-Pesa',
       detail: 'Insufficient funds',
       note: 'Nothing was taken. Top up or try a smaller amount.' },
-    { re: /pin|incorrect|wrong/i,
+    { re: /\b(wrong|incorrect|invalid) pin\b|\bpin\b.*\b(wrong|incorrect|invalid|rejected|failed)\b/i,
       headline: 'PIN not accepted',
       detail: 'PIN rejected',
       note: 'Nothing was taken. You can try again.' },
@@ -2708,6 +2708,8 @@
   function bindChrome() {
     API.on('settled', function (c) {
       if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
+      /* Only a trade this account placed. */
+      if (!c.owner || c.owner !== (API.session.get() || {}).id) return;
       window.NexNet.recordTrades([tradePayload(c)]).then(function (out) {
         /* A contract placed by an automated run comes back with the run's
            status, which is what the terminal waits on to carry on or stop. */
@@ -2990,8 +2992,12 @@
 
   function syncHistory() {
     if (!(window.NexNet && window.NexNet.live && window.NexNet.signedIn())) return;
+    var me = (API.session.get() || {}).id;
+    /* Only this account's own trades. A trade with no owner on it
+       predates the tag and could belong to anybody who used this
+       browser, so it stays here rather than going up as this account's. */
     var settled = API.contracts.closed().filter(function (c) {
-      return c.status === 'won' || c.status === 'lost';
+      return (c.status === 'won' || c.status === 'lost') && me && c.owner === me;
     });
     if (!settled.length) return;
     /* Quietly. A failure here costs a record, not a trade. The backlog

@@ -335,6 +335,10 @@
     symbol: (saved.symbol && BY_ID[saved.symbol]) ? saved.symbol : 'R_10',
     /* Set by the scanner, consumed by the terminal, see prefs.ticket. */
     ticket: saved.ticket || null,
+    /* Whose history, balances and flags this browser is holding. Kept
+       through sign-out, so the same person signing back in keeps theirs,
+       and anybody else starts clean. */
+    owner: saved.owner || null,
     /* The stake last chosen on the terminal, in USD. Kept here so a trip
        to the scanner and back does not reset it to the default. */
     stake: (+saved.stake > 0) ? +saved.stake : null,
@@ -382,7 +386,7 @@
     try {
       localStorage.setItem(KEY, JSON.stringify({
         session: S.session, account: S.account, balances: S.balances, symbol: S.symbol,
-        ticket: S.ticket, stake: S.stake,
+        ticket: S.ticket, stake: S.stake, owner: S.owner,
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
         contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
@@ -609,6 +613,9 @@
       exitSpot: null, exitTime: null,
       status: 'open', profit: 0, value: round(+spec.stake, 2),
       account: S.account, run: spec.run || null,
+      /* Who placed it. History is only ever sent to the server under the
+         account that made it. */
+      owner: S.session ? S.session.id : null,
       /* Recorded on the contract itself, so the tag survives into the
          history even if the mode is switched off a minute later. */
       demoMode: !!S.demoMode
@@ -997,6 +1004,25 @@
            the real account, new accounts included. A reload of the same
            session keeps whichever account was last chosen. */
         var fresh = !S.session || S.session.id !== user.id;
+
+        /* Somebody else signing in on this browser starts clean. Their
+           history, balances and flags belonged to the last person here;
+           left in place they showed on this account, and the trade
+           history was sent to the server as this account's, where real
+           wins moved this account's balance. */
+        if (S.owner && S.owner !== user.id) {
+          S.contracts = [];
+          S.transactions = [];
+          S.balances = { real: 0, demo: DEMO_SEED_USD };
+          S.deposited = 0;
+          S.copyActive = false;
+          S.kycSent = {};
+          S.verified = false;
+          S.kycStatus = 'unverified';
+          S.ticket = null;
+        }
+        S.owner = user.id;
+
         S.session = {
           id: user.id,
           email: user.email,
