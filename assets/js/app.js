@@ -567,8 +567,8 @@
        leaving a fingerprint. */
     return '<span class="acct-flag">' + (flag('US') || '') + '</span>' +
       '<span class="acct-txt">' +
-        '<span class="acct-kind">' + kind + ' · USD</span>' +
-        '<span class="bal num">' +
+        '<span class="acct-kind">' + kind + '</span>' +
+        '<span class="bal num">$' +
           (real ? F.usdAmount(API.account.displayBalance()) : F.amount(API.account.displayBalance())) +
         '</span>' +
       '</span>' + icon('chevD', 12);
@@ -2355,6 +2355,7 @@
       return;
     }
     if (name === 'withdraw') {
+      var wLabel = node ? node.textContent : 'Withdraw';
       /* Ask the server before refusing. An approval made five minutes
          ago must not stay invisible until the next page load: somebody
          who was told to verify, verified, and came straight back would
@@ -2364,7 +2365,7 @@
         if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
           if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
           hydrateSession().then(function () {
-            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (node) { node.disabled = false; node.textContent = wLabel; }
             if (API.kyc.verified()) runAction('withdraw', node);
             else gotoStep('kyc');
           });
@@ -2380,7 +2381,7 @@
         if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
           if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
           syncDeposited().then(function () {
-            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (node) { node.disabled = false; node.textContent = wLabel; }
             if (API.account.withdrawUnlocked()) runAction('withdraw', node);
             else gotoStep('fund');
           });
@@ -2416,6 +2417,7 @@
         if (addr.length < 20) return fieldError('wAddress', 'Enter the full wallet address');
         dest.address = addr;
         dest.network = (document.getElementById('wNetwork') || {}).value || undefined;
+        state.data.payTo = addr.slice(0, 6) + '\u2026' + addr.slice(-4);
       } else if (method === 'card') {
         var bank = ((document.getElementById('wBank') || {}).value || '').trim();
         var holder = ((document.getElementById('wCardName') || {}).value || '').trim();
@@ -2424,11 +2426,13 @@
         if (holder.length < 2) return fieldError('wCardName', 'Enter the name on the account');
         if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
         dest.card = { bank: bank, name: holder, account: account };
+        state.data.payTo = bank + ' \u2022\u2022' + account.slice(-4);
       } else if (!document.getElementById('wPhone')) {
         /* Paying out to the number on the account. Nothing is sent: the
            server reads the digits it holds, which are the same ones the
            deposit came off. */
         dest.onFile = true;
+        state.data.payTo = (API.session.get() || {}).phoneMasked || null;
       } else {
         var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
         var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');
@@ -2453,6 +2457,8 @@
            something else. */
         dest.phone = wdial ? ('+' + wdial + wdigits) : (wdigits || undefined);
         dest.country = wcc;
+        var wlocal = wdigits.length === 9 ? '0' + wdigits : wdigits;
+        state.data.payTo = wlocal.slice(0, 3) + '****' + wlocal.slice(-3);
       }
 
       if (window.NexNet && window.NexNet.live) return liveWithdraw(w, dest);

@@ -3846,6 +3846,144 @@ html{touch-action:manipulation;overflow-x:clip}
   .tgt-v input,.input,.input.sm,textarea,select{font-size:16px}
 }
 
+
+/* ================================================================
+   Light theme: softened corners, the contract tabs, the account chip
+   The client's light screen has rounded cards and controls; the dark
+   theme keeps its square edges. Appended last so it wins over the
+   square rules above without editing each of them.
+   ================================================================ */
+:root[data-theme="light"]{--r-lg:14px;--r:10px;--r-sm:8px}
+
+/* ---- the three contracts: green words, a light green slot, short rules between ---- */
+:root[data-theme="light"] .ctab + .ctab::before{
+  display:block;content:"";position:absolute;left:0;top:28%;bottom:28%;
+  width:1px;background:var(--line);
+}
+:root[data-theme="light"] .ctab.active{color:var(--accent-fill);background:var(--pos-soft)}
+:root[data-theme="light"] .ctab.active .ctab-ico{color:var(--accent-fill)}
+@media (min-width:900px){
+  :root[data-theme="light"] .terminal .col-right .ctab.active{background:var(--pos-soft);color:var(--accent-fill)}
+}
+
+/* ---- cards and controls with rounded corners ---- */
+:root[data-theme="light"] .chart-card{
+  margin:8px 10px 0;border:1px solid var(--line);border-radius:14px;
+}
+:root[data-theme="light"] .stake,
+:root[data-theme="light"] .quick button,
+:root[data-theme="light"] .method,
+:root[data-theme="light"] .mkt-pick,
+:root[data-theme="light"] .tbtn{border-radius:10px}
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .stat,
+:root[data-theme="light"] .auth-card,
+:root[data-theme="light"] .modal-box:not(.modal-hero),
+:root[data-theme="light"] .flash{border-radius:14px}
+:root[data-theme="light"] .hero-card{border-radius:18px}
+:root[data-theme="light"] .hero-close{border-radius:10px}
+
+/* ---- the top bar: rounded balance box and Deposit, a round menu button ---- */
+:root[data-theme="light"] .topbar .acct,
+:root[data-theme="light"] .topbar .btn-primary{border-radius:12px}
+:root[data-theme="light"] .topbar .iconbtn{border-radius:12px}
+:root[data-theme="light"] .topbar #menuBtn{border-radius:50%}
+
+/* The flag in a circle, cropped from the middle of the rectangle. */
+.acct-flag,
+.topbar .acct-flag{
+  width:22px;height:22px;border-radius:50%;border:1px solid var(--line);
+}
+.acct-flag svg{width:auto;height:100%;max-width:none;flex:none}
+@media (max-width:420px){
+  .topbar .acct-flag{width:20px;height:20px}
+}
+
+
+/* ================================================================
+   Withdraw: the available balance, the rail as tabs, the form on its
+   own card, and a confirmation card with a green head.
+   ================================================================ */
+.wd{display:flex;flex-direction:column;gap:12px}
+.wd-avail{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+}
+.wd-avail-ico{
+  flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;
+  background:var(--pos-soft);color:var(--accent-fill);font-weight:600;font-size:17px;
+}
+.wd-avail-l{flex:1;min-width:0;font-size:13px;color:var(--text-2)}
+.wd-avail b{font-size:20px;font-weight:700;color:var(--text);white-space:nowrap}
+.wd-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wd-tab{
+  display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 6px;
+  border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--text-2);font-size:13px;font-weight:600;
+}
+.wd-tab:hover{border-color:var(--accent-fill);color:var(--text)}
+.wd-tab.active{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff}
+.wd-card{
+  padding:16px 14px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+}
+.wd-card label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+.wd-card .input,.wd-card .saved-num{border-radius:10px}
+.wd-amount{position:relative}
+.wd-amount span{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-weight:600;font-size:16px;pointer-events:none;
+}
+.wd-amount .input{padding-left:32px;font-size:18px}
+.wd-limits{display:flex;justify-content:space-between;margin-top:7px;font-size:12px;color:var(--muted)}
+.wd-go{border-radius:10px;padding:15px;font-size:15px}
+.wd-foot{margin:0;font-size:12px;line-height:1.5;color:var(--muted);text-align:center}
+
+.wd-ok{
+  overflow:hidden;border-radius:20px;background:var(--surface);
+  border:1px solid var(--line);box-shadow:0 24px 60px rgba(0,0,0,.22);
+}
+.wd-ok-head{
+  position:relative;padding:30px 20px 22px;text-align:center;
+  background:var(--pos-soft);border-bottom:1px solid color-mix(in srgb, var(--accent-fill) 22%, transparent);
+}
+.wd-ok-x{
+  position:absolute;top:14px;right:14px;display:grid;place-items:center;
+  width:34px;height:34px;border-radius:50%;background:var(--text);color:var(--bg);
+}
+.wd-ok-mark{
+  display:grid;place-items:center;width:84px;height:84px;margin:0 auto 16px;border-radius:50%;
+  background:color-mix(in srgb, var(--accent-fill) 12%, transparent);
+}
+.wd-ok-mark i{
+  display:grid;place-items:center;width:58px;height:58px;border-radius:50%;
+  background:color-mix(in srgb, var(--accent-fill) 18%, transparent);color:var(--accent-fill);
+  border:2px solid color-mix(in srgb, var(--accent-fill) 45%, transparent);
+}
+.wd-ok-k{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-fill)}
+.wd-ok-v{margin-top:6px;font-size:34px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.wd-ok-local{margin-top:4px;font-size:14px;color:var(--text-2)}
+.wd-ok-body{display:flex;flex-direction:column;gap:10px;padding:18px 18px 20px}
+.wd-ok-row{
+  display:flex;align-items:center;gap:14px;padding:13px 14px;
+  border-radius:12px;background:var(--surface-2);
+}
+.wd-ok-row > span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wd-ok-row small{font-size:12.5px;color:var(--muted)}
+.wd-ok-row b{font-size:15px;font-weight:700;color:var(--text)}
+.wd-ok-ico{
+  flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;
+  background:var(--pos-soft);color:var(--accent-fill);
+}
+.wd-ok-ico.time{background:var(--warn-soft);color:var(--warn)}
+.wd-ok-note{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;
+  background:color-mix(in srgb, var(--pos-soft) 60%, transparent);
+  border:1px solid color-mix(in srgb, var(--accent-fill) 22%, transparent);
+  font-size:13px;color:var(--text-2);
+}
+.wd-ok-note svg{flex:none;color:var(--accent-fill)}
+.wd-ok .wd-go{margin-top:4px}
+
 </style>
 
 <div class="app" id="app"></div>
@@ -5528,7 +5666,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         ticket: S.ticket, stake: S.stake, owner: S.owner, runs: S.runs.slice(0, 100),
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
-        contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
+        /* Newest first, so the first 200. slice(-200) kept the oldest, and
+           once there were more than 200 every new trade was dropped on
+           the way to the next page, which is why Positions never showed
+           it. */
+        contracts: S.contracts.slice(0, 200), transactions: S.transactions.slice(0, 200),
         deposited: S.deposited, copyActive: S.copyActive,
         auto: S.auto, autoV: S.autoV
       }));
@@ -6592,7 +6734,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     ctx.setLineDash([]);
     ctx.beginPath(); ctx.arc(X(points.length - 1), ly, 2.8, 0, Math.PI * 2);
     ctx.fillStyle = css('--chart-line'); ctx.fill();
-    this._tag(lastPt.price.toFixed(this.dp()), ly, css('--surface'), css('--text'), css('--line'));
+    /* Green, white figures: the price the line has just reached is the
+       one number on the axis anybody is reading, so it stands out. */
+    this._tag(lastPt.price.toFixed(this.dp()), ly, css('--accent-fill'), '#fff', css('--accent-fill'));
 
     /* crosshair readout */
     if (this.cross && this.cross.x < w && !this.drag) {
@@ -7802,35 +7946,26 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       }
     },
 
-    /* ---------------- withdraw ---------------- */
+    /* ---------------- withdraw ----------------
+       One screen: what can be taken out, the rail as three tabs across
+       the top, and the form for that rail under it. Picking a rail
+       redraws the same screen rather than stepping into another one. */
     withdraw: {
       steps: {
-        choose: {
-          title: 'Withdraw funds',
-          sub: 'Reviewed and paid within one hour.',
-          body: function () {
-            return '<div class="balance-strip"><span class="label">Available</span>' +
-              '<b class="num">' + F().money(API().account.balance()) + '</b></div>' +
-              method('mpesa', 'phone', 'M-Pesa', 'To the number on your profile') +
-              method('card', 'card', 'Card', 'Back to the card you deposited with') +
-              method('usdt', 'coin', 'USDT', 'TRC-20, ERC-20 or BEP-20');
-          }
-        },
         form: {
-          title: function (s) { return 'Withdraw to ' + (NAMES[s.method] || 'M-Pesa'); },
-          sub: function () {
-            return 'Minimum ' + F().localMoney(API().money.minWithdrawDisplay()) +
-              '. One free withdrawal per day.';
-          },
+          title: 'Withdraw funds',
+          sub: 'To M-Pesa, your bank account or a USDT wallet',
+          noBack: true,
           body: function (s) {
+            var m = s.method || 'mpesa';
             var inner;
-            if (s.method === 'usdt') {
+            if (m === 'usdt') {
               inner = '<div class="field"><label for="wNetwork">Network</label>' +
                 '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option>' +
                 '<option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
                 field('wAddress', 'Wallet address', 'placeholder="T..."',
                   'Check carefully. Transfers cannot be reversed.');
-            } else if (s.method === 'card') {
+            } else if (m === 'card') {
               /* Bank, name and account number. A payout is a transfer
                  into an account, not a reverse card charge: somebody who
                  deposited by phone has no card to send it back to, and
@@ -7842,58 +7977,61 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
               inner = field('wBank', 'Bank', 'placeholder="Equity, KCB, Co-operative"') +
                 field('wCardName', 'Name on the account', 'placeholder="As it appears at the bank"') +
                 field('wAccount', 'Account number', 'inputmode="numeric" placeholder="0123456789"',
-                  'Payouts are sent to an account in your own name. A mismatch is the ' +
-                  'one thing that delays a transfer.');
+                  'Payouts are sent to an account in your own name.');
             } else {
               /* The number on the account, the same one the deposit
                  sheet pays from, masked the same way. A payout to a
                  number typed in a hurry is the mistake that cannot be
-                 taken back, and the number already on file is the one
-                 that funded the account.
-
-                 Every dialling code behind "Use another", not only the
-                 seven the deposit rails cover: a payout is sent by a
-                 person, so where it can go is not limited by what we can
-                 collect. */
+                 taken back. Every dialling code behind "Use another":
+                 a payout is sent by a person, so where it can go is not
+                 limited by what we can collect. */
               var who = API().session.get() || {};
               inner = (who.phoneSet && !s.newNumber)
-                ? savedNumber(who.phoneMasked, 'Mobile money number',
-                    'Where the payout is sent. It must be registered to your ' +
-                    'verified name. Change it for good in Account.')
-                : phoneField('wPhone', 'Mobile money number',
+                ? savedNumber(who.phoneMasked, 'M-Pesa phone number',
+                    'Payment goes to the number on your account. Change it in Account if it is wrong.')
+                : phoneField('wPhone', 'M-Pesa phone number',
                     'Must match the number registered to your verified name.', true);
             }
 
-            /* The sheet works in the viewer's own money from the first
-               figure to the last: the field, the minimum and the total
-               are all display units, so nothing here is converted twice.
-
-               There is no fee row any more. Nothing on the server takes a
-               cut, so a "network fee" line was a figure we invented that
-               made the customer expect less than we actually send, and at
-               a 100 KES floor a one-dollar fee ate the whole payout. */
+            /* No fee row: nothing on the server takes a cut, so a fee
+               line would be a figure we invented. */
+            var bal = API().account.balance();
             var minLocal = API().money.minWithdrawDisplay();
-            var startLocal = Math.max(minLocal, Math.round(API().money.toDisplay(
-              Math.min(API().account.balance(), 100))));
+            var tab = function (value, ico, name) {
+              return '<button type="button" class="wd-tab' + (m === value ? ' active' : '') +
+                '" data-set="method:' + value + '" data-goto="form" aria-pressed="' + (m === value) + '">' +
+                I(ico, 17) + '<span>' + name + '</span></button>';
+            };
 
-            return '<div class="modal-form">' +
-              '<div class="field"><label for="wAmount">Amount</label>' +
-                '<div class="input-wrap"><input class="input num" id="wAmount" value="' + startLocal +
-                  '" inputmode="decimal">' +
-                '<span class="suffix">' + API().account.currency() + '</span></div>' +
-                '<span class="hint">Minimum ' + F().localMoney(minLocal) + '</span></div>' +
-              inner +
-              '<div class="totals">' + kv('Available', F().money(API().account.balance())) +
-                kv('You receive', F().localMoney(startLocal),
-                   'data-total="wAmount" data-fee="0"') + '</div>' +
-              (!API().kyc.verified()
-                ? '<div class="notice">' + I('shield', 17) +
-                  '<span>Identity verification is required before your first payout.</span></div>'
-                : !API().account.withdrawUnlocked()
+            return '<div class="wd">' +
+              '<div class="wd-avail">' +
+                '<span class="wd-avail-ico">$</span>' +
+                '<span class="wd-avail-l">Available for withdrawal</span>' +
+                '<b class="num">$' + F().amount(bal) + '</b>' +
+              '</div>' +
+              '<div class="wd-tabs">' +
+                tab('mpesa', 'phone', 'M-Pesa') + tab('card', 'card', 'Bank') + tab('usdt', 'coin', 'USDT') +
+              '</div>' +
+              '<div class="wd-card modal-form">' +
+                inner +
+                '<div class="field"><label for="wAmount">Withdrawal amount (USD)</label>' +
+                  '<div class="wd-amount"><span>$</span><input class="input num" id="wAmount" ' +
+                    'placeholder="0.00" inputmode="decimal"></div>' +
+                  '<div class="wd-limits"><span>Min: $' + F().localAmount(minLocal) + '</span>' +
+                    '<span>Max: $' + F().amount(bal) + '</span></div>' +
+                '</div>' +
+                (!API().kyc.verified()
                   ? '<div class="notice">' + I('shield', 17) +
-                    '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
-                  : '') +
-              act('Request withdrawal', 'withdraw', 'btn-pos') +
+                    '<span>Identity verification is required before your first payout.</span></div>'
+                  : !API().account.withdrawUnlocked()
+                    ? '<div class="notice">' + I('shield', 17) +
+                      '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
+                    : '') +
+                act('Withdraw to ' + (m === 'card' ? 'bank' : NAMES[m]), 'withdraw', 'btn-pos wd-go') +
+                '<p class="wd-foot">Withdrawals are reviewed and paid within one hour, to the ' +
+                  (m === 'mpesa' ? 'M-Pesa number' : m === 'card' ? 'bank account' : 'wallet') +
+                  ' above.</p>' +
+              '</div>' +
             '</div>';
           }
         },
@@ -7908,17 +8046,38 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
           }
         },
         failed: failStep('Withdrawal'),
+        /* Drawn as its own card: a green head with the mark and the
+           amount, then where the money is going and how long it takes. */
         success: {
-          title: 'Payout sent',
-          sub: 'Your provider will confirm by SMS.',
+          title: 'Withdrawal requested',
+          hero: true,
           noBack: true,
           body: function (s) {
-            return doneBody('Withdrawal complete',
-              F().money(s.sent) + ' is on its way.',
-              kv('Amount', F().money(s.sent)) +
-              kv('Network fee', F().money(1)) +
-              kv('New balance', F().money(API().account.balance())) +
-              kv('Reference', '<span class="num">' + s.ref + '</span>'));
+            var c = API().geo.country() || {};
+            var local = c.cur && c.rate && c.rate !== 1 && c.cur !== 'USD'
+              ? '<div class="wd-ok-local">\u2248 ' + c.cur + ' ' +
+                F().count(Math.round((s.sent || 0) * c.rate)) + '</div>'
+              : '';
+            var dest = s.method === 'usdt' ? ['coin', 'USDT wallet']
+              : s.method === 'card' ? ['card', 'Bank account'] : ['phone', 'M-Pesa phone number'];
+            return '<div class="wd-ok">' +
+              '<div class="wd-ok-head">' +
+                '<button class="wd-ok-x" type="button" data-close aria-label="Close">' + I('close', 16) + '</button>' +
+                '<span class="wd-ok-mark"><i>' + I('check', 26) + '</i></span>' +
+                '<div class="wd-ok-k">Withdrawal requested</div>' +
+                '<div class="wd-ok-v num">$' + F().amount(s.sent) + '</div>' +
+                local +
+              '</div>' +
+              '<div class="wd-ok-body">' +
+                '<div class="wd-ok-row"><span class="wd-ok-ico">' + I(dest[0], 18) + '</span>' +
+                  '<span><small>' + dest[1] + '</small><b class="num">' + (s.payTo || 'On your account') + '</b></span></div>' +
+                '<div class="wd-ok-row"><span class="wd-ok-ico time">' + I('clock', 18) + '</span>' +
+                  '<span><small>Processing time</small><b>Within 1 hour</b></span></div>' +
+                '<div class="wd-ok-note">' + I('check', 16) + '<span>Your withdrawal is being processed.' +
+                  (s.ref ? ' Ref <span class="num">' + s.ref + '</span>' : '') + '</span></div>' +
+                '<button class="btn btn-pos wd-go" type="button" data-close>Done ' + I('chev', 16) + '</button>' +
+              '</div>' +
+            '</div>';
           }
         },
         fund: {
@@ -8068,7 +8227,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        reading this row for. Green for a tick the contract wants, red for
        one it does not — so a trader on Even watches the live circle go
        green on 2 and red on 3 without doing the parity themselves. */
-    var live = liveContract();
+    /* Only the tick that settles a contract lights its circle. The ticks
+       before it move the marker as they would with nothing running, so a
+       trade reads as the digits walking and then one landing. */
+    var live = settledJust();
     var out = '';
     for (var i = 0; i < 10; i++) {
       /* The circle holds the digit and nothing else. The share sat
@@ -8262,7 +8424,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return '<div class="tdetail">' +
       detailRow('Instrument', meta.name) +
       detailRow('Contract', tabLabel()) +
-      detailRow('Duration', S.mode === 'manual' ? '1 tick' : 'Until target or stop') +
+      detailRow('Duration', S.mode === 'manual' ? CONTRACT_TICKS + ' ticks' : 'Until target or stop') +
       /* The two sides of a contract do not always pay the same — Matches
          and Differs are nowhere near each other — so this says one rate
          only when it is honestly one rate. */
@@ -8389,17 +8551,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       : [['over', 'Over ' + S.barrier], ['under', 'Under ' + S.barrier]];
   }
 
-  /* Any open contract on the instrument on screen. Used to tint the
-     live digit; when two are running the first is enough, since the
-     circle can only say one thing. */
-  function liveContract() {
-    var open = API.contracts.open();
-    for (var i = 0; i < open.length; i++) {
-      if (open[i].symbol === S.symbol) return open[i];
-    }
-    /* A one-tick manual trade settles on the very tick that lands, so
-       it is never open when the row repaints. Hold the colour on the
-       digit that decided it until the next tick replaces it. */
+  /* The contract on the instrument on screen that the last tick
+     settled, if any. Used to tint the live digit; when two settle on
+     the same tick the first is enough, since the circle can only say
+     one thing. */
+  function settledJust() {
+    /* The contract the last tick settled, held until the next tick
+       replaces it. Open contracts are left out on purpose: their ticks
+       are not results yet. */
     var all = API.contracts.all();
     for (var j = 0; j < all.length && j < 5; j++) {
       var c = all[j];
@@ -8515,48 +8674,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return a.id === 'stake' || !!(a.closest && a.closest('.targets'));
   }
 
-  /* ---------- calling the ticks ----------
-     Every tick a contract lives through is called as it lands: the
-     digit, and whether it is on your side. Ten seconds of a contract is
-     five to ten of these depending on how fast the instrument runs, and
-     that is the point — a contract that reports once at the end is ten
-     seconds of nothing followed by a verdict, and the ten seconds are
-     the part somebody is actually watching.
-
-     It says where the contract stands, not what it has won. The last
-     tick is the one that decides, and every call before it is "this is
-     what it would be if it stopped here" — which is exactly what the
-     resale value above the button is already saying in money. */
-  function callTick(d) {
-    var open = API.contracts.open();
-    var mine = null;
-    for (var i = 0; i < open.length; i++) {
-      if (open[i].symbol === d.symbol) { mine = open[i]; break; }
-    }
-    if (!mine || !window.NexTick) return;
-
-    /* The contract is settled by the tick that ends it, and that one
-       gets the full banner a moment later. Calling it twice, once small
-       and once large, reads as two results. */
-    if (mine.elapsed >= mine.ticks) return;
-
-    /* Money, not the digit. The digit was on the circle above and in
-       the pill and on the chart, three times over, and none of those
-       answers the question somebody has while a contract runs, which is
-       what it is worth right now. It climbs on a tick that lands the
-       right way and falls on one that does not — the same figure the
-       trade button is showing, said loudly enough to notice. */
-    /* Inside a run, the figure is the run's: what it has made so far plus
-       what the open contract is worth now. Each tick used to be called
-       "Trade won" or "Trade lost" with that one contract's value, which
-       read as dozens of separate trades winning and losing when it was
-       one run moving. */
-    var pnl = mine.value - mine.stake;
-    if (S.run && mine.run === S.run.id) pnl = S.run.pnl + pnl;
-    var up = pnl >= 0;
-    window.NexTick(up ? 'win' : 'loss', F.signedUsd(pnl),
-      S.run ? 'Run P/L' : 'Trade P/L', mine.symbolName || '');
-  }
+  /* ---------- the ticks inside a contract ----------
+     Not called. The ticks before the one that settles a contract should
+     look like the market moving with nothing running; the result comes
+     on the tick that decides, as the banner or the card. */
 
   /* ---------- a run's targets, on every tick ----------
      The run's total is what it has made from finished contracts plus
@@ -8618,14 +8739,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return Math.max(1, Math.min(10, Math.round(RUN_MS / rate)));
   }
 
-  /* Manual is one trade: a single tick, settled on the next digit.
-     Auto is the one that runs a string of them. */
-  /* One tick, always. A manual trade is one tick; an automated run is
-     a continuous chain of them, each settled on the next tick and the
-     next placed at once, so the run reads as one contract that keeps
-     going rather than ten-second contracts that stop and restart. */
+  /* Every contract, manual or inside a run, is three ticks: two that
+     pass like any other, then the one that settles it. A run chains
+     them, the next placed as soon as one settles. It used to be one
+     tick, which lit up digit after digit and was over before anybody
+     watching could follow it. */
+  var CONTRACT_TICKS = 3;
   function contractTicks() {
-    return 1;
+    return CONTRACT_TICKS;
   }
 
   /* ---------- validation ---------- */
@@ -9081,7 +9202,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
-        callTick(d);
         checkRunTargets();
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
@@ -9173,7 +9293,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     if (view === 'open') {
       var openRuns = runs.filter(function (r) { return r.status === 'running'; })
         .map(function (r) { return { kind: 'run', s: runSummary(r) }; });
-      var loose = API.contracts.open().filter(function (c) { return !(c.run && known[c.run]); })
+      /* A run ends when the terminal is left, but the contract it had
+         open carries on to its last tick. It is listed here on its own
+         until it settles, rather than vanishing with the run. */
+      var running = {};
+      runs.forEach(function (r) { if (r.status === 'running') running[r.id] = true; });
+      var loose = API.contracts.open().filter(function (c) { return !(c.run && running[c.run]); })
         .map(function (c) { return { kind: 'contract', c: c }; });
       return openRuns.concat(loose);
     }
@@ -10765,8 +10890,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        leaving a fingerprint. */
     return '<span class="acct-flag">' + (flag('US') || '') + '</span>' +
       '<span class="acct-txt">' +
-        '<span class="acct-kind">' + kind + ' · USD</span>' +
-        '<span class="bal num">' +
+        '<span class="acct-kind">' + kind + '</span>' +
+        '<span class="bal num">$' +
           (real ? F.usdAmount(API.account.displayBalance()) : F.amount(API.account.displayBalance())) +
         '</span>' +
       '</span>' + icon('chevD', 12);
@@ -12553,6 +12678,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       return;
     }
     if (name === 'withdraw') {
+      var wLabel = node ? node.textContent : 'Withdraw';
       /* Ask the server before refusing. An approval made five minutes
          ago must not stay invisible until the next page load: somebody
          who was told to verify, verified, and came straight back would
@@ -12562,7 +12688,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
           if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
           hydrateSession().then(function () {
-            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (node) { node.disabled = false; node.textContent = wLabel; }
             if (API.kyc.verified()) runAction('withdraw', node);
             else gotoStep('kyc');
           });
@@ -12578,7 +12704,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (window.NexNet && window.NexNet.live && window.NexNet.signedIn()) {
           if (node) { node.disabled = true; node.innerHTML = loader('sm') + 'Checking'; }
           syncDeposited().then(function () {
-            if (node) { node.disabled = false; node.textContent = 'Request withdrawal'; }
+            if (node) { node.disabled = false; node.textContent = wLabel; }
             if (API.account.withdrawUnlocked()) runAction('withdraw', node);
             else gotoStep('fund');
           });
@@ -12614,6 +12740,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (addr.length < 20) return fieldError('wAddress', 'Enter the full wallet address');
         dest.address = addr;
         dest.network = (document.getElementById('wNetwork') || {}).value || undefined;
+        state.data.payTo = addr.slice(0, 6) + '\u2026' + addr.slice(-4);
       } else if (method === 'card') {
         var bank = ((document.getElementById('wBank') || {}).value || '').trim();
         var holder = ((document.getElementById('wCardName') || {}).value || '').trim();
@@ -12622,11 +12749,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         if (holder.length < 2) return fieldError('wCardName', 'Enter the name on the account');
         if (account.length < 6) return fieldError('wAccount', 'Enter the full account number');
         dest.card = { bank: bank, name: holder, account: account };
+        state.data.payTo = bank + ' \u2022\u2022' + account.slice(-4);
       } else if (!document.getElementById('wPhone')) {
         /* Paying out to the number on the account. Nothing is sent: the
            server reads the digits it holds, which are the same ones the
            deposit came off. */
         dest.onFile = true;
+        state.data.payTo = (API.session.get() || {}).phoneMasked || null;
       } else {
         var wcc = ((document.getElementById('wPhoneCountry') || {}).value) || API.geo.code();
         var wdigits = (((document.getElementById('wPhone') || {}).value) || '').replace(/\D/g, '');
@@ -12651,6 +12780,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
            something else. */
         dest.phone = wdial ? ('+' + wdial + wdigits) : (wdigits || undefined);
         dest.country = wcc;
+        var wlocal = wdigits.length === 9 ? '0' + wdigits : wdigits;
+        state.data.payTo = wlocal.slice(0, 3) + '****' + wlocal.slice(-3);
       }
 
       if (window.NexNet && window.NexNet.live) return liveWithdraw(w, dest);

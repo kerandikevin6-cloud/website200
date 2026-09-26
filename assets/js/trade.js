@@ -107,7 +107,10 @@
        reading this row for. Green for a tick the contract wants, red for
        one it does not — so a trader on Even watches the live circle go
        green on 2 and red on 3 without doing the parity themselves. */
-    var live = liveContract();
+    /* Only the tick that settles a contract lights its circle. The ticks
+       before it move the marker as they would with nothing running, so a
+       trade reads as the digits walking and then one landing. */
+    var live = settledJust();
     var out = '';
     for (var i = 0; i < 10; i++) {
       /* The circle holds the digit and nothing else. The share sat
@@ -301,7 +304,7 @@
     return '<div class="tdetail">' +
       detailRow('Instrument', meta.name) +
       detailRow('Contract', tabLabel()) +
-      detailRow('Duration', S.mode === 'manual' ? '1 tick' : 'Until target or stop') +
+      detailRow('Duration', S.mode === 'manual' ? CONTRACT_TICKS + ' ticks' : 'Until target or stop') +
       /* The two sides of a contract do not always pay the same — Matches
          and Differs are nowhere near each other — so this says one rate
          only when it is honestly one rate. */
@@ -428,17 +431,14 @@
       : [['over', 'Over ' + S.barrier], ['under', 'Under ' + S.barrier]];
   }
 
-  /* Any open contract on the instrument on screen. Used to tint the
-     live digit; when two are running the first is enough, since the
-     circle can only say one thing. */
-  function liveContract() {
-    var open = API.contracts.open();
-    for (var i = 0; i < open.length; i++) {
-      if (open[i].symbol === S.symbol) return open[i];
-    }
-    /* A one-tick manual trade settles on the very tick that lands, so
-       it is never open when the row repaints. Hold the colour on the
-       digit that decided it until the next tick replaces it. */
+  /* The contract on the instrument on screen that the last tick
+     settled, if any. Used to tint the live digit; when two settle on
+     the same tick the first is enough, since the circle can only say
+     one thing. */
+  function settledJust() {
+    /* The contract the last tick settled, held until the next tick
+       replaces it. Open contracts are left out on purpose: their ticks
+       are not results yet. */
     var all = API.contracts.all();
     for (var j = 0; j < all.length && j < 5; j++) {
       var c = all[j];
@@ -554,48 +554,10 @@
     return a.id === 'stake' || !!(a.closest && a.closest('.targets'));
   }
 
-  /* ---------- calling the ticks ----------
-     Every tick a contract lives through is called as it lands: the
-     digit, and whether it is on your side. Ten seconds of a contract is
-     five to ten of these depending on how fast the instrument runs, and
-     that is the point — a contract that reports once at the end is ten
-     seconds of nothing followed by a verdict, and the ten seconds are
-     the part somebody is actually watching.
-
-     It says where the contract stands, not what it has won. The last
-     tick is the one that decides, and every call before it is "this is
-     what it would be if it stopped here" — which is exactly what the
-     resale value above the button is already saying in money. */
-  function callTick(d) {
-    var open = API.contracts.open();
-    var mine = null;
-    for (var i = 0; i < open.length; i++) {
-      if (open[i].symbol === d.symbol) { mine = open[i]; break; }
-    }
-    if (!mine || !window.NexTick) return;
-
-    /* The contract is settled by the tick that ends it, and that one
-       gets the full banner a moment later. Calling it twice, once small
-       and once large, reads as two results. */
-    if (mine.elapsed >= mine.ticks) return;
-
-    /* Money, not the digit. The digit was on the circle above and in
-       the pill and on the chart, three times over, and none of those
-       answers the question somebody has while a contract runs, which is
-       what it is worth right now. It climbs on a tick that lands the
-       right way and falls on one that does not — the same figure the
-       trade button is showing, said loudly enough to notice. */
-    /* Inside a run, the figure is the run's: what it has made so far plus
-       what the open contract is worth now. Each tick used to be called
-       "Trade won" or "Trade lost" with that one contract's value, which
-       read as dozens of separate trades winning and losing when it was
-       one run moving. */
-    var pnl = mine.value - mine.stake;
-    if (S.run && mine.run === S.run.id) pnl = S.run.pnl + pnl;
-    var up = pnl >= 0;
-    window.NexTick(up ? 'win' : 'loss', F.signedUsd(pnl),
-      S.run ? 'Run P/L' : 'Trade P/L', mine.symbolName || '');
-  }
+  /* ---------- the ticks inside a contract ----------
+     Not called. The ticks before the one that settles a contract should
+     look like the market moving with nothing running; the result comes
+     on the tick that decides, as the banner or the card. */
 
   /* ---------- a run's targets, on every tick ----------
      The run's total is what it has made from finished contracts plus
@@ -657,14 +619,14 @@
     return Math.max(1, Math.min(10, Math.round(RUN_MS / rate)));
   }
 
-  /* Manual is one trade: a single tick, settled on the next digit.
-     Auto is the one that runs a string of them. */
-  /* One tick, always. A manual trade is one tick; an automated run is
-     a continuous chain of them, each settled on the next tick and the
-     next placed at once, so the run reads as one contract that keeps
-     going rather than ten-second contracts that stop and restart. */
+  /* Every contract, manual or inside a run, is three ticks: two that
+     pass like any other, then the one that settles it. A run chains
+     them, the next placed as soon as one settles. It used to be one
+     tick, which lit up digit after digit and was over before anybody
+     watching could follow it. */
+  var CONTRACT_TICKS = 3;
   function contractTicks() {
-    return 1;
+    return CONTRACT_TICKS;
   }
 
   /* ---------- validation ---------- */
@@ -1120,7 +1082,6 @@
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
-        callTick(d);
         checkRunTargets();
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt

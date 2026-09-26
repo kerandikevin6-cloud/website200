@@ -71,7 +71,12 @@
     if (view === 'open') {
       var openRuns = runs.filter(function (r) { return r.status === 'running'; })
         .map(function (r) { return { kind: 'run', s: runSummary(r) }; });
-      var loose = API.contracts.open().filter(function (c) { return !(c.run && known[c.run]); })
+      /* A run ends when the terminal is left, but the contract it had
+         open carries on to its last tick. It is listed here on its own
+         until it settles, rather than vanishing with the run. */
+      var running = {};
+      runs.forEach(function (r) { if (r.status === 'running') running[r.id] = true; });
+      var loose = API.contracts.open().filter(function (c) { return !(c.run && running[c.run]); })
         .map(function (c) { return { kind: 'contract', c: c }; });
       return openRuns.concat(loose);
     }

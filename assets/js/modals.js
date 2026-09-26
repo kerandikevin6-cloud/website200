@@ -1154,35 +1154,26 @@
       }
     },
 
-    /* ---------------- withdraw ---------------- */
+    /* ---------------- withdraw ----------------
+       One screen: what can be taken out, the rail as three tabs across
+       the top, and the form for that rail under it. Picking a rail
+       redraws the same screen rather than stepping into another one. */
     withdraw: {
       steps: {
-        choose: {
-          title: 'Withdraw funds',
-          sub: 'Reviewed and paid within one hour.',
-          body: function () {
-            return '<div class="balance-strip"><span class="label">Available</span>' +
-              '<b class="num">' + F().money(API().account.balance()) + '</b></div>' +
-              method('mpesa', 'phone', 'M-Pesa', 'To the number on your profile') +
-              method('card', 'card', 'Card', 'Back to the card you deposited with') +
-              method('usdt', 'coin', 'USDT', 'TRC-20, ERC-20 or BEP-20');
-          }
-        },
         form: {
-          title: function (s) { return 'Withdraw to ' + (NAMES[s.method] || 'M-Pesa'); },
-          sub: function () {
-            return 'Minimum ' + F().localMoney(API().money.minWithdrawDisplay()) +
-              '. One free withdrawal per day.';
-          },
+          title: 'Withdraw funds',
+          sub: 'To M-Pesa, your bank account or a USDT wallet',
+          noBack: true,
           body: function (s) {
+            var m = s.method || 'mpesa';
             var inner;
-            if (s.method === 'usdt') {
+            if (m === 'usdt') {
               inner = '<div class="field"><label for="wNetwork">Network</label>' +
                 '<select class="input" id="wNetwork"><option>TRC-20 (Tron)</option>' +
                 '<option>ERC-20 (Ethereum)</option><option>BEP-20 (BNB Chain)</option></select></div>' +
                 field('wAddress', 'Wallet address', 'placeholder="T..."',
                   'Check carefully. Transfers cannot be reversed.');
-            } else if (s.method === 'card') {
+            } else if (m === 'card') {
               /* Bank, name and account number. A payout is a transfer
                  into an account, not a reverse card charge: somebody who
                  deposited by phone has no card to send it back to, and
@@ -1194,58 +1185,61 @@
               inner = field('wBank', 'Bank', 'placeholder="Equity, KCB, Co-operative"') +
                 field('wCardName', 'Name on the account', 'placeholder="As it appears at the bank"') +
                 field('wAccount', 'Account number', 'inputmode="numeric" placeholder="0123456789"',
-                  'Payouts are sent to an account in your own name. A mismatch is the ' +
-                  'one thing that delays a transfer.');
+                  'Payouts are sent to an account in your own name.');
             } else {
               /* The number on the account, the same one the deposit
                  sheet pays from, masked the same way. A payout to a
                  number typed in a hurry is the mistake that cannot be
-                 taken back, and the number already on file is the one
-                 that funded the account.
-
-                 Every dialling code behind "Use another", not only the
-                 seven the deposit rails cover: a payout is sent by a
-                 person, so where it can go is not limited by what we can
-                 collect. */
+                 taken back. Every dialling code behind "Use another":
+                 a payout is sent by a person, so where it can go is not
+                 limited by what we can collect. */
               var who = API().session.get() || {};
               inner = (who.phoneSet && !s.newNumber)
-                ? savedNumber(who.phoneMasked, 'Mobile money number',
-                    'Where the payout is sent. It must be registered to your ' +
-                    'verified name. Change it for good in Account.')
-                : phoneField('wPhone', 'Mobile money number',
+                ? savedNumber(who.phoneMasked, 'M-Pesa phone number',
+                    'Payment goes to the number on your account. Change it in Account if it is wrong.')
+                : phoneField('wPhone', 'M-Pesa phone number',
                     'Must match the number registered to your verified name.', true);
             }
 
-            /* The sheet works in the viewer's own money from the first
-               figure to the last: the field, the minimum and the total
-               are all display units, so nothing here is converted twice.
-
-               There is no fee row any more. Nothing on the server takes a
-               cut, so a "network fee" line was a figure we invented that
-               made the customer expect less than we actually send, and at
-               a 100 KES floor a one-dollar fee ate the whole payout. */
+            /* No fee row: nothing on the server takes a cut, so a fee
+               line would be a figure we invented. */
+            var bal = API().account.balance();
             var minLocal = API().money.minWithdrawDisplay();
-            var startLocal = Math.max(minLocal, Math.round(API().money.toDisplay(
-              Math.min(API().account.balance(), 100))));
+            var tab = function (value, ico, name) {
+              return '<button type="button" class="wd-tab' + (m === value ? ' active' : '') +
+                '" data-set="method:' + value + '" data-goto="form" aria-pressed="' + (m === value) + '">' +
+                I(ico, 17) + '<span>' + name + '</span></button>';
+            };
 
-            return '<div class="modal-form">' +
-              '<div class="field"><label for="wAmount">Amount</label>' +
-                '<div class="input-wrap"><input class="input num" id="wAmount" value="' + startLocal +
-                  '" inputmode="decimal">' +
-                '<span class="suffix">' + API().account.currency() + '</span></div>' +
-                '<span class="hint">Minimum ' + F().localMoney(minLocal) + '</span></div>' +
-              inner +
-              '<div class="totals">' + kv('Available', F().money(API().account.balance())) +
-                kv('You receive', F().localMoney(startLocal),
-                   'data-total="wAmount" data-fee="0"') + '</div>' +
-              (!API().kyc.verified()
-                ? '<div class="notice">' + I('shield', 17) +
-                  '<span>Identity verification is required before your first payout.</span></div>'
-                : !API().account.withdrawUnlocked()
+            return '<div class="wd">' +
+              '<div class="wd-avail">' +
+                '<span class="wd-avail-ico">$</span>' +
+                '<span class="wd-avail-l">Available for withdrawal</span>' +
+                '<b class="num">$' + F().amount(bal) + '</b>' +
+              '</div>' +
+              '<div class="wd-tabs">' +
+                tab('mpesa', 'phone', 'M-Pesa') + tab('card', 'card', 'Bank') + tab('usdt', 'coin', 'USDT') +
+              '</div>' +
+              '<div class="wd-card modal-form">' +
+                inner +
+                '<div class="field"><label for="wAmount">Withdrawal amount (USD)</label>' +
+                  '<div class="wd-amount"><span>$</span><input class="input num" id="wAmount" ' +
+                    'placeholder="0.00" inputmode="decimal"></div>' +
+                  '<div class="wd-limits"><span>Min: $' + F().localAmount(minLocal) + '</span>' +
+                    '<span>Max: $' + F().amount(bal) + '</span></div>' +
+                '</div>' +
+                (!API().kyc.verified()
                   ? '<div class="notice">' + I('shield', 17) +
-                    '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
-                  : '') +
-              act('Request withdrawal', 'withdraw', 'btn-pos') +
+                    '<span>Identity verification is required before your first payout.</span></div>'
+                  : !API().account.withdrawUnlocked()
+                    ? '<div class="notice">' + I('shield', 17) +
+                      '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
+                    : '') +
+                act('Withdraw to ' + (m === 'card' ? 'bank' : NAMES[m]), 'withdraw', 'btn-pos wd-go') +
+                '<p class="wd-foot">Withdrawals are reviewed and paid within one hour, to the ' +
+                  (m === 'mpesa' ? 'M-Pesa number' : m === 'card' ? 'bank account' : 'wallet') +
+                  ' above.</p>' +
+              '</div>' +
             '</div>';
           }
         },
@@ -1260,17 +1254,38 @@
           }
         },
         failed: failStep('Withdrawal'),
+        /* Drawn as its own card: a green head with the mark and the
+           amount, then where the money is going and how long it takes. */
         success: {
-          title: 'Payout sent',
-          sub: 'Your provider will confirm by SMS.',
+          title: 'Withdrawal requested',
+          hero: true,
           noBack: true,
           body: function (s) {
-            return doneBody('Withdrawal complete',
-              F().money(s.sent) + ' is on its way.',
-              kv('Amount', F().money(s.sent)) +
-              kv('Network fee', F().money(1)) +
-              kv('New balance', F().money(API().account.balance())) +
-              kv('Reference', '<span class="num">' + s.ref + '</span>'));
+            var c = API().geo.country() || {};
+            var local = c.cur && c.rate && c.rate !== 1 && c.cur !== 'USD'
+              ? '<div class="wd-ok-local">\u2248 ' + c.cur + ' ' +
+                F().count(Math.round((s.sent || 0) * c.rate)) + '</div>'
+              : '';
+            var dest = s.method === 'usdt' ? ['coin', 'USDT wallet']
+              : s.method === 'card' ? ['card', 'Bank account'] : ['phone', 'M-Pesa phone number'];
+            return '<div class="wd-ok">' +
+              '<div class="wd-ok-head">' +
+                '<button class="wd-ok-x" type="button" data-close aria-label="Close">' + I('close', 16) + '</button>' +
+                '<span class="wd-ok-mark"><i>' + I('check', 26) + '</i></span>' +
+                '<div class="wd-ok-k">Withdrawal requested</div>' +
+                '<div class="wd-ok-v num">$' + F().amount(s.sent) + '</div>' +
+                local +
+              '</div>' +
+              '<div class="wd-ok-body">' +
+                '<div class="wd-ok-row"><span class="wd-ok-ico">' + I(dest[0], 18) + '</span>' +
+                  '<span><small>' + dest[1] + '</small><b class="num">' + (s.payTo || 'On your account') + '</b></span></div>' +
+                '<div class="wd-ok-row"><span class="wd-ok-ico time">' + I('clock', 18) + '</span>' +
+                  '<span><small>Processing time</small><b>Within 1 hour</b></span></div>' +
+                '<div class="wd-ok-note">' + I('check', 16) + '<span>Your withdrawal is being processed.' +
+                  (s.ref ? ' Ref <span class="num">' + s.ref + '</span>' : '') + '</span></div>' +
+                '<button class="btn btn-pos wd-go" type="button" data-close>Done ' + I('chev', 16) + '</button>' +
+              '</div>' +
+            '</div>';
           }
         },
         fund: {

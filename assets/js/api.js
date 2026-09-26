@@ -406,7 +406,11 @@
         ticket: S.ticket, stake: S.stake, owner: S.owner, runs: S.runs.slice(0, 100),
         verified: S.verified, kycStatus: S.kycStatus, kycSent: S.kycSent, consent: S.consent, riskAck: S.riskAck,
         geo: S.geo, referrals: S.referrals,
-        contracts: S.contracts.slice(-200), transactions: S.transactions.slice(-200),
+        /* Newest first, so the first 200. slice(-200) kept the oldest, and
+           once there were more than 200 every new trade was dropped on
+           the way to the next page, which is why Positions never showed
+           it. */
+        contracts: S.contracts.slice(0, 200), transactions: S.transactions.slice(0, 200),
         deposited: S.deposited, copyActive: S.copyActive,
         auto: S.auto, autoV: S.autoV
       }));

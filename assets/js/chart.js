@@ -248,7 +248,9 @@
     ctx.setLineDash([]);
     ctx.beginPath(); ctx.arc(X(points.length - 1), ly, 2.8, 0, Math.PI * 2);
     ctx.fillStyle = css('--chart-line'); ctx.fill();
-    this._tag(lastPt.price.toFixed(this.dp()), ly, css('--surface'), css('--text'), css('--line'));
+    /* Green, white figures: the price the line has just reached is the
+       one number on the axis anybody is reading, so it stands out. */
+    this._tag(lastPt.price.toFixed(this.dp()), ly, css('--accent-fill'), '#fff', css('--accent-fill'));
 
     /* crosshair readout */
     if (this.cross && this.cross.x < w && !this.drag) {

@@ -3840,3 +3840,141 @@ html{touch-action:manipulation;overflow-x:clip}
 @media (pointer:coarse){
   .tgt-v input,.input,.input.sm,textarea,select{font-size:16px}
 }
+
+
+/* ================================================================
+   Light theme: softened corners, the contract tabs, the account chip
+   The client's light screen has rounded cards and controls; the dark
+   theme keeps its square edges. Appended last so it wins over the
+   square rules above without editing each of them.
+   ================================================================ */
+:root[data-theme="light"]{--r-lg:14px;--r:10px;--r-sm:8px}
+
+/* ---- the three contracts: green words, a light green slot, short rules between ---- */
+:root[data-theme="light"] .ctab + .ctab::before{
+  display:block;content:"";position:absolute;left:0;top:28%;bottom:28%;
+  width:1px;background:var(--line);
+}
+:root[data-theme="light"] .ctab.active{color:var(--accent-fill);background:var(--pos-soft)}
+:root[data-theme="light"] .ctab.active .ctab-ico{color:var(--accent-fill)}
+@media (min-width:900px){
+  :root[data-theme="light"] .terminal .col-right .ctab.active{background:var(--pos-soft);color:var(--accent-fill)}
+}
+
+/* ---- cards and controls with rounded corners ---- */
+:root[data-theme="light"] .chart-card{
+  margin:8px 10px 0;border:1px solid var(--line);border-radius:14px;
+}
+:root[data-theme="light"] .stake,
+:root[data-theme="light"] .quick button,
+:root[data-theme="light"] .method,
+:root[data-theme="light"] .mkt-pick,
+:root[data-theme="light"] .tbtn{border-radius:10px}
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .stat,
+:root[data-theme="light"] .auth-card,
+:root[data-theme="light"] .modal-box:not(.modal-hero),
+:root[data-theme="light"] .flash{border-radius:14px}
+:root[data-theme="light"] .hero-card{border-radius:18px}
+:root[data-theme="light"] .hero-close{border-radius:10px}
+
+/* ---- the top bar: rounded balance box and Deposit, a round menu button ---- */
+:root[data-theme="light"] .topbar .acct,
+:root[data-theme="light"] .topbar .btn-primary{border-radius:12px}
+:root[data-theme="light"] .topbar .iconbtn{border-radius:12px}
+:root[data-theme="light"] .topbar #menuBtn{border-radius:50%}
+
+/* The flag in a circle, cropped from the middle of the rectangle. */
+.acct-flag,
+.topbar .acct-flag{
+  width:22px;height:22px;border-radius:50%;border:1px solid var(--line);
+}
+.acct-flag svg{width:auto;height:100%;max-width:none;flex:none}
+@media (max-width:420px){
+  .topbar .acct-flag{width:20px;height:20px}
+}
+
+
+/* ================================================================
+   Withdraw: the available balance, the rail as tabs, the form on its
+   own card, and a confirmation card with a green head.
+   ================================================================ */
+.wd{display:flex;flex-direction:column;gap:12px}
+.wd-avail{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+}
+.wd-avail-ico{
+  flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;
+  background:var(--pos-soft);color:var(--accent-fill);font-weight:600;font-size:17px;
+}
+.wd-avail-l{flex:1;min-width:0;font-size:13px;color:var(--text-2)}
+.wd-avail b{font-size:20px;font-weight:700;color:var(--text);white-space:nowrap}
+.wd-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wd-tab{
+  display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 6px;
+  border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--text-2);font-size:13px;font-weight:600;
+}
+.wd-tab:hover{border-color:var(--accent-fill);color:var(--text)}
+.wd-tab.active{background:var(--accent-fill);border-color:var(--accent-fill);color:#fff}
+.wd-card{
+  padding:16px 14px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+}
+.wd-card label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+.wd-card .input,.wd-card .saved-num{border-radius:10px}
+.wd-amount{position:relative}
+.wd-amount span{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-weight:600;font-size:16px;pointer-events:none;
+}
+.wd-amount .input{padding-left:32px;font-size:18px}
+.wd-limits{display:flex;justify-content:space-between;margin-top:7px;font-size:12px;color:var(--muted)}
+.wd-go{border-radius:10px;padding:15px;font-size:15px}
+.wd-foot{margin:0;font-size:12px;line-height:1.5;color:var(--muted);text-align:center}
+
+.wd-ok{
+  overflow:hidden;border-radius:20px;background:var(--surface);
+  border:1px solid var(--line);box-shadow:0 24px 60px rgba(0,0,0,.22);
+}
+.wd-ok-head{
+  position:relative;padding:30px 20px 22px;text-align:center;
+  background:var(--pos-soft);border-bottom:1px solid color-mix(in srgb, var(--accent-fill) 22%, transparent);
+}
+.wd-ok-x{
+  position:absolute;top:14px;right:14px;display:grid;place-items:center;
+  width:34px;height:34px;border-radius:50%;background:var(--text);color:var(--bg);
+}
+.wd-ok-mark{
+  display:grid;place-items:center;width:84px;height:84px;margin:0 auto 16px;border-radius:50%;
+  background:color-mix(in srgb, var(--accent-fill) 12%, transparent);
+}
+.wd-ok-mark i{
+  display:grid;place-items:center;width:58px;height:58px;border-radius:50%;
+  background:color-mix(in srgb, var(--accent-fill) 18%, transparent);color:var(--accent-fill);
+  border:2px solid color-mix(in srgb, var(--accent-fill) 45%, transparent);
+}
+.wd-ok-k{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-fill)}
+.wd-ok-v{margin-top:6px;font-size:34px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.wd-ok-local{margin-top:4px;font-size:14px;color:var(--text-2)}
+.wd-ok-body{display:flex;flex-direction:column;gap:10px;padding:18px 18px 20px}
+.wd-ok-row{
+  display:flex;align-items:center;gap:14px;padding:13px 14px;
+  border-radius:12px;background:var(--surface-2);
+}
+.wd-ok-row > span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wd-ok-row small{font-size:12.5px;color:var(--muted)}
+.wd-ok-row b{font-size:15px;font-weight:700;color:var(--text)}
+.wd-ok-ico{
+  flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;
+  background:var(--pos-soft);color:var(--accent-fill);
+}
+.wd-ok-ico.time{background:var(--warn-soft);color:var(--warn)}
+.wd-ok-note{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;
+  background:color-mix(in srgb, var(--pos-soft) 60%, transparent);
+  border:1px solid color-mix(in srgb, var(--accent-fill) 22%, transparent);
+  font-size:13px;color:var(--text-2);
+}
+.wd-ok-note svg{flex:none;color:var(--accent-fill)}
+.wd-ok .wd-go{margin-top:4px}
