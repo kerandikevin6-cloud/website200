@@ -1070,39 +1070,12 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 }
 .saved-swap:hover{text-decoration:underline}
 
-/* ---------------- pull to refresh ----------------
-   A single dot under the top bar. It fades in with the drag, turns with
-   it, firms up when the gesture is far enough to fire, and spins while
-   the app is coming back. Inline styles from app.js do the moving; this
-   is only what it looks like.
-
-   pointer-events:none matters — it sits over the chart, and a control
-   that eats a tap on the thing behind it is worse than no indicator. */
-.ptr{
-  position:fixed;left:50%;top:calc(var(--topbar-h) - 22px);z-index:38;
-  width:40px;height:40px;margin-left:-20px;border-radius:50%;
-  display:grid;place-items:center;pointer-events:none;
-  color:var(--muted);background:var(--surface);
-  border:1px solid var(--line);
-  box-shadow:0 2px 6px rgba(8,14,22,.10), 0 10px 24px rgba(8,14,22,.14);
-  opacity:0;
-}
-/* Far enough to fire: the ring fills in, which is a state you can see
-   at arm's length without reading anything. */
-.ptr.ready{
-  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
-}
-.ptr.spin{
-  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
-}
-/* The glyph turns, not the dot: the dot is carrying the drag, and two
-   transforms on one element fight each other. */
-.ptr.spin svg{animation:ptr-turn .8s linear infinite}
-@keyframes ptr-turn{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){
-  .ptr.spin svg{animation-duration:2s}
-}
-@media (min-width:900px){.ptr{display:none}}
+/* ---------------- no pull to refresh ----------------
+   Dragging down from the top of the page scrolls, nothing else. The app
+   had its own pull-to-refresh, and it caught the gesture when somebody
+   scrolled back down from the run targets; the browser's own one is
+   turned off here for the same reason. */
+html,body{overscroll-behavior-y:none}
 
 .toast{
   position:fixed;left:50%;bottom:calc(var(--tabbar-h) + 26px);transform:translate(-50%,10px);

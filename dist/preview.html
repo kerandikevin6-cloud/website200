@@ -1075,39 +1075,12 @@ body.no-tabs main{padding-bottom:env(safe-area-inset-bottom)}
 }
 .saved-swap:hover{text-decoration:underline}
 
-/* ---------------- pull to refresh ----------------
-   A single dot under the top bar. It fades in with the drag, turns with
-   it, firms up when the gesture is far enough to fire, and spins while
-   the app is coming back. Inline styles from app.js do the moving; this
-   is only what it looks like.
-
-   pointer-events:none matters — it sits over the chart, and a control
-   that eats a tap on the thing behind it is worse than no indicator. */
-.ptr{
-  position:fixed;left:50%;top:calc(var(--topbar-h) - 22px);z-index:38;
-  width:40px;height:40px;margin-left:-20px;border-radius:50%;
-  display:grid;place-items:center;pointer-events:none;
-  color:var(--muted);background:var(--surface);
-  border:1px solid var(--line);
-  box-shadow:0 2px 6px rgba(8,14,22,.10), 0 10px 24px rgba(8,14,22,.14);
-  opacity:0;
-}
-/* Far enough to fire: the ring fills in, which is a state you can see
-   at arm's length without reading anything. */
-.ptr.ready{
-  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
-}
-.ptr.spin{
-  color:var(--accent-ink);background:var(--accent-fill-2);border-color:var(--accent-fill-2);
-}
-/* The glyph turns, not the dot: the dot is carrying the drag, and two
-   transforms on one element fight each other. */
-.ptr.spin svg{animation:ptr-turn .8s linear infinite}
-@keyframes ptr-turn{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){
-  .ptr.spin svg{animation-duration:2s}
-}
-@media (min-width:900px){.ptr{display:none}}
+/* ---------------- no pull to refresh ----------------
+   Dragging down from the top of the page scrolls, nothing else. The app
+   had its own pull-to-refresh, and it caught the gesture when somebody
+   scrolled back down from the run targets; the browser's own one is
+   turned off here for the same reason. */
+html,body{overscroll-behavior-y:none}
 
 .toast{
   position:fixed;left:50%;bottom:calc(var(--tabbar-h) + 26px);transform:translate(-50%,10px);
@@ -12052,7 +12025,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     /* The rail is fixed, so where it lands in the document does not
        matter to the layout — only that it is inside the app shell. */
     root.insertAdjacentHTML('beforeend', rail(page) + drawer() + (sub ? '' : tabbar(page)));
-    pullToRefresh();
   }
 
   /* The scroll listener that lived here is gone with the floating dock:
@@ -12103,159 +12075,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     val.textContent = who.phoneSet
       ? who.phoneMasked
       : 'Not set yet — add one for one-tap deposits';
-  }
-
-  /* ---------- pull to refresh ----------
-     The service worker keeps the whole shell on the device, which is what
-     makes the app open instantly and also what makes a stale build so
-     hard to shift: the page looks fine, it is simply yesterday's. On a
-     phone there is no address bar to long-press for a hard reload, and
-     "clear your browser data" is not an instruction to give anybody.
-
-     So: drag down from the top and the app throws away every cached file
-     and comes back from the network. What it never touches is
-     localStorage — the session and the account live there, and a refresh
-     that signed somebody out would be a worse bug than the one it fixes.
-
-     Native pull-to-refresh does the same thing in a tab, but it is absent
-     the moment the app is installed to the home screen, which is where it
-     is wanted most. preventDefault on the move keeps the two from firing
-     together. */
-  var PTR_TRIGGER = 64;          /* how far down before it will fire */
-  var PTR_MAX = 104;             /* how far the indicator can travel */
-
-  function pullToRefresh() {
-    if (window.__nexPtr) return;
-    if (!('ontouchstart' in window)) return;      /* a mouse has F5 */
-    window.__nexPtr = true;
-
-    var dot = document.createElement('div');
-    dot.className = 'ptr';
-    dot.innerHTML = icon('refresh', 17);
-    document.body.appendChild(dot);
-
-    var startY = 0, startX = 0, pulling = null, dist = 0, busy = false;
-
-    function paint(d, animate) {
-      dot.style.transition = animate ? 'transform .22s ease, opacity .22s ease' : 'none';
-      dot.style.transform = 'translateY(' + d + 'px) rotate(' + (d * 3) + 'deg)';
-      dot.style.opacity = Math.min(1, d / (PTR_TRIGGER * 0.7));
-      dot.classList.toggle('ready', d >= PTR_TRIGGER);
-    }
-    function reset() {
-      pulling = null; dist = 0;
-      paint(0, true);
-      dot.classList.remove('spin', 'ready');
-    }
-
-    addEventListener('touchstart', function (e) {
-      if (busy || e.touches.length !== 1) return;
-      /* Not while something is over the page, and not part way down it:
-         a drag that begins mid-scroll is a scroll. */
-      if (modalOpen || drawerOpen) return;
-      if (window.scrollY > 0) return;
-      startY = e.touches[0].clientY;
-      startX = e.touches[0].clientX;
-      pulling = null;
-      dist = 0;
-    }, { passive: true });
-
-    addEventListener('touchmove', function (e) {
-      if (busy || !startY || e.touches.length !== 1) return;
-      var dy = e.touches[0].clientY - startY;
-      var dx = e.touches[0].clientX - startX;
-
-      /* Decided once per gesture, on the first few pixels. A drag across
-         the chart pans it and must not also drag the page, and anything
-         heading upwards is an ordinary scroll. */
-      if (pulling === null) {
-        if (dy > 6 && Math.abs(dy) > Math.abs(dx) * 1.6) pulling = true;
-        else if (Math.abs(dx) > 6 || dy < -4) pulling = false;
-        if (!pulling) return;
-      }
-      if (window.scrollY > 0) { reset(); return; }
-
-      /* Rubber band: the further it is dragged the less it gives, so the
-         gesture has an end rather than running off the screen. */
-      dist = Math.min(PTR_MAX, dy * 0.45);
-      paint(dist, false);
-      e.preventDefault();
-    }, { passive: false });
-
-    addEventListener('touchend', function () {
-      if (busy) return;
-      if (pulling && dist >= PTR_TRIGGER) run();
-      else reset();
-      startY = 0;
-    }, { passive: true });
-
-    function run() {
-      busy = true;
-      dot.classList.add('spin');
-      dot.classList.remove('ready');
-      paint(PTR_TRIGGER, true);
-
-      /* There are two caches, and emptying the wrong one is why this
-         used to do nothing you could see.
-
-         The service worker's Cache Storage is the one this cleared, and
-         it was never the stubborn one: that worker is network-first, so
-         online it hands back whatever the network just said. The one
-         that actually pins a stale build is the browser's own HTTP
-         cache, and the stylesheet and every script were being served
-         into it with max-age of a year and "immutable" — a word that
-         tells the browser not to bother asking. A plain reload re-reads
-         the document and then serves year-old code into it without a
-         single request leaving the phone.
-
-         So: empty Cache Storage, then re-fetch the document and every
-         same-origin script and stylesheet it references with
-         cache:'reload', which is the one thing that ignores an
-         immutable entry and replaces it. The reload afterwards then
-         finds fresh copies of everything already in place.
-
-         (The headers are fixed too — they now say revalidate rather
-         than immutable — but that only helps once a browser has been
-         past here again, and this is what gets it past.) */
-      var jobs = [];
-
-      if (window.caches && caches.keys) {
-        jobs.push(caches.keys().then(function (keys) {
-          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-        }));
-      }
-
-      var urls = [location.href];
-      var refs = document.querySelectorAll('link[rel="stylesheet"][href], script[src]');
-      for (var i = 0; i < refs.length; i++) {
-        var u = refs[i].href || refs[i].src;
-        /* Same origin only: a font from Google is not what went stale,
-           and a cross-origin re-fetch is a request somebody else pays
-           for. */
-        if (u && u.indexOf(location.origin) === 0) urls.push(u);
-      }
-      urls.push(location.origin + '/sw.js');
-
-      jobs.push(Promise.all(urls.map(function (u) {
-        return fetch(u, { cache: 'reload', credentials: 'same-origin' })
-          .catch(function () {});
-      })));
-
-      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
-        jobs.push(navigator.serviceWorker.getRegistration().then(function (reg) {
-          return reg ? reg.update() : null;
-        }));
-      }
-      try { sessionStorage.clear(); } catch (e) {}
-
-      var done = function () { location.reload(); };
-      Promise.all(jobs.map(function (j) { return j.catch(function () {}); }))
-        .then(done, done);
-      /* Whatever the browser is doing with those promises, the page comes
-         back: a spinner that never ends is worse than a slow reload.
-         Long enough now that the re-fetches can finish on a phone. */
-      setTimeout(done, 6000);
-    }
   }
 
   function setDrawer(open, fromPop) {
