@@ -211,33 +211,9 @@
       ctx.fill();
     }
 
-    /* contract markers: entry spot line, entry dot, settled outcome */
-    var t0 = points[0].t, t1 = points[points.length - 1].t, tspan = (t1 - t0) || 1;
-    function XT(t) { return Math.max(0, Math.min(w, (t - t0) / tspan * w)); }
-
-    this.markers.forEach(function (m) {
-      if (m.entryTime < t0 - 60000) return;
-      var mx = XT(m.entryTime), my = Y(m.entrySpot);
-      var live = m.status === 'open';
-      var col = live ? css('--accent') : (m.profit >= 0 ? css('--pos') : css('--neg'));
-
-      if (live) {
-        ctx.setLineDash([2, 4]);
-        ctx.strokeStyle = col; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, Math.round(my) + 0.5); ctx.lineTo(w, Math.round(my) + 0.5); ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      ctx.beginPath();
-      ctx.moveTo(mx, my - 5); ctx.lineTo(mx + 5, my); ctx.lineTo(mx, my + 5); ctx.lineTo(mx - 5, my);
-      ctx.closePath();
-      ctx.fillStyle = col; ctx.fill();
-
-      if (!live && m.exitTime) {
-        var ex = XT(m.exitTime), ey = Y(m.exitSpot);
-        ctx.beginPath(); ctx.arc(ex, ey, 3.4, 0, Math.PI * 2);
-        ctx.fillStyle = col; ctx.fill();
-      }
-    });
+    /* No contract markers. The entry diamonds, exit dots and the dashed
+       entry line broke up the trace wherever a trade had run; the line
+       stays one smooth stroke whatever was traded on it. */
 
     /* live price marker */
     var lastPt = points[points.length - 1];

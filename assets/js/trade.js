@@ -98,6 +98,7 @@
     var total = h.length || 1;
     var pctArr = counts.map(function (c) { return c / total * 100; });
     var max = Math.max.apply(null, pctArr);
+    var min = Math.min.apply(null, pctArr);
     var cur = h[h.length - 1];
     var curDigit = cur.digit == null ? lastDigitOf(cur.price, meta.digits) : cur.digit;
 
@@ -116,7 +117,8 @@
       /* The circle holds the digit and nothing else. The share sat
          inside it at 7.5px, which is under the size anything is meant to
          be read at, and it was competing with the number it describes. */
-      var cls = 'dcell' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
+      var cls = 'dcell' + (pctArr[i] === max ? ' hot' : '') +
+        (pctArr[i] === min && min < max ? ' cold' : '') + (i === curDigit ? ' cur' : '') +
         (picking && i === S.barrier ? ' sel' : '') +
         (live && i === curDigit
           ? (API.contracts.winning(live, i) ? ' hit' : ' miss')

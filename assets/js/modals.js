@@ -1162,7 +1162,6 @@
       steps: {
         form: {
           title: 'Withdraw funds',
-          sub: 'To M-Pesa, your bank account or a USDT wallet',
           noBack: true,
           body: function (s) {
             var m = s.method || 'mpesa';
@@ -1194,9 +1193,12 @@
                  a payout is sent by a person, so where it can go is not
                  limited by what we can collect. */
               var who = API().session.get() || {};
-              inner = (who.phoneSet && !s.newNumber)
-                ? savedNumber(who.phoneMasked, 'M-Pesa phone number',
-                    'Payment goes to the number on your account. Change it in Account if it is wrong.')
+              /* The number on file, on one line and nothing else: it is
+                 changed in Account, not here. */
+              inner = who.phoneSet
+                ? '<div class="field"><label>M-Pesa phone number</label>' +
+                    '<div class="input saved-num">' + I('phone', 17) +
+                    '<b class="num">' + (who.phoneMasked || 'On your account') + '</b></div></div>'
                 : phoneField('wPhone', 'M-Pesa phone number',
                     'Must match the number registered to your verified name.', true);
             }
@@ -1236,9 +1238,6 @@
                       '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
                     : '') +
                 act('Withdraw to ' + (m === 'card' ? 'bank' : NAMES[m]), 'withdraw', 'btn-pos wd-go') +
-                '<p class="wd-foot">Withdrawals are reviewed and paid within one hour, to the ' +
-                  (m === 'mpesa' ? 'M-Pesa number' : m === 'card' ? 'bank account' : 'wallet') +
-                  ' above.</p>' +
               '</div>' +
             '</div>';
           }
@@ -1280,7 +1279,7 @@
                 '<div class="wd-ok-row"><span class="wd-ok-ico">' + I(dest[0], 18) + '</span>' +
                   '<span><small>' + dest[1] + '</small><b class="num">' + (s.payTo || 'On your account') + '</b></span></div>' +
                 '<div class="wd-ok-row"><span class="wd-ok-ico time">' + I('clock', 18) + '</span>' +
-                  '<span><small>Processing time</small><b>Within 1 hour</b></span></div>' +
+                  '<span><small>Processing time</small><b>Within 2 minutes</b></span></div>' +
                 '<div class="wd-ok-note">' + I('check', 16) + '<span>Your withdrawal is being processed.' +
                   (s.ref ? ' Ref <span class="num">' + s.ref + '</span>' : '') + '</span></div>' +
                 '<button class="btn btn-pos wd-go" type="button" data-close>Done ' + I('chev', 16) + '</button>' +

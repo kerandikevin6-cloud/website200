@@ -260,7 +260,9 @@
       return '<span class="coin" style="background:' + sym.coin[1] + '">' +
         sym.coin[0] + '</span>';
     }
-    return '<i class="sel-ico">' + icon(window.NexAPI.symbolIcon(sym), 16) + '</i>';
+    /* The index glyph in white on a green tile, the same in the chip over
+       the chart and in the list it opens. */
+    return '<i class="sel-ico inst-mark">' + icon(window.NexAPI.symbolIcon(sym), 14) + '</i>';
   }
   window.NexMark = mark;
 

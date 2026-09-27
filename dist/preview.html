@@ -3984,6 +3984,105 @@ html{touch-action:manipulation;overflow-x:clip}
 .wd-ok-note svg{flex:none;color:var(--accent-fill)}
 .wd-ok .wd-go{margin-top:4px}
 
+
+/* ---- withdraw: tighter, so the sheet fits without scrolling ---- */
+.wd{gap:10px}
+.wd-avail{padding:10px 14px}
+.wd-avail-ico{width:34px;height:34px;font-size:16px}
+.wd-avail b{font-size:18px}
+.wd-tab{padding:9px 6px}
+.wd-card.modal-form{gap:12px;padding:14px 14px 14px}
+.wd-card .saved-num{padding-top:12px;padding-bottom:12px}
+.wd-card .saved-num b{white-space:nowrap}
+.wd-card .input{padding-top:11px;padding-bottom:11px}
+.wd-limits{margin-top:6px}
+.wd-go{padding:13px}
+.modal-box:has(.wd){padding-top:14px;padding-bottom:14px}
+.modal-box:has(.wd) .modal-head{margin-bottom:12px}
+
+/* ---- the instrument mark: a green tile with the glyph in white ---- */
+.sel-ico.inst-mark,
+.sel-row .sel-ico.inst-mark,
+.sel-row.on .sel-ico.inst-mark,
+.sel-row:hover .sel-ico.inst-mark{
+  display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:6px;
+  background:var(--accent-fill);color:#fff;
+}
+.chart-inst .sel-btn .sel-ico.inst-mark{width:20px;height:20px;border-radius:5px}
+.sel-ico.inst-mark svg,.sel-btn .sel-ico.inst-mark svg{width:14px;height:14px;color:#fff}
+
+/* ---- light theme: the pop-ups in a dark slate so they stand out ---- */
+:root[data-theme="light"] .flash{
+  background:#1F2933;border-color:#1F2933;color:#fff;
+  box-shadow:0 2px 6px rgba(16,24,40,.18), 0 16px 40px rgba(16,24,40,.32);
+}
+:root[data-theme="light"] .flash .flash-k{color:#A7B0BC}
+:root[data-theme="light"] .flash .flash-n,
+:root[data-theme="light"] .flash .flash-v{color:#fff}
+:root[data-theme="light"] .flash.win{border-left-color:#2ED09A}
+:root[data-theme="light"] .flash.loss{border-left-color:#F0736A}
+:root[data-theme="light"] .flash.win .flash-v{color:#2ED09A}
+:root[data-theme="light"] .flash.loss .flash-v{color:#F0736A}
+
+:root[data-theme="light"]{
+  --hero-bg:#1F2933;
+  --hero-panel:rgba(255,255,255,.06);
+  --hero-good:#2ED09A;
+  --hero-good-ink:#0B2A1E;
+  --hero-bad:#F0736A;
+  --hero-text:#C9D1DB;
+  --hero-muted:#95A0AE;
+  --hero-line:rgba(255,255,255,.1);
+}
+:root[data-theme="light"] .hero-card{border-color:#1F2933;box-shadow:0 24px 64px rgba(16,24,40,.45)}
+:root[data-theme="light"] .hero-title,
+:root[data-theme="light"] .hero-card.bad .hero-title{color:#fff}
+:root[data-theme="light"] .hero-amount{color:var(--hero-good)}
+:root[data-theme="light"] .hero-card.bad .hero-amount{color:var(--hero-bad)}
+:root[data-theme="light"] .hero-mark{background:rgba(46,208,154,.14);color:var(--hero-good)}
+:root[data-theme="light"] .hero-card.bad .hero-mark{background:rgba(240,115,106,.14);color:var(--hero-bad)}
+:root[data-theme="light"] .hero-rows{background:var(--hero-panel);border-top:0;padding:4px 14px;border-radius:12px}
+:root[data-theme="light"] .hero-row + .hero-row{border-top-color:var(--hero-line)}
+:root[data-theme="light"] .hero-row > span{color:var(--hero-text)}
+:root[data-theme="light"] .hero-row b{color:#fff}
+:root[data-theme="light"] .hero-close{background:var(--hero-good);color:var(--hero-good-ink)}
+:root[data-theme="light"] .hero-close:hover{background:var(--hero-good);filter:brightness(1.06)}
+:root[data-theme="light"] .hero-card.bad .hero-close,
+:root[data-theme="light"] .hero-card.bad .hero-close:hover{background:var(--hero-bad);color:#fff;opacity:1}
+
+/* ---- light theme: digit circles with terminal contrast ----
+   Neutral circles get a firmer grey ring and near-black figures; the
+   most frequent digit is green, the least frequent red, and where the
+   tick has landed is a green ring with its figure, share and arrow in
+   green. Won and lost still fill the whole circle. */
+:root[data-theme="light"] .digit{
+  border:1.5px solid #C4CAD3;background:#fff;color:#1F2933;font-weight:600;
+}
+:root[data-theme="light"] .dpct{color:#4B5563;font-weight:500}
+:root[data-theme="light"] .dcell.hot .digit{border-color:#009B63;color:#007A50}
+:root[data-theme="light"] .dcell.hot .dpct{color:#007A50;font-weight:600}
+:root[data-theme="light"] .dcell.cold .digit{border-color:#D9363E;color:#C02A33}
+:root[data-theme="light"] .dcell.cold .dpct{color:#C02A33;font-weight:600}
+:root[data-theme="light"] .dcell.cur .digit,
+:root[data-theme="light"] .dcell.cur.sel .digit{
+  border:2.5px solid #009B63;color:#007A50;font-weight:700;background:#E8F7F0;
+  box-shadow:0 0 0 3px rgba(0,155,99,.12);
+}
+:root[data-theme="light"] .dcell.cur .dpct{color:#007A50;font-weight:700}
+:root[data-theme="light"] .dcell.cur::after{border-bottom-color:#009B63}
+:root[data-theme="light"] .dcell.sel .digit{border-color:#009B63;background:#E8F7F0;color:#007A50}
+:root[data-theme="light"] .dcell.cur.hit .digit,
+:root[data-theme="light"] .dcell.cur.sel.hit .digit{
+  border-color:var(--pos);background:var(--pos);color:#fff;
+}
+:root[data-theme="light"] .dcell.cur.miss .digit,
+:root[data-theme="light"] .dcell.cur.sel.miss .digit{
+  border-color:var(--neg);background:var(--neg);color:#fff;
+  box-shadow:0 0 0 3px var(--neg-soft);
+}
+:root[data-theme="light"] .dcell.cur.miss .dpct{color:var(--neg)}
+:root[data-theme="light"] .dcell.cur.miss::after{border-bottom-color:var(--neg)}
+
 </style>
 
 <div class="app" id="app"></div>
@@ -6697,33 +6796,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       ctx.fill();
     }
 
-    /* contract markers: entry spot line, entry dot, settled outcome */
-    var t0 = points[0].t, t1 = points[points.length - 1].t, tspan = (t1 - t0) || 1;
-    function XT(t) { return Math.max(0, Math.min(w, (t - t0) / tspan * w)); }
-
-    this.markers.forEach(function (m) {
-      if (m.entryTime < t0 - 60000) return;
-      var mx = XT(m.entryTime), my = Y(m.entrySpot);
-      var live = m.status === 'open';
-      var col = live ? css('--accent') : (m.profit >= 0 ? css('--pos') : css('--neg'));
-
-      if (live) {
-        ctx.setLineDash([2, 4]);
-        ctx.strokeStyle = col; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, Math.round(my) + 0.5); ctx.lineTo(w, Math.round(my) + 0.5); ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      ctx.beginPath();
-      ctx.moveTo(mx, my - 5); ctx.lineTo(mx + 5, my); ctx.lineTo(mx, my + 5); ctx.lineTo(mx - 5, my);
-      ctx.closePath();
-      ctx.fillStyle = col; ctx.fill();
-
-      if (!live && m.exitTime) {
-        var ex = XT(m.exitTime), ey = Y(m.exitSpot);
-        ctx.beginPath(); ctx.arc(ex, ey, 3.4, 0, Math.PI * 2);
-        ctx.fillStyle = col; ctx.fill();
-      }
-    });
+    /* No contract markers. The entry diamonds, exit dots and the dashed
+       entry line broke up the trace wherever a trade had run; the line
+       stays one smooth stroke whatever was traded on it. */
 
     /* live price marker */
     var lastPt = points[points.length - 1];
@@ -7954,7 +8029,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       steps: {
         form: {
           title: 'Withdraw funds',
-          sub: 'To M-Pesa, your bank account or a USDT wallet',
           noBack: true,
           body: function (s) {
             var m = s.method || 'mpesa';
@@ -7986,9 +8060,12 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                  a payout is sent by a person, so where it can go is not
                  limited by what we can collect. */
               var who = API().session.get() || {};
-              inner = (who.phoneSet && !s.newNumber)
-                ? savedNumber(who.phoneMasked, 'M-Pesa phone number',
-                    'Payment goes to the number on your account. Change it in Account if it is wrong.')
+              /* The number on file, on one line and nothing else: it is
+                 changed in Account, not here. */
+              inner = who.phoneSet
+                ? '<div class="field"><label>M-Pesa phone number</label>' +
+                    '<div class="input saved-num">' + I('phone', 17) +
+                    '<b class="num">' + (who.phoneMasked || 'On your account') + '</b></div></div>'
                 : phoneField('wPhone', 'M-Pesa phone number',
                     'Must match the number registered to your verified name.', true);
             }
@@ -8028,9 +8105,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                       '<span>Deposit ' + API().account.unlockUsd + ' USD to unlock withdrawals.</span></div>'
                     : '') +
                 act('Withdraw to ' + (m === 'card' ? 'bank' : NAMES[m]), 'withdraw', 'btn-pos wd-go') +
-                '<p class="wd-foot">Withdrawals are reviewed and paid within one hour, to the ' +
-                  (m === 'mpesa' ? 'M-Pesa number' : m === 'card' ? 'bank account' : 'wallet') +
-                  ' above.</p>' +
               '</div>' +
             '</div>';
           }
@@ -8072,7 +8146,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                 '<div class="wd-ok-row"><span class="wd-ok-ico">' + I(dest[0], 18) + '</span>' +
                   '<span><small>' + dest[1] + '</small><b class="num">' + (s.payTo || 'On your account') + '</b></span></div>' +
                 '<div class="wd-ok-row"><span class="wd-ok-ico time">' + I('clock', 18) + '</span>' +
-                  '<span><small>Processing time</small><b>Within 1 hour</b></span></div>' +
+                  '<span><small>Processing time</small><b>Within 2 minutes</b></span></div>' +
                 '<div class="wd-ok-note">' + I('check', 16) + '<span>Your withdrawal is being processed.' +
                   (s.ref ? ' Ref <span class="num">' + s.ref + '</span>' : '') + '</span></div>' +
                 '<button class="btn btn-pos wd-go" type="button" data-close>Done ' + I('chev', 16) + '</button>' +
@@ -8218,6 +8292,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var total = h.length || 1;
     var pctArr = counts.map(function (c) { return c / total * 100; });
     var max = Math.max.apply(null, pctArr);
+    var min = Math.min.apply(null, pctArr);
     var cur = h[h.length - 1];
     var curDigit = cur.digit == null ? lastDigitOf(cur.price, meta.digits) : cur.digit;
 
@@ -8236,7 +8311,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       /* The circle holds the digit and nothing else. The share sat
          inside it at 7.5px, which is under the size anything is meant to
          be read at, and it was competing with the number it describes. */
-      var cls = 'dcell' + (pctArr[i] === max ? ' hot' : '') + (i === curDigit ? ' cur' : '') +
+      var cls = 'dcell' + (pctArr[i] === max ? ' hot' : '') +
+        (pctArr[i] === min && min < max ? ' cold' : '') + (i === curDigit ? ' cur' : '') +
         (picking && i === S.barrier ? ' sel' : '') +
         (live && i === curDigit
           ? (API.contracts.winning(live, i) ? ' hit' : ' miss')
@@ -10583,7 +10659,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       return '<span class="coin" style="background:' + sym.coin[1] + '">' +
         sym.coin[0] + '</span>';
     }
-    return '<i class="sel-ico">' + icon(window.NexAPI.symbolIcon(sym), 16) + '</i>';
+    /* The index glyph in white on a green tile, the same in the chip over
+       the chart and in the list it opens. */
+    return '<i class="sel-ico inst-mark">' + icon(window.NexAPI.symbolIcon(sym), 14) + '</i>';
   }
   window.NexMark = mark;
 

@@ -3978,3 +3978,102 @@ html{touch-action:manipulation;overflow-x:clip}
 }
 .wd-ok-note svg{flex:none;color:var(--accent-fill)}
 .wd-ok .wd-go{margin-top:4px}
+
+
+/* ---- withdraw: tighter, so the sheet fits without scrolling ---- */
+.wd{gap:10px}
+.wd-avail{padding:10px 14px}
+.wd-avail-ico{width:34px;height:34px;font-size:16px}
+.wd-avail b{font-size:18px}
+.wd-tab{padding:9px 6px}
+.wd-card.modal-form{gap:12px;padding:14px 14px 14px}
+.wd-card .saved-num{padding-top:12px;padding-bottom:12px}
+.wd-card .saved-num b{white-space:nowrap}
+.wd-card .input{padding-top:11px;padding-bottom:11px}
+.wd-limits{margin-top:6px}
+.wd-go{padding:13px}
+.modal-box:has(.wd){padding-top:14px;padding-bottom:14px}
+.modal-box:has(.wd) .modal-head{margin-bottom:12px}
+
+/* ---- the instrument mark: a green tile with the glyph in white ---- */
+.sel-ico.inst-mark,
+.sel-row .sel-ico.inst-mark,
+.sel-row.on .sel-ico.inst-mark,
+.sel-row:hover .sel-ico.inst-mark{
+  display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:6px;
+  background:var(--accent-fill);color:#fff;
+}
+.chart-inst .sel-btn .sel-ico.inst-mark{width:20px;height:20px;border-radius:5px}
+.sel-ico.inst-mark svg,.sel-btn .sel-ico.inst-mark svg{width:14px;height:14px;color:#fff}
+
+/* ---- light theme: the pop-ups in a dark slate so they stand out ---- */
+:root[data-theme="light"] .flash{
+  background:#1F2933;border-color:#1F2933;color:#fff;
+  box-shadow:0 2px 6px rgba(16,24,40,.18), 0 16px 40px rgba(16,24,40,.32);
+}
+:root[data-theme="light"] .flash .flash-k{color:#A7B0BC}
+:root[data-theme="light"] .flash .flash-n,
+:root[data-theme="light"] .flash .flash-v{color:#fff}
+:root[data-theme="light"] .flash.win{border-left-color:#2ED09A}
+:root[data-theme="light"] .flash.loss{border-left-color:#F0736A}
+:root[data-theme="light"] .flash.win .flash-v{color:#2ED09A}
+:root[data-theme="light"] .flash.loss .flash-v{color:#F0736A}
+
+:root[data-theme="light"]{
+  --hero-bg:#1F2933;
+  --hero-panel:rgba(255,255,255,.06);
+  --hero-good:#2ED09A;
+  --hero-good-ink:#0B2A1E;
+  --hero-bad:#F0736A;
+  --hero-text:#C9D1DB;
+  --hero-muted:#95A0AE;
+  --hero-line:rgba(255,255,255,.1);
+}
+:root[data-theme="light"] .hero-card{border-color:#1F2933;box-shadow:0 24px 64px rgba(16,24,40,.45)}
+:root[data-theme="light"] .hero-title,
+:root[data-theme="light"] .hero-card.bad .hero-title{color:#fff}
+:root[data-theme="light"] .hero-amount{color:var(--hero-good)}
+:root[data-theme="light"] .hero-card.bad .hero-amount{color:var(--hero-bad)}
+:root[data-theme="light"] .hero-mark{background:rgba(46,208,154,.14);color:var(--hero-good)}
+:root[data-theme="light"] .hero-card.bad .hero-mark{background:rgba(240,115,106,.14);color:var(--hero-bad)}
+:root[data-theme="light"] .hero-rows{background:var(--hero-panel);border-top:0;padding:4px 14px;border-radius:12px}
+:root[data-theme="light"] .hero-row + .hero-row{border-top-color:var(--hero-line)}
+:root[data-theme="light"] .hero-row > span{color:var(--hero-text)}
+:root[data-theme="light"] .hero-row b{color:#fff}
+:root[data-theme="light"] .hero-close{background:var(--hero-good);color:var(--hero-good-ink)}
+:root[data-theme="light"] .hero-close:hover{background:var(--hero-good);filter:brightness(1.06)}
+:root[data-theme="light"] .hero-card.bad .hero-close,
+:root[data-theme="light"] .hero-card.bad .hero-close:hover{background:var(--hero-bad);color:#fff;opacity:1}
+
+/* ---- light theme: digit circles with terminal contrast ----
+   Neutral circles get a firmer grey ring and near-black figures; the
+   most frequent digit is green, the least frequent red, and where the
+   tick has landed is a green ring with its figure, share and arrow in
+   green. Won and lost still fill the whole circle. */
+:root[data-theme="light"] .digit{
+  border:1.5px solid #C4CAD3;background:#fff;color:#1F2933;font-weight:600;
+}
+:root[data-theme="light"] .dpct{color:#4B5563;font-weight:500}
+:root[data-theme="light"] .dcell.hot .digit{border-color:#009B63;color:#007A50}
+:root[data-theme="light"] .dcell.hot .dpct{color:#007A50;font-weight:600}
+:root[data-theme="light"] .dcell.cold .digit{border-color:#D9363E;color:#C02A33}
+:root[data-theme="light"] .dcell.cold .dpct{color:#C02A33;font-weight:600}
+:root[data-theme="light"] .dcell.cur .digit,
+:root[data-theme="light"] .dcell.cur.sel .digit{
+  border:2.5px solid #009B63;color:#007A50;font-weight:700;background:#E8F7F0;
+  box-shadow:0 0 0 3px rgba(0,155,99,.12);
+}
+:root[data-theme="light"] .dcell.cur .dpct{color:#007A50;font-weight:700}
+:root[data-theme="light"] .dcell.cur::after{border-bottom-color:#009B63}
+:root[data-theme="light"] .dcell.sel .digit{border-color:#009B63;background:#E8F7F0;color:#007A50}
+:root[data-theme="light"] .dcell.cur.hit .digit,
+:root[data-theme="light"] .dcell.cur.sel.hit .digit{
+  border-color:var(--pos);background:var(--pos);color:#fff;
+}
+:root[data-theme="light"] .dcell.cur.miss .digit,
+:root[data-theme="light"] .dcell.cur.sel.miss .digit{
+  border-color:var(--neg);background:var(--neg);color:#fff;
+  box-shadow:0 0 0 3px var(--neg-soft);
+}
+:root[data-theme="light"] .dcell.cur.miss .dpct{color:var(--neg)}
+:root[data-theme="light"] .dcell.cur.miss::after{border-bottom-color:var(--neg)}
