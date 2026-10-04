@@ -677,11 +677,30 @@
     return all;
   }
 
-  /* How often a contract settles in the customer's favour while the
-     presentation mode is on. Not 100: a walkthrough where nothing ever
-     loses does not look like trading, and the one loss in thirty is what
-     makes the rest read as a market rather than a slot machine. */
-  var DEMO_WIN_RATE = 0.97;
+  /* How many contracts in every five settle in the customer's favour
+     while the presentation mode is on. VIP gets three in five, standard
+     two in five: enough to show the product working without a run of
+     wins that reads as staged to anybody watching. */
+  var DEMO_WINS_PER_FIVE = { vip: 3, standard: 2 };
+
+  /* The outcomes are dealt from a shuffled hand of five rather than
+     rolled each time, so the rate holds over every five contracts and
+     not just on average: a coin weighted to 60 still throws five losses
+     in a row now and then, and that is the streak the mode exists to
+     avoid. */
+  var demoHand = [];
+  function demoDeal() {
+    if (!demoHand.length) {
+      var tier = S.session && S.session.tier === 'vip' ? 'vip' : 'standard';
+      var wins = DEMO_WINS_PER_FIVE[tier];
+      for (var i = 0; i < 5; i++) demoHand.push(i < wins);
+      for (var j = demoHand.length - 1; j > 0; j--) {
+        var k = Math.floor(Math.random() * (j + 1));
+        var t = demoHand[j]; demoHand[j] = demoHand[k]; demoHand[k] = t;
+      }
+    }
+    return demoHand.pop();
+  }
 
   /* Move the price so its last digit is one that wins, rather than
      declaring a win on a digit that lost.
@@ -697,11 +716,9 @@
 
     /* Both directions, which is what makes the rate mean what it says.
        Forcing only the wins leaves the natural odds to decide the rest,
-       and the rest still wins sometimes: 97 plus three percent of ninety
-       is 99.7, so Differs would almost never lose and the run would look
-       staged to anybody watching it for a minute. Forcing the loss too
-       costs one branch and makes 97 actually 97. */
-    var wantWin = Math.random() < DEMO_WIN_RATE;
+       and the rest still win sometimes, so the real rate would drift well
+       above the one set here. */
+    var wantWin = demoDeal();
 
     function digitsFor(c) {
       var win = winningDigits(c);
@@ -846,6 +863,7 @@
   function signOut() {
     S.session = null;
     S.demoMode = false;
+    demoHand.length = 0;
     /* The balance is not the only thing that has to go: leaving the
        account kind on 'real' means the next visitor to this browser
        opens on a real-looking terminal. */
@@ -1108,6 +1126,7 @@
         S.verified = user.kyc === 'verified';
         S.kycStatus = user.kyc || 'unverified';
         S.demoMode = !!user.demoMode;
+        demoHand.length = 0;
         if (user.copyActive != null) S.copyActive = !!user.copyActive;
         if (fresh) S.account = 'real';
 
