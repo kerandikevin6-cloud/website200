@@ -8756,16 +8756,14 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      often swinging back past the target. The sale settles like any
      other contract, so the run's own bookkeeping (and the server's)
      arrives at the same total. */
-  /* How many trades a run may take, from how many wins its target
-     needs: the target over what one win pays, rounded up. Roughly two
-     trades a win, so a target one win away gets 3 trades, two wins 5,
-     three wins 7, four wins 9, and nothing ever more than 10. The run
-     ends on whichever comes first: the target, the stop loss, or this. */
-  var MIN_TRADES = 3, MAX_TRADES = 10;
-  function tradeCap(side, stake, takeProfit) {
-    var winProfit = stake * (API.contracts.payoutRate(typeFor(side)) - 1);
-    var wins = winProfit > 0 ? Math.ceil(Math.max(0.01, takeProfit) / winProfit) : MAX_TRADES;
-    return Math.max(MIN_TRADES, Math.min(MAX_TRADES, 2 * wins + 1));
+  /* How many trades a run may take: ten, on every account and whatever
+     the target. It used to scale with the target (3 for one win away,
+     5 for two), which ended small-target runs after a couple of losses
+     well short of the target. The run ends on whichever comes first:
+     the target, the stop loss, or this. */
+  var MAX_TRADES = 10;
+  function tradeCap() {
+    return MAX_TRADES;
   }
 
   function checkRunTargets() {
@@ -8866,7 +8864,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       id: 'R' + Date.now(), side: side, done: 0, wins: 0, losses: 0, pnl: 0,
       base: S.stake, stake: S.stake, multiplier: 1,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss,
-      maxTrades: tradeCap(side, S.stake, cfg.takeProfit),
+      maxTrades: tradeCap(),
       serverId: null
     };
 
