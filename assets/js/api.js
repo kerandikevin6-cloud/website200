@@ -389,7 +389,13 @@
        opening the app for the first time. */
     /* Settings saved under the previous version keep their own target
        and stop; only the multiplier is dropped. */
-    auto: (saved.autoV === AUTO_V && saved.auto) ||
+    /* A finished run hands the next one the defaults: the targets
+       somebody typed for that run are not carried past a reload. Until
+       the page reloads they stay on screen, so what is shown is what the
+       next run uses. */
+    autoSpent: false,
+    auto: (!saved.autoSpent && saved.autoV === AUTO_V && saved.auto) ||
+      (saved.autoSpent ? AUTO_DEFAULTS() : null) ||
       (saved.auto && saved.autoV === 3
         ? Object.assign(AUTO_DEFAULTS(), {
             takeProfit: +saved.auto.takeProfit || AUTO_DEFAULTS().takeProfit,
@@ -412,7 +418,7 @@
            it. */
         contracts: S.contracts.slice(0, 200), transactions: S.transactions.slice(0, 200),
         deposited: S.deposited, copyActive: S.copyActive,
-        auto: S.auto, autoV: S.autoV
+        auto: S.auto, autoV: S.autoV, autoSpent: S.autoSpent
       }));
     } catch (e) {}
   }
@@ -1209,7 +1215,9 @@
       riskAck: function () { return S.riskAck; },
       setRiskAck: function (v) { S.riskAck = !!v; persist(); },
       auto: function () { return S.auto; },
-      setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); },
+      setAuto: function (o) { S.auto = Object.assign(S.auto, o); S.autoSpent = false; persist(); },
+      /* Called when a run ends: the next load starts on the defaults. */
+      spendAuto: function () { S.autoSpent = true; persistNow(); },
       symbol: function () { return BY_ID[S.symbol] ? S.symbol : 'R_10'; },
       /* A ticket handed from the scanner to the terminal. Written on
          one page and read on the next, which are separate documents, so

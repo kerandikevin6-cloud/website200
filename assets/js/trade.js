@@ -725,6 +725,7 @@
     S.run = null;
     S.stake = r.base;
     r.endKind = kind || 'stopped';
+    API.prefs.spendAuto();
     if (r.serverId && (r.endKind === 'stopped' || r.endKind === 'trade_limit') && live()) {
       window.NexNet.stopRun(r.serverId).catch(function () {});
     }
