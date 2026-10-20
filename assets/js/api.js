@@ -311,7 +311,7 @@
      sitting in somebody's localStorage and a stale one is worse than a
      new one: a saved runs:10 would keep a run going for the best part
      of a minute on a build where nothing else can. */
-  var AUTO_V = 4;
+  var AUTO_V = 5;
   function AUTO_DEFAULTS() {
     /* One contract. A run of ten at five seconds each is fifty seconds
        of watching a button, and nothing about the outcome is clearer at
@@ -322,7 +322,7 @@
     /* No stake multiplier: every contract in a run is staked the same.
        Doubling after a loss made runs long and swung the balance by
        tens of dollars mid-run. */
-    return { multiplier: 1, takeProfit: 200, stopLoss: 999 };
+    return { multiplier: 2, takeProfit: 200, stopLoss: 999 };
   }
   var S = {
     geo: saved.geo || null,
@@ -396,7 +396,7 @@
     autoSpent: false,
     auto: (!saved.autoSpent && saved.autoV === AUTO_V && saved.auto) ||
       (saved.autoSpent ? AUTO_DEFAULTS() : null) ||
-      (saved.auto && saved.autoV === 3
+      (saved.auto && (saved.autoV === 3 || saved.autoV === 4)
         ? Object.assign(AUTO_DEFAULTS(), {
             takeProfit: +saved.auto.takeProfit || AUTO_DEFAULTS().takeProfit,
             stopLoss: +saved.auto.stopLoss || AUTO_DEFAULTS().stopLoss
