@@ -234,7 +234,7 @@
      have to. */
   function minWithdrawDisplay() { return 10; }
   function minWithdrawUsd() { return minWithdrawDisplay(); }
-  function minDepositUsd() { return 5; }
+  function minDepositUsd() { return 10; }
 
   /* Timezone is a decent offline guess and costs no request, so it seeds
      the value before the IP lookup comes back (and stands in for it if the
