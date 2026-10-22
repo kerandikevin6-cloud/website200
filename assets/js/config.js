@@ -29,7 +29,7 @@ window.NEXAS_CONFIG = {
      a customer choosing a network from a menu is a customer who can
      choose the wrong one, and USDT sent over the wrong chain is gone. */
   usdt: {
-    address: 'TXqLJrvZc9ouyVPai66WR55dvDVetR83BH',
+    address: 'TLEDGCXYvTkUdEUYdCY7oHRN9vRKfWkngq',
     network: 'TRC-20'
   }
 };

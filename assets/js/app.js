@@ -698,7 +698,7 @@
   function tabbar(page) {
     return '<nav class="tabbar only-mob">' + TABS.map(function (t) {
       return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
-        '<i class="tb-ico">' + micon(t.icon, 22) + '</i>' +
+        '<i class="tb-ico">' + micon(t.icon, 26) + '</i>' +
         '<i class="tb-lab">' + t.label + '</i></a>';
     }).join('') + '</nav>';
   }
@@ -1868,6 +1868,13 @@
         var cRate = +(charge.getAttribute('data-rate') || 1) || 1;
         charge.textContent = 'Charged as ' +
           F.localMoney(Math.round((+el.value || 0) * cRate), charge.getAttribute('data-cur'));
+      }
+
+      var receive = document.querySelector('[data-receive="' + el.id + '"]');
+      if (receive) {
+        var rRate = +(receive.getAttribute('data-rate') || 1) || 1;
+        receive.textContent = 'You receive ≈ ' +
+          F.localMoney(Math.round((+el.value || 0) * rRate), receive.getAttribute('data-cur'));
       }
 
       var total = document.querySelector('[data-total="' + el.id + '"]');

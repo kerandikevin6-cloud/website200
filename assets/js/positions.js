@@ -25,10 +25,62 @@
     return c.type === 'over' || c.type === 'under';
   }
 
+  /* Which account this page is about, the same rule the History page
+     uses: practice trades belong under practice and nowhere else. */
+  function accountKind() { return API.account.kind() === 'real' ? 'real' : 'demo'; }
+  function kindOf(c) { return c.account === 'real' ? 'real' : 'demo'; }
+
+  /* ---------- server history ----------
+     The trades recorded on the account, the list the History page
+     reads. Without it, Closed only knew what this browser remembered,
+     so a trade placed on the phone never appeared here on the laptop
+     while History had it. Fetched per account, and merged with what is
+     local by reference, so a trade is listed once either way. */
+  var server = { kind: null, trades: [], loading: false };
+  function live() { return !!(window.NexNet && window.NexNet.live && window.NexNet.signedIn()); }
+  function fromServer(t) {
+    return {
+      id: t.ref || t.id, account: t.account, symbol: t.symbol, symbolName: t.symbolName,
+      type: t.type, side: t.side, barrier: t.barrier,
+      stake: (t.stakeMinor || 0) / 100, payout: (t.payoutMinor || 0) / 100,
+      profit: (t.profitMinor || 0) / 100, status: t.status, ticks: t.ticks,
+      entryTime: new Date(t.openedAt || t.settledAt).getTime(),
+      exitTime: new Date(t.settledAt).getTime(),
+      fromServer: true
+    };
+  }
+  async function loadServer() {
+    var kind = accountKind();
+    if (!live() || server.loading || server.kind === kind) return;
+    server.loading = true;
+    try {
+      var out = await window.NexNet.history({ account: kind, limit: 200 });
+      server = { kind: kind, trades: out.trades.map(fromServer), loading: false };
+    } catch (e) {
+      server.loading = false;
+      return;
+    }
+    if (view === 'closed') renderAll();
+  }
+  function closedAll() {
+    var kind = accountKind();
+    var local = API.contracts.closed().filter(function (c) { return kindOf(c) === kind; });
+    var seen = {};
+    local.forEach(function (c) { seen[String(c.id)] = true; });
+    var remote = server.kind === kind
+      ? server.trades.filter(function (c) { return !seen[String(c.id)]; })
+      : [];
+    return local.concat(remote);
+  }
+  function findClosed(id) {
+    return API.contracts.get(id) ||
+      server.trades.filter(function (c) { return String(c.id) === String(id); })[0];
+  }
+
   function rows() {
     if (view === 'open') return API.contracts.open();
     if (view === 'closed') {
-      return API.contracts.closed().filter(function (c) { return within(c.exitTime || c.entryTime) && typeOk(c); });
+      return closedAll().filter(function (c) { return within(c.exitTime || c.entryTime) && typeOk(c); });
     }
     return API.transactions.list().filter(function (t) { return within(t.t); });
   }
@@ -199,7 +251,7 @@
 
   /* ---------- detail ---------- */
   function detail(id) {
-    var c = API.contracts.get(id);
+    var c = findClosed(id);
     if (!c) return;
     var live = c.status === 'open';
     var pl = live ? c.value - c.stake : c.profit;
@@ -217,8 +269,8 @@
                 kv('Contract', API.contracts.label(c)) +
                 kv('Stake', F.money(c.stake)) +
                 kv('Payout if won', F.money(c.payout)) +
-                kv('Duration', F.ticks(c.ticks)) +
-                kv('Entry spot', F.price(c.entrySpot)) +
+                (c.ticks != null ? kv('Duration', F.ticks(c.ticks)) : '') +
+                (c.entrySpot != null ? kv('Entry spot', F.price(c.entrySpot)) : '') +
                 kv('Entry time', F.dateTime(c.entryTime)) +
                 (c.exitSpot != null ? kv('Exit spot', F.price(c.exitSpot)) : '') +
                 (c.exitTime ? kv('Exit time', F.dateTime(c.exitTime)) : '') +
@@ -325,7 +377,10 @@
   }
 
   /* ---------- mount ---------- */
-  function renderAll() { renderFilters(); renderList(); }
+  function renderAll() {
+    renderFilters(); renderList();
+    if (view === 'closed') loadServer();
+  }
 
   function init() {
     API = window.NexAPI; F = window.NexFmt; I = window.NexIcon;

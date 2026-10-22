@@ -3578,12 +3578,22 @@ html[data-oauth]::after{
 .tabbar a{height:var(--tabbar-h);border-radius:0;gap:4px;padding:0 2px 6px;color:var(--muted)}
 .tabbar a::before{display:none}
 .tabbar .tb-lab{font-size:10px;letter-spacing:0;text-transform:none;font-weight:500}
-.tabbar a.active,.tabbar a.active .tb-ico{color:var(--text)}
-/* the chosen tab is marked with a small green dot under its name */
-.tabbar a.active::after{
-  content:"";position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;
-  border-radius:50%;background:var(--accent-fill);
+/* Set apart from the page by a faint tint and a soft lift, rather than
+   a hairline that disappears against a white screen. */
+.tabbar{background:var(--surface-2);box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+/* Larger glyphs: 21px read as small at arm's length on a phone. */
+.tabbar .tb-ico{width:26px;height:26px}
+.tabbar .tb-ico svg{width:26px;height:26px}
+.tabbar a.active{color:var(--text)}
+.tabbar a.active .tb-lab{font-weight:600}
+/* The chosen tab: its icon sits in a small green-tinted pill, so it
+   is found at a glance without a filled block shouting about it. */
+.tabbar a.active .tb-ico{color:var(--accent)}
+.tabbar a.active .tb-ico::before{
+  content:"";position:absolute;left:50%;top:50%;width:52px;height:30px;
+  transform:translate(-50%,-50%);border-radius:999px;background:var(--accent-soft);z-index:-1;
 }
+.tabbar .tb-ico{position:relative;z-index:0}
 .tabbar a:active{transform:none;opacity:.7}
 
 /* ---- the three contracts: plain labels, a green underline for the chosen one ---- */

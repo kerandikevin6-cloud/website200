@@ -139,6 +139,17 @@
      somebody's account is the one they check against their SMS, and a
      note pinned to the minimum while the field says something else is
      worse than no note at all. */
+  /* What lands on the phone or in the bank for the dollars typed into
+     the withdrawal field, kept live by the input handler in app.js.
+     Nothing for USDT: that payout is sent in USDT, not shillings. */
+  function receiveLine(methodId) {
+    if (methodId === 'usdt') return '';
+    var c = API().geo.country();
+    if (!c.cur || !c.rate || c.rate === 1) return '';
+    return '<span data-receive="wAmount" data-rate="' + c.rate +
+      '" data-cur="' + c.cur + '">You receive ≈ ' + F().localMoney(0, c.cur) + '</span>';
+  }
+
   function railChargeLine(methodId, usd) {
     if (methodId === 'usdt') return '';
     var c = API().geo.country();
@@ -1228,7 +1239,7 @@
                   '<div class="wd-amount"><span>$</span><input class="input num" id="wAmount" ' +
                     'placeholder="0.00" inputmode="decimal"></div>' +
                   '<div class="wd-limits"><span>Min: $' + F().localAmount(minLocal) + '</span>' +
-                    '<span>Max: $' + F().amount(bal) + '</span></div>' +
+                    receiveLine(m) + '</div>' +
                 '</div>' +
                 (!API().kyc.verified()
                   ? '<div class="notice">' + I('shield', 17) +
