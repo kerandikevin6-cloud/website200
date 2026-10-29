@@ -562,21 +562,27 @@
      on the tick that decides, as the banner or the card. */
 
   /* ---------- a run's stake ----------
-     Every contract in a run is staked so that a win lands the run on
-     its target: what is left to make, divided by what a dollar staked
-     pays, rounded up to the cent. Capped by what is left before the stop
-     loss, so a losing contract takes the run to its stop and never past
-     it. A run therefore ends on its target or its stop, usually within
-     a few contracts, rather than running out of trades well short of
-     both, which is all a fixed stake and a ten-trade limit could do
-     against a $200 target.
+     A run is planned over RUN_PLAN contracts. Each one is staked to win
+     an even share of what is left to make over the contracts left in
+     that plan: a fifth of the target on the first, a quarter of what
+     remains on the second, and so on, until the last of the plan (and
+     any after it) is staked to land the run on its target in one win,
+     to the cent. Capped by what is left before the stop loss, so a
+     losing contract takes the run to its stop and never past it.
+
+     So a run ends on its target or its stop: usually in about five
+     contracts, rarely more than eight. Staking for the whole target at
+     once ended most runs on their second contract, and a fixed stake
+     with a ten-trade limit ended them on neither.
 
      The outcome of each contract is left to the tick, exactly as
      before; only the size of the stake is decided here. */
   var MAX_STAKE = 5000;
+  var RUN_PLAN = 5;
   function runStake(r) {
     var type = typeFor(r.side);
-    var need = Math.round((r.takeProfit - r.pnl) * 100) / 100;
+    var left = Math.max(1, RUN_PLAN - r.done);
+    var need = Math.round((r.takeProfit - r.pnl) / left * 100) / 100;
     var rate = API.contracts.payoutRate(type);
     var s = Math.ceil(need / (rate - 1) * 100) / 100;
     while (API.contracts.payoutFor(type, s) - s < need - 0.0001) s = Math.round((s + 0.01) * 100) / 100;
@@ -585,12 +591,12 @@
     return Math.min(s, room, MAX_STAKE);
   }
 
-  /* The highest target this balance can stake for in one contract, for
+  /* The highest target this balance can stake the first share of, for
      the message when the one asked for is out of reach. */
   function reachableTarget(side, funds) {
     var type = typeFor(side);
     var s = Math.floor(Math.min(funds, MAX_STAKE) * 100) / 100;
-    return Math.max(0, API.contracts.payoutFor(type, s) - s);
+    return Math.max(0, (API.contracts.payoutFor(type, s) - s) * RUN_PLAN);
   }
 
   /* ---------- how long a contract runs ----------
