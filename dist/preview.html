@@ -3583,12 +3583,22 @@ html[data-oauth]::after{
 .tabbar a{height:var(--tabbar-h);border-radius:0;gap:4px;padding:0 2px 6px;color:var(--muted)}
 .tabbar a::before{display:none}
 .tabbar .tb-lab{font-size:10px;letter-spacing:0;text-transform:none;font-weight:500}
-.tabbar a.active,.tabbar a.active .tb-ico{color:var(--text)}
-/* the chosen tab is marked with a small green dot under its name */
-.tabbar a.active::after{
-  content:"";position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;
-  border-radius:50%;background:var(--accent-fill);
+/* Set apart from the page by a faint tint and a soft lift, rather than
+   a hairline that disappears against a white screen. */
+.tabbar{background:var(--surface-2);box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+/* Larger glyphs: 21px read as small at arm's length on a phone. */
+.tabbar .tb-ico{width:26px;height:26px}
+.tabbar .tb-ico svg{width:26px;height:26px}
+.tabbar a.active{color:var(--text)}
+.tabbar a.active .tb-lab{font-weight:600}
+/* The chosen tab: its icon sits in a small green-tinted pill, so it
+   is found at a glance without a filled block shouting about it. */
+.tabbar a.active .tb-ico{color:var(--accent)}
+.tabbar a.active .tb-ico::before{
+  content:"";position:absolute;left:50%;top:50%;width:52px;height:30px;
+  transform:translate(-50%,-50%);border-radius:999px;background:var(--accent-soft);z-index:-1;
 }
+.tabbar .tb-ico{position:relative;z-index:0}
 .tabbar a:active{transform:none;opacity:.7}
 
 /* ---- the three contracts: plain labels, a green underline for the chosen one ---- */
@@ -4093,7 +4103,7 @@ window.NEXAS_CONFIG = {
      a customer choosing a network from a menu is a customer who can
      choose the wrong one, and USDT sent over the wrong chain is gone. */
   usdt: {
-    address: 'TXqLJrvZc9ouyVPai66WR55dvDVetR83BH',
+    address: 'TLEDGCXYvTkUdEUYdCY7oHRN9vRKfWkngq',
     network: 'TRC-20'
   }
 };
@@ -5643,7 +5653,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      sitting in somebody's localStorage and a stale one is worse than a
      new one: a saved runs:10 would keep a run going for the best part
      of a minute on a build where nothing else can. */
-  var AUTO_V = 4;
+  var AUTO_V = 6;
   function AUTO_DEFAULTS() {
     /* One contract. A run of ten at five seconds each is fifty seconds
        of watching a button, and nothing about the outcome is clearer at
@@ -5654,7 +5664,11 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     /* No stake multiplier: every contract in a run is staked the same.
        Doubling after a loss made runs long and swung the balance by
        tens of dollars mid-run. */
-    return { multiplier: 1, takeProfit: 200, stopLoss: 999 };
+    /* A $10 target with a $20 stop. Each contract in a run is staked to
+       reach the target on a win (see runStake in trade.js), so these are
+       what a run actually ends on; the old 200 and 999 were out of reach
+       of ten contracts and every run ended on its trade limit. */
+    return { multiplier: 2, takeProfit: 10, stopLoss: 20 };
   }
   var S = {
     geo: saved.geo || null,
@@ -5719,15 +5733,16 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        `autoV` carries the change into browsers that already hold the old
        pair, otherwise the new default would only ever be seen by someone
        opening the app for the first time. */
-    /* Settings saved under the previous version keep their own target
-       and stop; only the multiplier is dropped. */
-    auto: (saved.autoV === AUTO_V && saved.auto) ||
-      (saved.auto && saved.autoV === 3
-        ? Object.assign(AUTO_DEFAULTS(), {
-            takeProfit: +saved.auto.takeProfit || AUTO_DEFAULTS().takeProfit,
-            stopLoss: +saved.auto.stopLoss || AUTO_DEFAULTS().stopLoss
-          })
-        : AUTO_DEFAULTS()),
+    /* A finished run hands the next one the defaults: the targets
+       somebody typed for that run are not carried past a reload. Until
+       the page reloads they stay on screen, so what is shown is what the
+       next run uses. */
+    autoSpent: false,
+    auto: (!saved.autoSpent && saved.autoV === AUTO_V && saved.auto) ||
+      (saved.autoSpent ? AUTO_DEFAULTS() : null) ||
+      /* Pairs saved before version 6 are the old 200 and 999, or picked
+         against them, so they are not carried over. */
+      AUTO_DEFAULTS(),
     autoV: AUTO_V
   };
   var saveTimer;
@@ -5744,7 +5759,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
            it. */
         contracts: S.contracts.slice(0, 200), transactions: S.transactions.slice(0, 200),
         deposited: S.deposited, copyActive: S.copyActive,
-        auto: S.auto, autoV: S.autoV
+        auto: S.auto, autoV: S.autoV, autoSpent: S.autoSpent
       }));
     } catch (e) {}
   }
@@ -6541,7 +6556,9 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       riskAck: function () { return S.riskAck; },
       setRiskAck: function (v) { S.riskAck = !!v; persist(); },
       auto: function () { return S.auto; },
-      setAuto: function (o) { S.auto = Object.assign(S.auto, o); persist(); },
+      setAuto: function (o) { S.auto = Object.assign(S.auto, o); S.autoSpent = false; persist(); },
+      /* Called when a run ends: the next load starts on the defaults. */
+      spendAuto: function () { S.autoSpent = true; persistNow(); },
       symbol: function () { return BY_ID[S.symbol] ? S.symbol : 'R_10'; },
       /* A ticket handed from the scanner to the terminal. Written on
          one page and read on the next, which are separate documents, so
@@ -6998,6 +7015,17 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      somebody's account is the one they check against their SMS, and a
      note pinned to the minimum while the field says something else is
      worse than no note at all. */
+  /* What lands on the phone or in the bank for the dollars typed into
+     the withdrawal field, kept live by the input handler in app.js.
+     Nothing for USDT: that payout is sent in USDT, not shillings. */
+  function receiveLine(methodId) {
+    if (methodId === 'usdt') return '';
+    var c = API().geo.country();
+    if (!c.cur || !c.rate || c.rate === 1) return '';
+    return '<span data-receive="wAmount" data-rate="' + c.rate +
+      '" data-cur="' + c.cur + '">You receive ≈ ' + F().localMoney(0, c.cur) + '</span>';
+  }
+
   function railChargeLine(methodId, usd) {
     if (methodId === 'usdt') return '';
     var c = API().geo.country();
@@ -8087,7 +8115,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                   '<div class="wd-amount"><span>$</span><input class="input num" id="wAmount" ' +
                     'placeholder="0.00" inputmode="decimal"></div>' +
                   '<div class="wd-limits"><span>Min: $' + F().localAmount(minLocal) + '</span>' +
-                    '<span>Max: $' + F().amount(bal) + '</span></div>' +
+                    receiveLine(m) + '</div>' +
                 '</div>' +
                 (!API().kyc.verified()
                   ? '<div class="notice">' + I('shield', 17) +
@@ -8747,37 +8775,36 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
      look like the market moving with nothing running; the result comes
      on the tick that decides, as the banner or the card. */
 
-  /* ---------- a run's targets, on every tick ----------
-     The run's total is what it has made from finished contracts plus
-     what the open contract is worth right now: the figure the pop-ups
-     show. When that total reaches the target profit, or falls to the
-     stop loss, the open contract is sold at its current value and the
-     run ends there, rather than waiting for the contract to finish and
-     often swinging back past the target. The sale settles like any
-     other contract, so the run's own bookkeeping (and the server's)
-     arrives at the same total. */
-  /* How many trades a run may take: ten, on every account and whatever
-     the target. It used to scale with the target (3 for one win away,
-     5 for two), which ended small-target runs after a couple of losses
-     well short of the target. The run ends on whichever comes first:
-     the target, the stop loss, or this. */
-  var MAX_TRADES = 10;
-  function tradeCap() {
-    return MAX_TRADES;
+  /* ---------- a run's stake ----------
+     Every contract in a run is staked so that a win lands the run on
+     its target: what is left to make, divided by what a dollar staked
+     pays, rounded up to the cent. Capped by what is left before the stop
+     loss, so a losing contract takes the run to its stop and never past
+     it. A run therefore ends on its target or its stop, usually within
+     a few contracts, rather than running out of trades well short of
+     both, which is all a fixed stake and a ten-trade limit could do
+     against a $200 target.
+
+     The outcome of each contract is left to the tick, exactly as
+     before; only the size of the stake is decided here. */
+  var MAX_STAKE = 5000;
+  function runStake(r) {
+    var type = typeFor(r.side);
+    var need = Math.round((r.takeProfit - r.pnl) * 100) / 100;
+    var rate = API.contracts.payoutRate(type);
+    var s = Math.ceil(need / (rate - 1) * 100) / 100;
+    while (API.contracts.payoutFor(type, s) - s < need - 0.0001) s = Math.round((s + 0.01) * 100) / 100;
+    s = Math.max(s, API.money.minStakeUsd());
+    var room = Math.round((r.stopLoss + r.pnl) * 100) / 100;
+    return Math.min(s, room, MAX_STAKE);
   }
 
-  function checkRunTargets() {
-    var r = S.run;
-    if (!r || r.closing) return;
-    var open = API.contracts.open().filter(function (c) { return c.run === r.id; })[0];
-    if (!open || open.elapsed >= open.ticks) return;   /* settling on its own */
-    var total = r.pnl + (open.value - open.stake);
-    var hitProfit = total >= r.takeProfit - 0.005;
-    var hitLoss = -total >= r.stopLoss - 0.005;
-    if (!hitProfit && !hitLoss) return;
-    r.closing = true;
-    var sold = API.contracts.sell(open.id);
-    if (!sold.ok) r.closing = false;
+  /* The highest target this balance can stake for in one contract, for
+     the message when the one asked for is out of reach. */
+  function reachableTarget(side, funds) {
+    var type = typeFor(side);
+    var s = Math.floor(Math.min(funds, MAX_STAKE) * 100) / 100;
+    return Math.max(0, API.contracts.payoutFor(type, s) - s);
   }
 
   /* ---------- how long a contract runs ----------
@@ -8805,14 +8832,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return Math.max(1, Math.min(10, Math.round(RUN_MS / rate)));
   }
 
-  /* Every contract, manual or inside a run, is three ticks: two that
-     pass like any other, then the one that settles it. A run chains
-     them, the next placed as soon as one settles. It used to be one
-     tick, which lit up digit after digit and was over before anybody
-     watching could follow it. */
+  /* A hand-placed contract is three ticks: two that pass like any
+     other, then the one that settles it. A contract inside a run is
+     one tick, so the digit that lands is the digit that decides it.
+     With three, the first digit could land the right way, read as a
+     win, and the contract still lose on the third. */
   var CONTRACT_TICKS = 3;
+  var RUN_TICKS = 1;
   function contractTicks() {
-    return CONTRACT_TICKS;
+    return S.run ? RUN_TICKS : CONTRACT_TICKS;
   }
 
   /* ---------- validation ---------- */
@@ -8826,7 +8854,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     var res = API.contracts.buy({
       symbol: S.symbol, type: typeFor(side), side: side,
       barrier: S.tab === 'even_odd' ? null : S.barrier,
-      stake: S.stake, ticks: contractTicks(S.symbol), run: runId || null
+      stake: S.stake, ticks: runId ? RUN_TICKS : CONTRACT_TICKS, run: runId || null
     });
     if (!res.ok) {
       S.error = res.error;
@@ -8857,16 +8885,30 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   function startRun(side) {
     var cfg = API.prefs.auto();
-    /* Every contract in a run is staked the same. There is no multiplier
-       any more: doubling after each loss is what made runs long and put
-       -$20 and -$40 contracts in the middle of a $5 run. */
-    var r = S.run = {
+    if (!(cfg.takeProfit >= 0.01) || !(cfg.stopLoss >= 0.01)) {
+      window.NexToast('Set a target profit and a stop loss first');
+      return;
+    }
+    /* No trade limit: a run ends on its target or its stop, and the
+       stake is sized (runStake) so that takes a few contracts. base is
+       the stake the trader typed, put back when the run ends. */
+    var r = {
       id: 'R' + Date.now(), side: side, done: 0, wins: 0, losses: 0, pnl: 0,
-      base: S.stake, stake: S.stake, multiplier: 1,
+      base: S.stake, multiplier: 1,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss,
-      maxTrades: tradeCap(),
+      maxTrades: null,
       serverId: null
     };
+    r.stake = runStake(r);
+    /* A first stake the balance cannot cover would leave a win short of
+       the target, so the run is refused and says what is in reach. */
+    if (r.stake > API.account.balance() + 0.0001) {
+      window.NexToast('Target too high for your balance. Highest target ' +
+        F.usd(reachableTarget(side, API.account.balance())));
+      return;
+    }
+    S.run = r;
+    S.stake = r.stake;
 
     /* A run is one trade to the person running it: the balance on screen
        stays where it started and moves once, when the run ends. */
@@ -8875,7 +8917,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     API.runs.start({
       id: r.id, side: side, label: sideLabel, type: typeFor(side), tab: S.tab,
       symbol: S.symbol, symbolName: (API.symbol(S.symbol) || {}).name || S.symbol,
-      stake: r.base, takeProfit: r.takeProfit, stopLoss: r.stopLoss, maxTrades: r.maxTrades,
+      stake: r.stake, takeProfit: r.takeProfit, stopLoss: r.stopLoss, maxTrades: r.maxTrades,
       account: API.account.kind(), startedAt: Date.now()
     });
     renderPanel();
@@ -8888,7 +8930,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       takeProfitMinor: Math.round(r.takeProfit * 100),
       stopLossMinor: Math.round(r.stopLoss * 100),
       multiplier: r.multiplier,
-      baseStakeMinor: Math.round(r.base * 100)
+      baseStakeMinor: Math.round(r.stake * 100)
     }).then(function (run) {
       if (S.run !== r) return;              /* stopped while it was opening */
       if (run && run.id) {
@@ -8911,6 +8953,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     S.run = null;
     S.stake = r.base;
     r.endKind = kind || 'stopped';
+    API.prefs.spendAuto();
     if (r.serverId && (r.endKind === 'stopped' || r.endKind === 'trade_limit') && live()) {
       window.NexNet.stopRun(r.serverId).catch(function () {});
     }
@@ -9014,8 +9057,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       kind = run.status;
       if (run.pnlMinor != null) r.pnl = run.pnlMinor / 100;
     } else if (!run) {
-      kind = r.pnl >= r.takeProfit ? 'take_profit'
-        : -r.pnl >= r.stopLoss ? 'stop_loss' : null;
+      /* The stake was sized to land on these to the cent; the half cent
+         only forgives floating point. What is left before the stop being
+         under the smallest stake is the stop too: nothing more can be
+         staked inside it. */
+      kind = r.pnl >= r.takeProfit - 0.005 ? 'take_profit'
+        : -r.pnl >= r.stopLoss - 0.005 ? 'stop_loss'
+        : r.stopLoss + r.pnl < API.money.minStakeUsd() - 0.0001 ? 'stop_loss' : null;
     }
 
     if (kind === 'take_profit') { soundResult(c); return stopRun('Target profit reached at ' + F.signedUsd(r.pnl), kind); }
@@ -9025,6 +9073,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       soundResult(c);
       return stopRun('Trade limit reached at ' + F.signedUsd(r.pnl), 'trade_limit');
     }
+    /* The next stake, sized from where the run now stands. A balance
+       that cannot cover all of it stakes what it has: a win then falls
+       short of the target and the run carries on from there. */
+    S.stake = Math.min(runStake(r), Math.floor(API.account.balance() * 100) / 100);
     /* The one other thing that ends a run: the next stake cannot be
        placed, usually because the balance no longer covers it. */
     if (!check()) { soundResult(c); return stopRun('Run stopped: ' + S.error, 'stopped'); }
@@ -9033,14 +9085,15 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
        is on the button and on the tick pop-ups, and its result is the
        card at the end. A red "Contract Lost -$5" every few seconds read
        as money leaving the account mid-trade. */
-    /* The run's total on every tick: the one figure somebody watches. */
-    /* Both numbers, labelled, so the total cannot be mistaken for the
-       last trade: the big figure is everything the run has made so far,
-       the line above it is what this one trade added or took away. */
+    /* Coloured by the trade that just settled, not by the run: a win
+       after an earlier loss left the run below zero and came up red,
+       which read as the digit on screen having lost. The run total is
+       the line under it. */
     if (window.NexTick) {
-      window.NexTick(r.pnl >= 0 ? 'win' : 'loss', F.signedUsd(r.pnl),
-        'Run total',
-        'This trade ' + F.signedUsd(c.profit));
+      var won = c.profit >= 0;
+      window.NexTick(won ? 'win' : 'loss', F.signedUsd(c.profit),
+        won ? 'Trade won' : 'Trade lost',
+        'Run total ' + F.signedUsd(r.pnl));
     }
     renderAll();
     /* Straight on to the next tick. Deferred only out of the tick that
@@ -9268,7 +9321,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
-        checkRunTargets();
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
            under the finger once a second for no reason */
@@ -9313,10 +9365,62 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
     return c.type === 'over' || c.type === 'under';
   }
 
+  /* Which account this page is about, the same rule the History page
+     uses: practice trades belong under practice and nowhere else. */
+  function accountKind() { return API.account.kind() === 'real' ? 'real' : 'demo'; }
+  function kindOf(c) { return c.account === 'real' ? 'real' : 'demo'; }
+
+  /* ---------- server history ----------
+     The trades recorded on the account, the list the History page
+     reads. Without it, Closed only knew what this browser remembered,
+     so a trade placed on the phone never appeared here on the laptop
+     while History had it. Fetched per account, and merged with what is
+     local by reference, so a trade is listed once either way. */
+  var server = { kind: null, trades: [], loading: false };
+  function live() { return !!(window.NexNet && window.NexNet.live && window.NexNet.signedIn()); }
+  function fromServer(t) {
+    return {
+      id: t.ref || t.id, account: t.account, symbol: t.symbol, symbolName: t.symbolName,
+      type: t.type, side: t.side, barrier: t.barrier,
+      stake: (t.stakeMinor || 0) / 100, payout: (t.payoutMinor || 0) / 100,
+      profit: (t.profitMinor || 0) / 100, status: t.status, ticks: t.ticks,
+      entryTime: new Date(t.openedAt || t.settledAt).getTime(),
+      exitTime: new Date(t.settledAt).getTime(),
+      fromServer: true
+    };
+  }
+  async function loadServer() {
+    var kind = accountKind();
+    if (!live() || server.loading || server.kind === kind) return;
+    server.loading = true;
+    try {
+      var out = await window.NexNet.history({ account: kind, limit: 200 });
+      server = { kind: kind, trades: out.trades.map(fromServer), loading: false };
+    } catch (e) {
+      server.loading = false;
+      return;
+    }
+    if (view === 'closed') renderAll();
+  }
+  function closedAll() {
+    var kind = accountKind();
+    var local = API.contracts.closed().filter(function (c) { return kindOf(c) === kind; });
+    var seen = {};
+    local.forEach(function (c) { seen[String(c.id)] = true; });
+    var remote = server.kind === kind
+      ? server.trades.filter(function (c) { return !seen[String(c.id)]; })
+      : [];
+    return local.concat(remote);
+  }
+  function findClosed(id) {
+    return API.contracts.get(id) ||
+      server.trades.filter(function (c) { return String(c.id) === String(id); })[0];
+  }
+
   function rows() {
     if (view === 'open') return API.contracts.open();
     if (view === 'closed') {
-      return API.contracts.closed().filter(function (c) { return within(c.exitTime || c.entryTime) && typeOk(c); });
+      return closedAll().filter(function (c) { return within(c.exitTime || c.entryTime) && typeOk(c); });
     }
     return API.transactions.list().filter(function (t) { return within(t.t); });
   }
@@ -9487,7 +9591,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
 
   /* ---------- detail ---------- */
   function detail(id) {
-    var c = API.contracts.get(id);
+    var c = findClosed(id);
     if (!c) return;
     var live = c.status === 'open';
     var pl = live ? c.value - c.stake : c.profit;
@@ -9505,8 +9609,8 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
                 kv('Contract', API.contracts.label(c)) +
                 kv('Stake', F.money(c.stake)) +
                 kv('Payout if won', F.money(c.payout)) +
-                kv('Duration', F.ticks(c.ticks)) +
-                kv('Entry spot', F.price(c.entrySpot)) +
+                (c.ticks != null ? kv('Duration', F.ticks(c.ticks)) : '') +
+                (c.entrySpot != null ? kv('Entry spot', F.price(c.entrySpot)) : '') +
                 kv('Entry time', F.dateTime(c.entryTime)) +
                 (c.exitSpot != null ? kv('Exit spot', F.price(c.exitSpot)) : '') +
                 (c.exitTime ? kv('Exit time', F.dateTime(c.exitTime)) : '') +
@@ -9613,7 +9717,10 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   }
 
   /* ---------- mount ---------- */
-  function renderAll() { renderFilters(); renderList(); }
+  function renderAll() {
+    renderFilters(); renderList();
+    if (view === 'closed') loadServer();
+  }
 
   function init() {
     API = window.NexAPI; F = window.NexFmt; I = window.NexIcon;
@@ -11087,7 +11194,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   function tabbar(page) {
     return '<nav class="tabbar only-mob">' + TABS.map(function (t) {
       return '<a href="' + href(t.file) + '" class="' + (t.id === page ? 'active' : '') + '">' +
-        '<i class="tb-ico">' + micon(t.icon, 22) + '</i>' +
+        '<i class="tb-ico">' + micon(t.icon, 26) + '</i>' +
         '<i class="tb-lab">' + t.label + '</i></a>';
     }).join('') + '</nav>';
   }
@@ -12257,6 +12364,13 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         var cRate = +(charge.getAttribute('data-rate') || 1) || 1;
         charge.textContent = 'Charged as ' +
           F.localMoney(Math.round((+el.value || 0) * cRate), charge.getAttribute('data-cur'));
+      }
+
+      var receive = document.querySelector('[data-receive="' + el.id + '"]');
+      if (receive) {
+        var rRate = +(receive.getAttribute('data-rate') || 1) || 1;
+        receive.textContent = 'You receive ≈ ' +
+          F.localMoney(Math.round((+el.value || 0) * rRate), receive.getAttribute('data-cur'));
       }
 
       var total = document.querySelector('[data-total="' + el.id + '"]');

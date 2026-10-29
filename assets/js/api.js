@@ -311,7 +311,7 @@
      sitting in somebody's localStorage and a stale one is worse than a
      new one: a saved runs:10 would keep a run going for the best part
      of a minute on a build where nothing else can. */
-  var AUTO_V = 5;
+  var AUTO_V = 6;
   function AUTO_DEFAULTS() {
     /* One contract. A run of ten at five seconds each is fifty seconds
        of watching a button, and nothing about the outcome is clearer at
@@ -322,7 +322,11 @@
     /* No stake multiplier: every contract in a run is staked the same.
        Doubling after a loss made runs long and swung the balance by
        tens of dollars mid-run. */
-    return { multiplier: 2, takeProfit: 200, stopLoss: 999 };
+    /* A $10 target with a $20 stop. Each contract in a run is staked to
+       reach the target on a win (see runStake in trade.js), so these are
+       what a run actually ends on; the old 200 and 999 were out of reach
+       of ten contracts and every run ended on its trade limit. */
+    return { multiplier: 2, takeProfit: 10, stopLoss: 20 };
   }
   var S = {
     geo: saved.geo || null,
@@ -387,8 +391,6 @@
        `autoV` carries the change into browsers that already hold the old
        pair, otherwise the new default would only ever be seen by someone
        opening the app for the first time. */
-    /* Settings saved under the previous version keep their own target
-       and stop; only the multiplier is dropped. */
     /* A finished run hands the next one the defaults: the targets
        somebody typed for that run are not carried past a reload. Until
        the page reloads they stay on screen, so what is shown is what the
@@ -396,12 +398,9 @@
     autoSpent: false,
     auto: (!saved.autoSpent && saved.autoV === AUTO_V && saved.auto) ||
       (saved.autoSpent ? AUTO_DEFAULTS() : null) ||
-      (saved.auto && (saved.autoV === 3 || saved.autoV === 4)
-        ? Object.assign(AUTO_DEFAULTS(), {
-            takeProfit: +saved.auto.takeProfit || AUTO_DEFAULTS().takeProfit,
-            stopLoss: +saved.auto.stopLoss || AUTO_DEFAULTS().stopLoss
-          })
-        : AUTO_DEFAULTS()),
+      /* Pairs saved before version 6 are the old 200 and 999, or picked
+         against them, so they are not carried over. */
+      AUTO_DEFAULTS(),
     autoV: AUTO_V
   };
   var saveTimer;

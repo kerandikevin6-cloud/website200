@@ -561,37 +561,36 @@
      look like the market moving with nothing running; the result comes
      on the tick that decides, as the banner or the card. */
 
-  /* ---------- a run's targets, on every tick ----------
-     The run's total is what it has made from finished contracts plus
-     what the open contract is worth right now: the figure the pop-ups
-     show. When that total reaches the target profit, or falls to the
-     stop loss, the open contract is sold at its current value and the
-     run ends there, rather than waiting for the contract to finish and
-     often swinging back past the target. The sale settles like any
-     other contract, so the run's own bookkeeping (and the server's)
-     arrives at the same total. */
-  /* How many trades a run may take: ten, on every account and whatever
-     the target. It used to scale with the target (3 for one win away,
-     5 for two), which ended small-target runs after a couple of losses
-     well short of the target. The run ends on whichever comes first:
-     the target, the stop loss, or this. */
-  var MAX_TRADES = 10;
-  function tradeCap() {
-    return MAX_TRADES;
+  /* ---------- a run's stake ----------
+     Every contract in a run is staked so that a win lands the run on
+     its target: what is left to make, divided by what a dollar staked
+     pays, rounded up to the cent. Capped by what is left before the stop
+     loss, so a losing contract takes the run to its stop and never past
+     it. A run therefore ends on its target or its stop, usually within
+     a few contracts, rather than running out of trades well short of
+     both, which is all a fixed stake and a ten-trade limit could do
+     against a $200 target.
+
+     The outcome of each contract is left to the tick, exactly as
+     before; only the size of the stake is decided here. */
+  var MAX_STAKE = 5000;
+  function runStake(r) {
+    var type = typeFor(r.side);
+    var need = Math.round((r.takeProfit - r.pnl) * 100) / 100;
+    var rate = API.contracts.payoutRate(type);
+    var s = Math.ceil(need / (rate - 1) * 100) / 100;
+    while (API.contracts.payoutFor(type, s) - s < need - 0.0001) s = Math.round((s + 0.01) * 100) / 100;
+    s = Math.max(s, API.money.minStakeUsd());
+    var room = Math.round((r.stopLoss + r.pnl) * 100) / 100;
+    return Math.min(s, room, MAX_STAKE);
   }
 
-  function checkRunTargets() {
-    var r = S.run;
-    if (!r || r.closing) return;
-    var open = API.contracts.open().filter(function (c) { return c.run === r.id; })[0];
-    if (!open || open.elapsed >= open.ticks) return;   /* settling on its own */
-    var total = r.pnl + (open.value - open.stake);
-    var hitProfit = total >= r.takeProfit - 0.005;
-    var hitLoss = -total >= r.stopLoss - 0.005;
-    if (!hitProfit && !hitLoss) return;
-    r.closing = true;
-    var sold = API.contracts.sell(open.id);
-    if (!sold.ok) r.closing = false;
+  /* The highest target this balance can stake for in one contract, for
+     the message when the one asked for is out of reach. */
+  function reachableTarget(side, funds) {
+    var type = typeFor(side);
+    var s = Math.floor(Math.min(funds, MAX_STAKE) * 100) / 100;
+    return Math.max(0, API.contracts.payoutFor(type, s) - s);
   }
 
   /* ---------- how long a contract runs ----------
@@ -619,14 +618,15 @@
     return Math.max(1, Math.min(10, Math.round(RUN_MS / rate)));
   }
 
-  /* Every contract, manual or inside a run, is three ticks: two that
-     pass like any other, then the one that settles it. A run chains
-     them, the next placed as soon as one settles. It used to be one
-     tick, which lit up digit after digit and was over before anybody
-     watching could follow it. */
+  /* A hand-placed contract is three ticks: two that pass like any
+     other, then the one that settles it. A contract inside a run is
+     one tick, so the digit that lands is the digit that decides it.
+     With three, the first digit could land the right way, read as a
+     win, and the contract still lose on the third. */
   var CONTRACT_TICKS = 3;
+  var RUN_TICKS = 1;
   function contractTicks() {
-    return CONTRACT_TICKS;
+    return S.run ? RUN_TICKS : CONTRACT_TICKS;
   }
 
   /* ---------- validation ---------- */
@@ -640,7 +640,7 @@
     var res = API.contracts.buy({
       symbol: S.symbol, type: typeFor(side), side: side,
       barrier: S.tab === 'even_odd' ? null : S.barrier,
-      stake: S.stake, ticks: contractTicks(S.symbol), run: runId || null
+      stake: S.stake, ticks: runId ? RUN_TICKS : CONTRACT_TICKS, run: runId || null
     });
     if (!res.ok) {
       S.error = res.error;
@@ -671,16 +671,30 @@
 
   function startRun(side) {
     var cfg = API.prefs.auto();
-    /* Every contract in a run is staked the same. There is no multiplier
-       any more: doubling after each loss is what made runs long and put
-       -$20 and -$40 contracts in the middle of a $5 run. */
-    var r = S.run = {
+    if (!(cfg.takeProfit >= 0.01) || !(cfg.stopLoss >= 0.01)) {
+      window.NexToast('Set a target profit and a stop loss first');
+      return;
+    }
+    /* No trade limit: a run ends on its target or its stop, and the
+       stake is sized (runStake) so that takes a few contracts. base is
+       the stake the trader typed, put back when the run ends. */
+    var r = {
       id: 'R' + Date.now(), side: side, done: 0, wins: 0, losses: 0, pnl: 0,
-      base: S.stake, stake: S.stake, multiplier: 1,
+      base: S.stake, multiplier: 1,
       takeProfit: cfg.takeProfit, stopLoss: cfg.stopLoss,
-      maxTrades: tradeCap(),
+      maxTrades: null,
       serverId: null
     };
+    r.stake = runStake(r);
+    /* A first stake the balance cannot cover would leave a win short of
+       the target, so the run is refused and says what is in reach. */
+    if (r.stake > API.account.balance() + 0.0001) {
+      window.NexToast('Target too high for your balance. Highest target ' +
+        F.usd(reachableTarget(side, API.account.balance())));
+      return;
+    }
+    S.run = r;
+    S.stake = r.stake;
 
     /* A run is one trade to the person running it: the balance on screen
        stays where it started and moves once, when the run ends. */
@@ -689,7 +703,7 @@
     API.runs.start({
       id: r.id, side: side, label: sideLabel, type: typeFor(side), tab: S.tab,
       symbol: S.symbol, symbolName: (API.symbol(S.symbol) || {}).name || S.symbol,
-      stake: r.base, takeProfit: r.takeProfit, stopLoss: r.stopLoss, maxTrades: r.maxTrades,
+      stake: r.stake, takeProfit: r.takeProfit, stopLoss: r.stopLoss, maxTrades: r.maxTrades,
       account: API.account.kind(), startedAt: Date.now()
     });
     renderPanel();
@@ -702,7 +716,7 @@
       takeProfitMinor: Math.round(r.takeProfit * 100),
       stopLossMinor: Math.round(r.stopLoss * 100),
       multiplier: r.multiplier,
-      baseStakeMinor: Math.round(r.base * 100)
+      baseStakeMinor: Math.round(r.stake * 100)
     }).then(function (run) {
       if (S.run !== r) return;              /* stopped while it was opening */
       if (run && run.id) {
@@ -829,8 +843,13 @@
       kind = run.status;
       if (run.pnlMinor != null) r.pnl = run.pnlMinor / 100;
     } else if (!run) {
-      kind = r.pnl >= r.takeProfit ? 'take_profit'
-        : -r.pnl >= r.stopLoss ? 'stop_loss' : null;
+      /* The stake was sized to land on these to the cent; the half cent
+         only forgives floating point. What is left before the stop being
+         under the smallest stake is the stop too: nothing more can be
+         staked inside it. */
+      kind = r.pnl >= r.takeProfit - 0.005 ? 'take_profit'
+        : -r.pnl >= r.stopLoss - 0.005 ? 'stop_loss'
+        : r.stopLoss + r.pnl < API.money.minStakeUsd() - 0.0001 ? 'stop_loss' : null;
     }
 
     if (kind === 'take_profit') { soundResult(c); return stopRun('Target profit reached at ' + F.signedUsd(r.pnl), kind); }
@@ -840,6 +859,10 @@
       soundResult(c);
       return stopRun('Trade limit reached at ' + F.signedUsd(r.pnl), 'trade_limit');
     }
+    /* The next stake, sized from where the run now stands. A balance
+       that cannot cover all of it stakes what it has: a win then falls
+       short of the target and the run carries on from there. */
+    S.stake = Math.min(runStake(r), Math.floor(API.account.balance() * 100) / 100);
     /* The one other thing that ends a run: the next stake cannot be
        placed, usually because the balance no longer covers it. */
     if (!check()) { soundResult(c); return stopRun('Run stopped: ' + S.error, 'stopped'); }
@@ -848,14 +871,15 @@
        is on the button and on the tick pop-ups, and its result is the
        card at the end. A red "Contract Lost -$5" every few seconds read
        as money leaving the account mid-trade. */
-    /* The run's total on every tick: the one figure somebody watches. */
-    /* Both numbers, labelled, so the total cannot be mistaken for the
-       last trade: the big figure is everything the run has made so far,
-       the line above it is what this one trade added or took away. */
+    /* Coloured by the trade that just settled, not by the run: a win
+       after an earlier loss left the run below zero and came up red,
+       which read as the digit on screen having lost. The run total is
+       the line under it. */
     if (window.NexTick) {
-      window.NexTick(r.pnl >= 0 ? 'win' : 'loss', F.signedUsd(r.pnl),
-        'Run total',
-        'This trade ' + F.signedUsd(c.profit));
+      var won = c.profit >= 0;
+      window.NexTick(won ? 'win' : 'loss', F.signedUsd(c.profit),
+        won ? 'Trade won' : 'Trade lost',
+        'Run total ' + F.signedUsd(r.pnl));
     }
     renderAll();
     /* Straight on to the next tick. Deferred only out of the tick that
@@ -1083,7 +1107,6 @@
 
       unsub.push(API.on('tick', function (d) {
         if (d.symbol !== S.symbol) return;
-        checkRunTargets();
         renderDigits();
         /* only while something is live, so the idle dock is not rebuilt
            under the finger once a second for no reason */
