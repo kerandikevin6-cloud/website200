@@ -4065,9 +4065,14 @@ html{touch-action:manipulation;overflow-x:clip}
 /* ---------------- one scroll ----------------
    The whole terminal scrolls as one page: the chart, the digits, the
    ticket and the panel move together rather than the chart holding its
-   place while the rest slides under it. On a phone the two trade
-   buttons stay on their shelf above the tab bar. */
+   place while the rest slides under it. The two trade buttons scroll
+   with it too, on a phone as well: they sit at the foot of the ticket
+   instead of on a shelf above the tab bar. */
 .chart-pin{position:static;top:auto}
+@media (max-width:899px){
+  .trade-dock{position:static;padding:12px 12px 14px;background:none;border-top:none}
+  .terminal{padding-bottom:0}
+}
 #chart{height:clamp(220px, 40dvh, 300px)}
 @media (min-width:900px){
   .terminal{height:auto;min-height:calc(100vh - 64px)}
