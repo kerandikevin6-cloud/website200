@@ -18,7 +18,7 @@
   var unsub = [];
   var timer = null;
 
-  var WINDOW = 180;          /* ticks per instrument in the sample */
+  var WINDOW = 100;          /* ticks per instrument in the sample */
 
   /* The three contract families, which is what somebody actually means
      when they say what they want to trade. The scanner used to rank all
@@ -114,18 +114,8 @@
     return best;
   }
 
-  /* Every instrument is scored, and the best five are kept.
-
-     The list used to be as long as the board, which meant the two
-     buttons under it — the only two things there are to do with a scan —
-     were most of a screen away, and nobody reads to the bottom of a
-     ranking they did not ask for. Five is enough to see that the top one
-     won on merit and short enough that the way out is in sight. */
-  var SHOWN = 5;
-
-  /* The scanner only ever answers with a volatility index. Gold, forex,
-     crypto and the rest are still on the terminal, but a signal on them
-     is not what anybody opens this screen for. */
+  /* Every volatility index is scored and kept, best first: the top one
+     is the answer, the others are the market news under it. */
   function pool() {
     return API.symbols.filter(function (s) { return s.group === 'Volatility'; });
   }
@@ -133,8 +123,7 @@
   function rescan() {
     S.signals = pool().map(function (s) { return score(s.id); })
       .filter(Boolean)
-      .sort(function (a, b) { return b.edge - a.edge; })
-      .slice(0, SHOWN);
+      .sort(function (a, b) { return b.edge - a.edge; });
     if (!S.signals.length) return;
     if (!S.pick || !current()) S.pick = S.signals[0].symbol;
   }
@@ -146,31 +135,17 @@
     return null;
   }
 
-  /* ---------- what to scan for ----------
-     Asked before the scan, not after: which of the three contracts
-     somebody wants is a decision they have usually already made, and a
-     scanner that answers a different question is noise. */
-  function askFamily() {
-    if (!window.NexModal) { startScan(); return; }
-    window.NexModal.open('scan', null, { family: S.family });
-  }
+  /* ---------- the scan ----------
+     It walks the indices one at a time, the counter and the bar moving
+     with it, and lands on the best of them. Run as soon as the page
+     opens, and again whenever the market or the button asks. */
+  var STEP_MS = 420;
 
-  function chooseFamily(id) {
-    if (!FAMILIES[id]) return;
-    S.family = id;
-    S.signals = [];
-    S.pick = null;
-    if (window.NexModal) window.NexModal.close();
-    startScan();
-  }
-
-  /* ---------- scan animation ---------- */
   function startScan() {
-    if (S.phase === 'scanning') return;
+    clearInterval(timer);
     S.phase = 'scanning';
     S.step = 0;
     render();
-    clearInterval(timer);
     timer = setInterval(function () {
       S.step++;
       if (S.step >= pool().length) {
@@ -187,26 +162,15 @@
         }
         S.lastPick = S.pick;
         S.phase = 'done';
-        render();
-        return;
       }
       render();
-    }, 260);
+    }, STEP_MS);
   }
 
   /* ---------- handing it to the terminal ----------
-     The scanner does not place trades any more. It found something; the
-     decision to stake money on it belongs on the screen built for that,
-     with the chart, the balance and the two buttons in view. Pressing
-     buy from a list of statistics is how somebody ends up in a position
-     they never really looked at.
-
-     What crosses over is what the scanner found: instrument, contract,
-     digit and duration. Not the stake — that is the one number on a
-     ticket that is about the trader rather than the signal, it is asked
-     for on the terminal directly above the buy button, and asking for it
-     twice meant typing a figure here that a second field over there could
-     silently disagree with. */
+     The scanner does not place trades. What crosses over is what it
+     found: instrument, contract and digit. The stake is asked for on the
+     terminal, directly above the buttons. */
   var TAB_FOR = {
     even_odd: 'even_odd', matches: 'matches', differs: 'matches',
     over: 'over_under', under: 'over_under'
@@ -231,140 +195,118 @@
   }
 
   /* ---------- markup ---------- */
-  function scanCard() {
-    if (S.phase === 'scanning') {
-      var list = pool();
-      var sym = list[Math.min(S.step, list.length - 1)];
-      return '<div class="ai-hero scanning">' +
-        window.NexLoader() +
-        '<b>Scanning the market</b>' +
-        '<span class="ai-sub num">' + sym.name + '</span>' +
-        '<div class="ai-progress"><i style="width:' +
-          Math.round((S.step + 1) / list.length * 100) + '%"></i></div>' +
-      '</div>';
+  function familyOf(sig) { return FAMILIES[TAB_FOR[sig.type] || 'even_odd'].label; }
+
+  /* The reason, in the words of the sample it came from. */
+  function why(sig) {
+    var n = sig.sample;
+    var hits = Math.round(sig.prob * n);
+    var pc = ' (' + Math.round(sig.prob * 100) + '%).';
+    switch (sig.type) {
+      case 'over': return hits + ' of the last ' + n + ' ticks closed above ' + sig.barrier + pc;
+      case 'under': return hits + ' of the last ' + n + ' ticks closed below ' + sig.barrier + pc;
+      case 'matches': return 'Digit ' + sig.barrier + ' landed on ' + hits + ' of the last ' + n + ' ticks' + pc;
+      case 'differs': return hits + ' of the last ' + n + ' ticks missed digit ' + sig.barrier + pc;
+      default: return sig.label + ' closed ' + hits + ' of the last ' + n + ' ticks' + pc;
     }
+  }
 
-    if (S.phase === 'idle') {
-      return '<div class="ai-hero">' +
-        window.NexLoader() +
-        '<b>Signal engine</b>' +
-        '<span class="ai-sub">Reads the last ' + WINDOW + ' ticks on all ' +
-          pool().length + ' volatility indices and ranks the digit contracts by expected return.</span>' +
-        '<button class="ai-go" id="aiScan">' + I('radar', 17) + 'Scan the market</button>' +
+  function familySelect() {
+    return '<label class="es-k" for="esFamily">Market</label>' +
+      '<div class="es-select">' +
+        '<select id="esFamily">' + Object.keys(FAMILIES).map(function (id) {
+          return '<option value="' + id + '"' + (id === S.family ? ' selected' : '') + '>' +
+            FAMILIES[id].label + '</option>';
+        }).join('') + '</select>' + I('chevD', 14) +
       '</div>';
-    }
+  }
 
-    if (!S.signals.length) {
-      return '<div class="ai-hero done">' +
-        '<span class="label">' + FAMILIES[S.family].label + '</span>' +
-        '<b class="ai-headline">Nothing to report</b>' +
-        '<span class="ai-sub">Not enough history on any instrument yet. ' +
-          'Leave it a minute and scan again.</span>' +
-        '<button class="ai-go ghost" id="aiScan">' + I('radar', 16) + 'Rescan for the best market</button>' +
+  function progress() {
+    var list = pool();
+    if (!list.length) return '';
+    var at = S.phase === 'scanning' ? Math.min(S.step, list.length - 1) : list.length - 1;
+    var count = at + 1;
+    var name = S.phase === 'done' && current() ? current().symbolName : list[at].name;
+    return '<div class="es-prog' + (S.phase === 'scanning' ? ' on' : '') + '">' +
+        '<div class="es-prog-row"><span>' + name + '</span>' +
+          '<span class="num">' + count + '/' + list.length + '</span></div>' +
+        '<div class="es-bar"><i style="width:' + Math.round(count / list.length * 100) + '%"></i></div>' +
       '</div>';
+  }
+
+  function bestCard() {
+    if (S.phase !== 'done') {
+      return '<div class="es-best wait">' + window.NexLoader() +
+        '<p>Reading the last ' + WINDOW + ' ticks on every volatility index…</p></div>';
     }
-
-    /* Once the scan is done, the two facts the whole screen exists to
-       produce: which volatility it landed on, and what it is predicting
-       on it. They used to be nowhere — the summary card was taken out
-       for repeating the list under it, and the button at the foot said
-       "Load volatility" without ever naming one, so a finished scan and
-       an unfinished one looked the same until you read the ranking.
-
-       This is not the old card back: no hit rate, no expected return, no
-       second copy of the ranked row. Two lines, both of which are what
-       the Load button is about to do. */
     var sig = current();
-    if (!sig) return '';
-    var meta = API.symbol(sig.symbol) || {};
-    return '<div class="ai-ready">' +
-        '<span class="label">Ready to load</span>' +
-        '<div class="ai-ready-grid">' +
-          '<div class="ai-ready-cell">' +
-            '<span>Volatility</span>' +
-            '<b>' + (sig.symbolName || meta.name || sig.symbol) + '</b>' +
-          '</div>' +
-          '<div class="ai-ready-cell">' +
-            '<span>Prediction</span>' +
-            '<b class="pred">' + sig.label + '</b>' +
-          '</div>' +
+    if (!sig) {
+      return '<div class="es-best wait"><p>Not enough history on any index yet. ' +
+        'Leave it a minute and re-scan.</p></div>';
+    }
+    return '<div class="es-best">' +
+        '<span class="es-ok">' + I('check', 14) + '</span>' +
+        '<div>' +
+          '<p><b>Best market:</b> ' + sig.symbolName + ' | ' + familyOf(sig) + ' ' + sig.label +
+            ' | <b class="es-q">Quality ' + Math.round(sig.prob * 100) + '%</b></p>' +
+          '<p class="es-why"><b>Why:</b> ' + why(sig) + '</p>' +
         '</div>' +
-        '<p class="ai-ready-note">The terminal opens on this instrument with the ' +
-          'contract and digit already set. Nothing is placed until you press a side.</p>' +
       '</div>';
   }
 
-  function signalRows() {
+  /* What the rest of the board is doing, read off the same scan: one
+     line for each index the scanner did not pick. */
+  function news() {
     if (S.phase !== 'done') return '';
-    /* The heading carries the family now, since the card that used to
-       say it is gone. */
-    return '<div class="ai-sect label">' + FAMILIES[S.family].label +
-        ' · top ' + S.signals.length + '</div>' +
-      '<div class="list">' + S.signals.map(function (s) {
-        var good = s.edge >= 0;
-        var conf = Math.max(0, Math.min(100, s.prob * 100));
-        return '<button class="ai-row' + (s.symbol === S.pick ? ' on' : '') +
-            '" data-pick="' + s.symbol + '">' +
-          '<span class="ai-badge ' + (good ? 'pos' : 'neg') + '">' + I('spark', 15) + '</span>' +
-          '<span class="ai-t">' +
-            '<b>' + s.label + '</b>' +
-            '<span>' + s.symbolName + '</span>' +
-            '<span class="ai-meter"><i style="width:' + conf.toFixed(0) + '%"></i></span>' +
-          '</span>' +
-          '<span class="ai-p">' +
-            '<b class="num">' + F.pct(conf, 1) + '</b>' +
-            '<span class="num ' + (good ? 'pos' : 'neg') + '">' +
-              F.signedPct(s.edge * 100) + ' EV</span>' +
-          '</span>' +
-        '</button>';
-      }).join('') + '</div>';
-  }
-
-  /* ---------- the two ways on ----------
-     The ticket card that used to sit here restated the contract, the
-     instrument and the duration — all three of which are already on the
-     headline above and on the ranked row that is highlighted. Three
-     copies of one fact is not a summary, it is furniture, and it stood
-     between the result and the only two things there are to do with it:
-     take it to the terminal, or look again. */
-  function ticketCard() {
-    if (S.phase !== 'done' || !current()) return '';
-
-    /* The paragraph that used to sit under these said the terminal opens
-       with the digit already set and nothing is placed until you press
-       buy. Both are true, both are visible the second the terminal
-       opens, and on a short phone it was the one thing pushed below the
-       fold by the buttons it was explaining. */
-    return '<div class="ai-dock">' +
-        '<button class="btn btn-fill" id="aiTake">' +
-          I('candles', 16) + 'Load ' + (current().symbolName || 'volatility') + '</button>' +
-        '<button class="btn btn-again" id="aiScanAgain">' +
-          I('radar', 16) + 'Rescan for the best market</button>' +
+    var rest = S.signals.filter(function (s) { return s.symbol !== S.pick; }).slice(0, 4);
+    if (!rest.length) return '';
+    return '<div class="es-news">' +
+        '<div class="es-news-head">' + I('wave', 16) +
+          '<b>Market<br>news</b><span>What’s moving markets while you trade</span></div>' +
+        '<ul>' + rest.map(function (s) {
+          return '<li><b>' + s.symbolName + ': ' + s.label + ' leads at ' +
+              Math.round(s.prob * 100) + '%</b>' +
+            '<span>' + why(s) + '</span></li>';
+        }).join('') + '</ul>' +
       '</div>';
   }
 
-  function tradeLog() {
-    var mine = API.contracts.all().filter(function (c) { return c.run === 'AI'; }).slice(0, 8);
-    if (!mine.length) return '';
-    return '<div class="ai-sect label">Placed by the engine</div>' +
-      '<div class="list">' + mine.map(function (c) {
-        var open = c.status === 'open';
-        var cls = open ? 'live' : c.profit >= 0 ? 'pos' : 'neg';
-        return '<div class="trow">' +
-          '<span class="ico ' + cls + '">' + I(open ? 'clock' : c.profit >= 0 ? 'check' : 'close', 15) + '</span>' +
-          '<span class="t"><b>' + API.contracts.label(c) + '</b>' +
-            '<span>' + c.symbolName + ' · ' + F.time(c.entryTime) + '</span></span>' +
-          '<span class="p"><span class="num ' + (open ? '' : cls) + '">' +
-            (open ? F.money(c.value) : F.signedMoney(c.profit)) + '</span>' +
-            '<span class="sub">' + (open ? 'running' : c.status) + '</span></span>' +
-        '</div>';
-      }).join('') + '</div>';
+  function fields() {
+    var sig = S.phase === 'done' ? current() : null;
+    function f(k, v) {
+      return '<span class="es-k">' + k + '</span><div class="es-field">' + (v || '—') + '</div>';
+    }
+    return f('Selected market', sig && sig.symbolName) +
+      f('Trade type', sig ? familyOf(sig) : FAMILIES[S.family].label) +
+      f('Prediction (auto)', sig && sig.label);
+  }
+
+  function foot() {
+    var sig = S.phase === 'done' ? current() : null;
+    return '<div class="es-foot">' +
+        '<button class="btn btn-fill es-scan" id="aiScanAgain"' +
+          (S.phase === 'scanning' ? ' disabled' : '') + '>' +
+          I('search', 16) + 'Re-scan for best market</button>' +
+        '<button class="es-load" id="aiTake"' + (sig ? '' : ' disabled') + '>' +
+          'Load ' + (sig ? sig.symbolName : 'market') + '</button>' +
+      '</div>';
   }
 
   function render() {
     if (!el.root) return;
-    html(el.root, scanCard() + signalRows() + ticketCard() + tradeLog() +
-      '<div style="height:18px"></div>');
+    html(el.root, '<div class="es">' +
+        '<div class="es-head">' +
+          '<span class="es-mark">' + I('radar', 16) + '</span>' +
+          '<b>Entry Scanner</b>' +
+          '<button class="es-x" id="esClose" aria-label="Close">' + I('close', 16) + '</button>' +
+        '</div>' +
+        '<div class="es-body">' +
+          '<p class="es-intro">The deep scanner walks every volatility index and surfaces the ' +
+            'best entry point based on its recent tick patterns.</p>' +
+          familySelect() + progress() + bestCard() + news() + fields() +
+        '</div>' +
+        foot() +
+      '</div>');
   }
 
   /* ---------- events ---------- */
@@ -372,22 +314,16 @@
     root.addEventListener('click', function (e) {
       var t = e.target;
       if (!t.closest) return;
-
-      if (t.closest('#aiScan') || t.closest('#aiScanAgain')) { askFamily(); return; }
+      if (t.closest('#aiScanAgain')) { startScan(); return; }
       if (t.closest('#aiTake')) { handOff(); return; }
-
-      var pick = t.closest('[data-pick]');
-      if (pick) { S.pick = pick.getAttribute('data-pick'); render(); return; }
-
-
+      if (t.closest('#esClose')) { window.NexGo('/'); return; }
     });
-
-    /* The chooser is a dialog, which is mounted at the end of the body
-       rather than inside this page, so it cannot be caught by the
-       listener above. */
-    document.addEventListener('click', function (e) {
-      var pickFam = e.target.closest && e.target.closest('[data-scanfamily]');
-      if (pickFam) chooseFamily(pickFam.getAttribute('data-scanfamily'));
+    root.addEventListener('change', function (e) {
+      if (e.target.id !== 'esFamily' || !FAMILIES[e.target.value]) return;
+      S.family = e.target.value;
+      S.signals = [];
+      S.pick = null;
+      startScan();
     });
   }
 
@@ -398,8 +334,6 @@
     if (!root) return;
     el.root = root;
 
-    unsub.forEach(function (f) { f(); });
-    unsub = [];
     clearInterval(timer);
     S.phase = 'idle';
     S.signals = [];
@@ -408,36 +342,17 @@
 
     API.ready(function () {
       document.body.classList.remove('loading');
-      render();
-
-      /* while results are on screen, keep them honest against the feed, but only every second or so, or the list would rebuild under the
-         finger on every tick */
-      var lastRefresh = 0;
-      unsub.push(API.on('tick', function () {
-        if (S.phase !== 'done') return;
-        if (Date.now() - lastRefresh < 1200) return;
-        lastRefresh = Date.now();
+      startScan();
+      /* Opened before the feed has a hundred ticks to read, the scan has
+         nothing to say yet; it fills in as soon as there is enough. */
+      var lastTry = 0;
+      unsub.forEach(function (f) { f(); });
+      unsub = [API.on('tick', function () {
+        if (S.phase !== 'done' || S.signals.length || Date.now() - lastTry < 1500) return;
+        lastTry = Date.now();
         rescan();
-        render();
-      }));
-      unsub.push(API.on('settled', function (c) {
-        if (c.run !== 'AI') return;
-        /* Same banner the terminal uses, so a result reads the same way
-           whichever screen placed it: green won, red lost, across the
-           top. */
-        if (window.NexFlash) {
-          window.NexFlash(c.status === 'won' ? 'win' : 'loss',
-            c.status === 'won' ? 'Contract Won' : 'Contract Lost',
-            c.symbolName || '',
-            API.contracts.label(c) + '  ' + F.signedUsd(c.profit));
-        } else {
-          window.NexToast(c.status === 'won'
-            ? 'AI trade won ' + F.money(c.payout)
-            : 'AI trade lost ' + F.money(c.stake));
-        }
-        render();
-      }));
-      unsub.push(API.on('balance', render));
+        if (S.signals.length) render();
+      })];
     });
   }
 

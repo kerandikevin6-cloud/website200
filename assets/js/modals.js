@@ -129,7 +129,7 @@
      actually be debited, which is shown as a separate line at the moment
      it applies rather than by pricing the whole product in it. */
   function payCur() {
-    return { cur: 'USD', rate: 1, min: API().money.minDepositUsd(), quick: [10, 25, 50, 100, 250] };
+    return { cur: 'USD', rate: 1, min: API().money.minDepositUsd(), quick: [5, 10, 25, 50, 100] };
   }
 
   /* What the phone or the card is actually debited, for a rail that
