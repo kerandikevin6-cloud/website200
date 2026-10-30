@@ -1239,7 +1239,7 @@
     clearTimeout(tickEl._t);
     /* Long enough to read the figure before it goes. It was 750ms, which
        on a series ticking every second read as a flicker. */
-    tickEl._t = setTimeout(function () { tickEl.classList.remove('open'); }, 1300);
+    tickEl._t = setTimeout(function () { tickEl.classList.remove('open'); }, 2400);
     play('tick');
   };
 

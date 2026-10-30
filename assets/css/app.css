@@ -4060,3 +4060,18 @@ html{touch-action:manipulation;overflow-x:clip}
 }
 :root[data-theme="light"] .dcell.cur.miss .dpct{color:var(--neg)}
 :root[data-theme="light"] .dcell.cur.miss::after{border-bottom-color:var(--neg)}
+
+
+/* ---------------- one scroll ----------------
+   The whole terminal scrolls as one page: the chart, the digits, the
+   ticket and the panel move together rather than the chart holding its
+   place while the rest slides under it. On a phone the two trade
+   buttons stay on their shelf above the tab bar. */
+.chart-pin{position:static;top:auto}
+#chart{height:clamp(220px, 40dvh, 300px)}
+@media (min-width:900px){
+  .terminal{height:auto;min-height:calc(100vh - 64px)}
+  .terminal .chart-pin #chart{min-height:min(55vh,460px)}
+  .terminal .col-right{position:static;top:auto;height:auto}
+  .terminal .col-right .panel{flex:none;overflow:visible;position:static}
+}

@@ -579,6 +579,15 @@
      before; only the size of the stake is decided here. */
   var MAX_STAKE = 5000;
   var RUN_PLAN = 5;
+  /* The pause between one contract in a run settling and the next
+     being placed: about four seconds a contract with the tick, so a
+     run of five takes around twenty. */
+  var RUN_GAP_MS = 3000;
+  /* What the next contract is placed at: the run's sized stake while
+     one is going, the trader's otherwise. The field and the payout on
+     the buttons keep showing the trader's stake throughout, so the
+     figure they typed does not jump about mid-run. */
+  function runningStake() { return S.run ? S.run.stake : S.stake; }
   function runStake(r) {
     var type = typeFor(r.side);
     var left = Math.max(1, RUN_PLAN - r.done);
@@ -637,7 +646,7 @@
 
   /* ---------- validation ---------- */
   function check() {
-    S.error = API.contracts.validate({ stake: S.stake, ticks: contractTicks(S.symbol), symbol: S.symbol });
+    S.error = API.contracts.validate({ stake: runningStake(), ticks: contractTicks(S.symbol), symbol: S.symbol });
     return !S.error;
   }
 
@@ -646,7 +655,7 @@
     var res = API.contracts.buy({
       symbol: S.symbol, type: typeFor(side), side: side,
       barrier: S.tab === 'even_odd' ? null : S.barrier,
-      stake: S.stake, ticks: runId ? RUN_TICKS : CONTRACT_TICKS, run: runId || null
+      stake: runningStake(), ticks: runId ? RUN_TICKS : CONTRACT_TICKS, run: runId || null
     });
     if (!res.ok) {
       S.error = res.error;
@@ -699,8 +708,9 @@
         F.usd(reachableTarget(side, API.account.balance())));
       return;
     }
+    /* The stake field is left alone: it keeps the trader's figure for
+       the whole run, and the run's own sized stakes go on r.stake. */
     S.run = r;
-    S.stake = r.stake;
 
     /* A run is one trade to the person running it: the balance on screen
        stays where it started and moves once, when the run ends. */
@@ -743,7 +753,6 @@
     if (!S.run) return;
     var r = S.run;
     S.run = null;
-    S.stake = r.base;
     r.endKind = kind || 'stopped';
     API.prefs.spendAuto();
     if (r.serverId && (r.endKind === 'stopped' || r.endKind === 'trade_limit') && live()) {
@@ -868,7 +877,7 @@
     /* The next stake, sized from where the run now stands. A balance
        that cannot cover all of it stakes what it has: a win then falls
        short of the target and the run carries on from there. */
-    S.stake = Math.min(runStake(r), Math.floor(API.account.balance() * 100) / 100);
+    r.stake = Math.min(runStake(r), Math.floor(API.account.balance() * 100) / 100);
     /* The one other thing that ends a run: the next stake cannot be
        placed, usually because the balance no longer covers it. */
     if (!check()) { soundResult(c); return stopRun('Run stopped: ' + S.error, 'stopped'); }
@@ -888,10 +897,11 @@
         'Run total ' + F.signedUsd(r.pnl));
     }
     renderAll();
-    /* Straight on to the next tick. Deferred only out of the tick that
-       settled this one, so the new trade is not advanced on the same
-       tick it was bought on. */
-    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, 0);
+    /* A short breath before the next contract, so the pop-up can be
+       read and a run can be followed (and explained) as it goes.
+       Straight on to the next tick ended a five-contract run in a
+       handful of seconds. */
+    setTimeout(function () { if (S.run === r) place(r.side, r.id); }, RUN_GAP_MS);
   }
 
 
