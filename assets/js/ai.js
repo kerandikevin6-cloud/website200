@@ -225,8 +225,9 @@
     var list = pool();
     if (!list.length) return '';
     var at = S.phase === 'scanning' ? Math.min(S.step, list.length - 1) : list.length - 1;
-    var count = at + 1;
-    var name = S.phase === 'done' && current() ? current().symbolName : list[at].name;
+    var count = S.phase === 'idle' ? 0 : at + 1;
+    var name = S.phase === 'idle' ? 'Ready to scan'
+      : S.phase === 'done' && current() ? current().symbolName : list[at].name;
     return '<div class="es-prog' + (S.phase === 'scanning' ? ' on' : '') + '">' +
         '<div class="es-prog-row"><span>' + name + '</span>' +
           '<span class="num">' + count + '/' + list.length + '</span></div>' +
@@ -235,6 +236,9 @@
   }
 
   function bestCard() {
+    if (S.phase === 'idle') {
+      return '<div class="es-best wait"><p>Press Start deep scan to find the best market.</p></div>';
+    }
     if (S.phase !== 'done') {
       return '<div class="es-best wait">' + window.NexLoader() + '<p>Scanning…</p></div>';
     }
@@ -242,19 +246,40 @@
     if (!sig) {
       return '<div class="es-best wait"><p>Not enough ticks yet. Re-scan in a minute.</p></div>';
     }
-    function cell(k, v, cls) {
-      return '<div><span class="es-k">' + k + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>';
-    }
     return '<div class="es-best">' +
-        '<span class="es-k">' + I('check', 12) + 'Best market</span>' +
-        '<b class="es-name">' + sig.symbolName + '</b>' +
-        '<div class="es-cells">' +
-          cell('Trade type', familyOf(sig)) +
-          cell('Prediction', sig.label) +
-          cell('Quality', Math.round(sig.prob * 100) + '%', 'es-q') +
+        '<span class="es-ok">' + I('check', 14) + '</span>' +
+        '<div>' +
+          '<p><b>Best market:</b> ' + sig.symbolName + ' | ' + familyOf(sig) + ' ' + sig.label +
+            ' | <b class="es-q">Quality ' + Math.round(sig.prob * 100) + '%</b></p>' +
+          '<p class="es-why"><b>Why:</b> ' + why(sig) + '</p>' +
         '</div>' +
-        '<p class="es-why">' + why(sig) + '</p>' +
       '</div>';
+  }
+
+  /* What the rest of the board is doing, read off the same scan: one
+     line for each index the scanner did not pick. */
+  function news() {
+    if (S.phase !== 'done') return '';
+    var rest = S.signals.filter(function (s) { return s.symbol !== S.pick; }).slice(0, 3);
+    if (!rest.length) return '';
+    return '<div class="es-news">' +
+        '<div class="es-news-head">' + I('wave', 16) +
+          '<b>Market<br>news</b><span>What’s moving markets while you trade</span></div>' +
+        '<ul>' + rest.map(function (s) {
+          return '<li><b>' + s.symbolName + ': ' + s.label + ' leads at ' +
+              Math.round(s.prob * 100) + '%</b></li>';
+        }).join('') + '</ul>' +
+      '</div>';
+  }
+
+  function fields() {
+    var sig = S.phase === 'done' ? current() : null;
+    function f(k, v) {
+      return '<span class="es-k">' + k + '</span><div class="es-field">' + (v || '—') + '</div>';
+    }
+    return f('Selected market', sig && sig.symbolName) +
+      f('Trade type', sig ? familyOf(sig) : FAMILIES[S.family].label) +
+      f('Prediction (auto)', sig && sig.label);
   }
 
   function foot() {
@@ -262,7 +287,7 @@
     return '<div class="es-foot">' +
         '<button class="btn btn-fill es-scan" id="aiScanAgain"' +
           (S.phase === 'scanning' ? ' disabled' : '') + '>' +
-          I('search', 16) + 'Re-scan</button>' +
+          I('search', 16) + (S.phase === 'idle' ? 'Start deep scan' : 'Re-scan for best market') + '</button>' +
         '<button class="es-load" id="aiTake"' + (sig ? '' : ' disabled') + '>' +
           'Load ' + (sig ? sig.symbolName : 'market') + '</button>' +
       '</div>';
@@ -276,7 +301,10 @@
           '<b>Entry Scanner</b>' +
           '<button class="es-x" id="esClose" aria-label="Close">' + I('close', 16) + '</button>' +
         '</div>' +
-        '<div class="es-body">' + familySelect() + progress() + bestCard() + '</div>' +
+        '<div class="es-body">' +
+          '<p class="es-intro">Scans every volatility index for the best entry from its recent ticks.</p>' +
+          familySelect() + progress() + bestCard() + news() + fields() +
+        '</div>' +
         foot() +
       '</div>');
   }
@@ -295,7 +323,9 @@
       S.family = e.target.value;
       S.signals = [];
       S.pick = null;
-      startScan();
+      clearInterval(timer);
+      S.phase = 'idle';
+      render();
     });
   }
 
@@ -314,7 +344,7 @@
 
     API.ready(function () {
       document.body.classList.remove('loading');
-      startScan();
+      render();
       /* Opened before the feed has a hundred ticks to read, the scan has
          nothing to say yet; it fills in as soon as there is enough. */
       var lastTry = 0;

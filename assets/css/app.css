@@ -4170,24 +4170,3 @@ html{touch-action:manipulation;overflow-x:clip}
   .es{margin-top:24px}
   .es-foot{bottom:0}
 }
-
-/* The scanner squeezed onto one screen: the best market and the three
-   things it sets in one box, the two buttons straight under it. */
-.es{margin-top:8px}
-.es-head{padding:11px 14px}
-.es-body{padding:12px 14px 2px}
-.es-select{margin-bottom:12px}
-.es-select select{padding:10px 34px 10px 12px}
-.es-prog{margin-bottom:12px}
-.es-best{display:block;padding:12px 13px;margin-bottom:12px}
-.es-best > .es-k{display:flex;align-items:center;gap:6px;margin-bottom:4px;color:var(--accent)}
-.es-name{display:block;font-size:16px;font-weight:600;margin-bottom:11px}
-.es-cells{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.es-cells > div{padding:8px 9px;background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-sm);min-width:0}
-.es-cells .es-k{margin-bottom:3px;font-size:9.5px}
-.es-cells b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.es-best .es-why{margin-top:9px;font-size:11px}
-.es-best.wait{display:flex;gap:10px}
-.es-foot{flex-direction:row;padding:10px 14px 12px}
-.es-foot .es-scan,.es-foot .es-load{flex:1;min-width:0;padding:12px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.es-foot .es-scan{flex:0 0 38%}
