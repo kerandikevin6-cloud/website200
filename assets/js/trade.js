@@ -359,15 +359,9 @@
        that did nothing sitting above the one control that does. */
     var targets = S.mode === 'auto' ? targetsRow(auto) : '';
 
-    /* Where the numbers in this panel came from, said once. A panel that
-       silently differs from how it was left is worse than one that
-       explains itself. */
-    var scanRow = !S.fromScan ? '' :
-      '<div class="scan-note">' + I('radar', 15) +
-        '<span><b>' + S.fromScan.label + '</b> on ' + S.fromScan.symbolName +
-        ', from the scanner. Nothing is placed until you press buy.</span>' +
-        '<button class="scan-x" id="scanClear" aria-label="Dismiss">' + I('close', 14) + '</button>' +
-      '</div>';
+    /* A ticket loaded from the scanner arrives with no card: the market,
+       contract and digit it set are already on the screen. */
+    var scanRow = '';
 
     /* A strategy being copied, picked on the copy trading page. Said
        once, with a way to stop, so nobody wonders why it is there. */
