@@ -4163,11 +4163,13 @@ body[data-page="ai"] main{min-height:0;overflow:hidden}
 body[data-page="ai"] main .shell{flex:1;min-height:0;display:flex;flex-direction:column}
 #aiPage{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:10px}
 #aiPage .es{
-  width:100%;flex:0 1 auto;min-height:0;max-height:100%;margin-top:10px;
+  width:100%;flex:1 1 auto;min-height:0;margin-top:10px;
   display:flex;flex-direction:column;overflow:hidden;
 }
 #aiPage .es-head{padding:11px 14px}
-#aiPage .es-body{flex:1 1 auto;min-height:0;padding:12px 14px 4px}
+#aiPage .es-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:12px 14px 4px}
+/* The two buttons stay as they were: stacked, pinned at the foot. */
+#aiPage .es-foot{flex:none;position:relative;bottom:auto}
 #aiPage .es-intro{margin-bottom:12px}
 #aiPage .es-select{margin-bottom:12px}
 #aiPage .es-select select{padding:10px 36px 10px 12px}
@@ -4175,9 +4177,6 @@ body[data-page="ai"] main .shell{flex:1;min-height:0;display:flex;flex-direction
 #aiPage .es-best{margin-bottom:12px;padding:11px 12px}
 #aiPage .es-field{margin-bottom:10px;padding:10px 12px}
 #aiPage .es-k{margin-bottom:5px}
-#aiPage .es-foot{position:static;flex-direction:row;padding:10px 14px 12px}
-#aiPage .es-foot > *{flex:1;min-width:0}
-#aiPage .es-load{padding:11px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-height:720px){
   #aiPage .es-intro{display:none}
   #aiPage .es{margin-top:6px}
@@ -4188,6 +4187,4 @@ body[data-page="ai"] main .shell{flex:1;min-height:0;display:flex;flex-direction
   #aiPage .es-best{padding:9px 12px}
   #aiPage .es-best .es-why{margin-top:4px}
 }
-@media (max-height:600px){
-  #aiPage .es-body{overflow:auto}
-}
+
