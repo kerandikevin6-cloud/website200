@@ -4136,23 +4136,6 @@ html{touch-action:manipulation;overflow-x:clip}
 }
 .es-best.wait{align-items:center;border-color:var(--line-soft);background:var(--surface-2)}
 .es-best.wait p{font-size:12px;color:var(--muted)}
-.es-news{
-  margin-bottom:16px;border:1px solid var(--line-soft);border-radius:var(--r-sm);background:var(--surface-2);
-}
-.es-news-head{
-  display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid var(--line-soft);
-  color:var(--muted);
-}
-.es-news-head b{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text);line-height:1.25}
-.es-news-head span{margin-left:auto;max-width:15ch;font-size:10.5px;line-height:1.35}
-.es-news ul{list-style:none;margin:0;padding:0}
-.es-news li{position:relative;padding:11px 13px 11px 27px}
-.es-news li + li{border-top:1px solid var(--line-soft)}
-.es-news li::before{
-  content:"";position:absolute;left:13px;top:17px;width:5px;height:5px;border-radius:50%;background:var(--accent);
-}
-.es-news li b{display:block;font-size:12.5px;font-weight:500;line-height:1.45}
-.es-news li span{display:block;margin-top:3px;font-size:10.5px;color:var(--muted)}
 .es-field{
   margin-bottom:14px;padding:12px 13px;font-size:13.5px;font-weight:500;
   background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--r-sm);
@@ -4174,6 +4157,44 @@ html{touch-action:manipulation;overflow-x:clip}
 @media (min-width:900px){
   .es{margin-top:24px}
   .es-foot{bottom:0}
+}
+
+/* The scanner page does not scroll: everything is on one screen. The
+   page is locked to the viewport, the card fills what is left between
+   the bars, and the spacing gives way on shorter phones. */
+body[data-page="ai"]{overflow:hidden}
+body[data-page="ai"] .app{height:100dvh;min-height:0;overflow:hidden}
+body[data-page="ai"] main{min-height:0;overflow:hidden}
+body[data-page="ai"] main .shell{flex:1;min-height:0;display:flex;flex-direction:column}
+#aiPage{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:10px}
+#aiPage .es{
+  width:100%;flex:0 1 auto;min-height:0;max-height:100%;margin-top:10px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#aiPage .es-head{padding:11px 14px}
+#aiPage .es-body{flex:1 1 auto;min-height:0;padding:12px 14px 4px}
+#aiPage .es-intro{margin-bottom:12px}
+#aiPage .es-select{margin-bottom:12px}
+#aiPage .es-select select{padding:10px 36px 10px 12px}
+#aiPage .es-prog{margin-bottom:12px}
+#aiPage .es-best{margin-bottom:12px;padding:11px 12px}
+#aiPage .es-field{margin-bottom:10px;padding:10px 12px}
+#aiPage .es-k{margin-bottom:5px}
+#aiPage .es-foot{position:static;flex-direction:row;padding:10px 14px 12px}
+#aiPage .es-foot > *{flex:1;min-width:0}
+#aiPage .es-load{padding:11px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-height:720px){
+  #aiPage .es-intro{display:none}
+  #aiPage .es{margin-top:6px}
+  #aiPage .es-head{padding:8px 14px}
+  #aiPage .es-body{padding-top:10px}
+  #aiPage .es-select,#aiPage .es-prog,#aiPage .es-best{margin-bottom:9px}
+  #aiPage .es-field{margin-bottom:7px;padding:8px 12px}
+  #aiPage .es-best{padding:9px 12px}
+  #aiPage .es-best .es-why{margin-top:4px}
+}
+@media (max-height:600px){
+  #aiPage .es-body{overflow:auto}
 }
 
 </style>
@@ -10009,7 +10030,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
   }
 
   /* Every volatility index is scored and kept, best first: the top one
-     is the answer, the others are the market news under it. */
+     is the answer. */
   function pool() {
     return API.symbols.filter(function (s) { return s.group === 'Volatility'; });
   }
@@ -10150,22 +10171,6 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
       '</div>';
   }
 
-  /* What the rest of the board is doing, read off the same scan: one
-     line for each index the scanner did not pick. */
-  function news() {
-    if (S.phase !== 'done') return '';
-    var rest = S.signals.filter(function (s) { return s.symbol !== S.pick; }).slice(0, 3);
-    if (!rest.length) return '';
-    return '<div class="es-news">' +
-        '<div class="es-news-head">' + I('wave', 16) +
-          '<b>Market<br>news</b><span>What’s moving markets while you trade</span></div>' +
-        '<ul>' + rest.map(function (s) {
-          return '<li><b>' + s.symbolName + ': ' + s.label + ' leads at ' +
-              Math.round(s.prob * 100) + '%</b></li>';
-        }).join('') + '</ul>' +
-      '</div>';
-  }
-
   function fields() {
     var sig = S.phase === 'done' ? current() : null;
     function f(k, v) {
@@ -10197,7 +10202,7 @@ window.NEXAS_API = window.NEXAS_API || window.NEXAS_CONFIG.apiBase;
         '</div>' +
         '<div class="es-body">' +
           '<p class="es-intro">Scans every volatility index for the best entry from its recent ticks.</p>' +
-          familySelect() + progress() + bestCard() + news() + fields() +
+          familySelect() + progress() + bestCard() + fields() +
         '</div>' +
         foot() +
       '</div>');

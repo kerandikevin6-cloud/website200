@@ -115,7 +115,7 @@
   }
 
   /* Every volatility index is scored and kept, best first: the top one
-     is the answer, the others are the market news under it. */
+     is the answer. */
   function pool() {
     return API.symbols.filter(function (s) { return s.group === 'Volatility'; });
   }
@@ -256,22 +256,6 @@
       '</div>';
   }
 
-  /* What the rest of the board is doing, read off the same scan: one
-     line for each index the scanner did not pick. */
-  function news() {
-    if (S.phase !== 'done') return '';
-    var rest = S.signals.filter(function (s) { return s.symbol !== S.pick; }).slice(0, 3);
-    if (!rest.length) return '';
-    return '<div class="es-news">' +
-        '<div class="es-news-head">' + I('wave', 16) +
-          '<b>Market<br>news</b><span>What’s moving markets while you trade</span></div>' +
-        '<ul>' + rest.map(function (s) {
-          return '<li><b>' + s.symbolName + ': ' + s.label + ' leads at ' +
-              Math.round(s.prob * 100) + '%</b></li>';
-        }).join('') + '</ul>' +
-      '</div>';
-  }
-
   function fields() {
     var sig = S.phase === 'done' ? current() : null;
     function f(k, v) {
@@ -303,7 +287,7 @@
         '</div>' +
         '<div class="es-body">' +
           '<p class="es-intro">Scans every volatility index for the best entry from its recent ticks.</p>' +
-          familySelect() + progress() + bestCard() + news() + fields() +
+          familySelect() + progress() + bestCard() + fields() +
         '</div>' +
         foot() +
       '</div>');
