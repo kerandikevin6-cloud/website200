@@ -311,7 +311,7 @@
      sitting in somebody's localStorage and a stale one is worse than a
      new one: a saved runs:10 would keep a run going for the best part
      of a minute on a build where nothing else can. */
-  var AUTO_V = 6;
+  var AUTO_V = 7;
   function AUTO_DEFAULTS() {
     /* One contract. A run of ten at five seconds each is fifty seconds
        of watching a button, and nothing about the outcome is clearer at
@@ -326,7 +326,9 @@
        reach the target on a win (see runStake in trade.js), so these are
        what a run actually ends on; the old 200 and 999 were out of reach
        of ten contracts and every run ended on its trade limit. */
-    return { multiplier: 2, takeProfit: 10, stopLoss: 20 };
+    /* Target profit 200, stop loss 999. A value somebody types lasts
+       until their run finishes; the next load is back on these. */
+    return { multiplier: 2, takeProfit: 200, stopLoss: 999 };
   }
   var S = {
     geo: saved.geo || null,
@@ -398,7 +400,7 @@
     autoSpent: false,
     auto: (!saved.autoSpent && saved.autoV === AUTO_V && saved.auto) ||
       (saved.autoSpent ? AUTO_DEFAULTS() : null) ||
-      /* Pairs saved before version 6 are the old 200 and 999, or picked
+      /* Pairs saved before version 7 are the old 200 and 999, or picked
          against them, so they are not carried over. */
       AUTO_DEFAULTS(),
     autoV: AUTO_V
